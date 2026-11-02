@@ -1,9 +1,9 @@
 // Draws a room: floor tiles, walls and the door, as pieces that are depth-sorted together with
 // avatars, so nothing is ever drawn over something standing in front of it.
 //
-// - Walls come from Nitro's room parser (vendored in ./nitro, GPL-3), so every layout gets
-//   exactly the wall pieces, top edges and end pieces Habbo would give it, also where the
-//   outline steps in or out. Faces are coloured by the way they face: no darker strips.
+// - Walls come from Nitro's room parser (vendored in ./nitro, GPL-3) and are shown by Nitro's own
+//   visibility rule. Where Nitro stops a wall because the outline turns, connecting pieces keep
+//   the wall one solid piece. Faces are coloured by the way they face: no darker strips.
 // - The floor is drawn per tile with a thin outline. A floor edge facing empty space shows only
 //   the floor's thickness; the tall sides appear only between two floor levels (steps).
 // - The door tile sticks out of the left wall: the wall runs straight past it with a door
@@ -46,6 +46,9 @@ export interface RoomPiece {
   depth: number;
 }
 
+/** Nitro's camera direction (RoomGeometry(64, (-135, 30, 0), (11, 11, 5)).directionAxis). */
+const VIEW = { x: -0.6123724356957945, y: -0.6123724356957946, z: -0.5 };
+
 interface V3 {
   x: number;
   y: number;
@@ -83,19 +86,16 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
   const project = (v: V3): Point => corner(v.x, v.y, v.z);
   const doorTop = heightAt(grid, doorX, doorY) + DOOR_HEIGHT / STEP_PX;
 
-  // Nitro adds each wall as: its face (followed by a copy for the landscape layer), then its top
-  // edge and end pieces. A wall's top and ends are only drawn when its face is seen: walls along
-  // the front of the room face away from the camera and are left out completely, like Habbo.
-  const sameLoc = (a: V3, b: V3) => Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6 && Math.abs(a.z - b.z) < 1e-6;
-  const facesCamera = (n: V3) => n.x > 0.001 || n.y > 0.001;
-  let wallSeen = false;
+  // Which wall planes are seen: Nitro's own rule (RoomPlane.update). A plane is drawn only when
+  // it and all its secondary normals face the camera, so walls along the front of the room,
+  // their tops and end pieces are left out exactly like Habbo.
+  const cos = (n: V3) => (n.x * VIEW.x + n.y * VIEW.y + n.z * VIEW.z) / (Math.hypot(n.x, n.y, n.z) || 1);
+  const seen = (i: number) => [parser.getPlaneNormal(i) as V3, ...((parser.getPlaneSecondaryNormals(i) ?? []) as V3[])].every((n) => cos(n) < -0.001);
+  // Wall faces Nitro drew, by grid line and tile: "x<gx>,<y>" (left walls) and "y<gy>,<x>" (back walls).
+  const nitroFaces = new Set<string>();
   for (let i = 0; i < parser.planeCount; i++) {
-    const type = parser.getPlaneType(i);
-    if (type !== RoomPlaneData.PLANE_WALL) continue;
+    if (parser.getPlaneType(i) !== RoomPlaneData.PLANE_WALL || !seen(i)) continue;
     const n = parser.getPlaneNormal(i) as V3;
-    const isFace = parser.getPlaneType(i + 1) === RoomPlaneData.PLANE_LANDSCAPE && sameLoc(parser.getPlaneLocation(i) as V3, parser.getPlaneLocation(i + 1) as V3);
-    if (isFace) wallSeen = facesCamera(n);
-    if (!wallSeen) continue;
     // Only sides facing the camera are seen (like a 3D model).
     const color = n.z > 0.001 ? COLORS.wallTop : n.x > 0.001 ? COLORS.wallLeft : n.y > 0.001 ? COLORS.wallRight : null;
     if (color === null) continue;
@@ -119,60 +119,70 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       const inFrontOfDoor = color === COLORS.wallLeft && corners.every((v) => Math.abs(v.x - (doorX + 1)) < 0.01) && midY > doorY && midY < doorY + 1;
       const shown = inFrontOfDoor ? corners.map((v) => ({ ...v, z: Math.max(v.z, doorTop) })) : corners;
       poly(depth, shown.map(project), color);
+      if (color === COLORS.wallLeft) nitroFaces.add(`x${Math.round(a.x)},${Math.floor(Math.min(...corners.map((v) => v.y)) + 0.01)}`);
+      if (color === COLORS.wallRight) nitroFaces.add(`y${Math.round(a.y)},${Math.floor(Math.min(...corners.map((v) => v.x)) + 0.01)}`);
     }
   }
 
-  // ---- step pieces ----
-  // Where the back outline steps forward (like the Lobby's back-right corner, or a left wall that
-  // steps right further down), Nitro leaves out the short piece between the two walls because its
-  // room side faces away. Its outside faces the camera, though, so like a 3D model it is drawn:
-  // outside face plus top, making one solid, connected wall. Walls along the very front of the
-  // room stay out (there is no floor beyond them).
+  // ---- connecting pieces ----
+  // Nitro only draws the walls along the room's outline as far as it keeps stepping away from the
+  // camera; where the outline turns (a left wall that steps right further down, the Lobby's
+  // back-right corner) it stops. Like a 3D model with only its camera-facing sides shown, the
+  // missing pieces are added here so the walls stay one connected, solid wall:
+  //   - inside faces (+x or +y) on floor whose left or back neighbour is outside, if Nitro left them out;
+  //   - outside faces where the outline steps forward, with floor further along to connect to.
+  // Holes inside the room (with floor before them in their row and column) get no walls.
   const T = 0.25;
-  const maxZ = Math.max(0, ...grid.flat());
-  const top = maxZ + WALL_STEPS;
+  const top = Math.max(0, ...grid.flat()) + WALL_STEPS;
   const solid = (x: number, y: number) => isFloor(grid, x, y) && !(x === doorX && y === doorY);
-  // Empty tiles that are part of the outside behind the room: connected to the back (top) or left
-  // edge of the layout. Holes inside the room and gaps open to the front get no walls.
-  const behind = new Set<number>();
-  const stack: [number, number][] = [];
-  for (let x = 0; x < cols; x++) stack.push([x, 0]);
-  for (let y = 0; y < rows; y++) stack.push([0, y]);
-  while (stack.length > 0) {
-    const [x, y] = stack.pop()!;
-    const key = y * cols + x;
-    if (x < 0 || y < 0 || x >= cols || y >= rows || behind.has(key) || isFloor(grid, x, y)) continue;
-    behind.add(key);
-    stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-  }
-  const isBehind = (x: number, y: number) => x >= 0 && y >= 0 && x < cols && y < rows && behind.has(y * cols + x);
+  /** Empty tile outside the back of the room: no floor before it in its row, or in its column. */
+  const isBehind = (x: number, y: number) => {
+    if (isFloor(grid, x, y)) return false;
+    let rowOpen = true;
+    let colOpen = true;
+    for (let i = 0; i < x && rowOpen; i++) if (isFloor(grid, i, y)) rowOpen = false;
+    for (let j = 0; j < y && colOpen; j++) if (isFloor(grid, x, j)) colOpen = false;
+    return rowOpen || colOpen;
+  };
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       if (!solid(x, y)) continue;
-      const base = heightAt(grid, x, y) - T;
-      // Floor (x, y), nothing to its right, but floor further down that empty column: the right
-      // wall stepped forward here. Piece along grid x+1, outside towards +x.
-      let frontInColumn = false;
-      for (let j = y + 1; j < rows; j++) if (solid(x + 1, j)) frontInColumn = true;
-      if (isBehind(x + 1, y) && frontInColumn) {
-        const backWall = !isFloor(grid, x, y - 1) || !isFloor(grid, x + 1, y - 1);
-        const y0 = backWall ? y - T : y;
-        const gx = x + 1 + T;
-        const depth = tileDepth(x + 1, y) - 0.2;
-        poly(depth, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, top), corner(gx, y0, top)], COLORS.wallLeft);
-        poly(depth, [corner(x + 1, y0, top), corner(x + 1, y + 1, top), corner(gx, y + 1, top), corner(gx, y0, top)], COLORS.wallTop);
+      const z = heightAt(grid, x, y);
+      const depth = tileDepth(x, y) - 0.6;
+      // Inside face on the tile's left edge (grid line x), facing +x.
+      if (isBehind(x - 1, y) && !nitroFaces.has(`x${x},${y}`)) {
+        const y0 = isBehind(x, y - 1) ? y - T : y;
+        poly(depth, [corner(x, y, z), corner(x, y + 1, z), corner(x, y + 1, top), corner(x, y, top)], COLORS.wallLeft);
+        poly(depth, [corner(x - T, y0, top), corner(x - T, y + 1, top), corner(x, y + 1, top), corner(x, y0, top)], COLORS.wallTop);
       }
-      // Floor (x, y), nothing below it, but floor further right in that empty row: the left wall
-      // stepped right here. Piece along grid y+1, outside towards +y.
+      // Inside face on the tile's back edge (grid line y), facing +y.
+      if (isBehind(x, y - 1) && !nitroFaces.has(`y${y},${x}`)) {
+        const x0 = isBehind(x - 1, y) ? x - T : x;
+        poly(depth, [corner(x, y, z), corner(x + 1, y, z), corner(x + 1, y, top), corner(x, y, top)], COLORS.wallRight);
+        poly(depth, [corner(x0, y - T, top), corner(x + 1, y - T, top), corner(x + 1, y, top), corner(x0, y, top)], COLORS.wallTop);
+      }
+      const base = z - T;
+      // Nothing to the right, but floor further down that empty column: the back wall steps
+      // forward here. Outside face along grid x+1, facing +x.
+      let frontInColumn = false;
+      for (let j = y + 1; j < rows && !frontInColumn; j++) if (solid(x + 1, j)) frontInColumn = true;
+      if (isBehind(x + 1, y) && frontInColumn) {
+        const y0 = isBehind(x, y - 1) || isBehind(x + 1, y - 1) ? y - T : y;
+        const gx = x + 1 + T;
+        const d = tileDepth(x + 1, y) - 0.2;
+        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, top), corner(gx, y0, top)], COLORS.wallLeft);
+        poly(d, [corner(x + 1, y0, top), corner(x + 1, y + 1, top), corner(gx, y + 1, top), corner(gx, y0, top)], COLORS.wallTop);
+      }
+      // Nothing below, but floor further right in that empty row: the left wall steps right here.
+      // Outside face along grid y+1, facing +y.
       let frontInRow = false;
-      for (let i = x + 1; i < cols; i++) if (solid(i, y + 1)) frontInRow = true;
+      for (let i = x + 1; i < cols && !frontInRow; i++) if (solid(i, y + 1)) frontInRow = true;
       if (isBehind(x, y + 1) && frontInRow) {
-        const leftWall = !isFloor(grid, x - 1, y) || !isFloor(grid, x - 1, y + 1);
-        const x0 = leftWall ? x - T : x;
+        const x0 = isBehind(x - 1, y) || isBehind(x - 1, y + 1) ? x - T : x;
         const gy = y + 1 + T;
-        const depth = tileDepth(x, y + 1) - 0.2;
-        poly(depth, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, top), corner(x0, gy, top)], COLORS.wallRight);
-        poly(depth, [corner(x0, y + 1, top), corner(x + 1, y + 1, top), corner(x + 1, gy, top), corner(x0, gy, top)], COLORS.wallTop);
+        const d = tileDepth(x, y + 1) - 0.2;
+        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, top), corner(x0, gy, top)], COLORS.wallRight);
+        poly(d, [corner(x0, y + 1, top), corner(x + 1, y + 1, top), corner(x + 1, gy, top), corner(x0, gy, top)], COLORS.wallTop);
       }
     }
   }
