@@ -1,0 +1,9819 @@
+{
+ "pack": "salvaje",
+ "source": "furni",
+ "items": [
+  {
+   "id": "salvaje_3d_printer_cup",
+   "name": "3D Printer Cup",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "3D_Printer_Cup_1",
+      "3D_Printer_Cup_2",
+      "3D_Printer_Cup_3",
+      "3D_Printer_Cup_4",
+      "3D_Printer_Cup_5",
+      "3D_Printer_Cup_6",
+      "3D_Printer_Cup_7",
+      "3D_Printer_Cup_8",
+      "3D_Printer_Cup_9",
+      "3D_Printer_Cup_10",
+      "3D_Printer_Cup_11",
+      "3D_Printer_Cup_12",
+      "3D_Printer_Cup_13",
+      "3D_Printer_Cup_14",
+      "3D_Printer_Cup_15",
+      "3D_Printer_Cup_16"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_3d_printer_empty",
+   "name": "3D Printer Empty",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "3D_Printer_Empty_1",
+      "3D_Printer_Empty_2",
+      "3D_Printer_Empty_3",
+      "3D_Printer_Empty_4",
+      "3D_Printer_Empty_5",
+      "3D_Printer_Empty_6",
+      "3D_Printer_Empty_7",
+      "3D_Printer_Empty_8",
+      "3D_Printer_Empty_9",
+      "3D_Printer_Empty_10",
+      "3D_Printer_Empty_11",
+      "3D_Printer_Empty_12",
+      "3D_Printer_Empty_13",
+      "3D_Printer_Empty_14",
+      "3D_Printer_Empty_15",
+      "3D_Printer_Empty_16"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_ac",
+   "name": "AC",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "AC"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ac_big_1",
+   "name": "Ac Big 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ac_Big_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ac_big_2",
+   "name": "Ac Big 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ac_Big_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_aircc",
+   "name": "AirCC",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "AirCC_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_atari",
+   "name": "Atari",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Atari"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_basic_office_chair_a",
+   "name": "Basic Office Chair A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Basic_Office_Chair_A"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_basic_office_chair_b",
+   "name": "Basic Office Chair B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Basic_Office_Chair_B"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bath_1",
+   "name": "Bath 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bath_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_bath_carpet",
+   "name": "Bath Carpet",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bath_Carpet"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_bath_window",
+   "name": "Bath window",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bath_window"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_bed_a_4",
+   "name": "Bed A 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_A_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_b_4",
+   "name": "Bed B 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_B_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_c_4",
+   "name": "Bed C 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_C_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_d_4",
+   "name": "Bed D 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_D_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_e_4",
+   "name": "Bed E 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_E_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_f_4",
+   "name": "Bed F 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_F_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_g_4",
+   "name": "Bed G 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_G_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_h_4",
+   "name": "Bed H 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_H_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_i_4",
+   "name": "Bed I 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_I_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_j_4",
+   "name": "Bed J 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_J_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_k_4",
+   "name": "Bed K 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    3
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_K_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_l_4",
+   "name": "Bed L 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_L_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bed_m_4",
+   "name": "Bed M 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    3
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bed_M_4"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_bended_screen",
+   "name": "Bended Screen",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bended_Screen_1",
+      "Bended_Screen_2",
+      "Bended_Screen_3",
+      "Bended_Screen_4",
+      "Bended_Screen_5",
+      "Bended_Screen_6",
+      "Bended_Screen_7",
+      "Bended_Screen_8",
+      "Bended_Screen_9",
+      "Bended_Screen_10",
+      "Bended_Screen_11",
+      "Bended_Screen_12",
+      "Bended_Screen_13",
+      "Bended_Screen_14",
+      "Bended_Screen_15",
+      "Bended_Screen_16",
+      "Bended_Screen_17",
+      "Bended_Screen_18"
+     ]
+    }
+   },
+   "fps": 8,
+   "off": "Bended_Screen_Off"
+  },
+  {
+   "id": "salvaje_bendedscreen_a",
+   "name": "BendedScreen A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "BendedScreen_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_big_tv",
+   "name": "Big TV",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Big_TV_1",
+      "Big_TV_2",
+      "Big_TV_3",
+      "Big_TV_4",
+      "Big_TV_5",
+      "Big_TV_6",
+      "Big_TV_7",
+      "Big_TV_8",
+      "Big_TV_9",
+      "Big_TV_10",
+      "Big_TV_11",
+      "Big_TV_12",
+      "Big_TV_13",
+      "Big_TV_14",
+      "Big_TV_15",
+      "Big_TV_16",
+      "Big_TV_17",
+      "Big_TV_18",
+      "Big_TV_19"
+     ]
+    }
+   },
+   "fps": 8,
+   "off": "Big_TV_Off"
+  },
+  {
+   "id": "salvaje_big_tv_b",
+   "name": "Big TV B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Big_TV_B_1",
+      "Big_TV_B_2",
+      "Big_TV_B_3",
+      "Big_TV_B_4",
+      "Big_TV_B_5",
+      "Big_TV_B_6",
+      "Big_TV_B_7",
+      "Big_TV_B_8",
+      "Big_TV_B_9",
+      "Big_TV_B_10",
+      "Big_TV_B_11",
+      "Big_TV_B_12",
+      "Big_TV_B_13",
+      "Big_TV_B_14",
+      "Big_TV_B_15",
+      "Big_TV_B_16",
+      "Big_TV_B_17",
+      "Big_TV_B_18",
+      "Big_TV_B_19",
+      "Big_TV_B_20"
+     ]
+    }
+   },
+   "fps": 8,
+   "off": "Big_TV_B_Off"
+  },
+  {
+   "id": "salvaje_bigtv_3_off",
+   "name": "BigTV 3 Off",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "BigTV_3_Off_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_blueprint",
+   "name": "Blueprint",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Blueprint"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_board_empty",
+   "name": "Board Empty",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Board_Empty"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_board_full",
+   "name": "Board Full",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Board_Full"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_bonsai",
+   "name": "Bonsai",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bonsai"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_8",
+   "name": "Book 8",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_8"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_big_lightblue",
+   "name": "Book Big LightBlue",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Big_LightBlue_1",
+      "Book_Big_LightBlue_2",
+      "Book_Big_LightBlue_3",
+      "Book_Big_LightBlue_4",
+      "Book_Big_LightBlue_5",
+      "Book_Big_LightBlue_6",
+      "Book_Big_LightBlue_7",
+      "Book_Big_LightBlue_8",
+      "Book_Big_LightBlue_9",
+      "Book_Big_LightBlue_10",
+      "Book_Big_LightBlue_11",
+      "Book_Big_LightBlue_12",
+      "Book_Big_LightBlue_13",
+      "Book_Big_LightBlue_14",
+      "Book_Big_LightBlue_15",
+      "Book_Big_LightBlue_16"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_book_green",
+   "name": "Book Green",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_blue",
+   "name": "Book Small Blue",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Blue"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_blue_lying",
+   "name": "Book Small Blue Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Blue_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_blue_standing",
+   "name": "Book Small Blue Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Blue_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_brightred",
+   "name": "Book Small BrightRed",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_BrightRed"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_brightred_lying",
+   "name": "Book Small BrightRed Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_BrightRed_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_brightred_standing",
+   "name": "Book Small BrightRed Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_BrightRed_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_green",
+   "name": "Book Small Green",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_green_lying",
+   "name": "Book Small Green Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Green_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_green_standing",
+   "name": "Book Small Green Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Green_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_grey",
+   "name": "Book Small Grey",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Grey"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_grey_lying",
+   "name": "Book Small Grey Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Grey_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_grey_standing",
+   "name": "Book Small Grey Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Grey_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_lightgreen",
+   "name": "Book Small LightGreen",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_LightGreen"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_lightgreen_lying",
+   "name": "Book Small LightGreen Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_LightGreen_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_lightgreen_standing",
+   "name": "Book Small LightGreen Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_LightGreen_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_lightred",
+   "name": "Book Small LightRed",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_LightRed"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_lightred_lying",
+   "name": "Book Small LightRed Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_LightRed_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_lightred_standing",
+   "name": "Book Small LightRed Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_LightRed_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_orange",
+   "name": "Book Small Orange",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    3,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Orange"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_orange_lying",
+   "name": "Book Small Orange Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Orange_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_orange_standing",
+   "name": "Book Small Orange Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Orange_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_purple",
+   "name": "Book Small Purple",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Purple"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_purple_lying",
+   "name": "Book Small Purple Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Purple_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_purple_standing",
+   "name": "Book Small Purple Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Purple_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_yellow",
+   "name": "Book Small Yellow",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Yellow"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_yellow_lying",
+   "name": "Book Small Yellow Lying",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Yellow_Lying"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_book_small_yellow_standing",
+   "name": "Book Small Yellow Standing",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Book_Small_Yellow_Standing"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_books_pile",
+   "name": "Books Pile",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Books_Pile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_bottle_12",
+   "name": "Bottle 12",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Bottle_12"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_box_2",
+   "name": "Box 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Box_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cable_horizontal_1",
+   "name": "Cable Horizontal 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cable_Horizontal_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cable_horizontal_2",
+   "name": "Cable Horizontal 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cable_Horizontal_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cable_vertical",
+   "name": "Cable Vertical",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cable_Vertical"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cactus_1",
+   "name": "Cactus 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cactus_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cactus_2",
+   "name": "Cactus 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cactus_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_calculator",
+   "name": "Calculator",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Calculator"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_camera_1",
+   "name": "Camera 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Camera_1_1",
+      "Camera_1_2",
+      "Camera_1_3",
+      "Camera_1_4",
+      "Camera_1_5",
+      "Camera_1_6",
+      "Camera_1_7",
+      "Camera_1_8",
+      "Camera_1_9",
+      "Camera_1_10",
+      "Camera_1_11",
+      "Camera_1_12",
+      "Camera_1_13",
+      "Camera_1_14",
+      "Camera_1_15",
+      "Camera_1_16"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_camera_2",
+   "name": "Camera 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Camera_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_candle",
+   "name": "Candle",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Candle"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_carpet_13",
+   "name": "Carpet 13",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_13"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_14",
+   "name": "Carpet 14",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_14"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_3",
+   "name": "Carpet 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_3_Tile"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_7",
+   "name": "Carpet 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_7"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_fluffy",
+   "name": "Carpet Fluffy",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_Fluffy"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_modern",
+   "name": "Carpet Modern",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_Modern"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_red",
+   "name": "Carpet Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_Red"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carpet_yellow",
+   "name": "Carpet Yellow",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carpet_Yellow"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_carton_box",
+   "name": "Carton Box",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Carton_Box"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cereals",
+   "name": "Cereals",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cereals"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_chair_2",
+   "name": "Chair 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Chair_2_C_Tile"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Chair_2_B_Tile"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Chair_2_A_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Chair_2_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_chair_3",
+   "name": "Chair 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Chair_3_C_Tile"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Chair_3_B_Tile"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Chair_3_A_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Chair_3_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_chair_4",
+   "name": "Chair 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Chair_4_C_Tile"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Chair_4_B_Tile"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Chair_4_A_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Chair_4_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_chair_5",
+   "name": "Chair 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Chair_5_C_Tile"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Chair_5_B_Tile"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Chair_5_A_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Chair_5_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_chair_6",
+   "name": "Chair 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Chair_6_C_Tile"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Chair_6_B_Tile"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Chair_6_A_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Chair_6_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_chair_7_d",
+   "name": "Chair 7 D",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Chair_7_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_cleaning_robot",
+   "name": "Cleaning Robot",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cleaning_Robot_1",
+      "Cleaning_Robot_2",
+      "Cleaning_Robot_3",
+      "Cleaning_Robot_4",
+      "Cleaning_Robot_5",
+      "Cleaning_Robot_6",
+      "Cleaning_Robot_7",
+      "Cleaning_Robot_8",
+      "Cleaning_Robot_9",
+      "Cleaning_Robot_10",
+      "Cleaning_Robot_11",
+      "Cleaning_Robot_12",
+      "Cleaning_Robot_13",
+      "Cleaning_Robot_14",
+      "Cleaning_Robot_15",
+      "Cleaning_Robot_16"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_clothes_basket",
+   "name": "Clothes Basket",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Clothes_Basket"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_clothes_case",
+   "name": "Clothes Case",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Clothes_Case"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_coffemachine_red",
+   "name": "CoffeMachine Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "CoffeMachine_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cola",
+   "name": "Cola",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cola"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_copy_machine_dark",
+   "name": "Copy Machine Dark",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Copy_Machine_Dark_1",
+      "Copy_Machine_Dark_2",
+      "Copy_Machine_Dark_3",
+      "Copy_Machine_Dark_4",
+      "Copy_Machine_Dark_5",
+      "Copy_Machine_Dark_6",
+      "Copy_Machine_Dark_7",
+      "Copy_Machine_Dark_8",
+      "Copy_Machine_Dark_9",
+      "Copy_Machine_Dark_10",
+      "Copy_Machine_Dark_11",
+      "Copy_Machine_Dark_12",
+      "Copy_Machine_Dark_13",
+      "Copy_Machine_Dark_14",
+      "Copy_Machine_Dark_15",
+      "Copy_Machine_Dark_16",
+      "Copy_Machine_Dark_17",
+      "Copy_Machine_Dark_18",
+      "Copy_Machine_Dark_19"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_copy_machine_white",
+   "name": "Copy Machine White",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Copy_Machine_White_1",
+      "Copy_Machine_White_2",
+      "Copy_Machine_White_3",
+      "Copy_Machine_White_4",
+      "Copy_Machine_White_5",
+      "Copy_Machine_White_6",
+      "Copy_Machine_White_7",
+      "Copy_Machine_White_8",
+      "Copy_Machine_White_9",
+      "Copy_Machine_White_10",
+      "Copy_Machine_White_11",
+      "Copy_Machine_White_12",
+      "Copy_Machine_White_13"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_corkboard_1",
+   "name": "Corkboard 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Corkboard_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_corkboard_2",
+   "name": "Corkboard 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Corkboard_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_cutting_board",
+   "name": "Cutting Board",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Cutting_Board"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_desk_1",
+   "name": "Desk 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Desk_1_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_desk_1_b",
+   "name": "Desk 1 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Desk_1_B_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_desk_2",
+   "name": "Desk 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Desk_2_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_desk_3",
+   "name": "Desk 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    3,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Desk_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_diploma",
+   "name": "Diploma",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Diploma"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_dish",
+   "name": "Dish",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Dish"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_dish_soap",
+   "name": "Dish Soap",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Dish_Soap"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_dishwasher_1",
+   "name": "Dishwasher 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Dishwasher_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_document_shredder",
+   "name": "Document Shredder",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Document_Shredder_1",
+      "Document_Shredder_2",
+      "Document_Shredder_3",
+      "Document_Shredder_4",
+      "Document_Shredder_5",
+      "Document_Shredder_6",
+      "Document_Shredder_7",
+      "Document_Shredder_8",
+      "Document_Shredder_9"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_drawing_table",
+   "name": "Drawing Table",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Drawing_Table"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_dreamcast",
+   "name": "Dreamcast",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Dreamcast"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_duck",
+   "name": "Duck",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Duck"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_fidge_red",
+   "name": "Fidge Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fidge_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_fire_extinguisher",
+   "name": "Fire Extinguisher",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fire_Extinguisher"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_fork",
+   "name": "Fork",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fork"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_fridge",
+   "name": "Fridge",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fridge"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_fridge_2_a",
+   "name": "Fridge 2 A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fridge_2_A_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_fridge_2_c",
+   "name": "Fridge 2 C",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fridge_2_C_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_fridge_back",
+   "name": "Fridge Back",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fridge_Back"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_fridge_red",
+   "name": "Fridge Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Fridge_Red"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_frying_pan",
+   "name": "Frying Pan",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Frying_Pan"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_gameboy",
+   "name": "Gameboy",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Gameboy"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_gameboy_advance",
+   "name": "Gameboy Advance",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Gameboy_Advance"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_gamecube",
+   "name": "Gamecube",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Gamecube"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_gchair_9",
+   "name": "GChair 9",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "GChair_9_C"
+     ]
+    },
+    "2": {
+     "frames": [
+      "GChair_9_B"
+     ]
+    },
+    "4": {
+     "frames": [
+      "GChair_9_A"
+     ]
+    },
+    "6": {
+     "frames": [
+      "GChair_9_D"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_glass_1",
+   "name": "Glass 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Glass_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_glass_2",
+   "name": "Glass 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Glass_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_glass_wall",
+   "name": "Glass Wall",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Glass_Wall"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_grandfather_clock",
+   "name": "Grandfather Clock",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Grandfather_Clock_1",
+      "Grandfather_Clock_2",
+      "Grandfather_Clock_3",
+      "Grandfather_Clock_4",
+      "Grandfather_Clock_5",
+      "Grandfather_Clock_6",
+      "Grandfather_Clock_7"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_hanger",
+   "name": "Hanger",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Hanger"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_hanging_towel",
+   "name": "Hanging Towel",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Hanging_Towel"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_headset",
+   "name": "Headset",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Headset"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_basecup",
+   "name": "Japanese BaseCup",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_BaseCup"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_canvas",
+   "name": "Japanese Canvas",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Canvas"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_canvas_leters",
+   "name": "Japanese Canvas Leters",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Canvas_Leters"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_closet",
+   "name": "Japanese Closet",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Closet"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_japanese_cup",
+   "name": "Japanese Cup",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Cup"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_dish",
+   "name": "Japanese Dish",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Dish"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_lamp",
+   "name": "Japanese Lamp",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Lamp"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_plant",
+   "name": "Japanese Plant",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Plant"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_seat",
+   "name": "Japanese Seat",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Seat"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_japanese_shelf",
+   "name": "Japanese Shelf",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Shelf"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_japanese_table",
+   "name": "Japanese Table",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Table"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_japanese_tea",
+   "name": "Japanese Tea",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Tea"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_tori_gate",
+   "name": "Japanese Tori Gate",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Tori_Gate"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_japanese_vase",
+   "name": "Japanese Vase",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Japanese_Vase"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ketel_7",
+   "name": "Ketel 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ketel_7"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_kitchen_a",
+   "name": "Kitchen A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_A"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_a_2",
+   "name": "Kitchen A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_A_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_1",
+   "name": "Kitchen Furniture Black 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_2",
+   "name": "Kitchen Furniture Black 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_3",
+   "name": "Kitchen Furniture Black 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_4",
+   "name": "Kitchen Furniture Black 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_5",
+   "name": "Kitchen Furniture Black 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_6",
+   "name": "Kitchen Furniture Black 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_black_7",
+   "name": "Kitchen Furniture Black 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Black_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_1",
+   "name": "Kitchen Furniture Green 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_2",
+   "name": "Kitchen Furniture Green 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_3",
+   "name": "Kitchen Furniture Green 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_4",
+   "name": "Kitchen Furniture Green 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_5",
+   "name": "Kitchen Furniture Green 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_6",
+   "name": "Kitchen Furniture Green 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_green_7",
+   "name": "Kitchen Furniture Green 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Green_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_1",
+   "name": "Kitchen Furniture Orange 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_2",
+   "name": "Kitchen Furniture Orange 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_3",
+   "name": "Kitchen Furniture Orange 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_4",
+   "name": "Kitchen Furniture Orange 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_5",
+   "name": "Kitchen Furniture Orange 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_6",
+   "name": "Kitchen Furniture Orange 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_orange_7",
+   "name": "Kitchen Furniture Orange 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Orange_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_1",
+   "name": "Kitchen Furniture Pink 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_2",
+   "name": "Kitchen Furniture Pink 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_3",
+   "name": "Kitchen Furniture Pink 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_4",
+   "name": "Kitchen Furniture Pink 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_5",
+   "name": "Kitchen Furniture Pink 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_6",
+   "name": "Kitchen Furniture Pink 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_pink_7",
+   "name": "Kitchen Furniture Pink 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Pink_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_1",
+   "name": "Kitchen Furniture Red 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_2",
+   "name": "Kitchen Furniture Red 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_3",
+   "name": "Kitchen Furniture Red 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_4",
+   "name": "Kitchen Furniture Red 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_5",
+   "name": "Kitchen Furniture Red 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_6",
+   "name": "Kitchen Furniture Red 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_red_7",
+   "name": "Kitchen Furniture Red 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Red_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_1",
+   "name": "Kitchen Furniture White 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_2",
+   "name": "Kitchen Furniture White 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_3",
+   "name": "Kitchen Furniture White 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_4",
+   "name": "Kitchen Furniture White 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_5",
+   "name": "Kitchen Furniture White 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_6",
+   "name": "Kitchen Furniture White 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_white_7",
+   "name": "Kitchen Furniture White 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_White_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_1",
+   "name": "Kitchen Furniture Wood 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_2",
+   "name": "Kitchen Furniture Wood 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_3",
+   "name": "Kitchen Furniture Wood 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_3"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_4",
+   "name": "Kitchen Furniture Wood 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_4"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_5",
+   "name": "Kitchen Furniture Wood 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_6",
+   "name": "Kitchen Furniture Wood 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_furniture_wood_7",
+   "name": "Kitchen Furniture Wood 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Furniture_Wood_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_knife",
+   "name": "Kitchen Knife",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Knife"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_kitchen_rug",
+   "name": "Kitchen Rug",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Rug"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_kitchen_soap",
+   "name": "Kitchen Soap",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Soap"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_kitchen_stool",
+   "name": "Kitchen Stool",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Stool"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_kitchen_table",
+   "name": "Kitchen Table",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Table"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_kitchen_window",
+   "name": "Kitchen Window",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Kitchen_Window"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_10",
+   "name": "Lamp 10",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_10_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_11",
+   "name": "Lamp 11",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_11_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_7",
+   "name": "Lamp 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_7_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_8_a",
+   "name": "Lamp 8 A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_8_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_8_b",
+   "name": "Lamp 8 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_8_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_9",
+   "name": "Lamp 9",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_9_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lamp_modern",
+   "name": "Lamp Modern",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lamp_Modern"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_lava_lamp",
+   "name": "Lava Lamp",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Lava_Lamp_1",
+      "Lava_Lamp_2",
+      "Lava_Lamp_3",
+      "Lava_Lamp_4",
+      "Lava_Lamp_5",
+      "Lava_Lamp_6",
+      "Lava_Lamp_7",
+      "Lava_Lamp_8",
+      "Lava_Lamp_9",
+      "Lava_Lamp_10",
+      "Lava_Lamp_11",
+      "Lava_Lamp_12",
+      "Lava_Lamp_13",
+      "Lava_Lamp_14",
+      "Lava_Lamp_15",
+      "Lava_Lamp_16",
+      "Lava_Lamp_17",
+      "Lava_Lamp_18",
+      "Lava_Lamp_19",
+      "Lava_Lamp_20",
+      "Lava_Lamp_21",
+      "Lava_Lamp_22",
+      "Lava_Lamp_23",
+      "Lava_Lamp_24"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_lavalamp_9_off",
+   "name": "LavaLamp 9 Off",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "LavaLamp_9_Off_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_long_rack",
+   "name": "Long Rack",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Long_Rack"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_long_shelf",
+   "name": "Long Shelf",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Long_Shelf"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_macbook",
+   "name": "Macbook",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Macbook_1",
+      "Macbook_2",
+      "Macbook_3",
+      "Macbook_4",
+      "Macbook_5",
+      "Macbook_6",
+      "Macbook_7",
+      "Macbook_8",
+      "Macbook_9",
+      "Macbook_10",
+      "Macbook_11"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_macbook_1_closed",
+   "name": "Macbook 1 Closed",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Macbook_1_Closed_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_medical_kit_closed",
+   "name": "Medical Kit Closed",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Medical_Kit_Closed"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_metallic_closet_base",
+   "name": "Metallic Closet Base",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Metallic_Closet_Base"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_microscope",
+   "name": "Microscope",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Microscope"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_microwave_5",
+   "name": "Microwave 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Microwave_5_Tile_C"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Microwave_5_Tile_B"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Microwave_5_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Microwave_5_Tile_D"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_mirror",
+   "name": "Mirror",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Mirror"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_mug_15",
+   "name": "Mug 15",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Mug_15"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_mug_green",
+   "name": "Mug Green",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Mug_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_mug_red",
+   "name": "Mug Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Mug_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_nes",
+   "name": "NES",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "NES"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_nes_4",
+   "name": "NES 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "NES_4_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_nes_4_b",
+   "name": "NES 4 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "NES_4_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_newimac_a",
+   "name": "NewImac A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "NewImac_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_newimac_b",
+   "name": "NewImac B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "NewImac_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_newkeyboard",
+   "name": "NewKeyboard",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "NewKeyboard_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_night_table",
+   "name": "Night Table",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Night_Table_Tile"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_night_table_drawer_1",
+   "name": "Night Table Drawer 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Night_Table_Tile_Drawer_1"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_night_table_drawer_2",
+   "name": "Night Table Drawer 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Night_Table_Tile_Drawer_2"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_nintendo_64",
+   "name": "Nintendo 64",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Nintendo_64"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_nintendo_switch",
+   "name": "Nintendo Switch",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Nintendo_Switch"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_notebooks",
+   "name": "Notebooks",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Notebooks"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_office_kitchen_table",
+   "name": "Office Kitchen Table",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Office_Kitchen_Table"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_office_main_chair",
+   "name": "Office Main Chair",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Office_Main_Chair"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_office_main_table_base",
+   "name": "Office Main Table Base",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Office_Main_Table_Base"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_office_normal_table_base",
+   "name": "Office Normal Table Base",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Office_Normal_Table_Base"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_office_partition",
+   "name": "Office Partition",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Office_Partition"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_office_wood_closet",
+   "name": "Office Wood Closet",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Office_Wood_Closet"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_oldimac_a",
+   "name": "OldImac A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "OldImac_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_oldimac_b",
+   "name": "OldImac B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "OldImac_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_oldkeyboard",
+   "name": "OldKeyboard",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "OldKeyboard_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_oldpc_a",
+   "name": "OldPC A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "OldPC_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_oldpc_b",
+   "name": "OldPC B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "OldPC_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_oscilator_machine",
+   "name": "Oscilator Machine",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Oscilator_Machine_1",
+      "Oscilator_Machine_2",
+      "Oscilator_Machine_3",
+      "Oscilator_Machine_4",
+      "Oscilator_Machine_5",
+      "Oscilator_Machine_6",
+      "Oscilator_Machine_7",
+      "Oscilator_Machine_8",
+      "Oscilator_Machine_9",
+      "Oscilator_Machine_10",
+      "Oscilator_Machine_11",
+      "Oscilator_Machine_12",
+      "Oscilator_Machine_13",
+      "Oscilator_Machine_14",
+      "Oscilator_Machine_15",
+      "Oscilator_Machine_16"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_oven",
+   "name": "Oven",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Oven"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_painting",
+   "name": "Painting",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Painting"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_paper",
+   "name": "Paper",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Paper_1",
+      "Paper_2",
+      "Paper_3",
+      "Paper_4",
+      "Paper_5",
+      "Paper_6"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_pc_tower",
+   "name": "PC Tower",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "PC_Tower_1",
+      "PC_Tower_2",
+      "PC_Tower_3",
+      "PC_Tower_4",
+      "PC_Tower_5",
+      "PC_Tower_6",
+      "PC_Tower_7",
+      "PC_Tower_8",
+      "PC_Tower_9"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_pctower",
+   "name": "PcTower",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "PcTower_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pencil_holder",
+   "name": "Pencil Holder",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pencil_Holder"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_photos_1",
+   "name": "Photos 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Photos_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_photos_2",
+   "name": "Photos 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Photos_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_picture_cat",
+   "name": "Picture Cat",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Picture_Cat"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_picture_frame",
+   "name": "Picture Frame",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Picture_Frame"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_picture_modern_1",
+   "name": "Picture Modern 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Picture_Modern_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_picture_modern_2",
+   "name": "Picture Modern 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Picture_Modern_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pillow_10",
+   "name": "Pillow 10",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_10"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pillow_10_sofa",
+   "name": "Pillow 10 Sofa",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_10_Sofa"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_pillow_11",
+   "name": "Pillow 11",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_11"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pillow_11_sofa",
+   "name": "Pillow 11 Sofa",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_11_Sofa"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_pillow_12",
+   "name": "Pillow 12",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_12"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pillow_12_sofa",
+   "name": "Pillow 12 Sofa",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_12_Sofa"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_pillow_9",
+   "name": "Pillow 9",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pillow_9"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pipe_corner",
+   "name": "Pipe Corner",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pipe_Corner"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pipe_horizontal",
+   "name": "Pipe Horizontal",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pipe_Horizontal"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pipe_horizontal_box",
+   "name": "Pipe Horizontal Box",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pipe_Horizontal_Box"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pipe_vertical",
+   "name": "Pipe Vertical",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pipe_Vertical"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plant_1",
+   "name": "Plant 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plant_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plant_2",
+   "name": "Plant 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plant_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plant_3",
+   "name": "Plant 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plant_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plant_5",
+   "name": "Plant 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plant_5"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plant_small",
+   "name": "Plant Small",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plant_Small"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plastic_box_1_empty",
+   "name": "Plastic Box 1 Empty",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plastic_Box_1_Empty"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plastic_box_1_full",
+   "name": "Plastic Box 1 Full",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plastic_Box_1_Full"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plastic_box_2_empty",
+   "name": "Plastic Box 2 Empty",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plastic_Box_2_Empty"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_plastic_box_2_full",
+   "name": "Plastic Box 2 Full",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Plastic_Box_2_Full"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_playstation",
+   "name": "Playstation",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Playstation"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_playstation_2",
+   "name": "Playstation 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Playstation_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_playstation_3",
+   "name": "Playstation 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Playstation_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_playstation_4",
+   "name": "Playstation 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Playstation_4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_playstation_5",
+   "name": "Playstation 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Playstation_5"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_1",
+   "name": "Poster 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_16",
+   "name": "Poster 16",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_16"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_17",
+   "name": "Poster 17",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_17"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_2",
+   "name": "Poster 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_3",
+   "name": "Poster 3",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_4",
+   "name": "Poster 4",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_5",
+   "name": "Poster 5",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_5"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_6",
+   "name": "Poster 6",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_6"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_fire",
+   "name": "Poster Fire",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_Fire"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_map_6",
+   "name": "Poster Map 6",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_Map_6"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_poster_medical",
+   "name": "Poster Medical",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Poster_Medical"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pot",
+   "name": "Pot",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pot"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_pot_full",
+   "name": "Pot Full",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Pot_Full"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_100",
+   "name": "Present 100",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "4": {
+     "frames": [
+      "Present_100"
+     ]
+    },
+    "2": {
+     "mirror": 4
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_100_e",
+   "name": "Present 100 E",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_100_E"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_2",
+   "name": "Present 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_3",
+   "name": "Present 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_4",
+   "name": "Present 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_5",
+   "name": "Present 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_5"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_6",
+   "name": "Present 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_6"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_7",
+   "name": "Present 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Present_7"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_printer",
+   "name": "Printer",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Printer_1",
+      "Printer_2",
+      "Printer_3",
+      "Printer_4",
+      "Printer_5",
+      "Printer_6",
+      "Printer_7",
+      "Printer_8",
+      "Printer_9",
+      "Printer_10",
+      "Printer_11"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_printer_filament",
+   "name": "Printer Filament",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Printer_Filament"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_projector_1",
+   "name": "Projector 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Projector_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_projector_2",
+   "name": "Projector 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Projector_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_projector_3",
+   "name": "Projector 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Projector_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_projector_4",
+   "name": "Projector 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Projector_4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_projector_screen_ani_7",
+   "name": "Projector Screen Ani 7",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Projector_Screen_Ani_7"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_projector_stand",
+   "name": "Projector Stand",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Projector_Stand"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_psp",
+   "name": "PSP",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "PSP"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_rack",
+   "name": "Rack",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Rack"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_rag",
+   "name": "Rag",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Rag"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ring_binder_blue",
+   "name": "Ring Binder Blue",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ring_Binder_Blue"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ring_binder_dark",
+   "name": "Ring Binder Dark",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ring_Binder_Dark"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ring_binder_green",
+   "name": "Ring Binder Green",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ring_Binder_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ring_binder_orange",
+   "name": "Ring Binder Orange",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ring_Binder_Orange"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ring_binder_red",
+   "name": "Ring Binder Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ring_Binder_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ring_binder_yellow",
+   "name": "Ring Binder Yellow",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ring_Binder_Yellow"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_rolled_papers",
+   "name": "Rolled Papers",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Rolled_Papers"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_rotationscreen_a",
+   "name": "RotationScreen A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "RotationScreen_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_rotationscreen_b",
+   "name": "RotationScreen B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "RotationScreen_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_rotationscreen_c",
+   "name": "RotationScreen C",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "RotationScreen_C_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_ruler",
+   "name": "Ruler",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Ruler"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_rumba_robot",
+   "name": "Rumba Robot",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Rumba_Robot"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_scourer",
+   "name": "Scourer",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Scourer"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_screen_small",
+   "name": "Screen Small",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Screen_Small"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_segagenesis",
+   "name": "SegaGenesis",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "SegaGenesis"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_server_1",
+   "name": "Server 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Server_1_1",
+      "Server_1_2",
+      "Server_1_3",
+      "Server_1_4"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_server_2_a",
+   "name": "Server 2 A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Server_2_A"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_server_2_b",
+   "name": "Server 2 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Server_2_B"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_server_2_c",
+   "name": "Server 2 C",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Server_2_C"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_server_3",
+   "name": "Server 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Server_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_shelf",
+   "name": "Shelf",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Shelf"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_shelving_6",
+   "name": "shelving 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "shelving_6"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_shelving_7",
+   "name": "shelving 7",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "shelving_7"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_shower_bin",
+   "name": "Shower Bin",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Shower_Bin"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_shower_floor",
+   "name": "Shower Floor",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Shower_Floor"
+     ]
+    }
+   },
+   "walk": true
+  },
+  {
+   "id": "salvaje_shower_tap",
+   "name": "Shower Tap",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Shower_Tap"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_shower_tray",
+   "name": "Shower Tray",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Shower_Tray"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sink",
+   "name": "Sink",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sink"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sink_1",
+   "name": "Sink 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sink_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_small_shelf",
+   "name": "Small Shelf",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Small_Shelf"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_smalltable_5",
+   "name": "SmallTable 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "SmallTable_5"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_snes",
+   "name": "SNES",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "SNES"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_soap",
+   "name": "Soap",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Soap"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_soap_green",
+   "name": "Soap Green",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Soap_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_soap_red",
+   "name": "Soap Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Soap_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_soap_yellow",
+   "name": "Soap Yellow",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Soap_Yellow"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_soda_can",
+   "name": "Soda Can",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Soda_Can"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sofa_1",
+   "name": "Sofa 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_1"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_1_a",
+   "name": "Sofa 1 A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_1_A"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_1_b",
+   "name": "Sofa 1 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_1_B"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_1_c",
+   "name": "Sofa 1 C",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_1_C"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_2_a",
+   "name": "Sofa 2 A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_2_A"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_2_b",
+   "name": "Sofa 2 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    3,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_2_B"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_3",
+   "name": "Sofa 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "0": {
+     "frames": [
+      "Sofa_3_C_Tile"
+     ]
+    },
+    "2": {
+     "frames": [
+      "Sofa_3_B_Tile"
+     ]
+    },
+    "4": {
+     "frames": [
+      "Sofa_3_A_Tile"
+     ]
+    },
+    "6": {
+     "frames": [
+      "Sofa_3_D_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_4_a",
+   "name": "Sofa 4 A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    3,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_4_A_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_sofa_4_b",
+   "name": "Sofa 4 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    3
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sofa_4_B_Tile"
+     ]
+    }
+   },
+   "sit": true
+  },
+  {
+   "id": "salvaje_speaker_6",
+   "name": "Speaker 6",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Speaker_6_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_spoon",
+   "name": "Spoon",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Spoon"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_staircase_back",
+   "name": "StairCase Back",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairCase_Back"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_staircase_front_1",
+   "name": "StairCase Front 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairCase_Front_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_staircase_front_2",
+   "name": "StairCase Front 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    4,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairCase_Front_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stairrailing_1",
+   "name": "StairRailing 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    3,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairRailing_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stairrailing_2",
+   "name": "StairRailing 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    3,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairRailing_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stairrailing_3",
+   "name": "StairRailing 3",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    5,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairRailing_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stairrailing_4",
+   "name": "StairRailing 4",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    5,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairRailing_4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stairrailing_5",
+   "name": "StairRailing 5",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    5,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairRailing_5"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stairrailing_back",
+   "name": "StairRailing Back",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    4
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "StairRailing_Back"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_1",
+   "name": "Sticky Note 1",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_2",
+   "name": "Sticky Note 2",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_3",
+   "name": "Sticky Note 3",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_4",
+   "name": "Sticky Note 4",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_5",
+   "name": "Sticky Note 5",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_5"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_6",
+   "name": "Sticky Note 6",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_6"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_blue",
+   "name": "Sticky Note Blue",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_Blue"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_green",
+   "name": "Sticky Note Green",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_pink",
+   "name": "Sticky Note Pink",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_Pink"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sticky_note_red",
+   "name": "Sticky Note Red",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sticky_Note_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_stoves",
+   "name": "Stoves",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Stoves"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sugar",
+   "name": "Sugar",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sugar"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_sun_flower",
+   "name": "Sun Flower",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Sun_Flower"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_switch",
+   "name": "Switch",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Switch"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_switch_a",
+   "name": "Switch A",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Switch_A"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_switch_b",
+   "name": "Switch B",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Switch_B"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_switch_c",
+   "name": "Switch C",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Switch_C"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_table_10",
+   "name": "Table 10",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Table_10"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_table_11",
+   "name": "Table 11",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Table_11"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_table_12",
+   "name": "Table 12",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Table_12"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_table_13",
+   "name": "Table 13",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Table_13"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_table_14",
+   "name": "Table 14",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Table_14"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_table_corridor",
+   "name": "Table Corridor",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Table_Corridor"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_tap_shower",
+   "name": "Tap Shower",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tap_Shower"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tap_wall",
+   "name": "Tap Wall",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tap_Wall"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_teapot",
+   "name": "TeaPot",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "TeaPot"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_telephone",
+   "name": "Telephone",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Telephone"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tissues",
+   "name": "Tissues",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tissues"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_toast",
+   "name": "Toast",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Toast"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_toaster",
+   "name": "Toaster",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Toaster"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_toaster_1",
+   "name": "Toaster 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Toaster_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_toilet_paper",
+   "name": "Toilet Paper",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Toilet_Paper"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tool_box_a",
+   "name": "Tool Box A",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tool_Box_A"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tool_box_b",
+   "name": "Tool Box B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tool_Box_B"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tool_box_c",
+   "name": "Tool Box C",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tool_Box_C"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tools",
+   "name": "Tools",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tools"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tools_electric",
+   "name": "Tools Electric",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tools_Electric"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_towel_blue",
+   "name": "Towel Blue",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Towel_Blue"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_towel_green",
+   "name": "Towel Green",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Towel_Green"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_towel_red",
+   "name": "Towel Red",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Towel_Red"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_trash_empty",
+   "name": "Trash Empty",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Trash_Empty"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_trash_full",
+   "name": "Trash Full",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Trash_Full"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_trash_square",
+   "name": "Trash Square",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Trash_Square"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_trashbin_closed",
+   "name": "TrashBin Closed",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "TrashBin_Closed"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_trashbin_open",
+   "name": "TrashBin Open",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "TrashBin_Open"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_tv_dvd",
+   "name": "TV DVD",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "TV_DVD_1",
+      "TV_DVD_2",
+      "TV_DVD_3",
+      "TV_DVD_4",
+      "TV_DVD_5",
+      "TV_DVD_6",
+      "TV_DVD_7",
+      "TV_DVD_8",
+      "TV_DVD_9",
+      "TV_DVD_10",
+      "TV_DVD_11",
+      "TV_DVD_12",
+      "TV_DVD_13",
+      "TV_DVD_14",
+      "TV_DVD_15",
+      "TV_DVD_16",
+      "TV_DVD_17",
+      "TV_DVD_18",
+      "TV_DVD_19",
+      "TV_DVD_20",
+      "TV_DVD_21",
+      "TV_DVD_22",
+      "TV_DVD_23",
+      "TV_DVD_24",
+      "TV_DVD_25",
+      "TV_DVD_26",
+      "TV_DVD_27",
+      "TV_DVD_28",
+      "TV_DVD_29",
+      "TV_DVD_30",
+      "TV_DVD_31",
+      "TV_DVD_32",
+      "TV_DVD_33",
+      "TV_DVD_34",
+      "TV_DVD_35",
+      "TV_DVD_36",
+      "TV_DVD_37",
+      "TV_DVD_38",
+      "TV_DVD_39",
+      "TV_DVD_40",
+      "TV_DVD_41",
+      "TV_DVD_42",
+      "TV_DVD_43",
+      "TV_DVD_44",
+      "TV_DVD_45",
+      "TV_DVD_46",
+      "TV_DVD_47",
+      "TV_DVD_48"
+     ]
+    }
+   },
+   "fps": 8,
+   "off": "TV_DVD_Off"
+  },
+  {
+   "id": "salvaje_tv_off",
+   "name": "Tv Off",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Tv_Off"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_vertical_screen",
+   "name": "Vertical Screen",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Vertical_Screen"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_voltagemeter",
+   "name": "VoltageMeter",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "VoltageMeter"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wacomtablet",
+   "name": "WacomTablet",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "WacomTablet"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_wall_clock",
+   "name": "Wall Clock",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_Clock_1",
+      "Wall_Clock_2",
+      "Wall_Clock_3",
+      "Wall_Clock_4",
+      "Wall_Clock_5",
+      "Wall_Clock_6",
+      "Wall_Clock_7",
+      "Wall_Clock_8",
+      "Wall_Clock_9",
+      "Wall_Clock_10",
+      "Wall_Clock_11",
+      "Wall_Clock_12"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_wall_l_japanese_128",
+   "name": "Wall L Japanese 128",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_L_Japanese_128"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wall_protection",
+   "name": "Wall Protection",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_Protection"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wall_r_japanese_128",
+   "name": "Wall R Japanese 128",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_R_Japanese_128"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wall_top_l_japanese_128",
+   "name": "Wall Top L Japanese 128",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_Top_L_Japanese_128"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wall_top_r_japanese_128",
+   "name": "Wall Top R Japanese 128",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_Top_R_Japanese_128"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wall_window_l_japanese_128",
+   "name": "Wall Window L Japanese 128",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_Window_L_Japanese_128"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wall_window_r_japanese_128",
+   "name": "Wall Window R Japanese 128",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wall_Window_R_Japanese_128"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_washingmachine_closed",
+   "name": "WashingMachine Closed",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "WashingMachine_Closed"
+     ]
+    }
+   },
+   "stack": true
+  },
+  {
+   "id": "salvaje_water_dispenser",
+   "name": "Water Dispenser",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Water_Dispenser_1",
+      "Water_Dispenser_2",
+      "Water_Dispenser_3",
+      "Water_Dispenser_4",
+      "Water_Dispenser_5",
+      "Water_Dispenser_6",
+      "Water_Dispenser_7",
+      "Water_Dispenser_8"
+     ]
+    }
+   },
+   "fps": 8
+  },
+  {
+   "id": "salvaje_wc_back_1",
+   "name": "Wc Back 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wc_Back_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wc_front_1",
+   "name": "Wc Front 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wc_Front_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wc_furniture",
+   "name": "Wc Furniture",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wc_Furniture"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wc_tap_1",
+   "name": "Wc Tap 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wc_Tap_1"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_welcome_parcel",
+   "name": "Welcome Parcel",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Welcome_Parcel"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_welder_machine",
+   "name": "Welder Machine",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Welder_Machine"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_white_box",
+   "name": "White Box",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "White_Box"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_whiteboard_eraser",
+   "name": "Whiteboard Eraser",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Whiteboard_Eraser"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wii",
+   "name": "Wii",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wii"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_11",
+   "name": "Window 11",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_11"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_11_b",
+   "name": "Window 11 B",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_11_B"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_11_c",
+   "name": "Window 11 C",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_11_C"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_7_a",
+   "name": "Window 7 A",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_7_A_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_7_b",
+   "name": "Window 7 B",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_7_B_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_7_c",
+   "name": "Window 7 C",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_7_C_Tile"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_8",
+   "name": "Window 8",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_8"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_b_8",
+   "name": "Window B 8",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    2,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_B_8"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_c_8",
+   "name": "Window C 8",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_C_8"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_l_128_japanese",
+   "name": "Window L 128 Japanese",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_L_128_Japanese"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_window_r_128_japanese",
+   "name": "Window R 128 Japanese",
+   "source": "furni",
+   "kind": "wall",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Window_R_128_Japanese"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wine",
+   "name": "Wine",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wine"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_wrapped_gift",
+   "name": "Wrapped Gift",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "Wrapped_Gift"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_xbox",
+   "name": "XBox",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "XBox"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_xbox_360",
+   "name": "XBox 360",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "XBox_360"
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_xbox_x",
+   "name": "XBox X",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "frames": [
+      "XBox_X"
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -88,6 +88,11 @@ export function createApp(opts: AppOptions): App {
       case 'GET /api/health':
         return sendJson(res, 200, { ok: true, version: config.version, protocol: PROTOCOL_VERSION });
 
+      // Furni definitions (what each furni is) and their sheets' frame lists (the pictures
+      // themselves come from /sprites/built/furni/<id>.png).
+      case 'GET /api/furni':
+        return sendJson(res, 200, { furni: [...content.furni.values()], sheets: Object.fromEntries(content.furniSheets) });
+
       // Read-only: room lists and floor plans (the same public info the navigator shows), so
       // layouts can be checked outside the game.
       case 'GET /api/rooms':
@@ -212,7 +217,7 @@ export function createApp(opts: AppOptions): App {
     function goTo(id: string): void {
       if (client.room?.id === id) return;
       const room = rooms.get(id);
-      if (!room) return client.send({ t: 'error', d: { code: 'room_not_found', message: 'That room does not exist' } });
+      if (!room || (room.details.staffOnly && !isStaff(user))) return client.send({ t: 'error', d: { code: 'room_not_found', message: 'That room does not exist' } });
       if (room.isFull) return client.send({ t: 'error', d: { code: 'room_full', message: 'That room is full' } });
       leave(client);
       client.room = room;
@@ -234,7 +239,7 @@ export function createApp(opts: AppOptions): App {
           goTo(rooms.lobbyId);
           return;
         case 'navigator':
-          client.send({ t: 'navigator', d: { tab: message.d.tab, query: message.d.query ?? '', rooms: rooms.list(message.d.tab, message.d.query ?? '', user.id) } });
+          client.send({ t: 'navigator', d: { tab: message.d.tab, query: message.d.query ?? '', rooms: rooms.list(message.d.tab, message.d.query ?? '', user.id, isStaff(user)) } });
           return;
         case 'layouts':
           client.send({ t: 'layouts', d: { layouts: rooms.layouts() } });

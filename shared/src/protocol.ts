@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { lookSchema } from './look.ts';
 
 /** Bump when a change means old clients can't talk to the new server. */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 export const CHAT_MAX = 100;
 export const NAME_MIN = 3;
@@ -27,6 +27,16 @@ export const roomUserSchema = z.object({
   dir: z.number().int().min(0).max(7),
 });
 export type RoomUser = z.output<typeof roomUserSchema>;
+
+/** A furni standing in a room (see furni.ts). */
+export const roomFurniSchema = z.object({
+  uid: z.number().int(),
+  def: z.string(),
+  x: z.number().int(),
+  y: z.number().int(),
+  z: z.number(),
+  dir: z.union([z.literal(0), z.literal(2), z.literal(4), z.literal(6)]),
+});
 
 export const ROOM_NAME_MIN = 3;
 export const ROOM_NAME_MAX = 30;
@@ -121,6 +131,7 @@ export const serverMessages = {
     map: z.array(z.string()),
     door: z.tuple([z.number().int(), z.number().int()]),
     users: z.array(roomUserSchema),
+    furni: z.array(roomFurniSchema),
   }),
   userJoin: roomUserSchema,
   userLeave: z.object({ id: z.number().int() }),

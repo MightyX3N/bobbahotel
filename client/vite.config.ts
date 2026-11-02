@@ -16,11 +16,12 @@ function devSprites(): Plugin {
       dev.middlewares.use('/sprites', (req, res, next) => {
         const path = decodeURIComponent((req.url ?? '/').split('?')[0]!);
         const file = resolve(spritesDir, '.' + path);
-        if (!file.startsWith(spritesDir.replace(/[\\/]$/, '') + sep) || !file.endsWith('.png') || !existsSync(file) || !statSync(file).isFile()) {
+        const type = file.endsWith('.png') ? 'image/png' : file.endsWith('.json') ? 'application/json' : null;
+        if (!file.startsWith(spritesDir.replace(/[\\/]$/, '') + sep) || !type || !existsSync(file) || !statSync(file).isFile()) {
           res.statusCode = 404;
           return res.end();
         }
-        res.setHeader('content-type', 'image/png');
+        res.setHeader('content-type', type);
         createReadStream(file).pipe(res);
         void next;
       });

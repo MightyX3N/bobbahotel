@@ -204,10 +204,11 @@ export class Rooms {
     return { ok: true, id: `r:${Number(result.lastInsertRowid)}` };
   }
 
-  list(tab: NavigatorTab, query: string, userId: number): RoomInfo[] {
+  list(tab: NavigatorTab, query: string, userId: number, staff = false): RoomInfo[] {
     const q = query.trim().toLowerCase();
     if (tab === 'public') {
       return this.content.publicRooms
+        .filter((p) => staff || !p.staffOnly)
         .map((p) => this.publicInfo(p.id, p.name, p.description ?? '', p.layout.maxUsers ?? DEFAULT_MAX_USERS))
         .filter((r) => !q || r.name.toLowerCase().includes(q));
     }
@@ -227,7 +228,7 @@ export class Rooms {
   /** A room's floor plan (public: anyone entering the room sees it). */
   floorPlanOf(id: string): { name: string; map: string[]; door: [number, number] } | null {
     const room = this.active.get(id) ?? this.load(id);
-    return room ? { name: room.details.name, map: room.layout.map, door: room.layout.door } : null;
+    return room && !room.details.staffOnly ? { name: room.details.name, map: room.layout.map, door: room.layout.door } : null;
   }
 
   stopAll(): void {
@@ -247,7 +248,8 @@ export class Rooms {
     if (kind === 'p') {
       const p = this.content.publicRooms.find((r) => r.id === key);
       if (!p) return null;
-      return new Room(id, { name: p.name, description: p.description ?? '', owner: null, ownerId: null, maxUsers: p.layout.maxUsers ?? DEFAULT_MAX_USERS }, p.layout, { autoTick: this.autoTick });
+      const details = { name: p.name, description: p.description ?? '', owner: null, ownerId: null, maxUsers: p.layout.maxUsers ?? DEFAULT_MAX_USERS, ...(p.staffOnly ? { staffOnly: true } : {}) };
+      return new Room(id, details, p.layout, { autoTick: this.autoTick, furni: p.furni ?? [], defs: this.content.furni });
     }
     if (kind === 'r' && key && /^\d+$/.test(key)) {
       const row = this.db

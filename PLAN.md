@@ -38,6 +38,12 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
   - The admin picks one theme for the whole server.
 - **Language:** every piece of text comes from a language file. Only English is made now; other languages can be added later as new files, with no code changes. A missing key falls back to English.
 
+## Furni
+- **Definitions** live in `content/furni/<pack>.json` (in git): name, floor or wall, tiles covered, pictures per direction (or mirrored from another direction), animation speed, and sit / walk / stack. Fix anything there by hand: size, `scale`, `offset`.
+- **Pictures** are the pack's own files under `sprites/<pack folder>/` (never in git, never changed). When the server starts it builds one sprite sheet plus frame list per furni into `sprites/built/furni/` (only when something changed), like Habbo's furni packages.
+- **`tools/furni-import.mjs`** makes definitions for a new pack from its pictures: it groups animation frames and directions and guesses the rest. Definitions that already exist are kept as they are.
+- The **Furni test** public room (staff only) shows every floor furni, to check sizes and looks.
+
 ## Mods
 - **Content packs:** new furni, layouts, catalogue pages, languages and themes, added as folders, with no code needed.
 - **Server plugins:** TypeScript modules loaded at startup that use one documented API: register commands, hook events (enter room, use furni, chat…), and add furni behaviour.

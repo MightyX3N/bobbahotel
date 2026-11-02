@@ -4,11 +4,14 @@ import {
   dirTowards,
   doorFacing,
   findPath,
+  furniTiles,
   heightAt,
   parseMap,
   tileKey,
+  type FurniDef,
   type Grid,
   type Layout,
+  type RoomFurni,
   type Look,
   type RoomUser,
   type ServerMessage,
@@ -54,6 +57,8 @@ export interface RoomDetails {
   owner: string | null;
   ownerId: number | null;
   maxUsers: number;
+  /** Only staff can go in (e.g. the furni test room). */
+  staffOnly?: boolean;
 }
 
 export class Room {
@@ -64,13 +69,23 @@ export class Room {
   private readonly occupants = new Map<number, Occupant>();
   private timer: ReturnType<typeof setInterval> | undefined;
   private readonly autoTick: boolean;
+  /** Furni standing in the room. */
+  readonly furni: RoomFurni[];
+  /** Tiles furni stand on that you can't walk onto (rugs and seats don't count). */
+  private readonly furniBlocked = new Set<number>();
 
-  constructor(id: string, details: RoomDetails, layout: Layout, opts: { autoTick?: boolean } = {}) {
+  constructor(id: string, details: RoomDetails, layout: Layout, opts: { autoTick?: boolean; furni?: RoomFurni[]; defs?: ReadonlyMap<string, FurniDef> } = {}) {
     this.id = id;
     this.details = details;
     this.layout = layout;
     this.grid = parseMap(layout.map);
     this.autoTick = opts.autoTick ?? true;
+    this.furni = opts.furni ?? [];
+    for (const f of this.furni) {
+      const def = opts.defs?.get(f.def);
+      if (!def || def.walk || def.sit) continue;
+      for (const [x, y] of furniTiles(def, f)) this.furniBlocked.add(tileKey(x, y));
+    }
   }
 
   get count(): number {
@@ -121,6 +136,7 @@ export class Room {
         map: this.layout.map,
         door: this.layout.door,
         users: [...this.occupants.values()].map(toRoomUser),
+        furni: this.furni,
       },
     });
     this.broadcast({ t: 'userJoin', d: toRoomUser(occupant) }, visitor.id);
@@ -186,10 +202,10 @@ export class Room {
     this.stopTicking();
   }
 
-  /** Tiles taken by other avatars. The door tile never counts, so people can always come in. */
+  /** Tiles taken by furni and other avatars. The door tile never counts, so people can always come in. */
   private blockedFor(id: number): Set<number> {
     const [dx, dy] = this.layout.door;
-    const blocked = new Set<number>();
+    const blocked = new Set<number>(this.furniBlocked);
     for (const o of this.occupants.values()) {
       if (o.visitor.id !== id && !(o.x === dx && o.y === dy)) blocked.add(tileKey(o.x, o.y));
     }

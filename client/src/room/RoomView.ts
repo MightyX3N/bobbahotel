@@ -4,6 +4,8 @@ import { Container, Graphics, type Application, type FederatedPointerEvent } fro
 import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
+import { FurniView } from './FurniView.ts';
+import { furniDefs } from './furniAssets.ts';
 import { depthToZIndex, drawRoom, drawTileOutline, tileDepth } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
@@ -21,6 +23,10 @@ export class RoomView {
   private readonly objects = new Container();
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
+  private furni: FurniView[] = [];
+  /** Bumped on every room change, so furni loading for an old room is dropped. */
+  private roomSerial = 0;
+  private hoveredFurni: FurniView | null = null;
   private grid: Grid = [];
   private door: [number, number] = [0, 0];
   /** Floor and wall pieces (depth-sorted together with the avatars). */
@@ -79,6 +85,10 @@ export class RoomView {
     this.avatars.clear();
     for (const g of this.roomPieces) g.destroy();
     this.roomPieces = [];
+    for (const f of this.furni) f.destroy();
+    this.furni = [];
+    this.hoveredFurni = null;
+    const serial = ++this.roomSerial;
 
     this.bubbles.clear();
     this.grid = parseMap(room.map);
@@ -94,6 +104,16 @@ export class RoomView {
     }
     this.hover.clear();
     for (const u of room.users) this.addUser(u);
+    void furniDefs().then((defs) => {
+      if (serial !== this.roomSerial) return;
+      for (const f of room.furni) {
+        const def = defs.get(f.def);
+        if (!def) continue;
+        const view = new FurniView(f, def);
+        this.furni.push(view);
+        this.objects.addChild(view.container);
+      }
+    });
     // Start at normal size, or half size when the room doesn't fit the screen.
     const b = this.roomBounds();
     const fits = b.width <= this.app.screen.width && b.height <= this.app.screen.height - TOOLBAR_HEIGHT;
@@ -159,6 +179,7 @@ export class RoomView {
   private update(): void {
     const now = performance.now();
     for (const a of this.avatars.values()) a.update(now);
+    for (const f of this.furni) f.update(now);
     this.bubbles.update(now);
   }
 
@@ -175,6 +196,14 @@ export class RoomView {
     const py = (sy - this.world.y) / this.zoom;
     let best: AvatarView | null = null;
     for (const a of this.avatars.values()) if (a.hits(px, py) && (!best || a.container.zIndex > best.container.zIndex)) best = a;
+    return best;
+  }
+
+  private furniAt(sx: number, sy: number): FurniView | null {
+    const px = (sx - this.world.x) / this.zoom;
+    const py = (sy - this.world.y) / this.zoom;
+    let best: FurniView | null = null;
+    for (const f of this.furni) if (f.hits(px, py) && (!best || f.container.zIndex > best.container.zIndex)) best = f;
     return best;
   }
 
@@ -201,6 +230,13 @@ export class RoomView {
       this.hoveredAvatar?.showName(false);
       a?.showName(true);
       this.hoveredAvatar = a;
+    }
+    // Furni names on hover (avatars come first).
+    const f = a ? null : this.furniAt(e.global.x, e.global.y);
+    if (f !== this.hoveredFurni) {
+      this.hoveredFurni?.showName(false);
+      f?.showName(true);
+      this.hoveredFurni = f;
     }
   }
 

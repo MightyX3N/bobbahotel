@@ -2,10 +2,17 @@ import { createApp } from './app.ts';
 import { loadConfig } from './config.ts';
 import { loadContent } from './content.ts';
 import { openDb } from './db.ts';
+import { buildFurniSheets } from './furni.ts';
 
 const config = loadConfig();
 const db = openDb(config.dbFile);
 const content = loadContent(config.contentDir);
+// Furni sprite sheets from the licensed pictures (only rebuilt when something changed).
+try {
+  content.furniSheets = buildFurniSheets(content.furni, config.spritesDir, (msg) => console.log(msg));
+} catch (err) {
+  console.error('Building furni sprite sheets failed:', err);
+}
 const app = createApp({ config, db, content });
 
 app.server.listen(config.port, config.host, () => {

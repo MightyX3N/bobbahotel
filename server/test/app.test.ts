@@ -273,7 +273,7 @@ describe('rooms', () => {
     p.send({ t: 'navigator', d: { tab: 'public' } });
     const list = await p.waitFor('navigator');
     expect(list.d.rooms[0]).toMatchObject({ id: 'p:lobby', name: 'Lobby', owner: null, users: 1 });
-    expect(list.d.rooms.length).toBe(content.publicRooms.length);
+    expect(list.d.rooms.length).toBe(content.publicRooms.filter((r) => !r.staffOnly).length);
   });
 
   it('creates a room from a layout, goes there, and lists it as mine', async () => {
@@ -427,3 +427,51 @@ describe('content', () => {
     expect(content.layouts.get('pub_lobby')!.door).toEqual([0, 9]);
   });
 });
+
+describe('furni', () => {
+  it('loads the furni definitions, with a sheet frame list endpoint', async () => {
+    expect(content.furni.size).toBeGreaterThan(300);
+    const chair = content.furni.get('salvaje_chair_2')!;
+    expect(chair).toMatchObject({ kind: 'floor', size: [1, 1], sit: true });
+    expect(Object.keys(chair.dirs).sort()).toEqual(['0', '2', '4', '6']);
+    const host = await start();
+    const body = (await (await fetch(`http://${host}/api/furni`)).json()) as { furni: unknown[]; sheets: object };
+    expect(body.furni.length).toBe(content.furni.size);
+    expect(typeof body.sheets).toBe('object');
+  });
+
+  it('the furni test room is for staff only and has every floor furni in it', async () => {
+    const host = await start({ steamValid: true });
+    const p = await Player.join(host, await guest(host, 'Nosy'));
+    p.send({ t: 'navigator', d: { tab: 'public' } });
+    expect((await p.waitFor('navigator')).d.rooms.some((r) => r.id === 'p:furni_test')).toBe(false);
+    p.send({ t: 'goToRoom', d: { id: 'p:furni_test' } });
+    expect((await p.waitFor('error')).d.code).toBe('room_not_found');
+    expect((await fetch(`http://${host}/api/room-plan?id=p:furni_test`)).status).toBe(404);
+
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    staff.send({ t: 'goToRoom', d: { id: 'p:furni_test' } });
+    const room = await staff.waitFor('room', (m) => m.d.id === 'p:furni_test');
+    const floor = [...content.furni.values()].filter((d) => d.kind === 'floor');
+    expect(room.d.furni.length).toBe(floor.length);
+    expect(new Set(room.d.furni.map((f) => f.def)).size).toBe(floor.length);
+  });
+
+  it("can't walk onto furni, only around it (rugs and seats excepted)", async () => {
+    const host = await start({ steamValid: true });
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    staff.send({ t: 'goToRoom', d: { id: 'p:furni_test' } });
+    const room = await staff.waitFor('room', (m) => m.d.id === 'p:furni_test');
+    const block = room.d.furni.find((f) => {
+      const d = content.furni.get(f.def)!;
+      return !d.sit && !d.walk && d.size[0] === 1 && d.size[1] === 1;
+    })!;
+    const me = (await staff.waitFor('welcome')).d.me;
+    staff.send({ t: 'walk', d: { x: block.x, y: block.y } });
+    const live = app!.rooms.get('p:furni_test')!;
+    for (let i = 0; i < 80; i++) live.tick(Date.now() + i * TICK_MS);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(staff.inbox.some((m) => m.t === 'status' && m.d.some((s) => s.id === me.id))).toBe(false);
+  });
+});
+
