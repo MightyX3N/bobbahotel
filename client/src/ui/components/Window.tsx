@@ -14,9 +14,9 @@ export interface Tab<K extends string> {
 interface Props<K extends string> {
   title: string;
   onClose: () => void;
-  tabs?: Tab<K>[];
-  activeTab?: K;
-  onTab?: (key: K) => void;
+  tabs?: Tab<K>[] | undefined;
+  activeTab?: K | undefined;
+  onTab?: ((key: K) => void) | undefined;
   width?: number;
   /** Where it first opens, from the bottom-left corner above the toolbar. */
   start?: { left: number; bottom: number };

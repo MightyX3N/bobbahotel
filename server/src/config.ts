@@ -13,6 +13,8 @@ export interface Config {
   dbFile: string;
   /** Folder with rooms.json and other content. */
   contentDir: string;
+  /** Steam IDs of staff (admins). */
+  staffSteamIds: Set<string>;
   /** The git commit this server was built from ("dev" when run from a checkout). */
   version: string;
 }
@@ -38,6 +40,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       .filter(Boolean),
     dbFile: env.DB_FILE ?? 'hotel.db',
     contentDir: env.CONTENT_DIR ?? fileURLToPath(new URL('../../content/', import.meta.url)),
+    staffSteamIds: new Set((env.STAFF_STEAMIDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)),
     version: readVersion(),
   };
 }

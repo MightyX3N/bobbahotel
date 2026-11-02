@@ -1,10 +1,11 @@
 // UI state, kept outside React so the network code can update it. Components read it with useUi().
 import { useSyncExternalStore } from 'react';
-import type { LayoutInfo, NavigatorTab, RoomInfo } from '@bobba/shared';
+import type { LayoutInfo, Me, NavigatorTab, RoomInfo } from '@bobba/shared';
 
 export interface UiState {
-  me: { id: number; name: string; guest: boolean } | null;
-  room: { id: string; name: string; description: string; owner: string | null } | null;
+  me: Me | null;
+  room: { id: string; name: string; description: string; owner: string | null; ownerId: number | null; map: string[]; door: [number, number] } | null;
+  editorOpen: boolean;
   navigator: {
     open: boolean;
     tab: NavigatorTab | 'create';
@@ -20,6 +21,7 @@ export interface UiState {
 let state: UiState = {
   me: null,
   room: null,
+  editorOpen: false,
   navigator: { open: false, tab: 'public', query: '', rooms: [], loading: false },
   layouts: [],
   notice: null,

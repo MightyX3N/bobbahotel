@@ -100,10 +100,13 @@ function RoomRow({ room, current }: { room: RoomInfo; current: boolean }) {
 
 function RoomCreator() {
   const layouts = useUi((s) => s.layouts);
+  const me = useUi((s) => s.me);
+  // Bobba Club layouts are for Club members (and staff).
+  const canUseClub = !!me && (me.staff || me.clubUntil > Date.now());
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [layout, setLayout] = useState<string | null>(null);
-  const chosen = layout ?? layouts.find((l) => !l.club)?.id ?? null;
+  const chosen = layout ?? layouts.find((l) => !l.club || canUseClub)?.id ?? null;
   const ok = name.trim().length >= ROOM_NAME_MIN && chosen !== null;
 
   const create = (e: React.FormEvent) => {
@@ -125,7 +128,7 @@ function RoomCreator() {
       <div className="creator-grid">
         {layouts.length === 0 && <div className="nav-empty">{t('navigator.loading')}</div>}
         {layouts.map((l) => (
-          <button key={l.id} type="button" disabled={l.club} title={l.name} className={`creator-layout${l.id === chosen ? ' selected' : ''}`} onClick={() => setLayout(l.id)}>
+          <button key={l.id} type="button" disabled={l.club && !canUseClub} title={l.name} className={`creator-layout${l.id === chosen ? ' selected' : ''}`} onClick={() => setLayout(l.id)}>
             <LayoutPreview map={l.map} door={l.door} />
             <span>{t('creator.tiles', { tiles: tileCount(l.map) })}</span>
             {l.club && <span className="creator-club">{t('creator.club')}</span>}

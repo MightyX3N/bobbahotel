@@ -89,6 +89,11 @@ export class Room {
     return this.occupants.has(id);
   }
 
+  /** Everyone in the room (e.g. to move them into a reloaded room). */
+  visitors(): Visitor[] {
+    return [...this.occupants.values()].map((o) => o.visitor);
+  }
+
   enter(visitor: Visitor): void {
     this.leave(visitor.id);
     const [x, y] = this.layout.door;
@@ -112,6 +117,7 @@ export class Room {
         name: this.details.name,
         description: this.details.description,
         owner: this.details.owner,
+        ownerId: this.details.ownerId,
         map: this.layout.map,
         door: this.layout.door,
         users: [...this.occupants.values()].map(toRoomUser),

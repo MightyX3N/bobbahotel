@@ -15,14 +15,15 @@ import type { Config } from './config.ts';
 import type { Content } from './content.ts';
 import type { Db } from './db.ts';
 import type { Room } from './room.ts';
-import { Rooms } from './rooms.ts';
+import { Rooms, type Asker } from './rooms.ts';
+import { runCommand } from './commands.ts';
 import { Users, type User } from './users.ts';
 
 const MAX_MESSAGE_BYTES = 16 * 1024;
 const MAX_BODY_BYTES = 4 * 1024;
 
 export interface AppOptions {
-  config: Pick<Config, 'allowOrigin' | 'version' | 'publicUrl'>;
+  config: Pick<Config, 'allowOrigin' | 'version' | 'publicUrl'> & Partial<Pick<Config, 'staffSteamIds'>>;
   db: Db;
   content: Content;
   /** For tests: replaces the HTTP client used to check Steam logins. */
@@ -52,6 +53,17 @@ export function createApp(opts: AppOptions): App {
   const auth = new Auth(db, { publicUrl: config.publicUrl, ...(opts.fetch ? { fetch: opts.fetch } : {}) });
   const rooms = new Rooms(db, content, { autoTick: !opts.manualTicks });
   const clients = new Map<number, Client>();
+  const staffIds = config.staffSteamIds ?? new Set<string>();
+  const isStaff = (u: User) => u.steamId !== null && staffIds.has(u.steamId);
+  /** Fresh account info (Club may have changed since login). */
+  const meOf = (u: User) => {
+    const fresh = users.byId(u.id) ?? u;
+    return { id: fresh.id, name: fresh.name, guest: fresh.guest, staff: isStaff(fresh), clubUntil: fresh.clubUntil };
+  };
+  const askerOf = (u: User): Asker => {
+    const me = meOf(u);
+    return { id: me.id, staff: me.staff, club: me.clubUntil > Date.now() };
+  };
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
 
   const originOk = (origin: string | undefined) =>
@@ -208,7 +220,7 @@ export function createApp(opts: AppOptions): App {
             return;
           }
           greeted = true;
-          client.send({ t: 'welcome', d: { server: config.version, protocol: PROTOCOL_VERSION, me: { id: user.id, name: user.name, guest: user.guest } } });
+          client.send({ t: 'welcome', d: { server: config.version, protocol: PROTOCOL_VERSION, me: meOf(user) } });
           // Everyone starts in the lobby (until there is a hotel view).
           goTo(rooms.lobbyId);
           return;
@@ -219,7 +231,7 @@ export function createApp(opts: AppOptions): App {
           client.send({ t: 'layouts', d: { layouts: rooms.layouts() } });
           return;
         case 'createRoom': {
-          const result = rooms.create(user.id, message.d.name, message.d.description, message.d.layout);
+          const result = rooms.create(askerOf(user), message.d.name, message.d.description, message.d.layout);
           if (!result.ok) return client.send({ t: 'error', d: { code: result.error, message: result.error } });
           client.send({ t: 'roomCreated', d: { id: result.id } });
           goTo(result.id);
@@ -228,10 +240,42 @@ export function createApp(opts: AppOptions): App {
         case 'goToRoom':
           goTo(message.d.id);
           return;
+        case 'saveLayout': {
+          const { id, name, map, door, club } = message.d;
+          const result = rooms.saveLayout(askerOf(user), { id, name, map, door, club });
+          if (!result.ok) return client.send({ t: 'error', d: { code: result.error, message: result.error } });
+          client.send({ t: 'layoutSaved', d: { id: result.id } });
+          client.send({ t: 'layouts', d: { layouts: rooms.layouts() } });
+          return;
+        }
+        case 'deleteLayout':
+          if (rooms.deleteLayout(askerOf(user), message.d.id)) client.send({ t: 'layouts', d: { layouts: rooms.layouts() } });
+          return;
+        case 'saveRoomFloor': {
+          const result = rooms.saveRoomFloor(askerOf(user), message.d.roomId, message.d.map, message.d.door);
+          if (!result.ok) return client.send({ t: 'error', d: { code: result.error, message: result.error } });
+          // Everyone in the room was moved into the rebuilt room.
+          if (result.room) for (const c of clients.values()) if (c.room?.id === message.d.roomId) c.room = result.room;
+          client.send({ t: 'info', d: { code: 'floor_saved' } });
+          return;
+        }
         case 'walk':
           client.room?.walkTo(user.id, message.d.x, message.d.y);
           return;
         case 'chat':
+          // ":" starts a command (like Habbo); commands are never shown as chat.
+          if (message.d.text.trimStart().startsWith(':')) {
+            runCommand(message.d.text.trim(), {
+              staff: isStaff(user),
+              users,
+              reply: (code, vars) => client.send({ t: 'info', d: vars ? { code, vars } : { code } }),
+              accountChanged: (id) => {
+                const c = clients.get(id);
+                if (c) c.send({ t: 'me', d: meOf(c.user) });
+              },
+            });
+            return;
+          }
           client.room?.say(user.id, message.d.text);
           return;
       }

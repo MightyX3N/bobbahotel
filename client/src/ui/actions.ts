@@ -8,6 +8,9 @@ export interface UiActions {
   loadLayouts(): void;
   createRoom(name: string, description: string, layout: string): void;
   goToRoom(id: string): void;
+  saveLayout(plan: { id?: string; name: string; club: boolean; map: string[]; door: [number, number] }): void;
+  deleteLayout(id: string): void;
+  saveRoomFloor(roomId: string, map: string[], door: [number, number]): void;
   logout(): void;
 }
 
@@ -17,6 +20,9 @@ export const actions: UiActions = {
   loadLayouts: () => {},
   createRoom: () => {},
   goToRoom: () => {},
+  saveLayout: () => {},
+  deleteLayout: () => {},
+  saveRoomFloor: () => {},
   logout: () => {},
 };
 

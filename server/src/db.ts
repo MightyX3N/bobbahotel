@@ -31,6 +31,19 @@ const MIGRATIONS: string[] = [
      created INTEGER NOT NULL
    );
    CREATE INDEX rooms_owner ON rooms(owner_id);`,
+  // 3: Bobba Club, layouts made in the editor, rooms with their own floor plan
+  `ALTER TABLE users ADD COLUMN club_until INTEGER NOT NULL DEFAULT 0;
+   CREATE TABLE layouts (
+     id TEXT PRIMARY KEY,
+     name TEXT NOT NULL,
+     map TEXT NOT NULL,
+     door_x INTEGER NOT NULL,
+     door_y INTEGER NOT NULL,
+     access TEXT NOT NULL,
+     created_by INTEGER,
+     created INTEGER NOT NULL
+   );
+   ALTER TABLE rooms ADD COLUMN floor TEXT;`,
 ];
 
 export type Db = DatabaseSync;

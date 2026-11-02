@@ -1,6 +1,7 @@
 // Everything drawn on top of the room: toolbar, windows, the room's name and notices.
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { FloorPlanEditor } from './components/FloorPlanEditor.tsx';
 import { Navigator } from './components/Navigator.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 import { t } from './i18n.ts';
@@ -29,10 +30,12 @@ function Notice() {
 
 function Ui() {
   const navOpen = useUi((s) => s.navigator.open);
+  const editorOpen = useUi((s) => s.editorOpen);
   return (
     <div className="ui-root">
       <RoomChip />
       {navOpen && <Navigator />}
+      {editorOpen && <FloorPlanEditor />}
       <Notice />
       <Toolbar />
     </div>

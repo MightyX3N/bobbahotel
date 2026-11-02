@@ -41,3 +41,18 @@ export function PersonIcon() {
     </svg>
   );
 }
+
+/** Floor plan editor: a pencil over a tile grid. */
+export function FloorPlanIcon() {
+  return (
+    <svg viewBox="0 0 17 17" aria-hidden="true" style={pixel}>
+      <polygon points="1,9 8,5 16,9 8,13" fill="#a47a52" />
+      <polygon points="1,9 8,13 8,15 1,11" fill="#7d5a3b" />
+      <polygon points="8,13 16,9 16,11 8,15" fill="#5e432c" />
+      <line x1="4.5" y1="7" x2="12" y2="11" stroke="#7d5a3b" strokeWidth="0.6" />
+      <line x1="12" y1="7" x2="4.5" y2="11" stroke="#7d5a3b" strokeWidth="0.6" />
+      <rect x="10" y="1" width="2" height="7" fill="#f2c665" transform="rotate(35 11 4)" />
+      <rect x="10" y="7" width="2" height="2" fill="#2b3a4a" transform="rotate(35 11 4)" />
+    </svg>
+  );
+}

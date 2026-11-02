@@ -1,6 +1,6 @@
 // Start-up: check the login, show the login screen if needed, then enter the hotel.
 import { Application } from 'pixi.js';
-import { NAME_MAX, NAME_MIN, PROTOCOL_VERSION, ROOM_NAME_MIN } from '@bobba/shared';
+import { FLOORPLAN_LIMITS, NAME_MAX, NAME_MIN, PROTOCOL_VERSION, ROOM_NAME_MIN } from '@bobba/shared';
 import { getMe, post } from './api.ts';
 import { hideScreens, showChooseName, showLogin } from './login.ts';
 import { Connection, serverUrl } from './net.ts';
@@ -20,7 +20,19 @@ function setStatus(text: string | null): void {
 
 /** Text for a server error code (with the numbers some messages need). */
 function errorText(code: string): string {
-  return t(`error.${code}`, { min: code === 'bad_room_name' ? ROOM_NAME_MIN : NAME_MIN, max: NAME_MAX });
+  const limits = getUi().me?.staff ? FLOORPLAN_LIMITS.staff : FLOORPLAN_LIMITS.club;
+  return t(`error.${code}`, {
+    min: code === 'bad_room_name' ? ROOM_NAME_MIN : NAME_MIN,
+    max: NAME_MAX,
+    w: limits.maxWidth,
+    h: limits.maxHeight,
+    step: limits.maxStep,
+  });
+}
+
+/** Text for a server "it worked" code. */
+function infoText(code: string, vars?: Record<string, string | number>): string {
+  return t(code.includes('.') ? code : `info.${code}`, vars);
 }
 
 async function main(): Promise<void> {
@@ -61,7 +73,7 @@ async function enterHotel(): Promise<void> {
   });
   conn.on('room', (d) => {
     room.enter(d);
-    setUi({ room: { id: d.id, name: d.name, description: d.description, owner: d.owner } });
+    setUi({ room: { id: d.id, name: d.name, description: d.description, owner: d.owner, ownerId: d.ownerId, map: d.map, door: d.door } });
   });
   conn.on('userJoin', (d) => room.addUser(d));
   conn.on('userLeave', (d) => room.removeUser(d.id));
@@ -73,6 +85,9 @@ async function enterHotel(): Promise<void> {
     if (nav.tab === d.tab && nav.query === d.query) setNavigator({ rooms: d.rooms, loading: false });
   });
   conn.on('layouts', (d) => setUi({ layouts: d.layouts }));
+  conn.on('layoutSaved', () => setUi({ notice: { text: infoText('layout_saved'), at: Date.now() } }));
+  conn.on('me', (d) => setUi({ me: d }));
+  conn.on('info', (d) => setUi({ notice: { text: infoText(d.code, d.vars), at: Date.now() } }));
   conn.on('roomCreated', () => setNavigator({ open: false, tab: 'mine' }));
   conn.on('error', (d) => {
     if (d.code === 'old_client') {
@@ -97,6 +112,9 @@ async function enterHotel(): Promise<void> {
     loadLayouts: () => conn.send({ t: 'layouts', d: {} }),
     createRoom: (name, description, layout) => conn.send({ t: 'createRoom', d: { name, description, layout } }),
     goToRoom: (id) => conn.send({ t: 'goToRoom', d: { id } }),
+    saveLayout: (plan) => conn.send({ t: 'saveLayout', d: plan }),
+    deleteLayout: (id) => conn.send({ t: 'deleteLayout', d: { id } }),
+    saveRoomFloor: (roomId, map, door) => conn.send({ t: 'saveRoomFloor', d: { roomId, map, door } }),
     logout: async () => {
       await post('/api/auth/logout');
       location.reload();

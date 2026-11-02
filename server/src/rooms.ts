@@ -1,6 +1,19 @@
 // All rooms: the public rooms from content, and guest rooms players create (saved in the
 // database). A room is loaded when someone goes there and unloaded once it has been empty a while.
-import { cleanChat, ROOM_DESC_MAX, ROOM_NAME_MAX, ROOM_NAME_MIN, type LayoutInfo, type NavigatorTab, type RoomInfo } from '@bobba/shared';
+import {
+  cleanChat,
+  floorPlanProblem,
+  FLOORPLAN_LIMITS,
+  ROOM_DESC_MAX,
+  ROOM_NAME_MAX,
+  ROOM_NAME_MIN,
+  type FloorPlanLimits,
+  type FloorPlanProblem,
+  type Layout,
+  type LayoutInfo,
+  type NavigatorTab,
+  type RoomInfo,
+} from '@bobba/shared';
 import type { Content } from './content.ts';
 import type { Db } from './db.ts';
 import { Room } from './room.ts';
@@ -21,9 +34,34 @@ interface RoomRow {
   name: string;
   description: string;
   layout: string;
+  /** The room's own floor plan (JSON {map, door}) made in the editor, or null. */
+  floor: string | null;
 }
 
+interface LayoutRow {
+  id: string;
+  name: string;
+  map: string;
+  door_x: number;
+  door_y: number;
+  access: string;
+}
+
+const ROOM_COLUMNS = 'r.id, r.owner_id, u.name AS owner_name, r.name, r.description, r.layout, r.floor';
+
+/** Who is asking, for rules about Club layouts and floor plans. */
+export interface Asker {
+  id: number;
+  staff: boolean;
+  club: boolean;
+}
+
+export type SaveLayoutResult = { ok: true; id: string } | { ok: false; error: FloorPlanProblem | 'bad_layout_name' | 'not_allowed' };
+export type SaveFloorResult = { ok: true; room: Room | null } | { ok: false; error: FloorPlanProblem | 'not_allowed' | 'room_not_found' };
+
 export type CreateResult = { ok: true; id: string } | { ok: false; error: 'bad_room_name' | 'too_many_rooms' | 'layout_not_allowed' };
+
+const LAYOUT_NAME_MAX = 40;
 
 export class Rooms {
   private readonly db: Db;
@@ -71,23 +109,93 @@ export class Rooms {
     this.unloadTimers.set(room.id, timer);
   }
 
-  /** Layouts a player can build a room from. Club layouts are listed (marked) but not usable yet. */
+  /** A layout by id: built-in (content) or made in the editor. */
+  layout(id: string): Layout | null {
+    const builtIn = this.content.layouts.get(id);
+    if (builtIn) return builtIn;
+    const row = this.db.prepare('SELECT id, name, map, door_x, door_y, access FROM layouts WHERE id = ?').get(id) as LayoutRow | undefined;
+    return row ? fromLayoutRow(row) : null;
+  }
+
+  /** Layouts a room can be built from: anyone's, and Bobba Club ones (marked). */
   layouts(): LayoutInfo[] {
+    const info = (l: Layout, custom: boolean): LayoutInfo => ({
+      id: l.id,
+      name: l.name,
+      map: l.map,
+      door: l.door,
+      maxUsers: l.maxUsers ?? DEFAULT_MAX_USERS,
+      club: l.access === 'club',
+      custom,
+    });
     const out: LayoutInfo[] = [];
-    for (const l of this.content.layouts.values()) {
-      if (l.access === 'admin') continue;
-      out.push({ id: l.id, name: l.name, map: l.map, door: l.door, maxUsers: l.maxUsers ?? DEFAULT_MAX_USERS, club: l.access === 'club' });
-    }
+    for (const l of this.content.layouts.values()) if (l.access !== 'admin') out.push(info(l, false));
+    const rows = this.db.prepare('SELECT id, name, map, door_x, door_y, access FROM layouts ORDER BY created').all() as unknown as LayoutRow[];
+    for (const r of rows) out.push(info(fromLayoutRow(r), true));
     return out;
   }
 
-  create(ownerId: number, rawName: string, rawDescription: string, layoutId: string, now = Date.now()): CreateResult {
+  /** Staff: save a layout made in the editor (new, or replace a custom one). */
+  saveLayout(asker: Asker, plan: { id?: string | undefined; name: string; map: string[]; door: [number, number]; club: boolean }, now = Date.now()): SaveLayoutResult {
+    if (!asker.staff) return { ok: false, error: 'not_allowed' };
+    const name = cleanChat(plan.name).slice(0, LAYOUT_NAME_MAX);
+    if (name.length < 2) return { ok: false, error: 'bad_layout_name' };
+    const problem = floorPlanProblem(plan.map, plan.door, FLOORPLAN_LIMITS.staff);
+    if (problem) return { ok: false, error: problem };
+    const access = plan.club ? 'club' : 'free';
+    const existing = plan.id && this.db.prepare('SELECT id FROM layouts WHERE id = ?').get(plan.id);
+    if (existing && plan.id) {
+      this.db.prepare('UPDATE layouts SET name = ?, map = ?, door_x = ?, door_y = ?, access = ? WHERE id = ?').run(name, JSON.stringify(plan.map), plan.door[0], plan.door[1], access, plan.id);
+      return { ok: true, id: plan.id };
+    }
+    const n = (this.db.prepare("SELECT COUNT(*) AS n FROM layouts").get() as { n: number }).n;
+    let id = `custom_${n + 1}`;
+    while (this.layout(id)) id = `custom_${Number(id.split('_')[1]) + 1}`;
+    this.db
+      .prepare('INSERT INTO layouts (id, name, map, door_x, door_y, access, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(id, name, JSON.stringify(plan.map), plan.door[0], plan.door[1], access, asker.id, now);
+    return { ok: true, id };
+  }
+
+  /** Staff: remove a layout made in the editor. Rooms built on it keep their shape. */
+  deleteLayout(asker: Asker, id: string): boolean {
+    if (!asker.staff) return false;
+    const layout = this.layout(id);
+    if (!layout || this.content.layouts.has(id)) return false;
+    this.db
+      .prepare('UPDATE rooms SET floor = ? WHERE layout = ? AND floor IS NULL')
+      .run(JSON.stringify({ map: layout.map, door: layout.door }), id);
+    this.db.prepare('DELETE FROM layouts WHERE id = ?').run(id);
+    return true;
+  }
+
+  /**
+   * Give a guest room its own floor plan: its owner with Bobba Club (within the Club limits) or
+   * staff (any size). A loaded room is rebuilt and everyone in it starts again at the door; the
+   * new room is returned so callers can point players at it.
+   */
+  saveRoomFloor(asker: Asker, roomId: string, map: string[], door: [number, number]): SaveFloorResult {
+    const key = /^r:(\d+)$/.exec(roomId)?.[1];
+    const row = key ? (this.db.prepare('SELECT owner_id FROM rooms WHERE id = ?').get(Number(key)) as { owner_id: number } | undefined) : undefined;
+    if (!row) return { ok: false, error: 'room_not_found' };
+    const isOwner = row.owner_id === asker.id;
+    if (!asker.staff && !(isOwner && asker.club)) return { ok: false, error: 'not_allowed' };
+    const limits: FloorPlanLimits = asker.staff ? FLOORPLAN_LIMITS.staff : FLOORPLAN_LIMITS.club;
+    const problem = floorPlanProblem(map, door, limits);
+    if (problem) return { ok: false, error: problem };
+    this.db.prepare('UPDATE rooms SET floor = ? WHERE id = ?').run(JSON.stringify({ map, door }), Number(key));
+    return { ok: true, room: this.reload(roomId) };
+  }
+
+  create(asker: Asker, rawName: string, rawDescription: string, layoutId: string, now = Date.now()): CreateResult {
+    const ownerId = asker.id;
     const name = cleanChat(rawName).slice(0, ROOM_NAME_MAX);
     const description = cleanChat(rawDescription).slice(0, ROOM_DESC_MAX);
     if (name.length < ROOM_NAME_MIN) return { ok: false, error: 'bad_room_name' };
-    const layout = this.content.layouts.get(layoutId);
-    // Bobba Club layouts open up once Club exists.
-    if (!layout || (layout.access ?? 'free') !== 'free') return { ok: false, error: 'layout_not_allowed' };
+    const layout = this.layout(layoutId);
+    const access = layout?.access ?? 'free';
+    const allowed = access === 'free' || (access === 'club' && (asker.club || asker.staff)) || (access === 'admin' && asker.staff);
+    if (!layout || !allowed) return { ok: false, error: 'layout_not_allowed' };
     const owned = (this.db.prepare('SELECT COUNT(*) AS n FROM rooms WHERE owner_id = ?').get(ownerId) as { n: number }).n;
     if (owned >= MAX_ROOMS_PER_USER) return { ok: false, error: 'too_many_rooms' };
     const result = this.db
@@ -108,7 +216,7 @@ export class Rooms {
     const search = q ? ' AND (lower(r.name) LIKE ? OR lower(u.name) LIKE ?)' : '';
     if (q) params.push(`%${q}%`, `%${q}%`);
     const rows = this.db
-      .prepare(`SELECT r.id, r.owner_id, u.name AS owner_name, r.name, r.description, r.layout FROM rooms r JOIN users u ON u.id = r.owner_id ${where}${search} ORDER BY r.id DESC LIMIT 500`)
+      .prepare(`SELECT ${ROOM_COLUMNS} FROM rooms r JOIN users u ON u.id = r.owner_id ${where}${search} ORDER BY r.id DESC LIMIT 500`)
       .all(...params) as unknown as RoomRow[];
     const infos = rows.map((r) => this.guestInfo(r));
     // Busy rooms first (like Habbo), newest first among equals.
@@ -137,9 +245,9 @@ export class Rooms {
     }
     if (kind === 'r' && key && /^\d+$/.test(key)) {
       const row = this.db
-        .prepare('SELECT r.id, r.owner_id, u.name AS owner_name, r.name, r.description, r.layout FROM rooms r JOIN users u ON u.id = r.owner_id WHERE r.id = ?')
+        .prepare(`SELECT ${ROOM_COLUMNS} FROM rooms r JOIN users u ON u.id = r.owner_id WHERE r.id = ?`)
         .get(Number(key)) as RoomRow | undefined;
-      const layout = row && this.content.layouts.get(row.layout);
+      const layout = row && this.roomLayout(row);
       if (!row || !layout) return null;
       return new Room(
         id,
@@ -151,6 +259,29 @@ export class Rooms {
     return null;
   }
 
+  /** Rebuild a loaded room (after its floor changed) and move everyone in it to the new one. */
+  private reload(id: string): Room | null {
+    const old = this.active.get(id);
+    if (!old) return null;
+    const visitors = old.visitors();
+    old.stop();
+    this.active.delete(id);
+    this.cancelUnload(id);
+    const fresh = this.get(id);
+    if (!fresh) return null;
+    for (const v of visitors) fresh.enter(v);
+    return fresh;
+  }
+
+  /** A guest room's floor: its own plan if it has one, else its layout. */
+  private roomLayout(row: RoomRow): Layout | null {
+    if (row.floor) {
+      const f = JSON.parse(row.floor) as { map: string[]; door: [number, number] };
+      return { id: `room_${row.id}`, name: row.name, map: f.map, door: f.door, maxUsers: this.layout(row.layout)?.maxUsers ?? DEFAULT_MAX_USERS };
+    }
+    return this.layout(row.layout);
+  }
+
   private publicInfo(key: string, name: string, description: string, maxUsers: number): RoomInfo {
     const id = `p:${key}`;
     return { id, name, description, owner: null, users: this.active.get(id)?.count ?? 0, maxUsers };
@@ -158,7 +289,11 @@ export class Rooms {
 
   private guestInfo(r: RoomRow): RoomInfo {
     const id = `r:${r.id}`;
-    const layout = this.content.layouts.get(r.layout);
+    const layout = this.layout(r.layout);
     return { id, name: r.name, description: r.description, owner: r.owner_name, users: this.active.get(id)?.count ?? 0, maxUsers: layout?.maxUsers ?? DEFAULT_MAX_USERS };
   }
+}
+
+function fromLayoutRow(r: LayoutRow): Layout {
+  return { id: r.id, name: r.name, map: JSON.parse(r.map) as string[], door: [r.door_x, r.door_y], access: r.access === 'club' ? 'club' : 'free' };
 }

@@ -52,8 +52,25 @@ export const layoutInfoSchema = z.object({
   door: z.tuple([z.number().int(), z.number().int()]),
   maxUsers: z.number().int(),
   club: z.boolean(),
+  /** Made in the editor (staff can change or remove it); false for the built-in layouts. */
+  custom: z.boolean(),
 });
 export type LayoutInfo = z.output<typeof layoutInfoSchema>;
+
+export const meSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  guest: z.boolean(),
+  staff: z.boolean(),
+  /** Bobba Club runs until this time (ms since 1970); 0 = no Club. */
+  clubUntil: z.number(),
+});
+export type Me = z.output<typeof meSchema>;
+
+const floorPlan = z.object({
+  map: z.array(z.string().max(64)).max(64),
+  door: z.tuple([z.number().int().min(0).max(63), z.number().int().min(0).max(63)]),
+});
 
 export const NAVIGATOR_TABS = ['public', 'all', 'mine'] as const;
 export type NavigatorTab = (typeof NAVIGATOR_TABS)[number];
@@ -66,6 +83,12 @@ export const clientMessages = {
   layouts: z.object({}),
   createRoom: z.object({ name: z.string().max(ROOM_NAME_MAX * 2), description: z.string().max(ROOM_DESC_MAX * 2), layout: z.string().max(40) }),
   goToRoom: z.object({ id: roomId }),
+  /** Staff: save a layout made in the editor (new, or update a custom one by id). */
+  saveLayout: floorPlan.extend({ id: z.string().max(40).optional(), name: z.string().max(60), club: z.boolean() }),
+  /** Staff: remove a custom layout. */
+  deleteLayout: z.object({ id: z.string().max(40) }),
+  /** Owner with Bobba Club (or staff): give a room its own floor plan. */
+  saveRoomFloor: floorPlan.extend({ roomId }),
   hello: z.object({ protocol: z.number().int() }),
   /** Walk to a tile. */
   walk: z.object({ x: tile, y: tile }),
@@ -78,17 +101,23 @@ export const serverMessages = {
   welcome: z.object({
     server: z.string(),
     protocol: z.number().int(),
-    me: z.object({ id: z.number().int(), name: z.string(), guest: z.boolean() }),
+    me: meSchema,
   }),
   navigator: z.object({ tab: z.enum(NAVIGATOR_TABS), query: z.string(), rooms: z.array(roomInfoSchema) }),
   layouts: z.object({ layouts: z.array(layoutInfoSchema) }),
   roomCreated: z.object({ id: z.string() }),
+  layoutSaved: z.object({ id: z.string() }),
+  /** Your account changed (e.g. Bobba Club was granted). */
+  me: meSchema,
+  /** Something worked; shown as a short notice (text from the language file). */
+  info: z.object({ code: z.string(), vars: z.record(z.string(), z.union([z.string(), z.number()])).optional() }),
   /** You entered a room: everything needed to draw it. */
   room: z.object({
     id: z.string(),
     name: z.string(),
     description: z.string(),
     owner: z.string().nullable(),
+    ownerId: z.number().int().nullable(),
     map: z.array(z.string()),
     door: z.tuple([z.number().int(), z.number().int()]),
     users: z.array(roomUserSchema),

@@ -17,10 +17,12 @@ afterEach(async () => {
   app = undefined;
 });
 
+const STAFF_STEAM = '76561198000000099';
+
 async function start(opts: { allowOrigin?: string[]; steamValid?: boolean } = {}): Promise<string> {
   const fakeSteam = (async () => new Response(`ns:http://specs.openid.net/auth/2.0\nis_valid:${opts.steamValid ? 'true' : 'false'}\n`)) as typeof fetch;
   app = createApp({
-    config: { allowOrigin: opts.allowOrigin ?? [], version: 'test', publicUrl: PUBLIC },
+    config: { allowOrigin: opts.allowOrigin ?? [], version: 'test', publicUrl: PUBLIC, staffSteamIds: new Set([STAFF_STEAM]) },
     db: openDb(':memory:'),
     content,
     fetch: fakeSteam,
@@ -40,6 +42,21 @@ async function guest(host: string, name: string): Promise<string> {
   });
   expect(res.status).toBe(200);
   return cookieOf(res);
+}
+
+/** Logs in a Steam account (Steam's answer is faked as valid) with a hotel name. */
+async function steamLogin(host: string, steamId: string, name: string): Promise<string> {
+  const params = new URLSearchParams({
+    'openid.ns': 'http://specs.openid.net/auth/2.0',
+    'openid.mode': 'id_res',
+    'openid.op_endpoint': 'https://steamcommunity.com/openid/login',
+    'openid.claimed_id': `https://steamcommunity.com/openid/id/${steamId}`,
+    'openid.return_to': `${PUBLIC}/api/auth/steam/return`,
+  });
+  const back = await fetch(`http://${host}/api/auth/steam/return?${params}`, { redirect: 'manual' });
+  const cookie = cookieOf(back);
+  await fetch(`http://${host}/api/auth/name`, { method: 'POST', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({ name }) });
+  return cookie;
 }
 
 /** A connected player that collects every message it receives. */
@@ -284,6 +301,92 @@ describe('rooms', () => {
     a.send({ t: 'goToRoom', d: { id: 'p:cafe' } });
     expect((await a.waitFor('room', (m) => m.d.id === 'p:cafe')).d.name).toBe('Corner Café');
     expect((await b.waitFor('userLeave')).d.id).toBe(moverId);
+  });
+});
+
+describe('Bobba Club and floor plans', () => {
+  const plan = { map: ['x0000', '00000', 'x0000', 'x0000'], door: [0, 1] as [number, number] };
+
+  it('staff give Club with :club, and the player sees it straight away', async () => {
+    const host = await start({ steamValid: true });
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    expect((await staff.waitFor('welcome')).d.me).toMatchObject({ staff: true, clubUntil: 0 });
+    const member = await Player.join(host, await guest(host, 'Lucky'));
+    staff.send({ t: 'chat', d: { text: ':club Lucky 30' } });
+    expect((await staff.waitFor('info', (m) => m.d.code === 'command.club_given')).d.vars).toMatchObject({ name: 'Lucky', days: 30 });
+    const me = await member.waitFor('me');
+    expect(me.d.clubUntil).toBeGreaterThan(Date.now() + 29 * 86_400_000);
+    // Commands are never shown as chat.
+    expect(member.inbox.some((m) => m.t === 'chat')).toBe(false);
+  });
+
+  it('only staff can use :club', async () => {
+    const host = await start();
+    const p = await Player.join(host, await guest(host, 'Sneaky'));
+    p.send({ t: 'chat', d: { text: ':club Sneaky 999' } });
+    await p.waitFor('info', (m) => m.d.code === 'command.not_allowed');
+  });
+
+  it('staff save Club layouts; only Club members can build with them', async () => {
+    const host = await start({ steamValid: true });
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    staff.send({ t: 'saveLayout', d: { name: 'Club Loft', club: true, ...plan } });
+    const id = (await staff.waitFor('layoutSaved')).d.id;
+    const listed = await staff.waitFor('layouts');
+    expect(listed.d.layouts.find((l) => l.id === id)).toMatchObject({ name: 'Club Loft', club: true, custom: true });
+
+    const normal = await Player.join(host, await guest(host, 'Normal'));
+    normal.send({ t: 'createRoom', d: { name: 'Try', description: '', layout: id } });
+    await normal.waitFor('error', (m) => m.d.code === 'layout_not_allowed');
+
+    staff.send({ t: 'chat', d: { text: ':club Normal 7' } });
+    await normal.waitFor('me');
+    normal.send({ t: 'createRoom', d: { name: 'Now I can', description: '', layout: id } });
+    const room = await normal.waitFor('room', (m) => m.d.name === 'Now I can');
+    expect(room.d.map).toEqual(plan.map);
+  });
+
+  it('players can not save layouts, and bad plans are refused', async () => {
+    const host = await start({ steamValid: true });
+    const p = await Player.join(host, await guest(host, 'Nope'));
+    p.send({ t: 'saveLayout', d: { name: 'Mine', club: false, ...plan } });
+    await p.waitFor('error', (m) => m.d.code === 'not_allowed');
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    staff.send({ t: 'saveLayout', d: { name: 'Broken', club: false, map: ['0000', '0000'], door: [0, 0] } });
+    await staff.waitFor('error', (m) => m.d.code === 'plan_door_not_out');
+  });
+
+  it('a Club owner reshapes their own room and everyone inside starts again at the door', async () => {
+    const host = await start({ steamValid: true });
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    const owner = await Player.join(host, await guest(host, 'Owner'));
+    owner.send({ t: 'createRoom', d: { name: 'Reshape me', description: '', layout: 'model_a' } });
+    const roomId = (await owner.waitFor('roomCreated')).d.id;
+    await owner.waitFor('room', (m) => m.d.id === roomId);
+
+    // Without Club: not allowed.
+    owner.send({ t: 'saveRoomFloor', d: { roomId, ...plan } });
+    await owner.waitFor('error', (m) => m.d.code === 'not_allowed');
+
+    staff.send({ t: 'chat', d: { text: ':club Owner 30' } });
+    await owner.waitFor('me');
+    const visitor = await Player.join(host, await guest(host, 'Visitor'));
+    visitor.send({ t: 'goToRoom', d: { id: roomId } });
+    await visitor.waitFor('room', (m) => m.d.id === roomId);
+
+    // Too big for Club.
+    const big = { map: ['x' + '0'.repeat(30), '0'.repeat(31)], door: [0, 1] as [number, number] };
+    owner.send({ t: 'saveRoomFloor', d: { roomId, ...big } });
+    await owner.waitFor('error', (m) => m.d.code === 'plan_too_big');
+
+    owner.send({ t: 'saveRoomFloor', d: { roomId, ...plan } });
+    await owner.waitFor('info', (m) => m.d.code === 'floor_saved');
+    const again = await visitor.waitFor('room', (m) => m.d.id === roomId && m.d.map.length === plan.map.length);
+    expect(again.d.map).toEqual(plan.map);
+    expect(again.d.users).toHaveLength(2);
+    // The room still works after the rebuild.
+    visitor.send({ t: 'chat', d: { text: 'still here' } });
+    await owner.waitFor('chat', (m) => m.d.text === 'still here');
   });
 });
 
