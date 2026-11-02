@@ -11,13 +11,12 @@ import {
   furniTop,
   LAY_HEIGHT,
   standHeight,
-  wallItemFits,
+  wallItemZ,
+  wallKindAt,
   furniTiles,
   heightAt,
   isFloor,
   SIT_HEIGHT,
-  WALL_ITEM_MAX_Z,
-  WALL_ITEM_MIN_Z,
   parseMap,
   tileKey,
   type FurniDef,
@@ -281,13 +280,9 @@ export class Room {
       // Direction 4: on the left wall at the tile's x edge; 2: on the back wall at its y edge.
       if (dir !== 2 && dir !== 4) return null;
       const off = Math.min(1, Math.max(0, want.off ?? 0.5));
-      const [dx, dy] = this.layout.door;
-      // A wall: floor in front of it, none behind it, and not the doorway.
-      const wallAt = (tx: number, ty: number) =>
-        isFloor(this.grid, tx, ty) && !(tx === dx && ty === dy) && !(dir === 4 ? isFloor(this.grid, tx - 1, ty) : isFloor(this.grid, tx, ty - 1));
-      if (!wallAt(x, y) || !wallItemFits(def, this.sheets.get(def.id), { x, y, dir, off }, wallAt)) return null;
-      const z = Math.min(WALL_ITEM_MAX_Z, Math.max(WALL_ITEM_MIN_Z, want.z ?? 1.5));
-      return { x, y, z: Math.round(z * 100) / 100, dir, off };
+      const z = wallItemZ(def, this.sheets.get(def.id), { x, y, dir, off }, want.z ?? 1.5, (tx, ty) => wallKindAt(this.grid, this.layout.door, dir, tx, ty));
+      if (z === null) return null;
+      return { x, y, z, dir, off };
     }
     const [door] = [this.layout.door];
     let z = 0;

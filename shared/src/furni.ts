@@ -3,6 +3,7 @@
 // Definitions live in content/furni/<pack>.json (in git). Their pictures are the pack's own image
 // files (licensed, never in git); the server turns each definition into one sprite sheet with
 // a frame list (sprites/built/furni/<id>.png + .json), like Habbo's furni packages.
+import { isFloor, type Grid } from './room.ts';
 
 /** Directions a furni can face, as in Habbo: 0 up-right, 2 down-right, 4 down-left, 6 up-left. */
 export type FurniDir = 0 | 2 | 4 | 6;
@@ -45,6 +46,8 @@ export interface FurniDef {
   walk?: boolean;
   /** Other furni can be put on top of it (tables, cabinets). */
   stack?: boolean;
+  /** Wall furni: how many tiles it sticks out from the wall (a wall cabinet: 1). */
+  depth?: number;
   /**
    * Hangs this many height steps above its floor (kitchen wall cabinets, wall shelves): it blocks
    * nobody, and other furni can stand under it on the same tiles.
@@ -95,9 +98,6 @@ export interface RoomFurni {
 export const SIT_HEIGHT = 0;
 /** How high you lie on a bed that doesn't say (its mattress), in height steps above where it stands. */
 export const LAY_HEIGHT = 0.5;
-/** Wall furni hang between these heights above the floor (height steps). */
-export const WALL_ITEM_MIN_Z = 0.3;
-export const WALL_ITEM_MAX_Z = 4.2;
 
 /** How high a furni's top is (height steps): its own `height`, or measured from its sheet. */
 export function furniHeight(def: FurniDef, sheet?: FurniSheet): number {
@@ -170,31 +170,61 @@ export function furniTiles(def: Pick<FurniDef, 'size'>, f: Pick<RoomFurni, 'x' |
   return out;
 }
 
-/** Half a wall furni's picture width, in tiles along its wall (a tile's edge is 32 px wide on screen). */
-export function wallHalfWidth(def: FurniDef, sheet: FurniSheet | undefined, dir: FurniDir): number {
+/** Walls reach at least this many height steps above the floor next to them. */
+export const WALL_HEIGHT = 4.5;
+/** The doorway is this many height steps high; wall furni can hang on the wall above it. */
+export const DOOR_HEIGHT = 2.9;
+
+/**
+ * A wall furni's size on its wall: half its length along the wall (tiles; a tile's edge is 32 px
+ * wide on screen) and half its height up the wall (height steps, 32 px each), without the slant
+ * of the picture and without how far it sticks out (`depth`).
+ */
+export function wallItemSize(def: FurniDef, sheet: FurniSheet | undefined, dir: FurniDir): { half: number; halfUp: number } {
   const images = def.dirs[dir];
   const source = images && 'mirror' in images ? images.mirror : dir;
   const frame = sheet?.dirs[source]?.[0]?.[0];
-  return frame ? (frame.w * (def.scale ?? 1)) / 2 / 32 : 0.5;
+  if (!frame) return { half: 0.5, halfUp: 0.5 };
+  const scale = def.scale ?? 1;
+  const w = frame.w * scale;
+  const h = frame.h * scale;
+  return { half: Math.max(0.1, (w / 32 - (def.depth ?? 0)) / 2), halfUp: Math.max(0.1, (h - w / 2) / 2 / 32) };
+}
+
+/** What is at the edge of floor tile (x, y) that a wall furni facing `dir` would hang on. */
+export type WallKind = 'wall' | 'door' | null;
+
+/** Wall (floor in front, none behind), the wall above the doorway, or nothing to hang on. */
+export function wallKindAt(grid: Grid, door: readonly [number, number], dir: FurniDir, x: number, y: number): WallKind {
+  const isDoor = (tx: number, ty: number) => tx === door[0] && ty === door[1];
+  if (!isFloor(grid, x, y) || isDoor(x, y)) return null;
+  const [bx, by] = dir === 4 ? [x - 1, y] : [x, y - 1];
+  if (!isFloor(grid, bx, by)) return 'wall';
+  return isDoor(bx, by) ? 'door' : null;
 }
 
 /**
- * Does a wall furni fit on its wall: is there wall all along its picture? `wallAt(x, y)` says if
- * floor tile (x, y) has a wall on the side the furni hangs on (direction 4: its x edge, 2: its y edge).
+ * Where a wall furni can hang, wanting height z (its middle, height steps above the floor):
+ * the nearest height where all of its picture is on the wall (above the doorway where it covers
+ * that), or null if it doesn't fit there at all (the wall ends, or it would be too tall).
  */
-export function wallItemFits(
+export function wallItemZ(
   def: FurniDef,
   sheet: FurniSheet | undefined,
   spot: Pick<RoomFurni, 'x' | 'y' | 'dir'> & { off: number },
-  wallAt: (x: number, y: number) => boolean,
-): boolean {
-  // A little overhang is fine (pictures have a soft edge); a quarter tile or more is not.
-  const half = Math.max(0, wallHalfWidth(def, sheet, spot.dir) - 0.15);
-  const from = Math.floor(spot.off - half);
-  const to = Math.floor(spot.off + half - 1e-6);
-  for (let k = from; k <= to; k++) {
-    const [x, y] = spot.dir === 4 ? [spot.x, spot.y + k] : [spot.x + k, spot.y];
-    if (!wallAt(x, y)) return false;
+  z: number,
+  wallAt: (x: number, y: number) => WallKind,
+): number | null {
+  const { half, halfUp } = wallItemSize(def, sheet, spot.dir);
+  // A little overhang along the wall is fine (pictures have soft edges).
+  const along = Math.max(0, half - 0.15);
+  let low = halfUp;
+  for (let k = Math.floor(spot.off - along); k <= Math.floor(spot.off + along - 1e-6); k++) {
+    const kind = spot.dir === 4 ? wallAt(spot.x, spot.y + k) : wallAt(spot.x + k, spot.y);
+    if (kind === null) return null;
+    if (kind === 'door') low = DOOR_HEIGHT + halfUp;
   }
-  return true;
+  const high = WALL_HEIGHT - halfUp;
+  if (low > high + 1e-6) return null;
+  return Math.round(Math.min(high, Math.max(low, z)) * 100) / 100;
 }
