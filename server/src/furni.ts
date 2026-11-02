@@ -1,7 +1,7 @@
 // Furni definitions (content/furni/*.json) and their sprite sheets.
 //
 // A definition says which of a pack's pictures a furni uses. When the server starts it turns each
-// definition into one sprite sheet plus a frame list (sprites/built/furni/<id>.png + .json), like
+// definition into one sprite sheet plus a frame list (<build dir>/furni/<id>.png + .json), like
 // Habbo's furni packages: every frame trimmed to the same box, with the anchor (the footprint's
 // front corner) worked out from the definition's size. Sheets are only rebuilt when the
 // definition or its pictures change. The pictures themselves are never changed.
@@ -52,6 +52,9 @@ export function loadFurniDefs(contentDir: string): Map<string, FurniDef> {
   return defs;
 }
 
+/** Where built sheets go. The server serves them at /api/furni/<id>.png. */
+export const furniSheetDir = (buildDir: string) => join(buildDir, 'furni');
+
 /** Bump to rebuild every sheet (when the sheet format changes). */
 const SHEET_FORMAT = 1;
 const ALPHA = 16;
@@ -60,8 +63,8 @@ const ALPHA = 16;
  * Builds the sprite sheets for every definition whose pictures are there and returns their frame
  * lists; furni whose pictures are missing are skipped (the game draws nothing for them).
  */
-export function buildFurniSheets(defs: Map<string, FurniDef>, spritesDir: string, log: (msg: string) => void = () => {}): Map<string, FurniSheet> {
-  const out = join(spritesDir, 'built', 'furni');
+export function buildFurniSheets(defs: Map<string, FurniDef>, spritesDir: string, buildDir: string, log: (msg: string) => void = () => {}): Map<string, FurniSheet> {
+  const out = furniSheetDir(buildDir);
   const sheets = new Map<string, FurniSheet>();
   let ready = 0;
   let built = 0;

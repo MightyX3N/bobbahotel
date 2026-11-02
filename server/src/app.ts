@@ -1,5 +1,7 @@
 // The HTTP + WebSocket server. Kept separate from index.ts so tests can start it on a free port.
+import { createReadStream, existsSync } from 'node:fs';
 import http from 'node:http';
+import { join } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
   clientMessages,
@@ -15,6 +17,7 @@ import type { Config } from './config.ts';
 import type { Content } from './content.ts';
 import type { Db } from './db.ts';
 import type { Room } from './room.ts';
+import { furniSheetDir } from './furni.ts';
 import { Rooms, type Asker } from './rooms.ts';
 import { runCommand } from './commands.ts';
 import { Users, type User } from './users.ts';
@@ -23,7 +26,7 @@ const MAX_MESSAGE_BYTES = 16 * 1024;
 const MAX_BODY_BYTES = 4 * 1024;
 
 export interface AppOptions {
-  config: Pick<Config, 'allowOrigin' | 'version' | 'publicUrl'> & Partial<Pick<Config, 'staffSteamIds'>>;
+  config: Pick<Config, 'allowOrigin' | 'version' | 'publicUrl'> & Partial<Pick<Config, 'staffSteamIds' | 'buildDir'>>;
   db: Db;
   content: Content;
   /** For tests: replaces the HTTP client used to check Steam logins. */
@@ -83,6 +86,17 @@ export function createApp(opts: AppOptions): App {
     const route = `${req.method} ${url.pathname}`;
 
     if (req.method === 'POST' && !originOk(req.headers.origin)) return sendJson(res, 403, { error: 'bad_origin' });
+
+    // Built furni sprite sheets (the version in ?v= changes whenever a sheet is rebuilt).
+    const sheet = req.method === 'GET' ? /^\/api\/furni\/([a-z0-9_]+)\.png$/.exec(url.pathname) : null;
+    if (sheet) {
+      const id = sheet[1]!;
+      const file = join(furniSheetDir(config.buildDir ?? ''), `${id}.png`);
+      if (!content.furniSheets.has(id) || !existsSync(file)) return sendJson(res, 404, { error: 'not_found' });
+      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=31536000, immutable' });
+      createReadStream(file).pipe(res);
+      return;
+    }
 
     switch (route) {
       case 'GET /api/health':

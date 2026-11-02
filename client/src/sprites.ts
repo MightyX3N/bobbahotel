@@ -7,9 +7,15 @@ const frames = new Map<string, Texture>();
 
 /** Loads /sprites/<path>. Resolves to null if the file is missing (the game keeps going). */
 export function loadSprite(path: string): Promise<Texture | null> {
+  return loadTexture(`/sprites/${path}`, path);
+}
+
+/** Loads a picture from any URL on this site, once. */
+export function loadTexture(url: string, key = url): Promise<Texture | null> {
+  const path = key;
   let p = loading.get(path);
   if (!p) {
-    p = Assets.load<Texture>(`/sprites/${path}`)
+    p = Assets.load<Texture>(url)
       .then((t) => {
         t.source.scaleMode = 'nearest';
         loaded.set(path, t);

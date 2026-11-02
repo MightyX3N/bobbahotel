@@ -1,5 +1,6 @@
 // Server settings come from environment variables. On the VPS they are in /etc/bobbahotel/env.
 import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface Config {
@@ -13,8 +14,10 @@ export interface Config {
   dbFile: string;
   /** Folder with rooms.json and other content. */
   contentDir: string;
-  /** Licensed pictures (never in git). Furni sprite sheets are built into <spritesDir>/built/. */
+  /** Licensed pictures (never in git). */
   spritesDir: string;
+  /** Where the server writes what it builds (furni sprite sheets): next to the database by default. */
+  buildDir: string;
   /** Steam IDs of staff (admins). */
   staffSteamIds: Set<string>;
   /** The git commit this server was built from ("dev" when run from a checkout). */
@@ -43,6 +46,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     dbFile: env.DB_FILE ?? 'hotel.db',
     contentDir: env.CONTENT_DIR ?? fileURLToPath(new URL('../../content/', import.meta.url)),
     spritesDir: env.SPRITES_DIR ?? fileURLToPath(new URL('../../sprites/', import.meta.url)),
+    buildDir: env.BUILD_DIR ?? join(dirname(resolve(env.DB_FILE ?? 'hotel.db')), 'built'),
     staffSteamIds: new Set((env.STAFF_STEAMIDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)),
     version: readVersion(),
   };

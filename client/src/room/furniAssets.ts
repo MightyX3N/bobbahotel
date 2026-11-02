@@ -1,9 +1,8 @@
 // Furni definitions and their sprite sheets' frame lists (both from /api/furni, loaded once), and
-// the sheet pictures (built on the server from the licensed pictures, served from
-// /sprites/built/furni/<id>.png).
+// the sheet pictures (built by the server from the licensed pictures, served at /api/furni/<id>.png).
 import { Rectangle, Texture } from 'pixi.js';
 import type { FurniDef, FurniDir, FurniSheet } from '@bobba/shared';
-import { loadSprite } from '../sprites.ts';
+import { loadTexture } from '../sprites.ts';
 
 interface FurniData {
   defs: Map<string, FurniDef>;
@@ -45,7 +44,7 @@ export function furniFrames(id: string): Promise<FurniFrames | null> {
       const sheet = (await furniData()).sheets.get(id);
       if (!sheet) return null;
       // The version busts the browser cache when a sheet is rebuilt.
-      const base = await loadSprite(`built/furni/${id}.png?v=${sheet.version}`);
+      const base = await loadTexture(`/api/furni/${id}.png?v=${sheet.version}`);
       if (!base) return null;
       const out: FurniFrames = {};
       for (const [dir, list] of Object.entries(sheet.dirs)) {

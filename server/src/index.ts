@@ -9,7 +9,7 @@ const db = openDb(config.dbFile);
 const content = loadContent(config.contentDir);
 // Furni sprite sheets from the licensed pictures (only rebuilt when something changed).
 try {
-  content.furniSheets = buildFurniSheets(content.furni, config.spritesDir, (msg) => {
+  content.furniSheets = buildFurniSheets(content.furni, config.spritesDir, config.buildDir, (msg) => {
     content.furniStatus = msg;
     console.log(msg);
   });
