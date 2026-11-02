@@ -18,7 +18,7 @@ const STEP_MS = 480; // Habbo walks one tile every ~0.5s
 
 const SPRITES = process.env.SPRITES_DIR ?? new URL('../../sprites', import.meta.url).pathname;
 const ORIGIN = process.env.ALLOW_ORIGIN ?? '*';
-type Layout = { floor?: string; wall?: string; id: string; name: string; maxUsers: number; door: [number, number] | null; map: string[] };
+type Layout = { floor?: string; wall?: string; id: string; name: string; access?: string; maxUsers: number; door: [number, number] | null; map: string[] };
 const data = JSON.parse(readFileSync(DATA, 'utf8')) as {
   layouts: Record<string, Layout>;
   public: { id: string; name: string; description: string; layout: string }[];
@@ -32,11 +32,16 @@ CREATE TABLE IF NOT EXISTS chat_log(id INTEGER PRIMARY KEY, room TEXT, user_id I
 `);
 for (const [col, def] of [['steamid', 'TEXT'], ['banned', 'INTEGER DEFAULT 0'], ['ban_reason', 'TEXT'], ['muted_until', 'INTEGER DEFAULT 0']])
   if (!(db.prepare('PRAGMA table_info(users)').all() as any[]).some(c => c.name === col)) db.exec(`ALTER TABLE users ADD COLUMN ${col} ${def}`);
+db.exec('CREATE TABLE IF NOT EXISTS rooms(id INTEGER PRIMARY KEY, owner_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, layout TEXT NOT NULL, floor TEXT, wall TEXT, created INTEGER)');
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_steam ON users(steamid) WHERE steamid IS NOT NULL');
 initAuth(db);
 const qBySteam = db.prepare('SELECT * FROM users WHERE steamid = ?');
 const qById = db.prepare('SELECT * FROM users WHERE id = ?');
 const qInsertSteam = db.prepare('INSERT INTO users(name, steamid, look, created) VALUES(?,?,?,?)');
+const qRoomsAll = db.prepare('SELECT r.*, u.name owner FROM rooms r JOIN users u ON u.id = r.owner_id ORDER BY r.id');
+const qRoomInsert = db.prepare('INSERT INTO rooms(owner_id, name, description, layout, floor, wall, created) VALUES(?,?,?,?,?,?,?)');
+const qRoomCount = db.prepare('SELECT COUNT(*) c FROM rooms WHERE owner_id = ?');
+const qSetLook = db.prepare('UPDATE users SET look = ? WHERE id = ?');
 const qByName = db.prepare('SELECT * FROM users WHERE name = ?');
 const qInsert = db.prepare('INSERT INTO users(name, token, look, created) VALUES(?,?,?,?)');
 const qLast = db.prepare('UPDATE users SET last_room = ? WHERE id = ?');
@@ -51,7 +56,7 @@ type Player = {
   x: number; y: number; z: number; dir: number; path: [number, number][]; lastChat: number; steam?: string; mutedUntil: number;
 };
 class Room {
-  floor = 'stone'; wall = 'whitecheck';
+  floor = 'stone'; wall = 'whitecheck'; ownerId = 0; owner = ''; desc = '';
   id: string; name: string; layout: Layout; grid: Grid; players = new Map<number, Player>();
   constructor(id: string, name: string, layout: Layout) {
     this.id = id; this.name = name; this.layout = layout;
@@ -66,21 +71,36 @@ class Room {
 const rooms = new Map<string, Room>();
 const PUB_STYLE: Record<string, [string, string]> = { lobby: ['stone', 'bone'], cafe: ['checkboard', 'classyred'], rooftop: ['stone', 'sea'], plaza: ['stone', 'beigeyellow'] };
 for (const r of data.public) { const room = new Room('pub:' + r.id, r.name, data.layouts[r.layout]); [room.floor, room.wall] = PUB_STYLE[r.id] ?? ['stone', 'bone']; rooms.set('pub:' + r.id, room); }
-function guestRoom(userName: string): Room {
-  const id = 'own:' + userName.toLowerCase();
-  let r = rooms.get(id);
-  if (!r) { r = new Room(id, userName + "'s room", data.layouts['model_a']); rooms.set(id, r); }
-  return r;
+const FREE_LAYOUTS = Object.values(data.layouts).filter(l => l.access === 'free' && l.id !== 'model_s');
+const LAYOUT_LIST = FREE_LAYOUTS.map(l => ({ id: l.id, name: l.name, max: l.maxUsers, tiles: l.map.join('').replace(/x/g, '').length, map: l.map, door: l.door }));
+const FLOORS = ['stone', 'checkboard', 'whitecheck', 'woodlight', 'woodbright', 'concrete', 'natural', 'classyblue', 'classyred'];
+const WALLS = ['whitecheck', 'bone', 'stone', 'beigeyellow', 'sea', 'classyred', 'classyblue', 'woodlight', 'brick'];
+function loadGuestRoom(r: any) {
+  const lay = data.layouts[r.layout]; if (!lay) return null;
+  const room = new Room('g:' + r.id, r.name, lay);
+  room.ownerId = r.owner_id; room.owner = r.owner; room.desc = r.description ?? '';
+  room.floor = r.floor ?? 'stone'; room.wall = r.wall ?? 'whitecheck';
+  rooms.set(room.id, room); return room;
 }
-function roomList() {
+for (const r of qRoomsAll.all() as any[]) loadGuestRoom(r);
+function createRoom(owner: { id: number; name: string }, name: string, desc: string, layout: string): Room | string {
+  const lay = FREE_LAYOUTS.find(l => l.id === layout); if (!lay) return 'Unknown layout';
+  name = name.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 30);
+  if (name.length < 3) return 'Room name must be at least 3 characters';
+  if ((qRoomCount.get(owner.id) as any).c >= 10) return 'You can have at most 10 rooms';
+  const res = qRoomInsert.run(owner.id, name, desc.replace(/[\u0000-\u001f]/g, '').slice(0, 100), layout, 'stone', 'whitecheck', Date.now());
+  return loadGuestRoom({ id: res.lastInsertRowid, owner_id: owner.id, owner: owner.name, name, description: desc, layout, floor: 'stone', wall: 'whitecheck' })!;
+}
+function roomList(forId?: number) {
   return {
     t: 'rooms',
-    rooms: [...rooms.values()].filter(r => r.id.startsWith('pub:') || r.players.size > 0).map(r => ({
+    rooms: [...rooms.values()].map(r => ({
       id: r.id, name: r.name, users: r.players.size, max: r.layout.maxUsers, pub: r.id.startsWith('pub:'),
-      desc: data.public.find(p => 'pub:' + p.id === r.id)?.description ?? '',
+      owner: r.owner, mine: !!forId && r.ownerId === forId, desc: r.desc || (data.public.find(p => 'pub:' + p.id === r.id)?.description ?? ''),
     })),
   };
 }
+const validLook = (l: any): l is Look => l && (l.sex === 'm' || l.sex === 'f') && [['body', 4], ['hair', 10], ['top', 15], ['bottom', 10], ['shoes', 10]].every(([k, n]) => Number.isInteger(l[k as string]) && l[k as string] >= 1 && l[k as string] <= (n as number));
 
 function leave(p: Player) {
   const r = p.room; if (!r) return;
@@ -88,7 +108,7 @@ function leave(p: Player) {
   r.send({ t: 'leave', id: p.id });
 }
 function join(p: Player, id: string) {
-  const r = id === 'own' ? guestRoom(p.name) : rooms.get(id);
+  const r = rooms.get(id);
   if (!r) return;
   if (r.players.size >= r.layout.maxUsers) return p.ws.send(JSON.stringify({ t: 'error', msg: 'Room is full' }));
   leave(p);
@@ -237,13 +257,24 @@ wss.on('connection', (ws, req) => {
       online.set(me.id, me);
       log(`[login] ${me.name}${steam ? ' (steam)' : ' (guest)'}`);
       send({ t: 'welcome', id: me.id, name: me.name, token: steam ? null : row.token, look: me.look, steam: !!steam });
-      send(roomList());
+      send({ t: 'layouts', layouts: LAYOUT_LIST });
+      if (!(qRoomCount.get(me.id) as any).c) createRoom(me, me.name + "'s room", '', 'model_a');
+      send(roomList(me.id));
       join(me, 'pub:lobby');
       return;
     }
     if (!me) return;
-    if (m.t === 'rooms') send(roomList());
-    else if (m.t === 'join' && typeof m.room === 'string') { join(me, m.room); log(`[room] ${me.name} -> ${me.room?.name}`); }
+    if (m.t === 'rooms') send(roomList(me.id));
+    else if (m.t === 'create_room') {
+      const r = createRoom(me, String(m.name ?? ''), String(m.desc ?? ''), String(m.layout ?? ''));
+      if (typeof r === 'string') return send({ t: 'error', msg: r });
+      log(`[room] ${me.name} created "${r.name}" (${r.layout.id})`); join(me, r.id);
+    } else if (m.t === 'look') {
+      if (!validLook(m.look)) return;
+      const l = m.look as Look; me.look = { sex: l.sex, body: l.body, hair: l.hair, top: l.top, bottom: l.bottom, shoes: l.shoes };
+      qSetLook.run(JSON.stringify(me.look), me.id);
+      me.room?.send({ t: 'look', id: me.id, look: me.look });
+    } else if (m.t === 'join' && typeof m.room === 'string') { join(me, m.room); log(`[room] ${me.name} -> ${me.room?.name}`); }
     else if (m.t === 'walk' && me.room) {
       const x = Number(m.x) | 0, y = Number(m.y) | 0;
       const blocked = new Set<string>();

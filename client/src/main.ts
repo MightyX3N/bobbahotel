@@ -1,12 +1,11 @@
 import { Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
+import { initUI, hideUI, uiHandle } from './ui';
+import { FW, FH, AX, AY, ROW, layerPaths, type Look } from './avatar';
 
 const params = new URLSearchParams(location.search);
 const WS_URL = params.get('server') ?? (import.meta.env.VITE_WS as string | undefined) ?? (location.hostname === 'localhost' ? 'ws://localhost:8080' : `wss://${location.host}/ws`);
 const TW = 64, TH = 32, WALL_H = 110;
 const HTTP = WS_URL.replace(/^ws/, 'http').replace(/\/ws$/, '');
-const FW = 64, FH = 80, AX = 32, AY = 75; // avatar frame size and where the feet are
-const ROW = [2, 2, 1, 1, 0, 0, 3, 3]; // facing (0=N .. 7=NW, clockwise) -> sheet row (0 down-left, 1 down-right, 2 up-right, 3 up-left)
-type Look = { sex: string; body: number; hair: number; top: number; bottom: number; shoes: number };
 const texCache = new Map<string, Promise<Texture | null>>();
 const loadTex = (path: string) => {
   let p = texCache.get(path);
@@ -18,17 +17,6 @@ function frameTex(path: string, base: Texture, row: number, frame: number) {
   const k = path + row + ',' + frame; let t = frameCache.get(k);
   if (!t) { t = new Texture({ source: base.source, frame: new Rectangle(frame * FW, row * FH, FW, FH) }); frameCache.set(k, t); }
   return t;
-}
-const two = (n: number) => String(n).padStart(2, '0');
-/** Layer pictures for one animation, bottom to top (tops 13-15 go over the hair). */
-function layerPaths(l: Look, anim: string) {
-  const f = (part: string, n: number, suf = '') => `cozy/${l.sex}/${anim}/${part}_${two(n)}${suf}.png`;
-  const list = [f('body', l.body), f('shoes', l.shoes), f('bottom', l.bottom)];
-  const high = l.top >= 13;
-  if (high) list.push(f('hair', l.hair, '_tucked'));
-  list.push(f('top', l.top));
-  if (!high) list.push(f('hair', l.hair));
-  return list;
 }
 
 type U = { id: number; name: string; look: Look; x: number; y: number; z: number; dir: number };
@@ -55,31 +43,24 @@ function connect(name: string) {
   const token = localStorage.getItem('bh_token:' + name.toLowerCase()) ?? undefined;
   ws.onopen = () => ws.send(JSON.stringify({ t: 'login', name, token }));
   ws.onerror = () => ($('err').textContent = 'Cannot reach the hotel server');
-  ws.onclose = () => { $('login').classList.remove('hidden'); if (!$('err').textContent) $('err').textContent = 'Disconnected from the hotel'; ['title', 'rooms', 'chat'].forEach(i => $(i).classList.add('hidden')); };
+  ws.onclose = () => { hideUI(); $('login').classList.remove('hidden'); if (!$('err').textContent) $('err').textContent = 'Disconnected from the hotel'; };
   ws.onmessage = e => handle(JSON.parse(e.data));
 }
 const send = (o: object) => ws.readyState === 1 && ws.send(JSON.stringify(o));
 
 function handle(m: any) {
+  uiHandle(m);
   switch (m.t) {
     case 'error': case 'need_name': $('err').textContent = m.msg; break;
     case 'kicked': $('err').textContent = m.msg; break;
-    case 'announce': { const t = $('toast'); t.textContent = m.text; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 8000); break; }
     case 'welcome':
       if (m.token) localStorage.setItem('bh_token:' + m.name.toLowerCase(), m.token);
       myName = m.name; meId = m.id;
-      $('login').classList.add('hidden'); ['title', 'rooms', 'chat'].forEach(i => $(i).classList.remove('hidden'));
+      $('login').classList.add('hidden');
+      initUI({ http: HTTP, send, me: { id: m.id, name: m.name, look: m.look, steam: !!m.steam }, logout: () => { if (m.steam) location.href = HTTP + '/auth/logout?next=/'; else { ws.close(); } } });
       break;
-    case 'rooms': {
-      const el = $('rooms'); el.innerHTML = '<b>Rooms</b>';
-      for (const r of m.rooms) {
-        const d = document.createElement('div'); d.textContent = `${r.name} (${r.users}/${r.max})`; d.title = r.desc;
-        d.onclick = () => send({ t: 'join', room: r.id }); el.appendChild(d);
-      }
-      const own = document.createElement('div'); own.textContent = 'My room'; own.onclick = () => send({ t: 'join', room: 'own' }); el.appendChild(own);
-      break;
-    }
     case 'room': enterRoom(m); break;
+    case 'look': { const v = views.get(m.id); if (v) { v.u.look = m.look; v.anim = ''; v.key = undefined; } break; }
     case 'join': addUser(m.user); break;
     case 'leave': { const v = views.get(m.id); if (v) { world.removeChild(v.g); views.delete(m.id); } break; }
     case 'step': {
@@ -101,7 +82,6 @@ async function enterRoom(m: any) {
   views.clear(); curRoom = m.id;
   style = { floor: m.floor, wall: m.wall };
   grid = m.map.map((r: string) => [...r].map(c => (c === 'x' ? -1 : parseInt(c, 36))));
-  $('title').textContent = m.name;
   await drawFloor();
   for (const u of m.users) addUser(u);
   // centre camera on the room
@@ -219,8 +199,4 @@ fetch(HTTP + '/api/me', { credentials: 'include' }).then(r => r.json()).then(me 
 $('steam').onclick = () => { location.href = HTTP + '/auth/steam?next=' + encodeURIComponent(location.pathname); };
 $('go').onclick = () => { $('err').textContent = ''; connect(($('name') as HTMLInputElement).value.trim()); };
 ($('name') as HTMLInputElement).onkeydown = e => { if (e.key === 'Enter') $('go').click(); };
-($('say') as HTMLInputElement).onkeydown = e => {
-  if (e.key !== 'Enter') return; const i = e.target as HTMLInputElement;
-  if (i.value.trim()) send({ t: 'chat', text: i.value }); i.value = '';
-};
 (window as any).__bh = { views, send };
