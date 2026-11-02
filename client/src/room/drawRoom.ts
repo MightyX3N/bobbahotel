@@ -3,7 +3,8 @@
 //
 // Follows how Habbo (and Nitro's RoomPlaneParser, GPL-3) builds rooms:
 // - The door tile sticks out of the left wall. Walls are worked out as if it weren't there, so the
-//   wall passes behind it, and the wall in front of it gets a door-shaped hole.
+//   wall passes in front of it, with a door-shaped hole you see the door tile's floor through.
+//   Walls are background: avatars are always drawn on top of them, also in the doorway.
 // - Walls stand on the back edges of the room only, are a quarter tile thick, reach from just
 //   below the floor (floor thickness) up to a fixed top 3.6 steps above the highest floor.
 // - Everything is drawn tile by tile from back to front, each tile's walls together with the
@@ -90,7 +91,6 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
         const tb: Point = [pb[0], wallTop(x, b)];
         if (open) {
           quad(down(pb, -DOOR_HEIGHT), down(pa, -DOOR_HEIGHT), ta, tb, COLORS.wallLeft);
-          quad(pb, down(pb, FLOOR_THICKNESS), down(pa, FLOOR_THICKNESS), pa, COLORS.wallLeft);
         } else {
           quad(down(pb, FLOOR_THICKNESS), down(pa, FLOOR_THICKNESS), ta, tb, COLORS.wallLeft);
         }
@@ -118,8 +118,20 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
       quad(tBase, rBase, rTop, tTop, COLORS.wallRight);
       quad(tTop, rTop, out(rTop, T), out(tTop, T), COLORS.wallTop);
       if (!hasRightWall(x + 1, y)) quad(rBase, rTop, out(rTop, T), out(rBase, T), COLORS.wallEndRight);
-      // A right wall that starts here without a left wall next to it gets an end piece on its back side too.
-      if (!leftWall && !hasRightWall(x - 1, y)) quad(tBase, tTop, out(tTop, T), out(tBase, T), COLORS.wallEndLeft);
+      // The outline stepped forward here (like the Lobby's back-right notch): the short wall
+      // piece between the two walls faces away from the camera, so, like Habbo, only its top
+      // edge is drawn, joining the two walls' top edges into one outline.
+      if (!leftWall && !hasRightWall(x - 1, y)) {
+        let j = 0;
+        while (j < y && !solid(x - 1, j)) j++;
+        if (j < y && hasRightWall(x - 1, j)) {
+          const a: Point = [corner(x, j, 0)[0], wallTop(x, j)];
+          const b: Point = [corner(x, y, 0)[0], wallTop(x, y)];
+          // This piece runs like a left wall but its outside is towards +x, so its top leans that way.
+          const side = (p: Point): Point => [p[0] + T, p[1] + T / 2];
+          quad(a, b, side(b), side(a), COLORS.wallTop);
+        }
+      }
     }
 
     // Back corner where a left and a right wall meet: fill the gap between the two top strips.
@@ -156,15 +168,6 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
 /** Screen point of grid corner (gx, gy) at height z (fractions allowed). */
 export function corner(gx: number, gy: number, z: number): Point {
   return [(gx - gy) * (TILE_W / 2), (gx + gy) * (TILE_H / 2) - z * STEP_PX];
-}
-
-/** The door hole's outline (for clipping avatars that are still behind the wall). */
-export function doorHolePolygon(grid: Grid, door: [number, number]): number[] {
-  const [dx, dy] = door;
-  const z = heightAt(grid, dx + 1, dy);
-  const a = corner(dx + 1, dy + 0.5, z);
-  const b = corner(dx + 1, dy + 1.5, z);
-  return [a[0], a[1] + 12, b[0], b[1] + 12, b[0], b[1] - DOOR_HEIGHT, a[0], a[1] - DOOR_HEIGHT];
 }
 
 /** Outline shown on the tile under the mouse. */
