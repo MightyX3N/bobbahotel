@@ -244,6 +244,12 @@ let ghost: { kind: 'place' | 'move'; id: number; furni: string; flip: number; sp
 const ghostImg = document.createElement('img');
 ghostImg.style.cssText = 'position:fixed;z-index:50;pointer-events:none;display:none;image-rendering:pixelated;opacity:.85;transform-origin:50% 50%';
 document.body.append(ghostImg);
+let ghostSize: [number, number] = [0, 0], clientPtr: [number, number] | null = null;
+/** The piece follows the mouse smoothly; only the coloured tiles under it snap to the grid. */
+function moveGhostImg() {
+  if (!clientPtr) return;
+  ghostImg.style.left = clientPtr[0] - ghostSize[0] / 2 + 'px'; ghostImg.style.top = clientPtr[1] - ghostSize[1] * 0.75 + 'px';
+}
 const ghostG = new Graphics(); ghostG.zIndex = 99998; world.addChild(ghostG);
 function select(iv: IV | null) {
   for (const o of itemViews.values()) o.sp.tint = 0xffffff;
@@ -276,7 +282,7 @@ function updateGhost() {
   const tw = ghost.sp.texture.width, th = ghost.sp.texture.height, k = Math.abs(ghost.sp.scale.y), r = app.canvas.getBoundingClientRect();
   if (tw > 1) {
     ghostImg.style.display = 'block'; ghostImg.style.width = tw * k + 'px'; ghostImg.style.height = th * k + 'px';
-    ghostImg.style.left = r.left + world.x + (flip ? ghost.sp.x - tw * k : ghost.sp.x) + 'px'; ghostImg.style.top = r.top + world.y + ghost.sp.y + 'px';
+    ghostSize = [tw * k, th * k]; moveGhostImg();
     ghostImg.style.transform = flip ? 'scaleX(-1)' : ''; ghostImg.style.filter = `drop-shadow(0 0 3px ${ok ? '#4f4' : '#f44'})`;
   }
   ghostG.clear(); const [w, dd] = size(d, flip);
@@ -336,7 +342,7 @@ function tileAt(px: number, py: number): [number, number] | null {
 window.addEventListener('pointermove', e => {
   const r = app.canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
   const overWindow = (e.target as HTMLElement)?.closest?.('.win, #toolbar, #bar, #itemcard');
-  ptr = [px, py];
+  ptr = [px, py]; clientPtr = [e.clientX, e.clientY]; if (ghost) moveGhostImg();
   const t = ghost ? tileFree(px, py) : overWindow ? null : tileAt(px, py);
   if (t) lastTile = t;
   if (ghost) { if (t) { const [gx, gy] = centred(t); if (gx !== ghost.x || gy !== ghost.y) { ghost.x = gx; ghost.y = gy; updateGhost(); } } hover.clear(); return; }
