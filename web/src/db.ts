@@ -56,9 +56,9 @@ export async function createAccount(
     let id: number;
     try {
       const [res] = await conn.query<mysql.ResultSetHeader>(
-        `INSERT INTO users (username, real_name, password, mail, account_created, last_login, motto, look, gender, \`rank\`, credits, pixels, points, ip_register, ip_current)
-         VALUES (?, '', '', NULL, ?, 0, '', ?, ?, ?, ?, 0, 0, ?, ?)`,
-        [input.name, now, input.look, input.gender, input.rank, STARTING.credits, input.ip, input.ip],
+        `INSERT INTO users (username, real_name, password, mail, account_created, last_login, motto, look, gender, \`rank\`, credits, pixels, points, ip_register, ip_current, home_room)
+         VALUES (?, '', '', NULL, ?, 0, '', ?, ?, ?, ?, 0, 0, ?, ?, ?)`,
+        [input.name, now, input.look, input.gender, input.rank, STARTING.credits, input.ip, input.ip, WELCOME_ROOM],
       );
       id = res.insertId;
     } catch (e) {
@@ -78,6 +78,9 @@ export async function createAccount(
     conn.release();
   }
 }
+
+/** The public room new players go into first (sql/lobby.sql). */
+export const WELCOME_ROOM = 100;
 
 /** What a new player starts with. */
 export const STARTING = { credits: 1000, duckets: 200, diamonds: 0 };

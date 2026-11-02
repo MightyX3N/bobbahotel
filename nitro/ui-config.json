@@ -128,77 +128,77 @@
    "name": "v"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 540,
    "name": "t"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 512,
    "name": "w"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 396,
    "name": "x"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 440,
    "name": "y"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 456,
    "name": "z"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 208,
    "name": "0"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 1009,
    "name": "1"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 1044,
    "name": "2"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 183,
    "name": "3"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 254,
    "name": "4"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 1024,
    "name": "5"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 801,
    "name": "6"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 354,
    "name": "7"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 888,
    "name": "8"
   },
   {
-   "clubLevel": 2,
+   "clubLevel": 1,
    "tileSize": 926,
    "name": "9"
   }
