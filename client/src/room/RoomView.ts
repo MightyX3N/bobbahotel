@@ -210,9 +210,11 @@ export class RoomView {
   }
 
   private pointerUp(e: FederatedPointerEvent): void {
-    const wasDrag = this.drag?.moved;
+    // Pixi hears pointer-ups anywhere on the page; only a click that also started on the room
+    // (not on a window above it) walks.
+    const started = this.drag;
     this.drag = null;
-    if (wasDrag || e.button !== 0) return;
+    if (!started || started.moved || e.button !== 0) return;
     const t = this.tileAt(e.global.x, e.global.y);
     if (t && isFloor(this.grid, t[0], t[1])) this.onWalk(t[0], t[1]);
   }

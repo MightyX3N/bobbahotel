@@ -16,10 +16,11 @@ A step is ticked only after it has been played on the live server. One step at a
 - [x] Toolbar (with the chat input)
 - [x] Navigator: public rooms, all rooms, my rooms, search
 - [x] Create a room from the Habbo room layouts; move between rooms
+- [x] Room drawing from Nitro's room code: walls, stairs, doorway; zoom
 
 ## 4. Layouts and Bobba Club
-- [ ] In-game layout editor (draw floor, heights, door), save new layouts
-- [ ] Bobba Club: Club-only layouts and other extras, admin can grant Club time
+- [x] In-game layout editor (draw floor, heights, door), save new layouts; Club members reshape their own rooms
+- [x] Bobba Club: Club-only layouts (incl. all of Habbo's standard layouts) and other extras, admin can grant Club time (`:club`)
 - [ ] Donations give Club time based on the amount (donation service tells the server automatically)
 
 ## 5. Hotel systems, in order
