@@ -242,7 +242,7 @@ function itemAt(px: number, py: number): IV | null {
 // ---- selecting, placing, moving ---------------------------------------------------
 let ghost: { kind: 'place' | 'move'; id: number; furni: string; flip: number; sp: Sprite; x: number; y: number } | null = null;
 const ghostImg = document.createElement('img');
-ghostImg.style.cssText = 'position:fixed;z-index:50;pointer-events:none;display:none;image-rendering:pixelated;opacity:.85;transform-origin:50% 85%';
+ghostImg.style.cssText = 'position:fixed;z-index:50;pointer-events:none;display:none;image-rendering:pixelated;opacity:.85;transform-origin:50% 50%';
 document.body.append(ghostImg);
 const ghostG = new Graphics(); ghostG.zIndex = 99998; world.addChild(ghostG);
 function select(iv: IV | null) {
@@ -271,7 +271,14 @@ function ghostValid() {
 function updateGhost() {
   if (!ghost) return; const d = S.defs[ghost.furni], ok = ghostValid(), { x, y, flip } = ghost;
   const base = grid[y]?.[x] ?? 0, z = ok ? (standHeight([...itemViews.values()].map(v => v.it), S.defs, d, x, y, flip, ghost.kind === 'move' ? ghost.id : -1) ?? 0) : 0;
-  placeSprite(ghost.sp, d, x, y, flip, base + z); ghost.sp.zIndex = 99999; ghost.sp.tint = ok ? 0xbbffbb : 0xff8888;
+  placeSprite(ghost.sp, d, x, y, flip, base + z); ghost.sp.visible = false;
+  // the piece itself is a page element so it shows above the windows too
+  const tw = ghost.sp.texture.width, th = ghost.sp.texture.height, k = Math.abs(ghost.sp.scale.y), r = app.canvas.getBoundingClientRect();
+  if (tw > 1) {
+    ghostImg.style.display = 'block'; ghostImg.style.width = tw * k + 'px'; ghostImg.style.height = th * k + 'px';
+    ghostImg.style.left = r.left + world.x + (flip ? ghost.sp.x - tw * k : ghost.sp.x) + 'px'; ghostImg.style.top = r.top + world.y + ghost.sp.y + 'px';
+    ghostImg.style.transform = flip ? 'scaleX(-1)' : ''; ghostImg.style.filter = `drop-shadow(0 0 3px ${ok ? '#4f4' : '#f44'})`;
+  }
   ghostG.clear(); const [w, dd] = size(d, flip);
   for (let i = 0; i < w; i++) for (let j = 0; j < dd; j++) { const p = iso(x + i, y + j, (grid[y + j]?.[x + i] ?? base) + z); ghostG.poly([p.x, p.y - TH / 2, p.x + TW / 2, p.y, p.x, p.y + TH / 2, p.x - TW / 2, p.y]).fill({ color: ok ? 0x44ff44 : 0xff4444, alpha: 0.35 }); }
 }
@@ -330,11 +337,6 @@ window.addEventListener('pointermove', e => {
   const r = app.canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
   const overWindow = (e.target as HTMLElement)?.closest?.('.win, #toolbar, #bar, #itemcard');
   ptr = [px, py];
-  if (ghost) { // over a window the room is hidden, so the piece floats with the mouse above it
-    const d = S.defs[ghost.furni]; ghostImg.style.display = overWindow ? 'block' : 'none';
-    ghostImg.style.left = e.clientX - (d.art?.fx ?? 20) + 'px'; ghostImg.style.top = e.clientY - (d.art?.fy ?? 40) + 'px';
-    ghostImg.style.transform = ghost.flip ? 'scaleX(-1)' : '';
-  }
   const t = ghost ? tileFree(px, py) : overWindow ? null : tileAt(px, py);
   if (t) lastTile = t;
   if (ghost) { if (t) { const [gx, gy] = centred(t); if (gx !== ghost.x || gy !== ghost.y) { ghost.x = gx; ghost.y = gy; updateGhost(); } } hover.clear(); return; }
