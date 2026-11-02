@@ -1,7 +1,7 @@
 import { Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 
 const params = new URLSearchParams(location.search);
-const WS_URL = params.get('server') ?? (import.meta.env.VITE_WS as string | undefined) ?? 'ws://localhost:8080';
+const WS_URL = params.get('server') ?? (import.meta.env.VITE_WS as string | undefined) ?? (location.hostname === 'localhost' ? 'ws://localhost:8080' : 'wss://ws.playbobba.com');
 const TW = 64, TH = 32, WALL_H = 110;
 const HTTP = WS_URL.replace(/^ws/, 'http');
 const FW = 64, FH = 80, AX = 32, AY = 75; // avatar frame size and where the feet are
