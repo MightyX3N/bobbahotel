@@ -29,6 +29,8 @@ const DEGREES = { 0: 0, 2: 90, 4: 180, 6: 270 };
 /** How high you sit on a seat and lie on a bed (height steps), see the avatar figure's sit/lay pictures. */
 const SIT_HEIGHT = 0.6;
 const LAY_HEIGHT = 0.6;
+/** How high wall shelves hang (in tiles of height); furni on them stand at this height. */
+const SHELF_HEIGHT = 1.5;
 
 // ---- measuring ----
 
@@ -224,7 +226,31 @@ for (const item of catalogue) {
     visDirs[dir] = {};
   };
 
-  if (wall) {
+  if (item.kind === 'shelf') {
+    // A wall shelf that holds furni (Habbo's way): a floor item on the tiles along a wall, drawn
+    // SHELF_HEIGHT up against the wall; furni put on its tiles stand on the board. Direction 4 is
+    // along the back wall (x), 2 along the left wall (y).
+    const [key] = own;
+    const first = load(join(spritesDir, 'furni', `${item.pics[key][0][0]}.png`));
+    const nitroDir = forBackWall(first) ? 4 : 2;
+    const len = item.len ?? 1;
+    addDirection(nitroDir, item.pics[key], (img) => {
+      const b = box(img) ?? [0, 0, img.width, img.height];
+      const drawn = crop(img, b);
+      // The board's middle: the middle of the picture, a little up (the board's front edge).
+      const bx = drawn.width / 2, by = drawn.height / 2 - 2;
+      // Where it goes from the middle of the first tile: half-way along the shelf, 0.3 tile
+      // towards the wall, SHELF_HEIGHT up.
+      const along = (len - 1) / 2;
+      const ox = nitroDir === 4 ? 32 * along + 9.6 : -32 * along - 9.6;
+      const oy = 16 * along - 4.8 - 32 * SHELF_HEIGHT;
+      return { img: drawn, x: Math.round(bx - ox), y: Math.round(by - oy) };
+    });
+    mirror(nitroDir === 4 ? 2 : 4, nitroDir);
+    size = [len, 1];
+    height = SHELF_HEIGHT;
+    logicZ = SHELF_HEIGHT + 0.2;
+  } else if (wall) {
     // Our own picture is drawn for one wall: Nitro's direction 4 is the right-hand (back) wall,
     // 2 the left wall. The other wall gets it mirrored.
     const [key] = own;
