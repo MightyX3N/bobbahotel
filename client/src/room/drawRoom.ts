@@ -137,7 +137,16 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     for (let k = 0; k < count; k++) {
       const a = add(loc, step, k);
       const b = add(a, step);
-      const corners = [a, b, add(b, side), add(a, side)].map(lowerTop);
+      let corners = [a, b, add(b, side), add(a, side)].map(lowerTop);
+      // Nitro starts a whole wall at the lowest floor along it. Where the floor next to a piece is
+      // higher (the Lobby's raised back), the piece starts on that floor, so it never covers it.
+      const sameX = corners.every((v) => Math.abs(v.x - corners[0]!.x) < 1e-6);
+      const sameY = corners.every((v) => Math.abs(v.y - corners[0]!.y) < 1e-6);
+      if (sameX !== sameY) {
+        const mid = (k: 'x' | 'y') => corners.reduce((sum, v) => sum + v[k], 0) / 4;
+        const floorZ = sameX ? heightAt(grid, Math.round(corners[0]!.x), Math.floor(mid('y'))) : heightAt(grid, Math.floor(mid('x')), Math.round(corners[0]!.y));
+        if (floorZ > 0) corners = corners.map((v) => (v.z < floorZ ? { ...v, z: floorZ } : v));
+      }
       const depth = corners.reduce((s, v) => s + v.x + v.y, 0) / 4;
       // The door opening: the left-wall face in front of the door tile is cut out below the door height.
       const midY = corners.reduce((s, v) => s + v.y, 0) / 4;
