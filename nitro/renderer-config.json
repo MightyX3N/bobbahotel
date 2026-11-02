@@ -527,6 +527,9 @@
    }
   ]
  },
- "pet.types": [],
+ "pet.types": [
+  "dog",
+  "cat"
+ ],
  "preload.assets.urls": ["${asset.url}/bundled/generic/avatar_additions.nitro", "${asset.url}/bundled/generic/floor_editor.nitro"]
 }

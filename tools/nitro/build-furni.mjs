@@ -16,11 +16,45 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { alignExact, blank, blit, box, crop, encode, half, load, transformed } from './png.mjs';
 import { writeBundle } from './bundle.mjs';
+import { derivedFurni } from './packs.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const out = process.argv[2] ?? join(root, 'build', 'nitro');
 const spritesDir = process.argv[3] ?? join(root, 'sprites');
-const catalogue = JSON.parse(readFileSync(join(root, 'content', 'furni', 'catalogue.json'), 'utf8')).items;
+const allFurni = JSON.parse(readFileSync(join(root, 'content', 'furni', 'catalogue.json'), 'utf8')).items;
+
+// Pictures: a name is a file in sprites/furni, "<pack>/<name>" a file in another pack's folder, or
+// a picture made from a pack by packs.mjs (cut from a sheet, ...).
+const derived = derivedFurni(spritesDir);
+// "<name>@1.5" is the picture enlarged that much (packs drawn smaller than ours).
+const picFile = (f) => join(spritesDir, f.includes('/') ? '' : 'furni', `${f.split('@')[0]}.png`);
+const pics = new Map();
+const pic = (f) => {
+  if (!pics.has(f)) {
+    const [name, scale] = f.split('@');
+    const img = derived[name] ?? load(picFile(name));
+    pics.set(f, scale ? enlarge(img, Number(scale)) : img);
+  }
+  return pics.get(f);
+};
+const hasPic = (f) => !!derived[f.split('@')[0]] || existsSync(picFile(f));
+/** A picture made `k` times bigger, nearest pixel (whole picture, so every state grows the same). */
+function enlarge(img, k) {
+  const out = blank(Math.round(img.width * k), Math.round(img.height * k));
+  for (let y = 0; y < out.height; y++) {
+    for (let x = 0; x < out.width; x++) {
+      const sx = Math.min(img.width - 1, Math.floor(x / k)), sy = Math.min(img.height - 1, Math.floor(y / k));
+      img.data.copy(out.data, (y * out.width + x) * 4, (sy * img.width + sx) * 4, (sy * img.width + sx) * 4 + 4);
+    }
+  }
+  return out;
+}
+// Furni whose pack isn't in the sprites folder (yet) are left out.
+const catalogue = allFurni.filter((item) => {
+  const missing = Object.values(item.pics).flat(2).filter((f) => !hasPic(f));
+  if (missing.length) console.warn(`  ${item.id}: picture ${missing[0]} is missing, left out`);
+  return !missing.length;
+});
 
 for (const d of ['bundled/furniture', 'dcr/hof_furni/icons', 'gamedata', 'sql']) mkdirSync(join(out, d), { recursive: true });
 
@@ -58,7 +92,7 @@ function measureFloor(img) {
  * Tiles [along x, along y] (for this picture's direction), scale or stretch to fit them, the
  * footprint's middle in the picture, and the height in height steps.
  */
-function fitFloor(img, flat) {
+function fitFloor(img, flat, keepScale = false) {
   const m = measureFloor(img);
   if (!m) return { size: [1, 1], m: [1, 0, 0, 1], at: [img.width / 2, img.height], height: 0 };
   const w = Math.max(0, (m.fx - m.left) / 32);
@@ -69,6 +103,8 @@ function fitFloor(img, flat) {
   if (flat) {
     size = [Math.max(1, Math.round(w)), Math.max(1, Math.round(l))];
     stretch = [size[0] / Math.max(0.2, w), size[1] / Math.max(0.2, l)];
+  } else if (keepScale) {
+    size = [Math.max(1, Math.round(w)), Math.max(1, Math.round(l))];
   } else if (w + l >= 1.2) {
     let best = null;
     for (let W = 1; W <= 8; W++) {
@@ -129,7 +165,7 @@ function forBackWall(img) {
  * Returns { pictures: [[img]] per state, offsets of each in the first picture's pixels }.
  */
 function lineUp(states) {
-  const imgs = states.map((frames) => frames.map((f) => load(join(spritesDir, 'furni', `${f}.png`))));
+  const imgs = states.map((frames) => frames.map((f) => pic(f)));
   const ref = imgs[0][0];
   const refSolid = box(ref, 200) ?? [0, 0, ref.width, ref.height];
   const offsets = imgs.map((frames) =>
@@ -224,7 +260,7 @@ for (const item of catalogue) {
         return frameId++;
       });
       if (ids.length > 1) animated = true;
-      const anim = (animations[s] ??= { layers: { 0: { frameSequences: { 0: { frames: {} } } } } });
+      const anim = (animations[item.stateIds?.[s] ?? s] ??= { layers: { 0: { frameSequences: { 0: { frames: {} } } } } });
       const layer = anim.layers[0];
       if (ids.length > 1) {
         layer.loopCount = item.once ? 1 : 0;
@@ -250,7 +286,7 @@ for (const item of catalogue) {
     // SHELF_HEIGHT up against the wall; furni put on its tiles stand on the board. Direction 4 is
     // along the back wall (x), 2 along the left wall (y).
     const [key] = own;
-    const first = load(join(spritesDir, 'furni', `${item.pics[key][0][0]}.png`));
+    const first = pic(item.pics[key][0][0]);
     const nitroDir = forBackWall(first) ? 4 : 2;
     const len = item.len ?? 1;
     let mid = null;
@@ -278,7 +314,7 @@ for (const item of catalogue) {
     // Our own picture is drawn for one wall: Nitro's direction 4 is the right-hand (back) wall,
     // 2 the left wall. The other wall gets it mirrored.
     const [key] = own;
-    const first = load(join(spritesDir, 'furni', `${item.pics[key][0][0]}.png`));
+    const first = pic(item.pics[key][0][0]);
     const nitroDir = forBackWall(first) ? 4 : 2;
     const depth = item.depth ?? 0;
     let w = 0, h = 0, mid = null;
@@ -302,7 +338,7 @@ for (const item of catalogue) {
   } else {
     // Each direction with its own pictures is measured on its first picture.
     const fits = {};
-    for (const d of own) fits[d] = fitFloor(load(join(spritesDir, 'furni', `${item.pics[d][0][0]}.png`)), !!item.walk);
+    for (const d of own) fits[d] = fitFloor(pic(item.pics[d][0][0]), !!item.walk, !!item.keepScale);
     const main = fits[4] ? 4 : fits[2] ? 2 : own[0];
     const f = fits[main];
     const [a, b] = f.size;
@@ -384,12 +420,12 @@ for (const item of catalogue) {
   const esc = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   sql.push(
     `(${item.sprite},${item.sprite},'${esc(item.name)}','${id}','${wall ? 'i' : 's'}',${wall ? 0 : size[0]},${wall ? 0 : size[1]},${stackHeight.toFixed(2)},` +
-      `${item.stack && !wall ? 1 : 0},${item.sit ? 1 : 0},${item.lay ? 1 : 0},${item.walk ? 1 : 0},'${esc(item.interaction ?? 'default')}',${stateCount})`,
+      `${item.stack && !wall ? 1 : 0},${item.sit ? 1 : 0},${item.lay ? 1 : 0},${item.walk ? 1 : 0},'${esc(item.interaction ?? 'default')}',${item.modes ?? stateCount})`,
   );
   item.price = price(item, wall ? [1, 1] : size, height);
   // Hidden furni (the gift parcel) aren't sold.
   if (!item.hidden) {
-    const page = wall && pageOf(item.name) === 'Other' ? 'Walls & Windows' : pageOf(item.name);
+    const page = item.page ?? (wall && pageOf(item.name) === 'Other' ? 'Walls & Windows' : pageOf(item.name));
     (pages.get(page) ?? pages.set(page, []).get(page)).push(item);
   }
 }
@@ -422,7 +458,7 @@ const pageIcon = (pid, picture) => {
   writeFileSync(join(out, 'c_images', 'catalogue', `icon_${pid}.png`), encode(img));
 };
 // The furni each page shows as its icon (the page's first one when it isn't listed here).
-const ICON_FURNI = { Office: 'bobba_office_main_chair', 'Living Room': 'bobba_sofa_1', Bedroom: 'bobba_bed_g_4', Kitchen: 'bobba_fridge', Bathroom: 'bobba_wc_front_1', Lighting: 'bobba_lamp_10', Plants: 'bobba_plant_2', Rugs: 'bobba_carpet_modern', 'Walls & Windows': 'bobba_window_11', Decoration: 'bobba_wall_clock' };
+const ICON_FURNI = { City: 'bobba_city_street_light_1', Cars: 'bobba_car_taxi', Casino: 'bobba_casino_high_limit_slot_machine', 'Pet Supplies': 'bobba_pet_foodbowl', Office: 'bobba_office_main_chair', 'Living Room': 'bobba_sofa_1', Bedroom: 'bobba_bed_g_4', Kitchen: 'bobba_fridge', Bathroom: 'bobba_wc_front_1', Lighting: 'bobba_lamp_10', Plants: 'bobba_plant_2', Rugs: 'bobba_carpet_modern', 'Walls & Windows': 'bobba_window_11', Decoration: 'bobba_wall_clock' };
 mkdirSync(join(out, 'c_images', 'catalogue'), { recursive: true });
 for (const [name, items] of pages) {
   const pid = pageId++;
