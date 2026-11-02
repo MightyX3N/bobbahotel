@@ -17,7 +17,7 @@
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { blank, half, load, solid } from './png.mjs';
+import { blank, box, crop, encode, half, load, solid } from './png.mjs';
 import { writeBundle } from './bundle.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -305,6 +305,28 @@ writeBundle(join(generic, 'avatar_additions.nitro'), 'avatar_additions', {}, {
 });
 
 mkdirSync(join(out, 'gamedata'), { recursive: true });
+// Catalogue icons for the floor and wallpaper items: our own tile pictures.
+{
+  const icons = join(out, 'dcr', 'hof_furni', 'icons');
+  mkdirSync(icons, { recursive: true });
+  const icon = (file) => {
+    const img = load(join(spritesDir, 'tiles', file));
+    const b = box(img) ?? [0, 0, img.width, img.height];
+    return encode(half(crop(img, b)));
+  };
+  writeFileSync(join(icons, 'floor_icon.png'), icon(`floor_${DEFAULT_FLOOR}.png`));
+  writeFileSync(join(icons, 'wallpaper_icon.png'), icon(`wall_r_${DEFAULT_WALL}.png`));
+  writeFileSync(join(icons, 'landscape_icon.png'), icon(`wall_r_sky.png`));
+  // The catalogue's floor and wall pages show one picture per style (c_images/catalogue/th_*).
+  const thumbs = join(out, 'c_images', 'catalogue');
+  mkdirSync(thumbs, { recursive: true });
+  const thumb = (file) => {
+    const img = load(join(spritesDir, 'tiles', file));
+    return encode(crop(img, box(img) ?? [0, 0, img.width, img.height]));
+  };
+  for (const n of floors) writeFileSync(join(thumbs, `th_floor_${code(floors, n)}.png`), thumb(`floor_${n}.png`));
+  for (const n of walls) writeFileSync(join(thumbs, `th_wall_${code(walls, n)}.png`), thumb(`wall_r_${n}.png`));
+}
 writeFileSync(
   join(out, 'gamedata', 'paints.json'),
   JSON.stringify({ floors: Object.fromEntries(floors.map((n) => [code(floors, n), n])), walls: Object.fromEntries(walls.map((n) => [code(walls, n), n])) }, null, 1),

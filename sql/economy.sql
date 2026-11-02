@@ -19,4 +19,4 @@ UPDATE emulator_settings SET value = '0' WHERE `key` = 'subscriptions.hc.payday.
 -- The catalogue page where club is bought.
 DELETE FROM catalog_pages WHERE id = 9100;
 INSERT INTO catalog_pages (id, parent_id, caption_save, caption, page_layout, icon_color, icon_image, min_rank, order_num, visible, enabled, page_headline, page_teaser, page_text1)
-VALUES (9100, -1, 'bobba_club', 'Bobba Club', 'vip_buy', 1, 1, 1, 0, '1', '1', '', '', 'Join Bobba Club with diamonds you earn by playing, or by supporting the hotel.');
+VALUES (9100, -1, 'bobba_club', 'Bobba Club', 'vip_buy', 1, 1, 1, 3, '1', '1', '', '', 'Join Bobba Club with diamonds you earn by playing, or by supporting the hotel.');

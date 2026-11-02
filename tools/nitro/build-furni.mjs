@@ -11,7 +11,7 @@
 // sides, which gives its tiles and the point where it touches the floor. Like Habbo's own furni,
 // every picture is then pinned to the centre of the furni's back tile (asset x/y), pictures drawn
 // a little off our tile size are resized to fit their tiles, and rugs are stretched to cover them.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { align, blank, blit, box, crop, encode, half, load, transformed } from './png.mjs';
@@ -162,6 +162,15 @@ const PAGES = [
   ['Walls & Windows', /window|wall|partition|stair|railing|torii|pipe|cable|vent/i],
   ['Decoration', /poster|sign|map|painting|art|portrait|photo|diploma|blueprint|chart|scroll|mirror|clock|note|book|vase|duck|present|parcel|box/i],
 ];
+/**
+ * Starting price in credits (owners change prices on the admin pages): small things are cheap,
+ * big ones cost more, seats and beds a little extra.
+ */
+function price(item, [w, l], height) {
+  const base = 2 + 3 * w * l + Math.round(2 * Math.min(height, 3));
+  return Math.max(2, Math.min(30, base + (item.sit ? 2 : 0) + (item.lay ? 4 : 0)));
+}
+
 const pageOf = (name) => (PAGES.find(([, re]) => re.test(name)) ?? ['Other'])[0];
 const pages = new Map();
 
@@ -318,9 +327,28 @@ for (const item of catalogue) {
     `(${item.sprite},${item.sprite},'${esc(item.name)}','${id}','${wall ? 'i' : 's'}',${wall ? 0 : size[0]},${wall ? 0 : size[1]},${stackHeight.toFixed(2)},` +
       `${item.stack && !wall ? 1 : 0},${item.sit ? 1 : 0},${item.lay ? 1 : 0},${item.walk ? 1 : 0},'default',${stateCount})`,
   );
+  item.price = price(item, wall ? [1, 1] : size, height);
   const page = wall && pageOf(item.name) === 'Other' ? 'Walls & Windows' : pageOf(item.name);
   (pages.get(page) ?? pages.set(page, []).get(page)).push(item);
 }
+
+// Floor and wall styles (from build-generic.mjs): bought as Habbo's "floor" and "wallpaper" items,
+// whose catalogue name ends in the style's code.
+const paintsFile = join(out, 'gamedata', 'paints.json');
+const paints = existsSync(paintsFile) ? JSON.parse(readFileSync(paintsFile, 'utf8')) : { floors: {}, walls: {} };
+const PAINT = { wallpaper: [9901, 3001, 'Wallpaper'], floor: [9902, 3002, 'Floor'], landscape: [9903, 4055, 'Landscape'] };
+for (const [classname, [, sprite, name]] of Object.entries(PAINT)) {
+  furnidata.wallitemtypes.furnitype.push({
+    id: sprite, classname, revision: 1, category: classname, defaultdir: 0, xdim: 1, ydim: 1, partcolors: { color: [] }, name, description: '',
+    adurl: '', offerid: -1, buyout: false, rentofferid: -1, rentbuyout: false, bc: false, excludeddynamic: false, customparams: '', specialtype: 1,
+    canstandon: false, cansiton: false, canlayon: false, furniline: 'bobba', environment: '', rare: false,
+  });
+}
+const PAINT_PRICE = 3;
+const paintRows = [
+  ...Object.keys(paints.floors).map((code, i) => `('${PAINT.floor[0]}',9050,'floor_single_${code}',${PAINT_PRICE},0,0,1,${i + 1},-1)`),
+  ...Object.keys(paints.walls).map((code, i) => `('${PAINT.wallpaper[0]}',9050,'wallpaper_single_${code}',${PAINT_PRICE},0,0,1,${100 + i + 1},-1)`),
+];
 
 writeFileSync(join(out, 'gamedata', 'FurnitureData.json'), JSON.stringify(furnidata));
 const pageRows = [];
@@ -330,7 +358,7 @@ pageRows.push(`(9000,-1,'bobba','Furni','default_3x3',1,1,1,'1','1')`);
 for (const [name, items] of pages) {
   const pid = pageId++;
   pageRows.push(`(${pid},9000,'${name.toLowerCase().replace(/[^a-z]+/g, '_')}','${name.replace(/'/g, "\\'")}','default_3x3',1,1,${pid - 9000},'1','1')`);
-  items.forEach((it, i) => itemRows.push(`('${it.sprite}',${pid},'${it.id}',0,0,0,1,${i + 1},-1)`));
+  items.forEach((it, i) => itemRows.push(`('${it.sprite}',${pid},'${it.id}',${it.price},0,0,1,${i + 1},-1)`));
 }
 writeFileSync(
   join(out, 'sql', 'furni.sql'),
@@ -342,6 +370,10 @@ writeFileSync(
     `INSERT INTO items_base (id,sprite_id,public_name,item_name,type,width,length,stack_height,allow_stack,allow_sit,allow_lay,allow_walk,interaction_type,interaction_modes_count) VALUES\n${sql.join(',\n')};`,
     `INSERT INTO catalog_pages (id,parent_id,caption_save,caption,page_layout,icon_image,min_rank,order_num,visible,enabled) VALUES\n${pageRows.join(',\n')};`,
     `INSERT INTO catalog_items (item_ids,page_id,catalog_name,cost_credits,cost_points,points_type,amount,order_number,offer_id) VALUES\n${itemRows.join(',\n')};`,
+    'DELETE FROM items_base WHERE id IN (9901, 9902, 9903);',
+    `INSERT INTO items_base (id,sprite_id,public_name,item_name,type,width,length,stack_height,allow_stack,allow_sit,allow_lay,allow_walk,interaction_type,interaction_modes_count) VALUES\n${Object.entries(PAINT).map(([cls, [id, sprite, name]]) => `(${id},${sprite},'${name}','${cls}','i',0,0,1.00,0,0,0,0,'roomeffect',1)`).join(',\n')};`,
+    `INSERT INTO catalog_pages (id,parent_id,caption_save,caption,page_layout,icon_image,min_rank,order_num,visible,enabled,page_headline,page_teaser,page_text1) VALUES\n(9050,-1,'spaces','Floors & Walls','spaces_new',1,1,2,'1','1','','','Floors and wallpapers for your rooms: try them on in the preview, then buy.');`,
+    paintRows.length ? `INSERT INTO catalog_items (item_ids,page_id,catalog_name,cost_credits,cost_points,points_type,amount,order_number,offer_id) VALUES\n${paintRows.join(',\n')};` : '',
     '',
   ].join('\n'),
 );
