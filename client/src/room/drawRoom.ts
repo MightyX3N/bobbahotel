@@ -155,12 +155,19 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
         const y0 = isBehind(x, y - 1) ? y - T : y;
         poly(depth, [corner(x, y, z), corner(x, y + 1, z), corner(x, y + 1, top), corner(x, y, top)], COLORS.wallLeft);
         poly(depth, [corner(x - T, y0, top), corner(x - T, y + 1, top), corner(x, y + 1, top), corner(x, y0, top)], COLORS.wallTop);
+        // Where this wall ends (no wall continues on the next tile), its end shows its thickness.
+        if (!solid(x, y + 1) && isBehind(x - 1, y + 1)) {
+          poly(depth, [corner(x - T, y + 1, z - T), corner(x, y + 1, z - T), corner(x, y + 1, top), corner(x - T, y + 1, top)], COLORS.wallRight);
+        }
       }
       // Inside face on the tile's back edge (grid line y), facing +y.
       if (isBehind(x, y - 1) && !nitroFaces.has(`y${y},${x}`)) {
         const x0 = isBehind(x - 1, y) ? x - T : x;
         poly(depth, [corner(x, y, z), corner(x + 1, y, z), corner(x + 1, y, top), corner(x, y, top)], COLORS.wallRight);
         poly(depth, [corner(x0, y - T, top), corner(x + 1, y - T, top), corner(x + 1, y, top), corner(x0, y, top)], COLORS.wallTop);
+        if (!solid(x + 1, y) && isBehind(x + 1, y - 1)) {
+          poly(depth, [corner(x + 1, y - T, z - T), corner(x + 1, y, z - T), corner(x + 1, y, top), corner(x + 1, y - T, top)], COLORS.wallLeft);
+        }
       }
       const base = z - T;
       // Nothing to the right, but floor further down that empty column: the back wall steps
@@ -197,7 +204,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     order: number;
     pts: Point[];
     color: number;
-    outline: boolean;
+    lines: [Point, Point][];
   }
   const cells: Cell[] = [];
   for (let i = 0; i < parser.planeCount; i++) {
@@ -240,7 +247,17 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
         const cx = (x0 + x1) / 2 - n.x * 0.01;
         const cy = (y0 + y1) / 2 - n.y * 0.01;
         const depth = tileDepth(Math.floor(cx), Math.floor(cy)) - 0.1;
-        cells.push({ depth, order: cx + cy + (flat ? 0 : 0.001), pts, color, outline: flat });
+        // Tile lines only along whole grid lines: stairs don't add extra lines to the floor.
+        const lines: [Point, Point][] = [];
+        if (flat) {
+          const z = lo('z');
+          const whole = (v: number) => Math.abs(v - Math.round(v)) < 1e-6;
+          if (whole(y0)) lines.push([corner(x0, y0, z), corner(x1, y0, z)]);
+          if (whole(x1)) lines.push([corner(x1, y0, z), corner(x1, y1, z)]);
+          if (whole(y1)) lines.push([corner(x1, y1, z), corner(x0, y1, z)]);
+          if (whole(x0)) lines.push([corner(x0, y1, z), corner(x0, y0, z)]);
+        }
+        cells.push({ depth, order: cx + cy + (flat ? 0 : 0.001), pts, color, lines });
       }
     }
   }
@@ -254,7 +271,8 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
   cells.sort((a, b) => a.depth - b.depth || a.order - b.order);
   for (const c of cells) {
     const g = at(c.depth).poly(c.pts.flat()).fill(c.color);
-    if (c.outline) g.stroke({ color: COLORS.floorLine, width: 1, alignment: 1 });
+    for (const [a, b] of c.lines) g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
+    if (c.lines.length > 0) g.stroke({ color: COLORS.floorLine, width: 2, alignment: 0.5 });
   }
 
   return [...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 }));
