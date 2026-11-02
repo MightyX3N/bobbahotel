@@ -4,7 +4,7 @@ import { Container, Graphics, type Application, type FederatedPointerEvent } fro
 import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
-import { drawRoom, drawTileOutline } from './drawRoom.ts';
+import { depthToZIndex, drawRoom, drawTileOutline, tileDepth } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
@@ -15,14 +15,14 @@ const DRAG_THRESHOLD = 5;
 export class RoomView {
   private readonly app: Application;
   private readonly world = new Container();
-  private readonly floorLayer = new Container();
   private readonly hover = new Graphics();
   private readonly objects = new Container();
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
   private grid: Grid = [];
   private door: [number, number] = [0, 0];
-  private occluders: Graphics[] = [];
+  /** Floor and wall pieces (depth-sorted together with the avatars). */
+  private roomPieces: Graphics[] = [];
   private tilesFrontToBack: [number, number][] = [];
   private hoveredAvatar: AvatarView | null = null;
   private drag: { startX: number; startY: number; worldX: number; worldY: number; moved: boolean } | null = null;
@@ -33,7 +33,8 @@ export class RoomView {
   constructor(app: Application) {
     this.app = app;
     this.objects.sortableChildren = true;
-    this.world.addChild(this.floorLayer, this.hover, this.objects);
+    this.world.addChild(this.objects);
+    this.objects.addChild(this.hover);
     app.stage.addChild(this.world, this.bubbles.container);
 
     app.stage.eventMode = 'static';
@@ -49,8 +50,8 @@ export class RoomView {
   enter(room: DataOf<ServerMessage, 'room'>): void {
     for (const a of this.avatars.values()) a.destroy();
     this.avatars.clear();
-    for (const o of this.occluders) o.destroy();
-    this.occluders = [];
+    for (const g of this.roomPieces) g.destroy();
+    this.roomPieces = [];
 
     this.bubbles.clear();
     this.grid = parseMap(room.map);
@@ -59,14 +60,10 @@ export class RoomView {
     this.grid.forEach((row, y) => row.forEach((h, x) => h >= 0 && this.tilesFrontToBack.push([x, y])));
     this.tilesFrontToBack.sort((a, b) => b[0] + b[1] - (a[0] + a[1]) || heightAt(this.grid, b[0], b[1]) - heightAt(this.grid, a[0], a[1]));
 
-    this.floorLayer.removeChildren().forEach((c) => c.destroy());
-    const drawing = drawRoom(this.grid, room.door);
-    this.floorLayer.addChild(drawing.background);
-    // Walls also take part in depth sorting, so they hide avatars standing behind them.
-    for (const o of drawing.occluders) {
-      o.graphics.zIndex = o.depth;
-      this.objects.addChild(o.graphics);
-      this.occluders.push(o.graphics);
+    for (const piece of drawRoom(this.grid, room.door)) {
+      piece.graphics.zIndex = depthToZIndex(piece.depth);
+      this.objects.addChild(piece.graphics);
+      this.roomPieces.push(piece.graphics);
     }
     this.hover.clear();
     for (const u of room.users) this.addUser(u);
@@ -100,11 +97,23 @@ export class RoomView {
 
   /** Puts the room in the middle of the screen. */
   center(): void {
-    const b = this.floorLayer.getLocalBounds();
+    const b = this.roomBounds();
     if (b.width === 0) return;
     // Centred in the space above the toolbar.
     const height = this.app.screen.height - TOOLBAR_HEIGHT;
     this.world.position.set(Math.round(this.app.screen.width / 2 - (b.x + b.width / 2)), Math.round(height / 2 - (b.y + b.height / 2)));
+  }
+
+  /** Bounds of the room's floor and walls (avatars left out, so the room doesn't shift as they move). */
+  private roomBounds(): { x: number; y: number; width: number; height: number } {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const g of this.roomPieces) {
+      const b = g.getLocalBounds();
+      if (b.width === 0) continue;
+      minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.width); maxY = Math.max(maxY, b.y + b.height);
+    }
+    return minX === Infinity ? { x: 0, y: 0, width: 0, height: 0 } : { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
 
   private update(): void {
@@ -140,8 +149,11 @@ export class RoomView {
       }
     }
     const t = this.tileAt(e.global.x, e.global.y);
-    if (t) drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
-    else this.hover.clear();
+    if (t) {
+      drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
+      // Just above its tile, so walls and anything in front still cover it.
+      this.hover.zIndex = depthToZIndex(tileDepth(t[0], t[1]) - 0.05);
+    } else this.hover.clear();
 
 
     const a = this.avatarAt(e.global.x, e.global.y);

@@ -2,7 +2,8 @@
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { AVATAR_FRAME, lookLayers, SHEET_ROW, type Look, type Pose, type RoomUser } from '@bobba/shared';
 import { loadSprite, sheetFrame } from '../sprites.ts';
-import { depthOf, tileCenter } from './iso.ts';
+import { depthToZIndex, tileDepth } from './drawRoom.ts';
+import { tileCenter } from './iso.ts';
 
 // The Cozy figure is about 73 px tall at its own size. Measured from Habbo, the avatar is about
 // as tall as the door opening (~85-88 px on 64 px tiles), so it is drawn at 1.2x: ~88 px.
@@ -87,9 +88,10 @@ export class AvatarView {
     const p = this.positionAt(now);
     const s = tileCenter(p.x, p.y, p.z);
     this.container.position.set(Math.round(s.x), Math.round(s.y));
-    // Sorted by where the avatar actually is (also mid-step), so walls in front hide it at the right
-    // moment, e.g. while stepping through the door opening.
-    this.container.zIndex = depthOf(p.x, p.y, 0) + 50;
+    // Sorted by where the avatar actually is (also mid-step), a little above its own tile, so a
+    // wall or raised floor in front hides it at the right moment (e.g. stepping through the door)
+    // while flat floor it walks onto never covers its feet.
+    this.container.zIndex = depthToZIndex(tileDepth(p.x, p.y) + 0.6);
 
     const walking = this.moving && now - this.moveStart < this.moveMs + 120;
     this.setPose(walking ? 'walk' : 'idle');
