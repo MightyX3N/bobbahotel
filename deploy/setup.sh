@@ -169,9 +169,6 @@ if [ -f "$APP/current/emu/arcturus.jar" ]; then
 else
   echo "No new-style release yet: the next push to main deploys one."
 fi
-if [ ! -f "$APP/sprites/hotelview.png" ]; then
-  echo "Tip: put the hotel view picture at $APP/sprites/hotelview.png (it is built from the licensed art)."
-fi
 
 if [ "$NEW_KEY" = 1 ]; then
   say "Add these two secrets on GitHub"

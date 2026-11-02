@@ -2,14 +2,13 @@
 // UI pictures for the Nitro client that aren't furni or rooms:
 //
 //   images/wallet/{-1,0,5,hc}.png   currency icons in the purse (credits, duckets, diamonds, club)
-//   images/hotelview.png            the hotel view picture, copied from sprites/hotelview.png
-//                                   (a picture of a room made from the licensed art, so it lives
-//                                   with the sprites and not in git)
+//   images/hotelview.png            the hotel view picture (content/nitro/hotelview.png, a picture
+//                                   of the Welcome Lounge)
 //
 // The icons are drawn here from little pixel maps.
 //
 // Usage: node tools/nitro/build-ui.mjs [outDir] [spritesDir]
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { blank, encode } from './png.mjs';
@@ -108,9 +107,8 @@ writeFileSync(join(wallet, '0.png'), encode(ducket));
 writeFileSync(join(wallet, '5.png'), encode(diamond));
 writeFileSync(join(wallet, 'hc.png'), encode(club));
 
-const view = join(spritesDir, 'hotelview.png');
-if (existsSync(view)) copyFileSync(view, join(out, 'images', 'hotelview.png'));
-console.log(`UI pictures -> ${join(out, 'images')}${existsSync(view) ? ' (with the hotel view)' : ' (no sprites/hotelview.png yet)'}`);
+copyFileSync(join(root, 'content', 'nitro', 'hotelview.png'), join(out, 'images', 'hotelview.png'));
+console.log(`UI pictures -> ${join(out, 'images')}`);
 
 // Room layout pictures for "create a room" (images/navigator/models/model_<name>.png): each
 // layout's floor drawn as little tiles, the door lighter.

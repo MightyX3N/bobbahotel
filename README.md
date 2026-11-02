@@ -24,7 +24,7 @@ npm run check                                   # type checks and tests (CI runs
 node tools/nitro/build-all.mjs build/nitro sprites   # the client's assets from your art
 ```
 
-Sprites are not in the repository (see Licence). Put your copy in `sprites/` (`sprites/furni`, `sprites/tiles`, `sprites/cozy`, and `sprites/hotelview.png`). See `deploy/` for how the parts fit together.
+Sprites are not in the repository (see Licence). Put your copy in `sprites/` (`sprites/furni`, `sprites/tiles`, `sprites/cozy`). See `deploy/` for how the parts fit together.
 
 ## Deploying
 Push to `main`. GitHub Actions runs the checks, builds the Nitro client and deploys to the VPS, which builds the assets, updates the database and checks that the website and the game server answer. If they don't, it switches back to the previous version by itself.
