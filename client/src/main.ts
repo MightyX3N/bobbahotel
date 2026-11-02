@@ -1,9 +1,9 @@
 import { Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 
 const params = new URLSearchParams(location.search);
-const WS_URL = params.get('server') ?? (import.meta.env.VITE_WS as string | undefined) ?? (location.hostname === 'localhost' ? 'ws://localhost:8080' : 'wss://ws.playbobba.com');
+const WS_URL = params.get('server') ?? (import.meta.env.VITE_WS as string | undefined) ?? (location.hostname === 'localhost' ? 'ws://localhost:8080' : `wss://${location.host}/ws`);
 const TW = 64, TH = 32, WALL_H = 110;
-const HTTP = WS_URL.replace(/^ws/, 'http');
+const HTTP = WS_URL.replace(/^ws/, 'http').replace(/\/ws$/, '');
 const FW = 64, FH = 80, AX = 32, AY = 75; // avatar frame size and where the feet are
 const ROW = [2, 2, 1, 1, 0, 0, 3, 3]; // facing (0=N .. 7=NW, clockwise) -> sheet row (0 down-left, 1 down-right, 2 up-right, 3 up-left)
 type Look = { sex: string; body: number; hair: number; top: number; bottom: number; shoes: number };

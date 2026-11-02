@@ -14,3 +14,8 @@ Open only ports 22/80/443. Use SSH keys; never share the root password.
 ## Sprites (not in the repo)
 Put the licensed sprites in `sprites/` next to `server/` (tiles/, cozy/). The server serves only `/sprites/*.png` (set ALLOW_ORIGIN to your Pages origin).
 `sprites/` is in .gitignore - the packs' licences forbid redistributing the files.
+
+## Layout
+- `website/`  playbobba.com on GitHub Pages (login, groups, news - landing page for now).
+- `client/`   the game, built and served by Caddy from the VPS at hotel.playbobba.com (same host as the server: /ws and /sprites).
+- `server/`   the game server. `deploy/` has setup.sh (fresh Ubuntu 24.04), update.sh, Caddyfile and the systemd unit.

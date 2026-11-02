@@ -1,0 +1,17 @@
+[Unit]
+Description=Bobba Hotel server
+After=network.target
+
+[Service]
+User=bobba
+WorkingDirectory=/opt/bobbahotel/server
+Environment=PORT=8080
+Environment=DB_FILE=/var/lib/bobbahotel/hotel.db
+Environment=SPRITES_DIR=/opt/bobbahotel/sprites
+Environment=ALLOW_ORIGIN=https://hotel.playbobba.com
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning src/index.ts
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
