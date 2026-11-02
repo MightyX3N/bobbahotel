@@ -588,7 +588,7 @@ describe('placing furni', () => {
     await new Promise((r) => setTimeout(r, 50));
     const last = staff.inbox.filter((m) => m.t === 'status').flatMap((m) => m.d).filter((s) => s.id === me.id).at(-1)!;
     expect(last).toMatchObject({ x: 6, y: 6, sit: true, dir: 2, moving: false });
-    expect(last.z).toBeGreaterThan(0);
+    expect(last.z).toBe(0); // an ordinary chair: you sit at its height (SIT_HEIGHT)
   });
 
   it('hangs wall furni on walls only', async () => {
