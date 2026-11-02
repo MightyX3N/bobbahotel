@@ -158,9 +158,9 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomDrawing {
         const aOut = minusY(plusX(down(a, FLOOR_THICKNESS)));
         const aOutTop = minusY(plusX(aTop));
         wall(aOut, plusX(down(b, FLOOR_THICKNESS)), plusX(bTop), aOutTop, COLORS.wallLeft, aOut, plusX(b));
-        // Top edge on the wall's thickness.
-        wall(minusY(aTop), aTop, bTop, plusX(bTop), COLORS.wallTop);
-        wall(aTop, bTop, plusX(bTop), aOutTop, COLORS.wallTop);
+        // Top: the strip along this piece, and the square where it meets the back wall's top.
+        wall(aTop, bTop, plusX(bTop), plusX(aTop), COLORS.wallTop);
+        wall(aTop, minusY(aTop), aOutTop, plusX(aTop), COLORS.wallTop);
       }
 
       wall(tBase, rBase, rTop, tTop, COLORS.wallRight, top, right);
