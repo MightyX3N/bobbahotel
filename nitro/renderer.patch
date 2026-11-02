@@ -1,3 +1,33 @@
+diff --git a/apps/frontend/index.html b/apps/frontend/index.html
+index c639d7b..549ab7d 100644
+--- a/apps/frontend/index.html
++++ b/apps/frontend/index.html
+@@ -16,19 +16,23 @@
+     <meta name="mobile-web-app-capable" content="yes">
+     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+     <base href="./" />
+-    <title>Nitro</title>
++    <title>Bobba Hotel</title>
+   </head>
+   <body>
+     <noscript>You need to enable JavaScript to run this app.</noscript>
+     <div id="root" class="w-100 h-100"></div>
+     <script>
+       const NitroConfig = {
+-        "config.urls": ["/renderer-config.json", "/ui-config.json"],
++        "config.urls": ["/client/renderer-config.json", "/client/ui-config.json"],
+         "sso.ticket": new URLSearchParams(window.location.search).get("sso") || null,
+         "forward.type": new URLSearchParams(window.location.search).get("room") ? 2 : -1,
+         "forward.id": new URLSearchParams(window.location.search).get("room") || 0,
+         "friend.id": new URLSearchParams(window.location.search).get("friend") || 0,
+       };
++      // Bobba Hotel: right-click belongs to the game, not the browser menu (except in text fields).
++      document.addEventListener("contextmenu", (event) => {
++        if (!(event.target instanceof Element) || !event.target.closest("input, textarea, [contenteditable]")) event.preventDefault();
++      });
+     </script>
+     <script type="module" src="./src/index.tsx"></script>
+   </body>
 diff --git a/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts b/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
 index c506e92..93e9530 100644
 --- a/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
@@ -10,6 +40,56 @@ index c506e92..93e9530 100644
    public static MIN_DIRECTION: number = 0; //_Str_1562
    public static MAX_DIRECTION: number = 7; //_Str_1257
  }
+diff --git a/libs/renderer/src/nitro/avatar/AvatarImage.ts b/libs/renderer/src/nitro/avatar/AvatarImage.ts
+index 3335ec4..bc8ab2a 100644
+--- a/libs/renderer/src/nitro/avatar/AvatarImage.ts
++++ b/libs/renderer/src/nitro/avatar/AvatarImage.ts
+@@ -259,7 +259,9 @@ export class AvatarImage implements IAvatarImage, IAvatarEffectListener {
+       this._cachedBodyPartsDirection = _arg_3;
+       this._cachedBodyPartsGeometryType = _arg_2;
+       this._cachedBodyPartsAvatarSet = k;
+-      this._cachedBodyParts = this._structure.getBodyParts(k, _arg_2, _arg_3);
++      // Bobba Hotel: our avatar pictures are whole figures (everything is in the torso), so a
++      // "head" picture is the whole figure cut to its head (see bobbaHeadRect).
++      this._cachedBodyParts = this._structure.getBodyParts(k === "head" ? "full" : k, _arg_2, _arg_3);
+     }
+     return this._cachedBodyParts;
+   }
+@@ -503,9 +505,22 @@ export class AvatarImage implements IAvatarImage, IAvatarEffectListener {
+       partCount--;
+     }
+ 
++    if (setType === "head") {
++      const head = new NitroSprite(TextureUtils.generateTexture(container, this.bobbaHeadRect(avatarCanvas.width)));
++
++      head.y = this.bobbaHeadRect(avatarCanvas.width).y;
++
++      return head;
++    }
++
+     return container;
+   }
+ 
++  /** Bobba Hotel: where the head is in an avatar picture (whole figures, see getBodyParts). */
++  private bobbaHeadRect(width: number): Rectangle {
++    return this._scale === "sh" ? new Rectangle(0, 26, width, 20) : new Rectangle(0, 42, width, 38);
++  }
++
+   public getCroppedImage(setType: string, scale: number = 1): HTMLImageElement {
+     if (!this._mainAction) return null;
+ 
+@@ -559,7 +574,10 @@ export class AvatarImage implements IAvatarImage, IAvatarEffectListener {
+       partCount--;
+     }
+ 
+-    const texture = TextureUtils.generateTexture(container, new Rectangle(0, 0, avatarCanvas.width, avatarCanvas.height));
++    const texture = TextureUtils.generateTexture(
++      container,
++      setType === "head" ? this.bobbaHeadRect(avatarCanvas.width) : new Rectangle(0, 0, avatarCanvas.width, avatarCanvas.height)
++    );
+ 
+     const image = TextureUtils.generateImage(texture);
+ 
 diff --git a/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts b/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts
 index 6bfd813..3777c30 100644
 --- a/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts

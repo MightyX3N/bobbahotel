@@ -161,3 +161,53 @@ export function align(ref, img) {
   }
   return [best[0], best[1], Math.max(0, best[2]) / pts.length];
 }
+
+/**
+ * Where `img` sits on `ref` so that their shared pixels line up exactly: [dx, dy, share], `share`
+ * being the part of `img`'s solid pixels that land on a pixel of `ref` with the same colour.
+ * A quick pass over a sample of pixels picks the likely shifts, then every pixel is counted for
+ * those (and their neighbours), so the answer is pixel exact.
+ */
+export function alignExact(ref, img, range = 48) {
+  const solidOf = (p) => {
+    const s = [];
+    for (let y = 0; y < p.height; y++) for (let x = 0; x < p.width; x++) if (p.data[(y * p.width + x) * 4 + 3] > 200) s.push(x, y);
+    return s;
+  };
+  const all = solidOf(img);
+  const n = all.length / 2;
+  if (n === 0) return [0, 0, 0];
+  const count = (pts, dx, dy) => {
+    let hit = 0;
+    for (let k = 0; k < pts.length; k += 2) {
+      const x = pts[k], y = pts[k + 1], rx = x + dx, ry = y + dy;
+      if (rx < 0 || ry < 0 || rx >= ref.width || ry >= ref.height) continue;
+      const i = (ry * ref.width + rx) * 4, j = (y * img.width + x) * 4;
+      if (ref.data[i + 3] <= 200) continue;
+      if (Math.abs(ref.data[i] - img.data[j]) + Math.abs(ref.data[i + 1] - img.data[j + 1]) + Math.abs(ref.data[i + 2] - img.data[j + 2]) <= 12) hit++;
+    }
+    return hit;
+  };
+  const step = Math.max(1, Math.floor(n / 2000));
+  const sample = [];
+  for (let k = 0; k < n; k += step) sample.push(all[2 * k], all[2 * k + 1]);
+  const xs = [Math.min(0, ref.width - img.width) - range, Math.max(0, ref.width - img.width) + range];
+  const ys = [Math.min(0, ref.height - img.height) - range, Math.max(0, ref.height - img.height) + range];
+  const scored = [];
+  for (let dy = ys[0]; dy <= ys[1]; dy++) for (let dx = xs[0]; dx <= xs[1]; dx++) scored.push([dx, dy, count(sample, dx, dy)]);
+  scored.sort((a, b) => b[2] - a[2]);
+  const tried = new Map();
+  for (const [cx, cy] of scored.slice(0, 8)) {
+    for (let dy = cy - 1; dy <= cy + 1; dy++) for (let dx = cx - 1; dx <= cx + 1; dx++) {
+      const key = `${dx},${dy}`;
+      if (!tried.has(key)) tried.set(key, [dx, dy, count(all, dx, dy)]);
+    }
+  }
+  // Same canvas: no shift unless another one is clearly better.
+  if (ref.width === img.width && ref.height === img.height && !tried.has('0,0')) tried.set('0,0', [0, 0, count(all, 0, 0)]);
+  let best = null;
+  for (const c of tried.values()) if (!best || c[2] > best[2]) best = c;
+  const zero = tried.get('0,0');
+  if (zero && ref.width === img.width && ref.height === img.height && zero[2] >= best[2] * 0.97) best = zero;
+  return [best[0], best[1], best[2] / n];
+}

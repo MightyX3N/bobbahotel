@@ -2,8 +2,8 @@
 // UI pictures for the Nitro client that aren't furni or rooms:
 //
 //   images/wallet/{-1,0,5,hc}.png   currency icons in the purse (credits, duckets, diamonds, club)
-//   images/hotelview.png            the hotel view picture (content/nitro/hotelview.png, a picture
-//                                   of the Welcome Lounge)
+//   images/hotelview.png            the hotel view: the Welcome Lounge on a little grass island
+//   images/hotelview-sky.png        and the sky behind it (both from content/nitro/)
 //
 // The icons are drawn here from little pixel maps.
 //
@@ -107,7 +107,34 @@ writeFileSync(join(wallet, '0.png'), encode(ducket));
 writeFileSync(join(wallet, '5.png'), encode(diamond));
 writeFileSync(join(wallet, 'hc.png'), encode(club));
 
-copyFileSync(join(root, 'content', 'nitro', 'hotelview.png'), join(out, 'images', 'hotelview.png'));
+// Catalogue icons of the pages that aren't furni: Bobba Club (the crown) and Floors & Walls.
+{
+  const dir = join(out, 'c_images', 'catalogue');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'icon_9100.png'), encode(club));
+  const paint = draw(
+    [
+      '.......oo.......',
+      '.....ooWWoo.....',
+      '...ooWWWWWWoo...',
+      '.ooWWWWWWWWWWoo.',
+      'oWWWWWWWWWWWWWWo',
+      'oLLWWWWWWWWWWBBo',
+      'oLLLLWWWWWWBBBBo',
+      'oLLLLLLWWBBBBBBo',
+      'oLLLLLLLBBBBBBBo',
+      'oFFLLLLLBBBBBDDo',
+      '.ooFFLLLBBBDDoo.',
+      '...ooFFLBDDoo...',
+      '.....ooFDoo.....',
+      '.......oo.......',
+    ],
+    { o: OUTLINE, W: [210, 160, 110], L: [236, 214, 170], B: [200, 176, 130], F: [160, 110, 70], D: [130, 90, 56] },
+  );
+  writeFileSync(join(dir, 'icon_9050.png'), encode(paint));
+}
+
+for (const f of ['hotelview.png', 'hotelview-sky.png']) copyFileSync(join(root, 'content', 'nitro', f), join(out, 'images', f));
 console.log(`UI pictures -> ${join(out, 'images')}`);
 
 // Room layout pictures for "create a room" (images/navigator/models/model_<name>.png): each
