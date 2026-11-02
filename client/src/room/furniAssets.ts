@@ -24,6 +24,25 @@ export async function furniDefs(): Promise<Map<string, FurniDef>> {
   return (await furniData()).defs;
 }
 
+/** Sheet frame lists (for heights and pictures in lists), once loaded. */
+export async function furniSheets(): Promise<Map<string, FurniSheet>> {
+  return (await furniData()).sheets;
+}
+
+/** A furni's picture for lists: its sheet and the first frame of its default direction. */
+export async function furniThumb(id: string): Promise<{ url: string; x: number; y: number; w: number; h: number; flip: boolean } | null> {
+  const { defs, sheets } = await furniData();
+  const def = defs.get(id);
+  const sheet = sheets.get(id);
+  if (!def || !sheet) return null;
+  const first = (Object.keys(def.dirs).map(Number) as FurniDir[]).sort((a, b) => [4, 2, 6, 0].indexOf(a) - [4, 2, 6, 0].indexOf(b))[0];
+  const images = first !== undefined ? def.dirs[first] : undefined;
+  const source = images && 'mirror' in images ? images.mirror : first;
+  const frame = source !== undefined ? sheet.dirs[source]?.[0]?.[0] : undefined;
+  if (!frame) return null;
+  return { url: `/api/furni/${id}.png?v=${sheet.version}`, x: frame.x, y: frame.y, w: frame.w, h: frame.h, flip: !!images && 'mirror' in images };
+}
+
 /** One frame ready to draw: its texture and anchor (the footprint's front corner) in pixels. */
 export interface FurniTexture {
   texture: Texture;

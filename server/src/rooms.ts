@@ -9,6 +9,8 @@ import {
   ROOM_NAME_MIN,
   type FloorPlanLimits,
   type FloorPlanProblem,
+  type FurniDir,
+  type RoomFurni,
   type Layout,
   type LayoutInfo,
   type NavigatorTab,
@@ -16,7 +18,7 @@ import {
 } from '@bobba/shared';
 import type { Content } from './content.ts';
 import type { Db } from './db.ts';
-import { Room } from './room.ts';
+import { Room, type FurniStore } from './room.ts';
 
 /** Most rooms one player can own. */
 export const MAX_ROOMS_PER_USER = 25;
@@ -45,6 +47,17 @@ interface LayoutRow {
   door_x: number;
   door_y: number;
   access: string;
+}
+
+interface FurniRow {
+  id: number;
+  def: string;
+  x: number;
+  y: number;
+  z: number;
+  dir: number;
+  state: number;
+  off: number | null;
 }
 
 const ROOM_COLUMNS = 'r.id, r.owner_id, u.name AS owner_name, r.name, r.description, r.layout, r.floor';
@@ -249,7 +262,9 @@ export class Rooms {
       const p = this.content.publicRooms.find((r) => r.id === key);
       if (!p) return null;
       const details = { name: p.name, description: p.description ?? '', owner: null, ownerId: null, maxUsers: p.layout.maxUsers ?? DEFAULT_MAX_USERS, ...(p.staffOnly ? { staffOnly: true } : {}) };
-      return new Room(id, details, p.layout, { autoTick: this.autoTick, furni: p.furni ?? [], defs: this.content.furni });
+      // The furni test room shows its own furni (not saved); other public rooms keep theirs.
+      const furni = p.furni ? { furni: p.furni } : this.furniOptions(id);
+      return new Room(id, details, p.layout, { autoTick: this.autoTick, defs: this.content.furni, sheets: this.content.furniSheets, ...furni });
     }
     if (kind === 'r' && key && /^\d+$/.test(key)) {
       const row = this.db
@@ -261,10 +276,29 @@ export class Rooms {
         id,
         { name: row.name, description: row.description, owner: row.owner_name, ownerId: row.owner_id, maxUsers: layout.maxUsers ?? DEFAULT_MAX_USERS },
         layout,
-        { autoTick: this.autoTick },
+        { autoTick: this.autoTick, defs: this.content.furni, sheets: this.content.furniSheets, ...this.furniOptions(id) },
       );
     }
     return null;
+  }
+
+  /** A room's saved furni, and where its furni changes are saved. */
+  private furniOptions(roomId: string): { furni: RoomFurni[]; store: FurniStore } {
+    const rows = this.db.prepare('SELECT id, def, x, y, z, dir, state, off FROM room_furni WHERE room = ? ORDER BY id').all(roomId) as unknown as FurniRow[];
+    const furni = rows
+      .filter((r) => this.content.furni.has(r.def))
+      .map((r) => ({ uid: r.id, def: r.def, x: r.x, y: r.y, z: r.z, dir: r.dir as FurniDir, state: r.state, ...(r.off !== null ? { off: r.off } : {}) }));
+    const store: FurniStore = {
+      add: (f) =>
+        Number(
+          this.db
+            .prepare('INSERT INTO room_furni (room, def, x, y, z, dir, state, off) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(roomId, f.def, f.x, f.y, f.z, f.dir, f.state, f.off ?? null).lastInsertRowid,
+        ),
+      update: (f) => void this.db.prepare('UPDATE room_furni SET x = ?, y = ?, z = ?, dir = ?, state = ?, off = ? WHERE id = ?').run(f.x, f.y, f.z, f.dir, f.state, f.off ?? null, f.uid),
+      remove: (uid) => void this.db.prepare('DELETE FROM room_furni WHERE id = ?').run(uid),
+    };
+    return { furni, store };
   }
 
   /** Rebuild a loaded room (after its floor changed) and move everyone in it to the new one. */

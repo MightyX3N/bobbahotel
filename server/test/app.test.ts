@@ -521,3 +521,84 @@ describe('furni', () => {
   });
 });
 
+
+describe('placing furni', () => {
+  /** A staff member in a fresh room of their own (model_a: door 3,5; floor from x 4). */
+  async function staffInOwnRoom() {
+    const host = await start({ steamValid: true });
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    staff.send({ t: 'createRoom', d: { name: 'Shop', description: '', layout: 'model_a' } });
+    const created = await staff.waitFor('roomCreated');
+    const room = await staff.waitFor('room', (m) => m.d.id === created.d.id);
+    return { host, staff, roomId: room.d.id };
+  }
+
+  it('staff place, move, turn and pick up furni; it stays after the room reloads', async () => {
+    const { host, staff, roomId } = await staffInOwnRoom();
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_chair_2', x: 6, y: 6, dir: 4 } });
+    const added = (await staff.waitFor('furniAdd')).d;
+    expect(added).toMatchObject({ def: 'salvaje_chair_2', x: 6, y: 6, dir: 4, z: 0, state: 0 });
+    staff.send({ t: 'moveFurni', d: { uid: added.uid, x: 7, y: 8, dir: 2 } });
+    expect((await staff.waitFor('furniMove')).d).toMatchObject({ uid: added.uid, x: 7, y: 8, dir: 2 });
+
+    // Saved: a fresh visitor after the room was unloaded still sees it.
+    const visitor = await Player.join(host, await guest(host, 'Visitor'));
+    visitor.send({ t: 'goToRoom', d: { id: roomId } });
+    const seen = await visitor.waitFor('room', (m) => m.d.id === roomId);
+    expect(seen.d.furni).toMatchObject([{ uid: added.uid, x: 7, y: 8, dir: 2 }]);
+
+    // Players can't place, move or pick up in a room that isn't theirs.
+    visitor.send({ t: 'placeFurni', d: { def: 'salvaje_chair_2', x: 5, y: 5, dir: 4 } });
+    expect((await visitor.waitFor('error')).d.code).toBe('not_allowed');
+    visitor.send({ t: 'pickUpFurni', d: { uid: added.uid } });
+    await visitor.waitFor('error', (m) => visitor.inbox.filter((x) => x.t === 'error').length >= 2 && m.d.code === 'not_allowed');
+
+    staff.send({ t: 'pickUpFurni', d: { uid: added.uid } });
+    expect((await visitor.waitFor('furniRemove')).d.uid).toBe(added.uid);
+  });
+
+  it('stacks on tables but not on chairs, and never on the door or off the floor', async () => {
+    const { staff } = await staffInOwnRoom();
+    const table = [...content.furni.values()].find((d) => d.stack && d.size[0] === 1 && d.size[1] === 1 && d.kind === 'floor')!;
+    staff.send({ t: 'placeFurni', d: { def: table.id, x: 6, y: 6, dir: 4 } });
+    await staff.waitFor('furniAdd');
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_lava_lamp', x: 6, y: 6, dir: 4 } });
+    const lamp = (await staff.waitFor('furniAdd', (m) => m.d.def === 'salvaje_lava_lamp')).d;
+    expect(lamp.z).toBeGreaterThan(0);
+
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_chair_2', x: 8, y: 8, dir: 4 } });
+    await staff.waitFor('furniAdd', (m) => m.d.def === 'salvaje_chair_2');
+    for (const [x, y] of [[8, 8], [3, 5], [0, 0]] as const) {
+      const before = staff.inbox.filter((m) => m.t === 'error').length;
+      staff.send({ t: 'placeFurni', d: { def: 'salvaje_lava_lamp', x, y, dir: 4 } });
+      await staff.waitFor('error', () => staff.inbox.filter((m) => m.t === 'error').length > before);
+    }
+    expect(staff.inbox.filter((m) => m.t === 'error').every((m) => m.d.code === 'furni_cant_place')).toBe(true);
+  });
+
+  it('you sit down on a seat, facing the way it faces; furni block walking', async () => {
+    const { staff, roomId } = await staffInOwnRoom();
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_chair_2', x: 6, y: 6, dir: 2 } });
+    await staff.waitFor('furniAdd');
+    const me = (await staff.waitFor('welcome')).d.me;
+    staff.send({ t: 'walk', d: { x: 6, y: 6 } });
+    await new Promise((r) => setTimeout(r, 50));
+    const live = app!.rooms.get(roomId)!;
+    for (let i = 1; i <= 12; i++) live.tick(Date.now() + i * TICK_MS);
+    await new Promise((r) => setTimeout(r, 50));
+    const last = staff.inbox.filter((m) => m.t === 'status').flatMap((m) => m.d).filter((s) => s.id === me.id).at(-1)!;
+    expect(last).toMatchObject({ x: 6, y: 6, sit: true, dir: 2, moving: false });
+    expect(last.z).toBeGreaterThan(0);
+  });
+
+  it('hangs wall furni on walls only', async () => {
+    const { staff } = await staffInOwnRoom();
+    // model_a: row y=0 is the first floor row at x >= 4? Find a tile with no floor behind it.
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_poster_1', x: 6, y: 6, dir: 2, off: 0.5, z: 1.5 } });
+    expect((await staff.waitFor('error')).d.code).toBe('furni_cant_place');
+    const layout = content.layouts.get('model_a')!;
+    const y0 = layout.map.findIndex((row) => row[6] !== 'x' && row[6] !== undefined);
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_poster_1', x: 6, y: y0, dir: 2, off: 0.5, z: 1.5 } });
+    expect((await staff.waitFor('furniAdd')).d).toMatchObject({ x: 6, y: y0, dir: 2, off: 0.5, z: 1.5 });
+  });
+});

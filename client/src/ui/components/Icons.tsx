@@ -16,6 +16,20 @@ export function NavigatorIcon() {
   );
 }
 
+/** Furni: a wooden crate. */
+export function FurniIcon() {
+  return (
+    <svg viewBox="0 0 17 17" aria-hidden="true" style={pixel}>
+      <rect x="2" y="5" width="13" height="10" fill="#6b4226" />
+      <rect x="3" y="6" width="11" height="8" fill="#b07a45" />
+      <rect x="3" y="9" width="11" height="1" fill="#6b4226" />
+      <rect x="8" y="6" width="1" height="8" fill="#6b4226" />
+      <rect x="1" y="3" width="15" height="3" fill="#8a5a30" />
+      <rect x="2" y="4" width="13" height="1" fill="#c99560" />
+    </svg>
+  );
+}
+
 /** Zoom: a magnifying glass. */
 export function ZoomIcon() {
   return (

@@ -81,14 +81,25 @@ async function enterHotel(): Promise<void> {
   setStatus(t('status.connecting'));
   conn.onOpen = () => conn.send({ t: 'hello', d: { protocol: PROTOCOL_VERSION } });
   conn.onClose = () => setStatus(t('status.reconnecting'));
+  /** Who may do what with furni here: staff anywhere, owners in their own rooms. */
+  const updateRights = () => {
+    const { me, room: r } = getUi();
+    const staff = !!me?.staff;
+    room.setRights({ edit: staff || (!!me && r?.ownerId === me.id), place: staff });
+  };
   conn.on('welcome', (d) => {
     setStatus(null);
     setUi({ me: d.me });
+    updateRights();
   });
   conn.on('room', (d) => {
-    room.enter(d);
     setUi({ room: { id: d.id, name: d.name, description: d.description, owner: d.owner, ownerId: d.ownerId, map: d.map, door: d.door } });
+    updateRights();
+    room.enter(d);
   });
+  conn.on('furniAdd', (d) => room.addFurni(d));
+  conn.on('furniMove', (d) => room.moveFurni(d));
+  conn.on('furniRemove', (d) => room.removeFurni(d.uid));
   conn.on('userJoin', (d) => room.addUser(d));
   conn.on('userLeave', (d) => room.removeUser(d.id));
   conn.on('status', (d) => room.status(d));
@@ -101,7 +112,10 @@ async function enterHotel(): Promise<void> {
   });
   conn.on('layouts', (d) => setUi({ layouts: d.layouts }));
   conn.on('layoutSaved', () => setUi({ notice: { text: infoText('layout_saved'), at: Date.now() } }));
-  conn.on('me', (d) => setUi({ me: d }));
+  conn.on('me', (d) => {
+    setUi({ me: d });
+    updateRights();
+  });
   conn.on('info', (d) => setUi({ notice: { text: infoText(d.code, d.vars), at: Date.now() } }));
   conn.on('roomCreated', () => setNavigator({ open: false, tab: 'mine' }));
   conn.on('error', (d) => {
@@ -119,6 +133,13 @@ async function enterHotel(): Promise<void> {
 
   room.onWalk = (x, y) => conn.send({ t: 'walk', d: { x, y } });
   room.onUseFurni = (uid) => conn.send({ t: 'useFurni', d: { uid } });
+  room.onSelectFurni = (f) => {
+    const states = f ? Math.max(1, ...Object.values(f.def.dirs).map((d) => ('states' in d ? d.states.length : 1))) : 0;
+    setUi({ selectedFurni: f && { uid: f.uid, name: f.def.name, states, state: f.state, wall: f.def.kind === 'wall' } });
+  };
+  room.onPlacing = (def) => setUi({ placing: def && { name: def.name, wall: def.kind === 'wall' } });
+  room.onPlaceFurni = (def, f) => conn.send({ t: 'placeFurni', d: { def, ...f } });
+  room.onMoveFurni = (uid, f) => conn.send({ t: 'moveFurni', d: { uid, ...f } });
   // Development only: lets automated tests walk to a tile. Not in production builds.
   if (import.meta.env.DEV) Object.assign(window, { bobbaRoom: room, bobbaConn: conn, bobbaWalk: (x: number, y: number) => conn.send({ t: 'walk', d: { x, y } }) });
 
@@ -132,6 +153,12 @@ async function enterHotel(): Promise<void> {
     deleteLayout: (id) => conn.send({ t: 'deleteLayout', d: { id } }),
     saveRoomFloor: (roomId, map, door) => conn.send({ t: 'saveRoomFloor', d: { roomId, map, door } }),
     zoom: () => room.toggleZoom(),
+    placeFurni: (def) => room.startPlacing(def),
+    moveFurni: (uid) => room.startMoving(uid),
+    rotateFurni: () => room.rotatePlacing(),
+    pickUpFurni: (uid) => conn.send({ t: 'pickUpFurni', d: { uid } }),
+    useFurni: (uid) => conn.send({ t: 'useFurni', d: { uid } }),
+    cancelPlacing: () => room.cancelPlacing(),
     logout: async () => {
       await post('/api/auth/logout');
       location.reload();

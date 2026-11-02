@@ -26,6 +26,9 @@ A step is ticked only after it has been played on the live server. One step at a
 
 ## 5. Hotel systems, in order
 - [ ] Furni: definitions, drawing, place / move / rotate / pick up, stacking, sitting
+  - [x] Our own furni format from the pixel_Salvaje pack, sheets built on the server, Furni test room
+  - [x] States (double-click), staff place from a furni list, drag or Move to move, Turn, Pick up, stacking, sitting, wall furni
+  - [ ] Lying in beds (needs lying pictures), furni fixes from playing
 - [ ] Inventory ("My stuff")
 - [ ] Catalogue and buying
 - [ ] Coins (silver and gold)

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { lookSchema } from './look.ts';
 
 /** Bump when a change means old clients can't talk to the new server. */
-export const PROTOCOL_VERSION = 5;
+export const PROTOCOL_VERSION = 6;
 
 export const CHAT_MAX = 100;
 export const NAME_MIN = 3;
@@ -16,6 +16,7 @@ export const NAME_MAX = 15;
 export const NAME_PATTERN = /^[A-Za-z0-9_\-=?!@:.,]+$/;
 
 const tile = z.number().int().min(0).max(4095);
+const furniDir = z.union([z.literal(0), z.literal(2), z.literal(4), z.literal(6)]);
 
 export const roomUserSchema = z.object({
   id: z.number().int(),
@@ -25,6 +26,8 @@ export const roomUserSchema = z.object({
   y: z.number().int(),
   z: z.number(),
   dir: z.number().int().min(0).max(7),
+  /** Sitting (on a seat). */
+  sit: z.boolean(),
 });
 export type RoomUser = z.output<typeof roomUserSchema>;
 
@@ -37,6 +40,7 @@ export const roomFurniSchema = z.object({
   z: z.number(),
   dir: z.union([z.literal(0), z.literal(2), z.literal(4), z.literal(6)]),
   state: z.number().int().min(0),
+  off: z.number().min(0).max(1).optional(),
 });
 
 export const ROOM_NAME_MIN = 3;
@@ -109,6 +113,12 @@ export const clientMessages = {
   chat: z.object({ text: z.string().max(CHAT_MAX * 2) }),
   /** Use a furni (double-click): switches it to its next state, for those allowed to. */
   useFurni: z.object({ uid: z.number().int() }),
+  /** Staff: put a new furni in the room (floor: tile and direction; wall: see RoomFurni). */
+  placeFurni: z.object({ def: z.string().max(80), x: tile, y: tile, dir: furniDir, off: z.number().min(0).max(1).optional(), z: z.number().min(0).max(40).optional() }),
+  /** Move or turn a furni (room owner or staff). Wall furni: off and z too. */
+  moveFurni: z.object({ uid: z.number().int(), x: tile, y: tile, dir: furniDir, off: z.number().min(0).max(1).optional(), z: z.number().min(0).max(40).optional() }),
+  /** Take a furni out of the room (room owner or staff). */
+  pickUpFurni: z.object({ uid: z.number().int() }),
 } satisfies Schemas;
 
 /** Server -> client */
@@ -152,11 +162,16 @@ export const serverMessages = {
       z: z.number(),
       dir: z.number().int().min(0).max(7),
       moving: z.boolean(),
+      sit: z.boolean(),
     }),
   ),
   chat: z.object({ id: z.number().int(), text: z.string() }),
   /** Answer to ping. */
   pong: z.object({}),
+  /** Furni appeared in, moved in or left your room. */
+  furniAdd: roomFurniSchema,
+  furniMove: roomFurniSchema,
+  furniRemove: z.object({ uid: z.number().int() }),
   /** A furni in your room changed state. */
   furniState: z.object({ uid: z.number().int(), state: z.number().int().min(0) }),
   error: z.object({ code: z.string(), message: z.string() }),

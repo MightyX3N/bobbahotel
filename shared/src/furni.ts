@@ -31,6 +31,10 @@ export interface FurniDef {
   scale?: number;
   /** Fine-tuning of where the picture sits, in screen pixels at scale 1. */
   offset?: [number, number];
+  /** How high its top is, in height steps (things stacked on it stand there). Default: measured from the picture. */
+  height?: number;
+  /** Seats: how high you sit, in height steps (default SIT_HEIGHT). */
+  sitHeight?: number;
   /** Avatars can sit on it. */
   sit?: boolean;
   /** Avatars can walk over it (rugs, mats). */
@@ -55,7 +59,12 @@ export interface FurniSheet {
   dirs: Partial<Record<FurniDir, FurniFrame[][]>>;
 }
 
-/** A furni standing in a room. */
+/**
+ * A furni in a room. Floor furni: standing on tile (x, y) (its back corner) at height z.
+ * Wall furni: hanging on the wall at the edge of floor tile (x, y), `off` (0-1) along that edge
+ * and z height steps above that floor; direction 4 = on a left wall (the tile's x edge),
+ * 2 = on a back wall (the tile's y edge).
+ */
 export interface RoomFurni {
   /** Unique within the room. */
   uid: number;
@@ -66,6 +75,29 @@ export interface RoomFurni {
   dir: FurniDir;
   /** Which of its states it shows (0 = the first). */
   state: number;
+  off?: number | undefined;
+}
+
+/**
+ * How high you sit on a seat that doesn't say, in height steps above where it stands. The Cozy
+ * sitting pictures are drawn with the feet on the floor and the seat at chair height, so for an
+ * ordinary chair this is 0.
+ */
+export const SIT_HEIGHT = 0;
+/** Wall furni hang between these heights above the floor (height steps). */
+export const WALL_ITEM_MIN_Z = 0.3;
+export const WALL_ITEM_MAX_Z = 4.2;
+
+/** How high a furni's top is (height steps): its own `height`, or measured from its sheet. */
+export function furniHeight(def: FurniDef, sheet?: FurniSheet): number {
+  if (def.height !== undefined) return def.height;
+  if (def.walk) return 0;
+  const [dir, states] = Object.entries(sheet?.dirs ?? {})[0] ?? [];
+  const frame = states?.[0]?.[0];
+  if (!frame) return 1;
+  const [fx, fy] = furniFootprint(def, Number(dir) as FurniDir);
+  // The picture's height above the footprint's diamond, in steps (32 px each).
+  return Math.max(0, Math.round(((frame.h - (fx + fy) * 16) / 32) * 10) / 10);
 }
 
 /** How many states a furni has (switched off/on, closed/open…). */

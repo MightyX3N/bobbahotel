@@ -44,6 +44,19 @@ const MIGRATIONS: string[] = [
      created INTEGER NOT NULL
    );
    ALTER TABLE rooms ADD COLUMN floor TEXT;`,
+  // 4: furni in rooms (room: "p:<public id>" or "r:<guest room id>")
+  `CREATE TABLE room_furni (
+     id INTEGER PRIMARY KEY,
+     room TEXT NOT NULL,
+     def TEXT NOT NULL,
+     x INTEGER NOT NULL,
+     y INTEGER NOT NULL,
+     z REAL NOT NULL,
+     dir INTEGER NOT NULL,
+     state INTEGER NOT NULL DEFAULT 0,
+     off REAL
+   );
+   CREATE INDEX room_furni_room ON room_furni(room);`,
 ];
 
 export type Db = DatabaseSync;

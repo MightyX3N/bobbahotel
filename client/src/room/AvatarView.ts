@@ -29,6 +29,8 @@ export class AvatarView {
   private moveMs = 1;
   private dir: number;
   private moving = false;
+  private sitting = false;
+  private readonly shadow: Graphics;
   private readonly seed: number;
 
   constructor(user: RoomUser) {
@@ -38,8 +40,10 @@ export class AvatarView {
     this.dir = user.dir;
     this.seed = (user.id * 9301) % 1000;
     this.from = this.to = { x: user.x, y: user.y, z: user.z };
+    this.sitting = user.sit;
 
     const shadow = new Graphics().ellipse(0, 0, 13, 6).fill({ color: 0x000000, alpha: 0.2 });
+    this.shadow = shadow;
     this.label = new Text({
       text: user.name,
       style: { fontFamily: 'Verdana, sans-serif', fontSize: 11, fontWeight: 'bold', fill: 0xffffff, stroke: { color: 0x000000, width: 3 } },
@@ -52,8 +56,9 @@ export class AvatarView {
     this.setPose('idle');
   }
 
-  /** Start walking to a tile (arrives in `ms`) or stop there. */
-  moveTo(x: number, y: number, z: number, dir: number, moving: boolean, ms: number, now: number): void {
+  /** Start walking to a tile (arrives in `ms`) or stop there (sitting, on a seat). */
+  moveTo(x: number, y: number, z: number, dir: number, moving: boolean, ms: number, now: number, sit = false): void {
+    this.sitting = sit;
     const cur = this.positionAt(now);
     this.from = cur;
     this.to = { x, y, z };
@@ -94,7 +99,9 @@ export class AvatarView {
     this.container.zIndex = depthToZIndex(tileDepth(p.x, p.y) + 0.6);
 
     const walking = this.moving && now - this.moveStart < this.moveMs + 120;
-    this.setPose(walking ? 'walk' : 'idle');
+    this.setPose(walking ? 'walk' : this.sitting ? 'sit' : 'idle');
+    // No shadow while sitting: the seat is under you.
+    this.shadow.visible = !(this.sitting && !walking);
     const fps = walking ? WALK_FPS : IDLE_FPS;
     const frame = Math.floor(((now + this.seed * 37) / 1000) * fps) % AVATAR_FRAME.frames;
     const row = SHEET_ROW[this.dir] ?? 0;

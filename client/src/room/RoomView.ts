@@ -1,14 +1,32 @@
-// A room on screen: floor and walls, avatars, the hover outline, clicks to walk, dragging to look
-// around, zooming (mouse wheel, pinch or the toolbar) and chat bubbles. Works with a mouse and
-// with touch: tap to walk, drag to look around, pinch to zoom, hold to see a name.
+// A room on screen: floor and walls, avatars, furni, the hover outline, clicks to walk, dragging
+// to look around, zooming (mouse wheel, pinch or the toolbar) and chat bubbles. Works with a mouse
+// and with touch: tap to walk, drag to look around, pinch to zoom, hold to see a name.
+// Furni: click to select, double-click to use; with rights, drag to move (mouse) and place new
+// ones with a see-through "ghost" that follows the pointer (R turns it, Esc stops).
 import { Container, Graphics, type Application, type FederatedPointerEvent } from 'pixi.js';
-import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
+import {
+  furniDirs,
+  furniHeight,
+  furniTiles,
+  heightAt,
+  isFloor,
+  parseMap,
+  WALL_ITEM_MAX_Z,
+  WALL_ITEM_MIN_Z,
+  type DataOf,
+  type FurniDef,
+  type FurniDir,
+  type FurniSheet,
+  type Grid,
+  type RoomFurni,
+  type ServerMessage,
+} from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
 import { toolbarHeight } from '../layout.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
 import { FurniView } from './FurniView.ts';
-import { furniDefs } from './furniAssets.ts';
-import { depthToZIndex, drawRoom, drawTileOutline, floorDepth } from './drawRoom.ts';
+import { furniDefs, furniSheets } from './furniAssets.ts';
+import { corner, depthToZIndex, drawRoom, drawTileOutline, floorDepth, type WallFace } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
@@ -20,6 +38,15 @@ const LONG_PRESS_MS = 450;
 /** How long a name shown by holding stays up. */
 const NAME_SHOW_MS = 2500;
 
+/** Where a furni goes: a floor tile and direction, or (wall furni) also where on the wall. */
+export interface FurniSpot {
+  x: number;
+  y: number;
+  dir: FurniDir;
+  off?: number;
+  z?: number;
+}
+
 export class RoomView {
   private readonly app: Application;
   private readonly world = new Container();
@@ -28,7 +55,17 @@ export class RoomView {
   private readonly objects = new Container();
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
-  private furni: FurniView[] = [];
+  private readonly furni = new Map<number, FurniView>();
+  private walls: WallFace[] = [];
+  private defs = new Map<string, FurniDef>();
+  private sheets = new Map<string, FurniSheet>();
+  /** What you may do with furni here (set by the UI from who you are and whose room it is). */
+  private rights = { edit: false, place: false };
+  private selected: number | null = null;
+  /** Placing a new furni (uid null) or moving one: the ghost following the pointer. */
+  private placing: { def: FurniDef; uid: number | null; ghost: FurniView; dir: FurniDir; spot: RoomFurni | null; drag: boolean } | null = null;
+  /** A press on a furni you may move: dragging it moves it (mouse). */
+  private pressedFurni: number | null = null;
   private roomId: string | null = null;
   /** Bumped on every room change, so furni loading for an old room is dropped. */
   private roomSerial = 0;
@@ -51,6 +88,12 @@ export class RoomView {
   onWalk: (x: number, y: number) => void = () => {};
   /** Called when the player double-clicks a furni. */
   onUseFurni: (uid: number) => void = () => {};
+  /** A furni was selected (clicked) or nothing is selected any more. */
+  onSelectFurni: (furni: { uid: number; def: FurniDef; state: number } | null) => void = () => {};
+  /** Placing or moving started (with the furni) or ended (null). */
+  onPlacing: (def: FurniDef | null) => void = () => {};
+  onPlaceFurni: (def: string, f: FurniSpot) => void = () => {};
+  onMoveFurni: (uid: number, f: FurniSpot) => void = () => {};
   private lastClick = { uid: -1, at: 0 };
 
   constructor(app: Application) {
@@ -87,6 +130,21 @@ export class RoomView {
       },
       { passive: false },
     );
+    // R turns what you're placing, Esc stops (not while typing).
+    window.addEventListener('keydown', (e) => {
+      const el = document.activeElement;
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
+      if (!this.placing) return;
+      if (e.key === 'r' || e.key === 'R') this.rotatePlacing();
+      if (e.key === 'Escape') this.cancelPlacing();
+    });
+    void furniDefs().then((d) => (this.defs = d));
+    void furniSheets().then((s) => (this.sheets = s));
+  }
+
+  setRights(rights: { edit: boolean; place: boolean }): void {
+    this.rights = rights;
+    if (!rights.edit && !rights.place) this.cancelPlacing();
   }
 
   /** Zoom to a level, keeping the point under (sx, sy) (default: the middle of the screen) in place. */
@@ -109,9 +167,11 @@ export class RoomView {
     this.avatars.clear();
     for (const g of this.roomPieces) g.destroy();
     this.roomPieces = [];
-    for (const f of this.furni) f.destroy();
-    this.furni = [];
+    this.cancelPlacing();
+    for (const f of this.furni.values()) f.destroy();
+    this.furni.clear();
     this.hoveredFurni = null;
+    this.select(null);
     const serial = ++this.roomSerial;
 
     this.bubbles.clear();
@@ -124,22 +184,18 @@ export class RoomView {
     this.grid.forEach((row, y) => row.forEach((h, x) => h >= 0 && this.tilesFrontToBack.push([x, y])));
     this.tilesFrontToBack.sort((a, b) => b[0] + b[1] - (a[0] + a[1]) || heightAt(this.grid, b[0], b[1]) - heightAt(this.grid, a[0], a[1]));
 
-    for (const piece of drawRoom(this.grid, room.door)) {
+    const drawn = drawRoom(this.grid, room.door);
+    this.walls = drawn.walls;
+    for (const piece of drawn.pieces) {
       piece.graphics.zIndex = depthToZIndex(piece.depth);
       this.objects.addChild(piece.graphics);
       this.roomPieces.push(piece.graphics);
     }
     this.hover.clear();
     for (const u of room.users) this.addUser(u);
-    void furniDefs().then((defs) => {
+    void furniDefs().then(() => {
       if (serial !== this.roomSerial) return;
-      for (const f of room.furni) {
-        const def = defs.get(f.def);
-        if (!def) continue;
-        const view = new FurniView(f, def);
-        this.furni.push(view);
-        this.objects.addChild(view.container);
-      }
+      for (const f of room.furni) this.addFurni(f);
     });
     if (sameRoom) return;
     // Start at normal size, or half size when the room doesn't fit the screen.
@@ -165,11 +221,191 @@ export class RoomView {
 
   status(updates: DataOf<ServerMessage, 'status'>): void {
     const now = performance.now();
-    for (const s of updates) this.avatars.get(s.id)?.moveTo(s.x, s.y, s.z, s.dir, s.moving, TICK_MS, now);
+    for (const s of updates) this.avatars.get(s.id)?.moveTo(s.x, s.y, s.z, s.dir, s.moving, TICK_MS, now, s.sit);
   }
 
   furniState(uid: number, state: number): void {
-    this.furni.find((f) => f.uid === uid)?.setState(state);
+    this.furni.get(uid)?.setState(state);
+    if (this.selected === uid) this.select(uid);
+  }
+
+  addFurni(f: RoomFurni): void {
+    const def = this.defs.get(f.def);
+    if (!def) return;
+    this.furni.get(f.uid)?.destroy();
+    const view = new FurniView(f, def, heightAt(this.grid, f.x, f.y));
+    this.furni.set(f.uid, view);
+    this.objects.addChild(view.container);
+  }
+
+  moveFurni(f: RoomFurni): void {
+    const view = this.furni.get(f.uid);
+    if (!view) return this.addFurni(f);
+    view.place(f, heightAt(this.grid, f.x, f.y));
+    view.container.visible = this.placing?.uid !== f.uid;
+  }
+
+  removeFurni(uid: number): void {
+    if (this.placing?.uid === uid) this.cancelPlacing();
+    this.furni.get(uid)?.destroy();
+    this.furni.delete(uid);
+    if (this.selected === uid) this.select(null);
+    if (this.hoveredFurni?.uid === uid) this.hoveredFurni = null;
+  }
+
+  /** Start placing a new furni: a ghost follows the pointer until you click (or tap) somewhere. */
+  startPlacing(defId: string): void {
+    const def = this.defs.get(defId);
+    if (!def || !this.rights.place) return;
+    this.beginPlacing(def, null, furniDirs(def)[0] ?? 4);
+  }
+
+  /** Start moving a furni in the room (like placing, from where it is). */
+  startMoving(uid: number): void {
+    const view = this.furni.get(uid);
+    if (!view || !this.rights.edit) return;
+    this.beginPlacing(view.def, uid, view.data.dir);
+    view.container.visible = false;
+  }
+
+  /** Turn the furni you're placing, or the selected one (to its next direction). */
+  rotatePlacing(): void {
+    const p = this.placing;
+    if (p) {
+      if (p.def.kind === 'wall') return;
+      const dirs = furniDirs(p.def);
+      p.dir = dirs[(dirs.indexOf(p.dir) + 1) % dirs.length] ?? p.dir;
+      if (p.spot) this.showGhost({ ...p.spot, dir: p.dir });
+      return;
+    }
+    const view = this.selected !== null ? this.furni.get(this.selected) : undefined;
+    if (!view || !this.rights.edit || view.def.kind === 'wall') return;
+    const dirs = furniDirs(view.def);
+    const dir = dirs[(dirs.indexOf(view.data.dir) + 1) % dirs.length] ?? view.data.dir;
+    this.onMoveFurni(view.uid, { x: view.data.x, y: view.data.y, dir });
+  }
+
+  cancelPlacing(): void {
+    const p = this.placing;
+    if (!p) return;
+    p.ghost.destroy();
+    if (p.uid !== null) {
+      const view = this.furni.get(p.uid);
+      if (view) view.container.visible = true;
+    }
+    this.placing = null;
+    this.onPlacing(null);
+  }
+
+  /** The furni selected in the room, if any. */
+  selectedFurni(): number | null {
+    return this.selected;
+  }
+
+  private beginPlacing(def: FurniDef, uid: number | null, dir: FurniDir): void {
+    this.cancelPlacing();
+    const ghost = new FurniView({ uid: -1, def: def.id, x: 0, y: 0, z: 0, dir, state: 0 }, def);
+    ghost.container.visible = false;
+    ghost.setGhost(true);
+    this.objects.addChild(ghost.container);
+    this.placing = { def, uid, ghost, dir, spot: null, drag: false };
+    this.onPlacing(def);
+  }
+
+  private select(uid: number | null): void {
+    this.selected = uid;
+    const view = uid !== null ? this.furni.get(uid) : undefined;
+    this.onSelectFurni(view ? { uid: view.uid, def: view.def, state: view.data.state } : null);
+  }
+
+  /** Follow the pointer with the ghost: on a floor tile, or on a wall for wall furni. */
+  private moveGhost(sx: number, sy: number): void {
+    const p = this.placing;
+    if (!p) return;
+    let spot: RoomFurni | null = null;
+    if (p.def.kind === 'wall') {
+      const hit = this.wallAt(sx, sy);
+      if (hit) spot = { uid: -1, def: p.def.id, x: hit.face.x, y: hit.face.y, z: hit.z, dir: hit.face.dir, state: 0, off: hit.off };
+    } else {
+      const t = this.tileAt(sx, sy);
+      if (t) spot = { uid: -1, def: p.def.id, x: t[0], y: t[1], z: 0, dir: p.dir, state: 0 };
+    }
+    p.spot = spot;
+    if (spot) this.showGhost(spot);
+    else p.ghost.container.visible = false;
+  }
+
+  private showGhost(spot: RoomFurni): void {
+    const p = this.placing!;
+    const z = p.def.kind === 'wall' ? spot.z : this.stackZ(p.def, spot, p.uid);
+    const shown = { ...spot, z: z ?? heightAt(this.grid, spot.x, spot.y), dir: p.def.kind === 'wall' ? spot.dir : p.dir };
+    p.spot = { ...shown };
+    p.ghost.place(shown, heightAt(this.grid, spot.x, spot.y));
+    p.ghost.setGhost(z !== null);
+    p.ghost.container.visible = true;
+  }
+
+  /**
+   * Where a floor furni would stand (the same rules as the server): on floor, not the door,
+   * stacked on furni things can go on. null if it can't go there.
+   */
+  private stackZ(def: FurniDef, spot: Pick<RoomFurni, 'x' | 'y' | 'dir'>, except: number | null): number | null {
+    let z = 0;
+    for (const [tx, ty] of furniTiles(def, spot)) {
+      if (!isFloor(this.grid, tx, ty) || (tx === this.door[0] && ty === this.door[1])) return null;
+      let top = heightAt(this.grid, tx, ty);
+      let highest: FurniView | null = null;
+      let highestTop = -Infinity;
+      for (const f of this.furni.values()) {
+        if (f.uid === except || f.def.kind !== 'floor') continue;
+        if (!furniTiles(f.def, f.data).some(([x, y]) => x === tx && y === ty)) continue;
+        const t = f.data.z + furniHeight(f.def, this.sheets.get(f.def.id));
+        if (t > highestTop) {
+          highestTop = t;
+          highest = f;
+        }
+      }
+      if (highest) {
+        if (!(highest.def.stack || highest.def.walk)) return null;
+        top = Math.max(top, highestTop);
+      }
+      z = Math.max(z, top);
+    }
+    return Math.round(z * 100) / 100;
+  }
+
+  /** The wall under a screen point, where on it, and how high. */
+  private wallAt(sx: number, sy: number): { face: WallFace; off: number; z: number } | null {
+    const px = (sx - this.world.x) / this.zoom;
+    const py = (sy - this.world.y) / this.zoom;
+    let best: { face: WallFace; off: number; z: number; depth: number } | null = null;
+    for (const face of this.walls) {
+      // Screen x = (gx - gy) * 32 and y = (gx + gy) * 16 - z * 32: solve for the point on this wall.
+      const along = face.dir === 4 ? face.x - px / 32 : px / 32 + face.y;
+      const off = along - (face.dir === 4 ? face.y : face.x);
+      if (off < 0 || off > 1) continue;
+      const [gx, gy] = face.dir === 4 ? [face.x, along] : [along, face.y];
+      const z = ((gx + gy) * 16 - py) / 32;
+      if (z < face.base || z > face.top) continue;
+      const depth = gx + gy;
+      if (!best || depth > best.depth) {
+        const h = Math.min(WALL_ITEM_MAX_Z, Math.max(WALL_ITEM_MIN_Z, z - face.base));
+        best = { face, off: Math.min(0.9, Math.max(0.1, off)), z: Math.round(h * 100) / 100, depth };
+      }
+    }
+    return best && { face: best.face, off: best.off, z: best.z };
+  }
+
+  /** Place (or move) the ghost where it is now. */
+  private confirmPlacing(): void {
+    const p = this.placing;
+    if (!p?.spot || !p.ghost.container.visible) return;
+    const { x, y, dir, off, z } = p.spot;
+    if (p.def.kind === 'floor' && this.stackZ(p.def, p.spot, p.uid) === null) return;
+    const where = p.def.kind === 'wall' ? { x, y, dir, off: off ?? 0.5, z } : { x, y, dir };
+    if (p.uid === null) this.onPlaceFurni(p.def.id, where);
+    else this.onMoveFurni(p.uid, where);
+    this.cancelPlacing();
   }
 
   chat(id: number, text: string): void {
@@ -211,7 +447,8 @@ export class RoomView {
   private update(): void {
     const now = performance.now();
     for (const a of this.avatars.values()) a.update(now);
-    for (const f of this.furni) f.update(now);
+    for (const f of this.furni.values()) f.update(now);
+    this.placing?.ghost.update(now);
     this.bubbles.update(now);
   }
 
@@ -235,7 +472,7 @@ export class RoomView {
     const px = (sx - this.world.x) / this.zoom;
     const py = (sy - this.world.y) / this.zoom;
     let best: FurniView | null = null;
-    for (const f of this.furni) if (f.hits(px, py) && (!best || f.container.zIndex > best.container.zIndex)) best = f;
+    for (const f of this.furni.values()) if (f.hits(px, py) && (!best || f.container.zIndex > best.container.zIndex)) best = f;
     return best;
   }
 
@@ -250,9 +487,24 @@ export class RoomView {
         clearTimeout(this.longPress);
       }
       if (this.drag.moved) {
+        // Dragging a furni you may move picks it up and moves it (mouse, like Habbo).
+        if (this.pressedFurni !== null && !this.placing) {
+          this.startMoving(this.pressedFurni);
+          this.pressedFurni = null;
+          if (this.placing) (this.placing as { drag: boolean }).drag = true;
+        }
+        if (this.placing?.drag) {
+          this.moveGhost(e.global.x, e.global.y);
+          return;
+        }
         this.world.position.set(Math.round(this.drag.worldX + dx), Math.round(this.drag.worldY + dy));
         return;
       }
+    }
+    if (this.placing) {
+      this.hover.clear();
+      if (e.pointerType !== 'touch') this.moveGhost(e.global.x, e.global.y);
+      return;
     }
     // Hover (tile outline, names) is for the mouse; touch has no hover.
     if (e.pointerType === 'touch') return;
@@ -292,6 +544,9 @@ export class RoomView {
     }
     if (this.pointers.size > 2 || this.pinch) return;
     this.drag = { startX: e.global.x, startY: e.global.y, worldX: this.world.x, worldY: this.world.y, moved: false };
+    // With a mouse, pressing a furni you may move can start dragging it.
+    const pressed = !this.placing && this.rights.edit && e.pointerType !== 'touch' ? this.furniAt(e.global.x, e.global.y) : null;
+    this.pressedFurni = pressed ? pressed.uid : null;
     if (e.pointerType === 'touch') {
       const { x, y } = e.global;
       clearTimeout(this.longPress);
@@ -312,6 +567,7 @@ export class RoomView {
 
   /** A finger lifted or lost: ends a pinch (snapping to the nearest zoom level). */
   private pointerGone(e: FederatedPointerEvent): void {
+    if (this.pointers.size <= 1) this.pressedFurni = null;
     const last = this.pointers.get(e.pointerId);
     this.pointers.delete(e.pointerId);
     clearTimeout(this.longPress);
@@ -345,9 +601,22 @@ export class RoomView {
     const started = this.drag;
     const wasPinch = !!this.pinch;
     this.pointerGone(e);
+    this.pressedFurni = null;
     if (wasPinch) return;
     this.drag = null;
+    // Letting go of a dragged furni puts it there.
+    if (this.placing?.drag) {
+      this.moveGhost(e.global.x, e.global.y);
+      this.confirmPlacing();
+      return;
+    }
     if (!started || started.moved || e.button !== 0) return;
+    // Placing: a click (or tap) puts it there.
+    if (this.placing) {
+      this.moveGhost(e.global.x, e.global.y);
+      this.confirmPlacing();
+      return;
+    }
     // Double-click a furni to use it (switch it on/off, open it…).
     const f = this.avatarAt(e.global.x, e.global.y) ? null : this.furniAt(e.global.x, e.global.y);
     const now = performance.now();
@@ -357,6 +626,8 @@ export class RoomView {
       return;
     }
     this.lastClick = { uid: f?.uid ?? -1, at: now };
+    // Clicking a furni selects it (its name and buttons show); clicking the floor stops that.
+    this.select(f ? f.uid : null);
     const t = this.tileAt(e.global.x, e.global.y);
     if (t && isFloor(this.grid, t[0], t[1])) this.onWalk(t[0], t[1]);
   }

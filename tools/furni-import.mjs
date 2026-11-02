@@ -224,6 +224,25 @@ const STACK = /(table|desk|shelf|shelving|counter|kitchen_furniture|kitchen_a|ca
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 const title = (s) => s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 
+/** Does the picture's top edge go down to the right (drawn for a back wall)? */
+function slopesDownRight(file) {
+  const png = load(file);
+  const box = bbox(png);
+  if (!box) return true;
+  const [l, , r] = box;
+  const topAt = (x) => {
+    for (let y = 0; y < png.height; y++) if (png.data[(y * png.width + x) * 4 + 3] > 16) return y;
+    return png.height;
+  };
+  const third = Math.max(1, Math.floor((r - l) / 3));
+  let left = 0, right = 0;
+  for (let i = 0; i < third; i++) {
+    left += topAt(l + i);
+    right += topAt(r - 1 - i);
+  }
+  return right >= left;
+}
+
 /** Tiles covered, from the picture: its width says how many tiles across, the front corner how they split. */
 function guessSize(frames) {
   const png = load(frames[0]);
@@ -254,10 +273,20 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
   for (let i = 2; ids.has(id); i++) id = `${pack}_${slugName}_${i}`;
   ids.add(id);
   const dirs = {};
-  for (const [d, states] of Object.entries(g.dirs)) dirs[d] = { states };
-  // Only pictures facing one way: the other way round is the same picture mirrored, like Habbo.
-  if (!g.dirs[2]) dirs[2] = { mirror: 4 };
-  const def = { id, name, source, kind: WALL.test(g.base) ? 'wall' : 'floor', size: guessSize(g.dirs[4][0]), dirs };
+  const kind = WALL.test(g.base) ? 'wall' : 'floor';
+  if (kind === 'wall' && !g.dirs[2]) {
+    // Wall items: direction 2 hangs on the back walls (running down to the right), 4 on the left
+    // walls. The picture is drawn for one of them (seen from how its top edge slopes); the other
+    // is the same picture mirrored.
+    const forBack = slopesDownRight(g.dirs[4][0][0]);
+    dirs[forBack ? 2 : 4] = { states: g.dirs[4] };
+    dirs[forBack ? 4 : 2] = { mirror: forBack ? 2 : 4 };
+  } else {
+    for (const [d, states] of Object.entries(g.dirs)) dirs[d] = { states };
+    // Only pictures facing one way: the other way round is the same picture mirrored, like Habbo.
+    if (!g.dirs[2]) dirs[2] = { mirror: 4 };
+  }
+  const def = { id, name, source, kind, size: guessSize(g.dirs[4][0]), dirs };
   if (g.dirs[4].some((st) => st.length > 1)) def.fps = g.fps ?? 8;
   if (def.kind === 'floor') {
     if (SIT.test(g.base)) def.sit = true;
@@ -272,4 +301,4 @@ const out = { pack, source, items: [...existing.items, ...added] };
 writeFileSync(outFile, JSON.stringify(out, null, 1) + '\n');
 const count = (k) => added.filter((d) => d.kind === k).length;
 console.log(`${files.length} pictures → ${groups.length} furni. Added ${added.length} (${count('floor')} floor, ${count('wall')} wall), kept ${known.size}.`);
-console.log(`Animated: ${added.filter((d) => d.fps).length}, with states: ${added.filter((d) => d.dirs[4].states.length > 1).length}, with real directions: ${added.filter((d) => d.dirs[2] && 'states' in d.dirs[2]).length}`);
+console.log(`Animated: ${added.filter((d) => d.fps).length}, with states: ${added.filter((d) => Object.values(d.dirs).some((v) => v.states?.length > 1)).length}, with real directions: ${added.filter((d) => d.dirs[2] && 'states' in d.dirs[2]).length}`);

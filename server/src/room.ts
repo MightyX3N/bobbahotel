@@ -1,15 +1,23 @@
-// A room: who is in it, where they are, and the 500 ms tick that moves them (like Habbo's room cycle).
+// A room: who is in it, where they are, the 500 ms tick that moves them (like Habbo's room cycle),
+// and its furni: placing, moving, stacking, and sitting on seats.
 import {
   cleanChat,
   dirTowards,
   doorFacing,
   findPath,
+  furniHeight,
   furniStateCount,
   furniTiles,
   heightAt,
+  isFloor,
+  SIT_HEIGHT,
+  WALL_ITEM_MAX_Z,
+  WALL_ITEM_MIN_Z,
   parseMap,
   tileKey,
   type FurniDef,
+  type FurniDir,
+  type FurniSheet,
   type Grid,
   type Layout,
   type RoomFurni,
@@ -43,6 +51,7 @@ interface Occupant {
   moving: boolean;
   /** When this avatar may take its next step (or stop). */
   nextStepAt: number;
+  sit: boolean;
   chatTimes: number[];
 }
 
@@ -62,6 +71,26 @@ export interface RoomDetails {
   staffOnly?: boolean;
 }
 
+/** Where a room's furni are kept (the database), so they are still there next time. */
+export interface FurniStore {
+  /** Saves a new furni and returns its id (used as its uid). */
+  add(f: Omit<RoomFurni, 'uid'>): number;
+  update(f: RoomFurni): void;
+  remove(uid: number): void;
+}
+
+/** Why a furni can't go somewhere (shown to the player). */
+export type FurniProblem = 'furni_not_found' | 'furni_cant_place' | 'furni_not_here';
+
+export interface RoomOptions {
+  autoTick?: boolean;
+  furni?: RoomFurni[];
+  defs?: ReadonlyMap<string, FurniDef>;
+  /** Built sprite sheets, for furni heights measured from their pictures. */
+  sheets?: ReadonlyMap<string, FurniSheet>;
+  store?: FurniStore;
+}
+
 export class Room {
   readonly id: string;
   details: RoomDetails;
@@ -70,13 +99,17 @@ export class Room {
   private readonly occupants = new Map<number, Occupant>();
   private timer: ReturnType<typeof setInterval> | undefined;
   private readonly autoTick: boolean;
-  /** Furni standing in the room. */
+  /** Furni in the room. */
   readonly furni: RoomFurni[];
   /** Tiles furni stand on that you can't walk onto (rugs and seats don't count). */
   private readonly furniBlocked = new Set<number>();
   private readonly defs: ReadonlyMap<string, FurniDef>;
+  private readonly sheets: ReadonlyMap<string, FurniSheet>;
+  private readonly store: FurniStore | undefined;
+  /** Next uid for rooms without a store (the furni test room). */
+  private nextUid: number;
 
-  constructor(id: string, details: RoomDetails, layout: Layout, opts: { autoTick?: boolean; furni?: RoomFurni[]; defs?: ReadonlyMap<string, FurniDef> } = {}) {
+  constructor(id: string, details: RoomDetails, layout: Layout, opts: RoomOptions = {}) {
     this.id = id;
     this.details = details;
     this.layout = layout;
@@ -84,11 +117,10 @@ export class Room {
     this.autoTick = opts.autoTick ?? true;
     this.furni = (opts.furni ?? []).map((f) => ({ ...f }));
     this.defs = opts.defs ?? new Map();
-    for (const f of this.furni) {
-      const def = opts.defs?.get(f.def);
-      if (!def || def.walk || def.sit) continue;
-      for (const [x, y] of furniTiles(def, f)) this.furniBlocked.add(tileKey(x, y));
-    }
+    this.sheets = opts.sheets ?? new Map();
+    this.store = opts.store;
+    this.nextUid = Math.max(0, ...this.furni.map((f) => f.uid)) + 1;
+    this.rebuildBlocked();
   }
 
   get count(): number {
@@ -125,6 +157,7 @@ export class Room {
       goal: null,
       moving: false,
       nextStepAt: 0,
+      sit: false,
       chatTimes: [],
     };
     this.occupants.set(visitor.id, occupant);
@@ -182,7 +215,142 @@ export class Room {
     const def = f && this.defs.get(f.def);
     if (!f || !def) return;
     f.state = (f.state + 1) % furniStateCount(def);
+    this.store?.update(f);
     this.broadcast({ t: 'furniState', d: { uid, state: f.state } });
+  }
+
+  // ---- furni ----
+
+  /** Puts a new furni in the room. Returns a problem, or null if it worked. */
+  placeFurni(defId: string, x: number, y: number, dir: FurniDir, off?: number, z?: number): FurniProblem | null {
+    const def = this.defs.get(defId);
+    if (!def) return 'furni_not_found';
+    const spot = this.spotFor(def, { x, y, dir, off, z }, null);
+    if (!spot) return 'furni_cant_place';
+    const f: Omit<RoomFurni, 'uid'> = { def: def.id, ...spot, state: 0 };
+    const uid = this.store ? this.store.add(f) : this.nextUid++;
+    const placed: RoomFurni = { uid, ...f };
+    this.furni.push(placed);
+    this.furniChanged();
+    this.broadcast({ t: 'furniAdd', d: placed });
+    return null;
+  }
+
+  /** Moves or turns a furni. Returns a problem, or null if it worked. */
+  moveFurni(uid: number, x: number, y: number, dir: FurniDir, off?: number, z?: number): FurniProblem | null {
+    const f = this.furni.find((it) => it.uid === uid);
+    const def = f && this.defs.get(f.def);
+    if (!f || !def) return 'furni_not_here';
+    const spot = this.spotFor(def, { x, y, dir, off, z }, f);
+    if (!spot) return 'furni_cant_place';
+    Object.assign(f, spot);
+    if (spot.off === undefined) delete f.off;
+    this.store?.update(f);
+    this.furniChanged();
+    this.broadcast({ t: 'furniMove', d: f });
+    return null;
+  }
+
+  /** Takes a furni out of the room (anything stacked on it stays where it was). */
+  pickUpFurni(uid: number): FurniProblem | null {
+    const i = this.furni.findIndex((it) => it.uid === uid);
+    if (i < 0) return 'furni_not_here';
+    this.furni.splice(i, 1);
+    this.store?.remove(uid);
+    this.furniChanged();
+    this.broadcast({ t: 'furniRemove', d: { uid } });
+    return null;
+  }
+
+  /**
+   * Where a furni would end up: floor furni on free floor tiles (not the door, nobody standing
+   * there unless it's a seat or rug), stacked on furni that things can go on, at the highest of
+   * them; wall furni on a wall at the edge of a floor tile. null if it can't go there.
+   */
+  private spotFor(def: FurniDef, want: { x: number; y: number; dir: FurniDir; off?: number | undefined; z?: number | undefined }, moving: RoomFurni | null): Omit<RoomFurni, 'uid' | 'def' | 'state'> | null {
+    const { x, y, dir } = want;
+    if (!(dir in def.dirs)) return null;
+    if (def.kind === 'wall') {
+      // Direction 4: on the left wall at the tile's x edge; 2: on the back wall at its y edge.
+      if (dir !== 2 && dir !== 4) return null;
+      const behind = dir === 4 ? [x - 1, y] : [x, y - 1];
+      if (!isFloor(this.grid, x, y) || isFloor(this.grid, behind[0]!, behind[1]!)) return null;
+      const z = Math.min(WALL_ITEM_MAX_Z, Math.max(WALL_ITEM_MIN_Z, want.z ?? 1.5));
+      return { x, y, z: Math.round(z * 100) / 100, dir, off: Math.min(1, Math.max(0, want.off ?? 0.5)) };
+    }
+    const [door] = [this.layout.door];
+    let z = 0;
+    for (const [tx, ty] of furniTiles(def, { x, y, dir })) {
+      if (!isFloor(this.grid, tx, ty) || (tx === door[0] && ty === door[1])) return null;
+      if (!def.walk && !def.sit && [...this.occupants.values()].some((o) => o.x === tx && o.y === ty)) return null;
+      let top = heightAt(this.grid, tx, ty);
+      const under = this.furniOn(tx, ty).filter((it) => it !== moving);
+      if (under.length > 0) {
+        const highest = under.reduce((a, b) => (this.topOf(b) > this.topOf(a) ? b : a));
+        const hd = this.defs.get(highest.def);
+        if (!hd || !(hd.stack || hd.walk)) return null;
+        top = Math.max(top, this.topOf(highest));
+      }
+      z = Math.max(z, top);
+    }
+    return { x, y, z: Math.round(z * 100) / 100, dir };
+  }
+
+  /** Floor furni covering a tile. */
+  private furniOn(x: number, y: number): RoomFurni[] {
+    return this.furni.filter((f) => {
+      const def = this.defs.get(f.def);
+      return def?.kind === 'floor' && furniTiles(def, f).some(([tx, ty]) => tx === x && ty === y);
+    });
+  }
+
+  private topOf(f: RoomFurni): number {
+    const def = this.defs.get(f.def);
+    return f.z + (def ? furniHeight(def, this.sheets.get(def.id)) : 0);
+  }
+
+  /** The seat on a tile, if any (the highest). */
+  private seatAt(x: number, y: number): RoomFurni | null {
+    return this.furniOn(x, y).filter((f) => this.defs.get(f.def)?.sit).sort((a, b) => b.z - a.z)[0] ?? null;
+  }
+
+  /** How high someone stands (or sits) on a tile. */
+  private standZ(x: number, y: number): number {
+    const seat = this.seatAt(x, y);
+    if (seat) return seat.z + (this.defs.get(seat.def)?.sitHeight ?? SIT_HEIGHT);
+    let z = Math.max(0, heightAt(this.grid, x, y));
+    for (const f of this.furniOn(x, y)) if (this.defs.get(f.def)?.walk) z = Math.max(z, this.topOf(f));
+    return z;
+  }
+
+  private rebuildBlocked(): void {
+    this.furniBlocked.clear();
+    for (const f of this.furni) {
+      const def = this.defs.get(f.def);
+      if (!def || def.kind !== 'floor' || def.walk || def.sit) continue;
+      for (const [x, y] of furniTiles(def, f)) this.furniBlocked.add(tileKey(x, y));
+    }
+  }
+
+  /** After furni changed: avatars stand (or sit) at the new height, and walk around new furni. */
+  private furniChanged(): void {
+    this.rebuildBlocked();
+    const changes: ServerMessage & { t: 'status' } = { t: 'status', d: [] };
+    for (const o of this.occupants.values()) {
+      const before = `${o.z}|${o.sit}|${o.dir}`;
+      if (!o.moving) this.settle(o);
+      else o.z = this.standZ(o.x, o.y);
+      if (`${o.z}|${o.sit}|${o.dir}` !== before) changes.d.push(statusOf(o));
+    }
+    if (changes.d.length > 0) this.broadcast(changes);
+  }
+
+  /** Someone who stopped: sits down if they're on a seat (facing the way it faces). */
+  private settle(o: Occupant): void {
+    const seat = this.seatAt(o.x, o.y);
+    o.sit = !!seat;
+    if (seat) o.dir = seat.dir;
+    o.z = this.standZ(o.x, o.y);
   }
 
   say(id: number, raw: string, now = Date.now()): void {
@@ -212,14 +380,16 @@ export class Room {
         o.path.shift();
         o.dir = dirTowards(next[0] - o.x, next[1] - o.y);
         [o.x, o.y] = next;
-        o.z = heightAt(this.grid, o.x, o.y);
+        o.z = this.standZ(o.x, o.y);
         o.moving = true;
+        o.sit = false;
         o.nextStepAt = now + TICK_MS;
         if (o.path.length === 0) o.goal = null;
-        changes.d.push({ id: o.visitor.id, x: o.x, y: o.y, z: o.z, dir: o.dir, moving: true });
+        changes.d.push(statusOf(o));
       } else if (o.moving) {
         o.moving = false;
-        changes.d.push({ id: o.visitor.id, x: o.x, y: o.y, z: o.z, dir: o.dir, moving: false });
+        this.settle(o);
+        changes.d.push(statusOf(o));
       }
     }
     if (changes.d.length > 0) this.broadcast(changes);
@@ -254,5 +424,9 @@ export class Room {
 }
 
 function toRoomUser(o: Occupant): RoomUser {
-  return { id: o.visitor.id, name: o.visitor.name, look: o.visitor.look, x: o.x, y: o.y, z: o.z, dir: o.dir };
+  return { id: o.visitor.id, name: o.visitor.name, look: o.visitor.look, x: o.x, y: o.y, z: o.z, dir: o.dir, sit: o.sit };
+}
+
+function statusOf(o: Occupant) {
+  return { id: o.visitor.id, x: o.x, y: o.y, z: o.z, dir: o.dir, moving: o.moving, sit: o.sit };
 }

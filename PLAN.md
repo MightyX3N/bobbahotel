@@ -47,6 +47,7 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
 - **Pictures** are the pack's own files under `sprites/<pack folder>/` (never in git, never changed). When the server starts it builds one sprite sheet plus frame list per furni into `sprites/built/furni/` (only when something changed), like Habbo's furni packages.
 - **`tools/furni-import.mjs`** makes definitions for a new pack from its pictures: it groups animation frames, directions and states, drops repeated pictures and multi-furni sheets, renames brands, and guesses the rest. Definitions that already exist are kept as they are.
 - The **Furni test** public room (staff only) shows every floor furni, to check sizes and looks.
+- **In rooms:** furni are saved per room (`room_furni`). Staff place new ones from the Furni list (until there is an inventory and catalogue); staff and the room's owner move (drag, or Move), turn, pick up and use them. Things stack on furni marked `stack` (and on rugs) at the height of what's under them (`height`, measured from the picture unless set); you sit on `sit` furni facing their way. Wall furni hang on the wall at the edge of a floor tile.
 
 ## Mods
 - **Content packs:** new furni, layouts, catalogue pages, languages and themes, added as folders, with no code needed.

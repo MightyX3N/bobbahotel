@@ -82,7 +82,20 @@ interface V3 {
   z: number;
 }
 
-export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
+/**
+ * A piece of wall that wall furni can hang on: the wall at the left edge (dir 4) or back edge
+ * (dir 2) of floor tile (x, y), from height `base` to `top`.
+ */
+export interface WallFace {
+  dir: 2 | 4;
+  x: number;
+  y: number;
+  base: number;
+  top: number;
+}
+
+export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiece[]; walls: WallFace[] } {
+  const walls: WallFace[] = [];
   const rows = grid.length;
   const cols = Math.max(...grid.map((r) => r.length));
   const [doorX, doorY] = door;
@@ -170,8 +183,17 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       const shown = inFrontOfDoor ? corners.map((v) => ({ ...v, z: Math.max(v.z, doorTop) })) : corners;
       // The wall above the opening (the lintel) and beside it are drawn over anyone standing in the doorway.
       poly(inFrontOfDoor ? tileDepth(doorX, doorY) + 0.7 : depth, shown.map(project), color);
-      if (color === COLORS.wallLeft) nitroFaces.add(`x${Math.round(a.x)},${Math.floor(Math.min(...corners.map((v) => v.y)) + 0.01)}`);
-      if (color === COLORS.wallRight) nitroFaces.add(`y${Math.round(a.y)},${Math.floor(Math.min(...corners.map((v) => v.x)) + 0.01)}`);
+      const minX = Math.floor(Math.min(...corners.map((v) => v.x)) + 0.01);
+      const minY = Math.floor(Math.min(...corners.map((v) => v.y)) + 0.01);
+      const maxZ = Math.max(...corners.map((v) => v.z));
+      if (color === COLORS.wallLeft && sameX) {
+        nitroFaces.add(`x${Math.round(a.x)},${minY}`);
+        if (!inFrontOfDoor && isFloor(grid, Math.round(a.x), minY)) walls.push({ dir: 4, x: Math.round(a.x), y: minY, base: heightAt(grid, Math.round(a.x), minY), top: maxZ });
+      }
+      if (color === COLORS.wallRight && sameY) {
+        nitroFaces.add(`y${Math.round(a.y)},${minX}`);
+        if (isFloor(grid, minX, Math.round(a.y))) walls.push({ dir: 2, x: minX, y: Math.round(a.y), base: heightAt(grid, minX, Math.round(a.y)), top: maxZ });
+      }
     }
   }
 
@@ -208,6 +230,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       // Inside face on the tile's left edge (grid line x), facing +x.
       if (isBehind(x - 1, y) && !nitroFaces.has(`x${x},${y}`)) piece([x, y], [x, y + 1], () => {
         const y0 = isBehind(x, y - 1) ? y - T : y;
+        walls.push({ dir: 4, x, y, base: z, top: Math.min(topAt(x, y), topAt(x, y + 1)) });
         poly(depth, [corner(x, y, z), corner(x, y + 1, z), corner(x, y + 1, topAt(x, y + 1)), corner(x, y, topAt(x, y))], COLORS.wallLeft);
         poly(depth, [corner(x - T, y0, topAt(x - T, y0)), corner(x - T, y + 1, topAt(x - T, y + 1)), corner(x, y + 1, topAt(x, y + 1)), corner(x, y0, topAt(x, y0))], COLORS.wallTop);
         // Where this wall ends (no wall continues on the next tile), its end shows its thickness.
@@ -218,6 +241,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       // Inside face on the tile's back edge (grid line y), facing +y.
       if (isBehind(x, y - 1) && !nitroFaces.has(`y${y},${x}`)) piece([x, y], [x + 1, y], () => {
         const x0 = isBehind(x - 1, y) ? x - T : x;
+        walls.push({ dir: 2, x, y, base: z, top: Math.min(topAt(x, y), topAt(x + 1, y)) });
         poly(depth, [corner(x, y, z), corner(x + 1, y, z), corner(x + 1, y, topAt(x + 1, y)), corner(x, y, topAt(x, y))], COLORS.wallRight);
         poly(depth, [corner(x0, y - T, topAt(x0, y - T)), corner(x + 1, y - T, topAt(x + 1, y - T)), corner(x + 1, y, topAt(x + 1, y)), corner(x0, y, topAt(x0, y))], COLORS.wallTop);
         if (!solid(x + 1, y) && isBehind(x + 1, y - 1)) {
@@ -351,9 +375,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     if (c.lines.length > 0) g.stroke({ color: COLORS.floorLine, width: 2, alignment: 0.5 });
   }
 
-  return [
-    ...[...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 })),
-  ];
+  return { pieces: [...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 })), walls };
 }
 
 /** Outline shown on the tile under the mouse. */

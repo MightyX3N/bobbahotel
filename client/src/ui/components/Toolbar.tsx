@@ -4,11 +4,12 @@ import { CHAT_MAX, clubDaysLeft } from '@bobba/shared';
 import { actions } from '../actions.ts';
 import { t } from '../i18n.ts';
 import { getUi, setNavigator, setUi, useUi } from '../store.ts';
-import { FloorPlanIcon, LogoutIcon, NavigatorIcon, ZoomIcon } from './Icons.tsx';
+import { FloorPlanIcon, FurniIcon, LogoutIcon, NavigatorIcon, ZoomIcon } from './Icons.tsx';
 
 export function Toolbar() {
   const navOpen = useUi((s) => s.navigator.open);
   const editorOpen = useUi((s) => s.editorOpen);
+  const furniOpen = useUi((s) => s.furniWindowOpen);
   const me = useUi((s) => s.me);
   const clubDays = me ? clubDaysLeft(me.clubUntil) : 0;
   // Staff always get the floor plan editor; Bobba Club members for their own rooms.
@@ -20,6 +21,8 @@ export function Toolbar() {
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement;
       const typing = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+      // While placing a furni, R turns it instead.
+      if (getUi().placing) return;
       if (!typing && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) input.current?.focus();
     };
     window.addEventListener('keydown', onKey);
@@ -43,6 +46,11 @@ export function Toolbar() {
         <button type="button" className="toolbar-btn" title={t('toolbar.zoom')} onClick={() => actions.zoom()}>
           <ZoomIcon />
         </button>
+        {me?.staff && (
+          <button type="button" className={`toolbar-btn${furniOpen ? ' active' : ''}`} title={t('toolbar.furni')} onClick={() => setUi({ furniWindowOpen: !furniOpen })}>
+            <FurniIcon />
+          </button>
+        )}
         {showEditor && (
           <button type="button" className={`toolbar-btn${editorOpen ? ' active' : ''}`} title={t('toolbar.floorplan')} onClick={() => setUi({ editorOpen: !editorOpen })}>
             <FloorPlanIcon />

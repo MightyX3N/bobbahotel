@@ -16,6 +16,11 @@ export interface UiState {
   layouts: LayoutInfo[];
   /** A short message shown at the top (errors from the server). */
   notice: { text: string; at: number } | null;
+  /** The furni clicked in the room (its name and buttons show bottom-right). */
+  selectedFurni: { uid: number; name: string; states: number; state: number; wall: boolean } | null;
+  /** The furni being placed or moved, while that's going on. */
+  placing: { name: string; wall: boolean } | null;
+  furniWindowOpen: boolean;
 }
 
 let state: UiState = {
@@ -25,6 +30,9 @@ let state: UiState = {
   navigator: { open: false, tab: 'public', query: '', rooms: [], loading: false },
   layouts: [],
   notice: null,
+  selectedFurni: null,
+  placing: null,
+  furniWindowOpen: false,
 };
 const listeners = new Set<() => void>();
 

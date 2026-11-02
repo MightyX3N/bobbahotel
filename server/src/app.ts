@@ -334,6 +334,24 @@ export function createApp(opts: AppOptions): App {
           if (room && (isStaff(user) || room.details.ownerId === user.id)) room.useFurni(message.d.uid);
           return;
         }
+        case 'placeFurni': {
+          // For now only staff place new furni (inventory and catalogue come later).
+          const room = client.room;
+          if (!room || !isStaff(user)) return client.send({ t: 'error', d: { code: 'not_allowed', message: 'not_allowed' } });
+          const { def, x, y, dir, off, z } = message.d;
+          const problem = room.placeFurni(def, x, y, dir, off, z);
+          if (problem) client.send({ t: 'error', d: { code: problem, message: problem } });
+          return;
+        }
+        case 'moveFurni':
+        case 'pickUpFurni': {
+          const room = client.room;
+          if (!room || !(isStaff(user) || room.details.ownerId === user.id)) return client.send({ t: 'error', d: { code: 'not_allowed', message: 'not_allowed' } });
+          const d = message.d;
+          const problem = message.t === 'pickUpFurni' ? room.pickUpFurni(d.uid) : room.moveFurni(d.uid, message.d.x, message.d.y, message.d.dir, message.d.off, message.d.z);
+          if (problem) client.send({ t: 'error', d: { code: problem, message: problem } });
+          return;
+        }
         case 'chat':
           // ":" starts a command (like Habbo); commands are never shown as chat.
           if (message.d.text.trimStart().startsWith(':')) {

@@ -2,6 +2,8 @@
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { FloorPlanEditor } from './components/FloorPlanEditor.tsx';
+import { FurniInfo } from './components/FurniInfo.tsx';
+import { FurniWindow } from './components/FurniWindow.tsx';
 import { Navigator } from './components/Navigator.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 import { t } from './i18n.ts';
@@ -31,11 +33,14 @@ function Notice() {
 function Ui() {
   const navOpen = useUi((s) => s.navigator.open);
   const editorOpen = useUi((s) => s.editorOpen);
+  const furniOpen = useUi((s) => s.furniWindowOpen);
   return (
     <div className="ui-root">
       <RoomChip />
       {navOpen && <Navigator />}
       {editorOpen && <FloorPlanEditor />}
+      {furniOpen && <FurniWindow />}
+      <FurniInfo />
       <Notice />
       <Toolbar />
     </div>

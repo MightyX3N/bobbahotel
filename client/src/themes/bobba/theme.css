@@ -458,3 +458,50 @@ textarea.ui-input {
 .win-header {
   touch-action: none;
 }
+
+/* ---- furni: the info stand (bottom-right) and the staff furni list ---- */
+.infostand {
+  position: absolute;
+  right: 10px;
+  bottom: calc(var(--toolbar-height) + env(safe-area-inset-bottom) + 10px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 170px;
+  max-width: min(320px, calc(100vw - 20px));
+  padding: 8px 10px;
+  border-radius: var(--win-radius);
+  background: rgb(28 28 32 / 0.9);
+  color: #fff;
+}
+.infostand-hint {
+  font-size: 11px;
+  color: #c9d1d8;
+}
+.infostand-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.furni-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 4px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 2px;
+}
+.furni-cell {
+  display: grid;
+  place-items: center;
+  height: 60px;
+  padding: 0;
+  border: 1px solid #b0b8bf;
+  border-radius: var(--win-radius);
+  background: #fff;
+  overflow: hidden;
+  cursor: pointer;
+}
+.furni-cell:hover {
+  background: var(--row-hover);
+}

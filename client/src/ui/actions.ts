@@ -13,6 +13,13 @@ export interface UiActions {
   saveRoomFloor(roomId: string, map: string[], door: [number, number]): void;
   /** Room zoom: between normal size and half size. */
   zoom(): void;
+  /** Furni: start placing a new one (staff), move / turn / pick up / use one in the room. */
+  placeFurni(def: string): void;
+  moveFurni(uid: number): void;
+  rotateFurni(): void;
+  pickUpFurni(uid: number): void;
+  useFurni(uid: number): void;
+  cancelPlacing(): void;
   logout(): void;
 }
 
@@ -26,6 +33,12 @@ export const actions: UiActions = {
   deleteLayout: () => {},
   saveRoomFloor: () => {},
   zoom: () => {},
+  placeFurni: () => {},
+  moveFurni: () => {},
+  rotateFurni: () => {},
+  pickUpFurni: () => {},
+  useFurni: () => {},
+  cancelPlacing: () => {},
   logout: () => {},
 };
 
