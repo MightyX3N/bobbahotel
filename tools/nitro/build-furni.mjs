@@ -278,6 +278,11 @@ for (const item of catalogue) {
     }
   }
 
+  // Seats facing away from the viewer (0 and 6): whoever sits there has their back to us, so the
+  // seat's back is in front of them. The picture is drawn closer than the sitter (Habbo does this
+  // with a separate backrest layer).
+  if (item.sit) for (const d of [0, 6]) if (visDirs[d]) visDirs[d] = { layers: { 0: { z: -0.5 } } };
+
   const dirs = Object.keys(visDirs).map(Number).sort((p, q) => p - q);
   const multi = stateCount > 1 || animated;
   const vis = (s) => ({ size: s, layerCount: 1, angle: 45, layers: { 0: { z: 0 } }, directions: visDirs, ...(multi ? { animations } : {}) });
