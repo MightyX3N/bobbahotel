@@ -80,6 +80,8 @@ export function derivedFurni(spritesDir) {
           }
         }
         out[`casino/deco_${deco}_${side}`] = t;
+        // Lights switch off: the same picture, darker.
+        if (deco === 'sconce_light' || deco === 'neon_accent') out[`casino/deco_${deco}_${side}_off`] = dimmed(t);
       }
     }
   }
@@ -158,7 +160,7 @@ const SIDES = { 1: [2, 3], 2: [1, 3], 3: [1, 2], 4: [1, 5], 5: [1, 4], 6: [2, 4]
  */
 function drawDie(top, lift = 0, tilt = 0) {
   const img = blank(64, 64);
-  const W = 11, H = 5.5, Z = 11; // half width, half height of the top, height of the sides
+  const W = 16, H = 8, Z = 15; // half width, half height of the top, height of the sides (Habbo-sized)
   const cx = 32, cy = 57 - 2 * H - Z - lift; // top face centre
   const OUT = [70, 40, 40, 255];
   const faces = [
@@ -187,14 +189,19 @@ function drawDie(top, lift = 0, tilt = 0) {
   }
   if (top > 0) {
     const [left, right] = SIDES[top];
-    const pips = (f, n, col) => PIPS[n].forEach(([u, v]) => {
-      const [x, y] = f(u, v);
+    // Big round pips on top (4x2, readable at normal zoom), smaller ones on the sides.
+    const bigPip = (x, y, col, dark) => {
+      for (const [dx, dy] of [[-1, -1], [0, -1], [-2, 0], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1]]) set(img, Math.round(x) + dx, Math.round(y - 0.5) + dy, dy === 1 ? dark : col);
+    };
+    const smallPip = (x, y, col) => {
       set(img, Math.round(x - 1), Math.round(y - 0.5), col);
       set(img, Math.round(x), Math.round(y - 0.5), col);
-    });
-    pips(faces[0][1], top, [200, 30, 40, 255]);
-    pips(faces[1][1], left, [170, 30, 40, 255]);
-    pips(faces[2][1], right, [150, 25, 35, 255]);
+      set(img, Math.round(x - 1), Math.round(y + 0.5), col);
+      set(img, Math.round(x), Math.round(y + 0.5), col);
+    };
+    PIPS[top].forEach(([u, v]) => { const [x, y] = faces[0][1](u, v); bigPip(x, y, [210, 25, 35, 255], [140, 15, 25, 255]); });
+    PIPS[left].forEach(([u, v]) => { const [x, y] = faces[1][1](u, v); smallPip(x, y, [170, 30, 40, 255]); });
+    PIPS[right].forEach(([u, v]) => { const [x, y] = faces[2][1](u, v); smallPip(x, y, [150, 25, 35, 255]); });
   }
   void OPPOSITE;
   return img;
@@ -272,6 +279,46 @@ function drawBowl(fill, water) {
   return img;
 }
 
+/**
+ * Slot machine reels spinning: inside each reel window (a slanted box: columns x0..x1, starting at
+ * y0 and going down half a pixel per pixel, h tall) every column's pixels are turned round by `k`.
+ */
+function spinReels(img, windows, k) {
+  const out = blank(img.width, img.height);
+  img.data.copy(out.data);
+  for (const [x0, x1, y0, h] of windows) {
+    for (let x = x0; x <= x1; x++) {
+      const top = Math.round(y0 + (x - x0) / 2);
+      for (let i = 0; i < h; i++) set(out, x, top + i, get(img, x, top + ((i + k) % h + h) % h));
+    }
+  }
+  return out;
+}
+
+/** The roulette wheel (an ellipse, centre cx/cy, radii rx/ry) turned by `turn` (0..1). */
+function spinWheelDisc(img, [cx, cy, rx, ry], turn) {
+  const out = blank(img.width, img.height);
+  img.data.copy(out.data);
+  const a = turn * 2 * Math.PI, ca = Math.cos(a), sa = Math.sin(a);
+  for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) {
+    for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry;
+      if (u * u + v * v > 0.8) continue; // leave the rim
+      const su = u * ca - v * sa, sv = u * sa + v * ca;
+      if (su * su + sv * sv > 0.8) continue;
+      set(out, x, y, get(img, Math.floor(cx + su * rx), Math.floor(cy + sv * ry)));
+    }
+  }
+  return out;
+}
+
+/** Light furni switched off: the same picture, darker. */
+function dimmed(img) {
+  const out = blank(img.width, img.height);
+  for (let i = 0; i < img.data.length; i += 4) out.data.set([img.data[i] * 0.55, img.data[i + 1] * 0.55, img.data[i + 2] * 0.6, img.data[i + 3]].map(Math.round), i);
+  return out;
+}
+
 /** Pictures for the casino games: dice (dice/0..6, dice/roll_0..3) and the jackpot wheel's turns. */
 export function gamePictures(spritesDir) {
   const out = {};
@@ -289,6 +336,20 @@ export function gamePictures(spritesDir) {
     // 8 stops (the results) and 12 frames of spinning
     for (let i = 0; i < 8; i++) out[`casino/wheel_stop_${i + 1}`] = turnWheel(wheel, i / 8);
     for (let i = 0; i < 12; i++) out[`casino/wheel_spin_${i}`] = turnWheel(wheel, i / 12);
+    // Slot machines: reels spinning, then stopping on one of three; the roulette wheel turns.
+    const SLOTS = {
+      high_limit_slot_machine: [[23, 35, 31, 6]],
+      slot_machine_row: [[13, 20, 12, 8], [28, 35, 19, 8], [42, 50, 27, 8]],
+    };
+    for (const [name, windows] of Object.entries(SLOTS)) {
+      const machine = load(join(spritesDir, 'casino', `${name}.png`));
+      for (let i = 0; i < 6; i++) out[`casino/${name}_spin_${i}`] = spinReels(machine, windows, i * 2 + 1);
+      [0, 3, 5, 7].forEach((k, i) => (out[`casino/${name}_stop_${i}`] = spinReels(machine, windows, k)));
+    }
+    const roulette = load(join(spritesDir, 'casino', 'roulette_table.png'));
+    const disc = [19, 38.5, 6.5, 4];
+    for (let i = 0; i < 8; i++) out[`casino/roulette_spin_${i}`] = spinWheelDisc(roulette, disc, i / 8);
+    for (let i = 0; i <= 8; i++) out[`casino/roulette_stop_${i}`] = spinWheelDisc(roulette, disc, i / 9);
   }
   return out;
 }

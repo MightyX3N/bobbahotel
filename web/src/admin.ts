@@ -6,7 +6,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { Config } from './config.ts';
-import type { Account, Db } from './db.ts';
+import { lobbyRoom, type Account, type Db } from './db.ts';
 import { esc, layout } from './pages.ts';
 import { rcon, RCON } from './rcon.ts';
 import { readBody, redirect, send } from './app.ts';
@@ -20,7 +20,7 @@ export function adminRoutes({ config, db }: { config: Config; db: Db }) {
   const page = (title: string, body: string, note?: string) =>
     layout(`${title} - Bobba Hotel admin`, `
 <div class="card">
-  <div class="row" style="margin:0 0 12px"><a href="/admin">Players</a> · <a href="/admin/catalogue">Catalogue</a> · <a href="/admin/staff">Staff</a> · <a href="/admin/art">Art packs</a> · <a href="/">Back to the hotel</a></div>
+  <div class="row" style="margin:0 0 12px"><a href="/admin">Players</a> · <a href="/admin/catalogue">Catalogue</a> · <a href="/admin/staff">Staff</a> · <a href="/admin/rooms">Rooms</a> · <a href="/admin/art">Art packs</a> · <a href="/">Back to the hotel</a></div>
   <h1>${esc(title)}</h1>
   ${note ? `<div class="error" style="background:#e3f6dd;border-color:#8bc480">${esc(note)}</div>` : ''}
   ${body}
@@ -100,6 +100,28 @@ ${items.map((i) => `<tr><td>${esc(String(i.public_name))}</td>
     if (r?.status === RCON.OK) return 'Done.';
     await offline();
     return r ? 'Done (the player is offline; they get it when they log in).' : 'Done in the database (the game server did not answer).';
+  }
+
+  async function rooms(url: URL): Promise<string> {
+    const term = (url.searchParams.get('q') ?? '').trim();
+    const lobby = await lobbyRoom(db);
+    const featured = new Set((await q('SELECT room_id FROM navigator_publics WHERE visible = ?', ['1'])).map((r) => Number(r.room_id)));
+    const where = term ? 'WHERE r.name LIKE ? OR r.owner_name LIKE ?' : `WHERE r.id = ? OR r.id IN (SELECT room_id FROM navigator_publics) OR r.owner_id IN (SELECT id FROM users WHERE \`rank\` >= ?)`;
+    const args = term ? [`%${term}%`, `%${term}%`] : [lobby, config.ownerRank];
+    const list = await q(`SELECT r.id, r.name, r.owner_name, r.users, r.users_max FROM rooms r ${where} ORDER BY r.id DESC LIMIT 100`, args);
+    return `<p>Build rooms in the game, then pick here which one is the <b>lobby</b> (everyone lands there: after logging in, when leaving a room, when kicked)
+and which are <b>featured</b> (listed under Public rooms in the navigator). The lobby gets Bobba, the bot that gives new players their first room.</p>
+<p>Lobby now: ${lobby ? `room ${lobby}` : '<b>none</b> (players land in their own room, or the hotel view)'}.</p>
+<form method="get" action="/admin/rooms" class="row"><input type="text" name="q" value="${esc(term)}" placeholder="Room or owner name"><button class="btn small">Search</button></form>
+<p style="font-size:13px">${term ? 'Search results.' : 'Showing the lobby, featured rooms and staff rooms; search to find others.'}</p>
+<table><tr><th>Room</th><th>Owner</th><th>Players</th><th>Lobby</th><th>Featured</th></tr>
+${list.map((r) => {
+  const id = Number(r.id);
+  return `<tr><td>${esc(String(r.name))} <span style="color:#789">#${id}</span></td><td>${esc(String(r.owner_name))}</td><td>${r.users}/${r.users_max}</td>
+<td>${id === lobby ? '<b>lobby</b>' : `<form method="post" action="/admin/rooms/lobby" class="inline"><input type="hidden" name="id" value="${id}"><button class="btn small">Make lobby</button></form>`}</td>
+<td><form method="post" action="/admin/rooms/feature" class="inline"><input type="hidden" name="id" value="${id}"><input type="hidden" name="on" value="${featured.has(id) ? '0' : '1'}"><button class="btn small">${featured.has(id) ? 'Unfeature' : 'Feature'}</button></form></td></tr>`;
+}).join('')}
+</table>`;
   }
 
   async function art(): Promise<string> {
@@ -187,6 +209,25 @@ document.getElementById('go').onclick = async (e) => {
           console.log(`admin ${me.username}: rank ${rank} for user ${id}`);
           return back(note);
         }
+        case '/admin/rooms/lobby': {
+          const old = await lobbyRoom(db);
+          await db.query("INSERT INTO emulator_settings (`key`, `value`) VALUES ('bobba.lobby', ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)", [String(id)]);
+          // Everyone who had no home room (or the old lobby) now starts in the new lobby.
+          await db.query('UPDATE users SET home_room = ? WHERE home_room = 0 OR home_room = ?', [id, old || -1]);
+          console.log(`admin ${me.username}: lobby is room ${id}`);
+          return redirect(res, '/admin/rooms?note=' + encodeURIComponent(`Room ${id} is the lobby now.`));
+        }
+        case '/admin/rooms/feature': {
+          const on = f.get('on') === '1';
+          await db.query('DELETE FROM navigator_publics WHERE room_id = ?', [id]);
+          if (on) {
+            const [cat] = await q('SELECT id FROM navigator_publiccats WHERE visible = ? ORDER BY order_num, id LIMIT 1', ['1']);
+            await db.query("INSERT INTO navigator_publics (public_cat_id, room_id, visible) VALUES (?, ?, '1')", [Number(cat?.id ?? 1), id]);
+          }
+          const r = await rcon(config.rcon, 'bobbanavigator', {});
+          console.log(`admin ${me.username}: room ${id} ${on ? 'featured' : 'unfeatured'}`);
+          return redirect(res, '/admin/rooms?note=' + encodeURIComponent(`${on ? 'Featured' : 'Not featured any more'}.${r ? '' : ' (The game server did not answer; the navigator shows it after a restart.)'}`));
+        }
         case '/admin/art/delete':
           await deletePack(db, id);
           return redirect(res, '/admin/art?note=' + encodeURIComponent('Removed.'));
@@ -221,6 +262,8 @@ document.getElementById('go').onclick = async (e) => {
         return send(res, 200, page('Staff', await staff(), note));
       case '/admin/art':
         return send(res, 200, page('Art packs', await art(), note));
+      case '/admin/rooms':
+        return send(res, 200, page('Rooms', await rooms(url), note));
     }
     return send(res, 404, 'Not found', 'text/plain');
   };
