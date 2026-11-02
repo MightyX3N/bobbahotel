@@ -12,7 +12,7 @@ export function openNavigator() {
       { t: 'select', id: 'field', action: 'filter', options: [['any', 'Anything'], ['name', 'Room name'], ['owner', 'Owner']] },
       { t: 'input', id: 'q', placeholder: 'Search rooms', fill: true, action: 'filter' }] },
     { t: 'list', id: 'list', fill: true },
-    { t: 'text', id: 'detail', text: 'Pick a room to see what it is about.', cls: 'detail' },
+    { t: 'text', id: 'detail', text: 'Click a room to go in. Click the i to see details.', cls: 'detail' },
     { t: 'row', children: [
       { t: 'button', label: 'Create room', action: 'create', kind: 'blue', big: true, fill: true },
       { t: 'button', label: 'Somewhere new', action: 'random', kind: 'green', big: true, fill: true }] },
@@ -39,16 +39,16 @@ export function openNavigator() {
     if (!rows.length) list.append(h('div', 'empty', tab === 'mine' ? 'You have no rooms yet.' : 'No rooms found.'));
     for (const r of rows) list.append(row(r));
     const s = S.rooms.find(r => r.id === sel);
-    b.refs.detail.textContent = s ? `${s.name}${s.owner ? ' · by ' + s.owner : ''} · ${s.users}/${s.max} guests${s.desc ? ' — ' + s.desc : ''}` : 'Pick a room to see what it is about.';
+    b.refs.detail.textContent = s ? `${s.name}${s.owner ? ' · by ' + s.owner : ''} · ${s.users}/${s.max} guests${s.desc ? ' — ' + s.desc : ''}` : 'Click a room to go in. Click the i to see details.';
   }
   function row(r: RoomInfo) {
     const e = h('div', 'rr' + (r.id === sel ? ' sel' : ''));
     const f = r.users / r.max, c = h('span', 'cnt ' + (r.users === 0 ? '' : f >= 1 ? 'full' : f >= .5 ? 'mid' : 'low'), String(r.users));
     const n = h('span', 'nm', r.name); n.title = r.name;
     e.append(c, n); if (r.owner && !r.pub) e.append(h('span', 'ow', r.owner)); e.append(h('span', 'inf', 'i'));
-    e.onclick = () => { sel = r.id; render(); };
-    e.ondblclick = () => S.send({ t: 'join', room: r.id });
-    e.querySelector('.inf')!.addEventListener('click', ev => { ev.stopPropagation(); S.send({ t: 'join', room: r.id }); });
+    // click a room to go in; the little "i" shows the room's details instead
+    e.onclick = () => S.send({ t: 'join', room: r.id });
+    e.querySelector('.inf')!.addEventListener('click', ev => { ev.stopPropagation(); sel = r.id; render(); });
     return e;
   }
   S.listeners.add(render);
