@@ -2,7 +2,7 @@
 
 A Habbo-style hotel in the browser. Play at **hotel.playbobba.com**.
 
-The previous, self-written version is kept on the `old-version` branch.
+The previous, self-written versions are kept on the `old-own-client` and `old-version` branches.
 
 ## How it is made
 Bobba Hotel runs on the open-source Habbo retro stack, with its own art and its own website:
