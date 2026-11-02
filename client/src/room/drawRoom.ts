@@ -51,9 +51,10 @@ export function corner(gx: number, gy: number, z: number): Point {
 export interface RoomPiece {
   graphics: Graphics;
   depth: number;
-  /** Floor pieces are drawn below everything (furni and avatars always stand on top, like Habbo);
-   *  wall pieces are depth-sorted with furni and avatars (so the doorway hides who's in it). */
-  layer: 'floor' | 'wall';
+  /** 'floor': the floor and walls, depth-sorted among themselves and drawn below everything else
+   *  (furni and avatars always stand on top, like Habbo). 'objects': the wall beside and above the
+   *  door opening, depth-sorted with furni and avatars so it hides whoever stands in the doorway. */
+  layer: 'floor' | 'objects';
 }
 
 /** Nitro's camera direction (RoomGeometry(64, (-135, 30, 0), (11, 11, 5)).directionAxis). */
@@ -73,7 +74,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
   // Pieces with the same depth share one Graphics.
   const byDepth = new Map<number, Graphics>();
   const floorByDepth = new Map<number, Graphics>();
-  const at = (depth: number, map = byDepth) => {
+  const at = (depth: number, map = floorByDepth) => {
     const key = depthToZIndex(depth);
     let g = map.get(key);
     if (!g) map.set(key, (g = new Graphics()));
@@ -152,8 +153,10 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       const midY = corners.reduce((s, v) => s + v.y, 0) / 4;
       const inFrontOfDoor = color === COLORS.wallLeft && corners.every((v) => Math.abs(v.x - (doorX + 1)) < 0.01) && midY > doorY && midY < doorY + 1;
       const shown = inFrontOfDoor ? corners.map((v) => ({ ...v, z: Math.max(v.z, doorTop) })) : corners;
-      // The wall above the opening (the lintel) is drawn over anyone standing in the doorway.
-      poly(inFrontOfDoor ? tileDepth(doorX, doorY) + 0.7 : depth, shown.map(project), color);
+      // The wall above the opening (the lintel) and beside it are drawn over anyone standing in the doorway.
+      const besideDoor = color === COLORS.wallLeft && corners.every((v) => Math.abs(v.x - (doorX + 1)) < 0.01) && midY > doorY + 1 && midY < doorY + 2;
+      if (inFrontOfDoor || besideDoor) at(inFrontOfDoor ? tileDepth(doorX, doorY) + 0.7 : depth, byDepth).poly(shown.map(project).flat()).fill(color);
+      else poly(depth, shown.map(project), color);
       if (color === COLORS.wallLeft) nitroFaces.add(`x${Math.round(a.x)},${Math.floor(Math.min(...corners.map((v) => v.y)) + 0.01)}`);
       if (color === COLORS.wallRight) nitroFaces.add(`y${Math.round(a.y)},${Math.floor(Math.min(...corners.map((v) => v.x)) + 0.01)}`);
     }
@@ -337,7 +340,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
 
   return [
     ...[...floorByDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'floor' as const })),
-    ...[...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'wall' as const })),
+    ...[...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'objects' as const })),
   ];
 }
 
