@@ -224,6 +224,12 @@ export class Rooms {
     return infos.slice(0, LIST_LIMIT);
   }
 
+  /** A room's floor plan (public: anyone entering the room sees it). */
+  floorPlanOf(id: string): { name: string; map: string[]; door: [number, number] } | null {
+    const room = this.active.get(id) ?? this.load(id);
+    return room ? { name: room.details.name, map: room.layout.map, door: room.layout.door } : null;
+  }
+
   stopAll(): void {
     for (const t of this.unloadTimers.values()) clearTimeout(t);
     this.unloadTimers.clear();

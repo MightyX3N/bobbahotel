@@ -109,6 +109,18 @@ describe('http', () => {
     expect(await res.json()).toEqual({ ok: true, version: 'test', protocol: PROTOCOL_VERSION });
   });
 
+  it('shows room lists and floor plans read-only', async () => {
+    const host = await start();
+    const p = await Player.join(host, await guest(host, 'Planner'));
+    p.send({ t: 'createRoom', d: { name: 'Planned', description: '', layout: 'model_a' } });
+    const id = (await p.waitFor('roomCreated')).d.id;
+    const list = (await (await fetch(`http://${host}/api/rooms?q=plan`)).json()) as { rooms: { id: string; name: string }[] };
+    expect(list.rooms[0]).toMatchObject({ id, name: 'Planned' });
+    const plan = (await (await fetch(`http://${host}/api/room-plan?id=${id}`)).json()) as { map: string[] };
+    expect(plan.map).toEqual(content.layouts.get('model_a')!.map);
+    expect((await fetch(`http://${host}/api/room-plan?id=r:99999`)).status).toBe(404);
+  });
+
   it('logs in a guest and remembers them', async () => {
     const host = await start();
     expect(await (await fetch(`http://${host}/api/me`)).json()).toEqual({ state: 'out' });

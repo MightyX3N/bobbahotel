@@ -88,6 +88,15 @@ export function createApp(opts: AppOptions): App {
       case 'GET /api/health':
         return sendJson(res, 200, { ok: true, version: config.version, protocol: PROTOCOL_VERSION });
 
+      // Read-only: room lists and floor plans (the same public info the navigator shows), so
+      // layouts can be checked outside the game.
+      case 'GET /api/rooms':
+        return sendJson(res, 200, { rooms: rooms.list('all', url.searchParams.get('q') ?? '', 0) });
+      case 'GET /api/room-plan': {
+        const plan = rooms.floorPlanOf(url.searchParams.get('id') ?? '');
+        return plan ? sendJson(res, 200, plan) : sendJson(res, 404, { error: 'room_not_found' });
+      }
+
       case 'GET /api/me': {
         const session = auth.fromCookie(req.headers.cookie);
         const user = session?.userId != null ? users.byId(session.userId) : null;
