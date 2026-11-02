@@ -33,10 +33,7 @@ jobs:
           cd apps/frontend
           npx vite build --base=/client/ --outDir ../../../client
           cd ../../..
-          # The page loads its configs from the site root by default; ours are under /client/.
-          sed -i -e 's#"/renderer-config.json"#"/client/renderer-config.json"#' \
-                 -e 's#"/ui-config.json"#"/client/ui-config.json"#' \
-                 -e 's#<title>Nitro</title>#<title>Bobba Hotel</title>#' client/index.html
+          # (the patch also points the page at its configs under /client/ and names it Bobba Hotel)
           grep -q '/client/renderer-config.json' client/index.html
           rm -f client/renderer-config.json* client/ui-config.json*
 
@@ -46,6 +43,8 @@ jobs:
           mkdir -p emu/plugins
           git show FETCH_HEAD:arcturus.jar > emu/arcturus.jar
           git show FETCH_HEAD:NitroWebsockets-3.1.jar > emu/plugins/NitroWebsockets.jar
+          # Our own plugin (emu-plugin/: leaving rooms through the door, ...)
+          emu-plugin/build.sh emu/arcturus.jar emu/plugins/BobbaHotel.jar
 
       - name: Pack the release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

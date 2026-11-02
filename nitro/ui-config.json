@@ -207,8 +207,8 @@
   "show.avatar": true,
   "widgets": {},
   "images": {
-   "background": "",
-   "background.colour": "#6eadc8",
+   "background": "${images.url}/hotelview-sky.png",
+   "background.colour": "#bae2f4",
    "sun": "",
    "drape": "",
    "left": "",

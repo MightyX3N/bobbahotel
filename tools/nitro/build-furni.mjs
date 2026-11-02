@@ -14,7 +14,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { align, blank, blit, box, crop, encode, half, load, transformed } from './png.mjs';
+import { alignExact, blank, blit, box, crop, encode, half, load, transformed } from './png.mjs';
 import { writeBundle } from './bundle.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -131,20 +131,39 @@ function forBackWall(img) {
 function lineUp(states) {
   const imgs = states.map((frames) => frames.map((f) => load(join(spritesDir, 'furni', `${f}.png`))));
   const ref = imgs[0][0];
-  const placed = imgs.map((frames) =>
+  const refSolid = box(ref, 200) ?? [0, 0, ref.width, ref.height];
+  const offsets = imgs.map((frames) =>
     frames.map((img) => {
-      if (img === ref) return { img, at: [0, 0] };
-      if (img.width === ref.width && img.height === ref.height) return { img, at: [0, 0] };
-      const [dx, dy, share] = align(ref, img);
-      if (share < 0.25) {
-        // Too different to match (a present opening): line up their bottom middles.
-        return { img, at: [Math.round((ref.width - img.width) / 2), ref.height - img.height] };
-      }
-      return { img, at: [dx, dy] };
+      if (img === ref) return [0, 0];
+      // The pack draws a furni's animation frames on one canvas: those stay where they are.
+      if (img.width === ref.width && img.height === ref.height) return [0, 0];
+      // The solid part (no glow or light beam) the same size: the same thing in another state
+      // (a window with its shutters closed), so the solid parts go exactly on top of each other.
+      const b = box(img, 200) ?? [0, 0, img.width, img.height];
+      if (b[2] - b[0] === refSolid[2] - refSolid[0] && b[3] - b[1] === refSolid[3] - refSolid[1]) return [refSolid[0] - b[0], refSolid[1] - b[1]];
+      const [dx, dy, share] = alignExact(ref, img);
+      if (share >= 0.35) return [dx, dy];
+      // Too different to match pixel by pixel (a present opened, a book laid down): stand them
+      // on the same spot, the middle of the bottom of the solid part.
+      return [Math.round((refSolid[0] + refSolid[2]) / 2 - (b[0] + b[2]) / 2), refSolid[3] - b[3]];
+    }),
+  );
+  // Every picture on one shared canvas, so all of them are cut, scaled and pinned the same way.
+  const all = imgs.flatMap((frames, s) => frames.map((img, f) => [img, offsets[s][f]]));
+  const minX = Math.min(...all.map(([, [x]]) => x)), minY = Math.min(...all.map(([, [, y]]) => y));
+  const maxX = Math.max(...all.map(([img, [x]]) => x + img.width)), maxY = Math.max(...all.map(([img, [, y]]) => y + img.height));
+  const placed = imgs.map((frames, s) =>
+    frames.map((img, f) => {
+      const c = blank(maxX - minX, maxY - minY);
+      blit(img, c, offsets[s][f][0] - minX, offsets[s][f][1] - minY);
+      return { img: c, at: [minX, minY], first: s === 0 && f === 0 };
     }),
   );
   return { ref, placed };
 }
+
+/** A crop box grown so that it starts on even pixels (the half-size pictures then line up too). */
+const even = ([l, t, r, b]) => [l - (l & 1), t - (t & 1), r, b];
 
 // ---- building ----
 
@@ -196,8 +215,8 @@ for (const item of catalogue) {
     const { placed } = lineUp(states);
     let frameId = 0;
     placed.forEach((frames, s) => {
-      const ids = frames.map(({ img, at }) => {
-        const { img: drawn, x, y } = place(img, at);
+      const ids = frames.map(({ img, at, first }) => {
+        const { img: drawn, x, y } = place(img, at, first);
         const name = `${id}_64_a_${dir}_${frameId}`;
         assets[name] = { x, y };
         images[`${id}_${name}`] = drawn;
@@ -234,17 +253,22 @@ for (const item of catalogue) {
     const first = load(join(spritesDir, 'furni', `${item.pics[key][0][0]}.png`));
     const nitroDir = forBackWall(first) ? 4 : 2;
     const len = item.len ?? 1;
-    addDirection(nitroDir, item.pics[key], (img) => {
-      const b = box(img) ?? [0, 0, img.width, img.height];
+    let mid = null;
+    addDirection(nitroDir, item.pics[key], (img, at, isFirst) => {
+      const b = even(box(img) ?? [0, 0, img.width, img.height]);
+      if (isFirst || !mid) {
+        const fb = box(img) ?? b;
+        // The board's middle: the middle of the picture, a little up (the board's front edge).
+        mid = [(fb[0] + fb[2]) / 2, (fb[1] + fb[3]) / 2 - 2];
+      }
       const drawn = crop(img, b);
-      // The board's middle: the middle of the picture, a little up (the board's front edge).
-      const bx = drawn.width / 2, by = drawn.height / 2 - 2;
       // Where it goes from the middle of the first tile: half-way along the shelf, 0.3 tile
       // towards the wall, SHELF_HEIGHT up.
       const along = (len - 1) / 2;
       const ox = nitroDir === 4 ? 32 * along + 9.6 : -32 * along - 9.6;
       const oy = 16 * along - 4.8 - 32 * SHELF_HEIGHT;
-      return { img: drawn, x: Math.round(bx - ox), y: Math.round(by - oy) };
+      void at;
+      return { img: drawn, x: Math.round(mid[0] - b[0] - ox), y: Math.round(mid[1] - b[1] - oy) };
     });
     mirror(nitroDir === 4 ? 2 : 4, nitroDir);
     size = [len, 1];
@@ -257,16 +281,20 @@ for (const item of catalogue) {
     const first = load(join(spritesDir, 'furni', `${item.pics[key][0][0]}.png`));
     const nitroDir = forBackWall(first) ? 4 : 2;
     const depth = item.depth ?? 0;
-    let w = 0, h = 0;
-    addDirection(nitroDir, item.pics[key], (img, at) => {
-      // Pinned by the middle of the picture (its middle on the wall, for things that stick out).
-      const b = box(img) ?? [0, 0, img.width, img.height];
+    let w = 0, h = 0, mid = null;
+    addDirection(nitroDir, item.pics[key], (img, at, isFirst) => {
+      // Pinned by the middle of the first picture (its middle on the wall, for things that stick
+      // out); every state is on the same canvas, so they all use that same point.
+      const b = even(box(img) ?? [0, 0, img.width, img.height]);
+      if (isFirst || !mid) {
+        const fb = box(img) ?? b;
+        [w, h] = [fb[2] - fb[0], fb[3] - fb[1]];
+        mid = [(fb[0] + fb[2]) / 2, (fb[1] + fb[3]) / 2];
+      }
       const drawn = crop(img, b);
-      if (img === first || (!w && !h)) [w, h] = [drawn.width, drawn.height];
-      const cx = drawn.width / 2, cy = drawn.height / 2;
       const dx = nitroDir === 4 ? 16 * depth : -16 * depth;
       void at;
-      return { img: drawn, x: Math.round(cx + dx), y: Math.round(cy - 8 * depth) };
+      return { img: drawn, x: Math.round(mid[0] - b[0] + dx), y: Math.round(mid[1] - b[1] - 8 * depth) };
     });
     mirror(nitroDir === 4 ? 2 : 4, nitroDir);
     size = [Math.max(0.2, w / 32 - depth), 0];
@@ -287,7 +315,7 @@ for (const item of catalogue) {
         // The footprint's middle in this picture, then through the scale/stretch.
         const centre = [fit.at[0] - at[0], fit.at[1] - at[1]];
         const t = transformed(img, fit.m, centre);
-        const b = box(t.img) ?? [0, 0, 1, 1];
+        const b = even(box(t.img) ?? [0, 0, 1, 1]);
         const drawn = crop(t.img, b);
         const cx = t.point[0] - b[0], cy = t.point[1] - b[1];
         // Pinned at the centre of the back tile: the footprint's middle minus half the footprint.
@@ -320,11 +348,15 @@ for (const item of catalogue) {
 
   const dirs = Object.keys(visDirs).map(Number).sort((p, q) => p - q);
   const multi = stateCount > 1 || animated;
-  const vis = (s) => ({ size: s, layerCount: 1, angle: 45, layers: { 0: { z: 0 } }, directions: visDirs, ...(multi ? { animations } : {}) });
+  // Rugs and other flat things you walk on are drawn behind everything standing on their tiles
+  // (pushed back by their own length, as if they were at their back corner), but in front of the
+  // shadows (which Nitro draws 1 back).
+  const flatZ = item.walk && !item.sit ? 1.2 + size[0] + size[1] : 0;
+  const vis = (s) => ({ size: s, layerCount: 1, angle: 45, layers: { 0: { z: flatZ } }, directions: visDirs, ...(multi ? { animations } : {}) });
   const data = {
     name: id,
     type: id,
-    logicType: stateCount > 1 ? 'furniture_multistate' : 'furniture_basic',
+    logicType: item.logic ?? (stateCount > 1 ? 'furniture_multistate' : 'furniture_basic'),
     visualizationType: multi ? 'furniture_animated' : 'furniture_static',
     logic: { model: { dimensions: { x: size[0], y: size[1], z: logicZ }, directions: dirs.map((d) => DEGREES[d]) } },
     assets,
@@ -337,6 +369,7 @@ for (const item of catalogue) {
     const k = Math.min(1, 50 / Math.max(icon.width, icon.height));
     const small = k < 1 ? transformed(icon, [k, 0, 0, k], [0, 0]).img : icon;
     writeFileSync(join(out, 'dcr', 'hof_furni', 'icons', `${id}_icon.png`), encode(small));
+    item.iconPicture = icon;
   }
 
   // Furni list (client) and items_base + catalogue (server).
@@ -351,11 +384,14 @@ for (const item of catalogue) {
   const esc = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   sql.push(
     `(${item.sprite},${item.sprite},'${esc(item.name)}','${id}','${wall ? 'i' : 's'}',${wall ? 0 : size[0]},${wall ? 0 : size[1]},${stackHeight.toFixed(2)},` +
-      `${item.stack && !wall ? 1 : 0},${item.sit ? 1 : 0},${item.lay ? 1 : 0},${item.walk ? 1 : 0},'default',${stateCount})`,
+      `${item.stack && !wall ? 1 : 0},${item.sit ? 1 : 0},${item.lay ? 1 : 0},${item.walk ? 1 : 0},'${esc(item.interaction ?? 'default')}',${stateCount})`,
   );
   item.price = price(item, wall ? [1, 1] : size, height);
-  const page = wall && pageOf(item.name) === 'Other' ? 'Walls & Windows' : pageOf(item.name);
-  (pages.get(page) ?? pages.set(page, []).get(page)).push(item);
+  // Hidden furni (the gift parcel) aren't sold.
+  if (!item.hidden) {
+    const page = wall && pageOf(item.name) === 'Other' ? 'Walls & Windows' : pageOf(item.name);
+    (pages.get(page) ?? pages.set(page, []).get(page)).push(item);
+  }
 }
 
 // Floor and wall styles (from build-generic.mjs): bought as Habbo's "floor" and "wallpaper" items,
@@ -377,14 +413,26 @@ writeFileSync(join(out, 'gamedata', 'FurnitureData.json'), JSON.stringify(furnid
 // furni are, but keeps the prices owners set on the admin pages.
 const q = (v) => (typeof v === 'number' ? String(v) : `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`);
 const offers = []; // [catalog_name, item_ids, page_id, credits, order]
-const pageRows = [`(9000,-1,'bobba','Furni','default_3x3',1,1,1,'1','1','','','')`];
+const pageRows = [`(9000,-1,'bobba','Furni','default_3x3',9000,1,1,'1','1','','','')`];
 let pageId = 9001;
+/** A catalogue page's icon (c_images/catalogue/icon_<page>.png): a furni from it, at most 22 px. */
+const pageIcon = (pid, picture) => {
+  const k = Math.min(1, 22 / Math.max(picture.width, picture.height));
+  const img = k < 1 ? transformed(picture, [k, 0, 0, k], [0, 0]).img : picture;
+  writeFileSync(join(out, 'c_images', 'catalogue', `icon_${pid}.png`), encode(img));
+};
+// The furni each page shows as its icon (the page's first one when it isn't listed here).
+const ICON_FURNI = { Office: 'bobba_office_main_chair', 'Living Room': 'bobba_sofa_1', Bedroom: 'bobba_bed_g_4', Kitchen: 'bobba_fridge', Bathroom: 'bobba_wc_front_1', Lighting: 'bobba_lamp_10', Plants: 'bobba_plant_2', Rugs: 'bobba_carpet_modern', 'Walls & Windows': 'bobba_window_11', Decoration: 'bobba_wall_clock' };
+mkdirSync(join(out, 'c_images', 'catalogue'), { recursive: true });
 for (const [name, items] of pages) {
   const pid = pageId++;
-  pageRows.push(`(${pid},9000,${q(name.toLowerCase().replace(/[^a-z]+/g, '_'))},${q(name)},'default_3x3',1,1,${pid - 9000},'1','1','','','')`);
+  const shown = items.find((it) => it.id === ICON_FURNI[name] && it.iconPicture) ?? items.find((it) => it.iconPicture);
+  if (shown) pageIcon(pid, shown.iconPicture);
+  if (shown && name === 'Living Room') pageIcon(9000, shown.iconPicture);
+  pageRows.push(`(${pid},9000,${q(name.toLowerCase().replace(/[^a-z]+/g, '_'))},${q(name)},'default_3x3',${pid},1,${pid - 9000},'1','1','','','')`);
   items.forEach((it, i) => offers.push([it.id, it.sprite, pid, it.price, i + 1]));
 }
-pageRows.push(`(9050,-1,'spaces','Floors & Walls','spaces_new',1,1,2,'1','1','','','Floors and wallpapers for your rooms: try them on in the preview, then buy.')`);
+pageRows.push(`(9050,-1,'spaces','Floors & Walls','spaces_new',9050,1,2,'1','1','','','Floors and wallpapers for your rooms: try them on in the preview, then buy.')`);
 Object.keys(paints.floors).forEach((code, i) => offers.push([`floor_single_${code}`, PAINT.floor[0], 9050, PAINT_PRICE, i + 1]));
 Object.keys(paints.walls).forEach((code, i) => offers.push([`wallpaper_single_${code}`, PAINT.wallpaper[0], 9050, PAINT_PRICE, 100 + i + 1]));
 
@@ -398,6 +446,7 @@ writeFileSync(
     `INSERT INTO items_base (${BASE_COLS}) VALUES\n${sql.join(',\n')}\nON DUPLICATE KEY UPDATE ${update(BASE_COLS)};`,
     `INSERT INTO items_base (${BASE_COLS}) VALUES\n${Object.entries(PAINT).map(([cls, [id, sprite, name]]) => `(${id},${sprite},'${name}','${cls}','i',0,0,1.00,0,0,0,0,'roomeffect',1)`).join(',\n')}\nON DUPLICATE KEY UPDATE ${update(BASE_COLS)};`,
     `INSERT INTO catalog_pages (${PAGE_COLS}) VALUES\n${pageRows.join(',\n')}\nON DUPLICATE KEY UPDATE ${update(PAGE_COLS)};`,
+    'UPDATE catalog_pages SET icon_image=9100 WHERE id=9100;',
     `DELETE FROM catalog_pages WHERE id >= 9000 AND id < 9100 AND id NOT IN (${pageRows.map((r) => r.slice(1, r.indexOf(','))).join(',')});`,
     `DELETE FROM catalog_items WHERE page_id >= 9000 AND page_id < 9100 AND catalog_name NOT IN (${offers.map((o) => q(o[0])).join(',')});`,
     ...offers.map(([name, item, page, credits, order]) =>
