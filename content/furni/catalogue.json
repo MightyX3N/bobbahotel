@@ -12,7 +12,7 @@
   {"id": "bobba_bath_carpet", "name": "Bath Mat", "kind": "floor", "pics": {"4": [["Bath_Carpet"]]}, "walk": true, "stack": true, "sprite": 10009},
   {"id": "bobba_bath_window", "name": "Bathroom Window", "kind": "wall", "pics": {"2": [["Bath_window"]]}, "sprite": 10010},
   {"id": "bobba_bed_a_4", "name": "Mattress", "kind": "floor", "pics": {"4": [["Bed_A_4"]]}, "lay": true, "sprite": 10011},
-  {"id": "bobba_bed_b_4", "name": "Messy Bed", "kind": "floor", "pics": {"4": [["Bed_B_4"]]}, "lay": true, "sprite": 10012},
+  {"id": "bobba_bed_b_4", "name": "Messy Bed", "kind": "floor", "pics": {"2": [["Bed_B_4"]]}, "lay": true, "sprite": 10012},
   {"id": "bobba_bed_c_4", "name": "Low Bed", "kind": "floor", "pics": {"4": [["Bed_C_4"]]}, "lay": true, "sprite": 10013},
   {"id": "bobba_bed_d_4", "name": "Bed (yellow)", "kind": "floor", "pics": {"4": [["Bed_D_4"]]}, "lay": true, "sprite": 10014},
   {"id": "bobba_bed_e_4", "name": "Bed (pink)", "kind": "floor", "pics": {"4": [["Bed_E_4"]]}, "lay": true, "sprite": 10015},
