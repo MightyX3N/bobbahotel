@@ -13,7 +13,7 @@ export function openInventory() {
     { t: 'row', children: [{ t: 'text', id: 'count', text: '', cls: 'k-fill k-muted' }, { t: 'button', label: 'Place in room', action: 'place', kind: 'green', id: 'placeBtn' }] },
   ] };
   const win = createWindow({ id: 'inventory', title: 'My stuff', w: 460, h: 520, onClose: () => S.listeners.delete(render) });
-  const b = build(spec, { place: () => { const it = S.inv.find(i => i.furni === sel); if (it) S.startPlace(it.id); } });
+  const b = build(spec, { place: () => { if (!S.edit) { const r = S.rooms.find(x => x.mine); if (r) S.send({ t: 'join', room: r.id }); return; } const it = S.inv.find(i => i.furni === sel); if (it) S.startPlace(it.id); } });
   b.root.style.cssText = 'height:400px'; b.refs.grid.style.minHeight = '0'; win.body.append(b.root);
   function render() {
     const groups = new Map<string, InvItem[]>();
@@ -32,8 +32,8 @@ export function openInventory() {
     const d = S.defs[sel];
     b.refs.info.textContent = d ? d.name : 'Nothing selected.';
     b.refs.count.textContent = S.inv.length ? `${S.inv.length} piece${S.inv.length === 1 ? '' : 's'}` : '';
-    (b.refs.placeBtn as HTMLButtonElement).disabled = !d || !S.edit;
-    (b.refs.placeBtn as HTMLButtonElement).title = S.edit ? '' : 'You can only place furniture in your own rooms';
+    const pb = b.refs.placeBtn as HTMLButtonElement; pb.disabled = S.edit && !d;
+    pb.textContent = S.edit ? 'Place in room' : 'Go to my room to place';
   }
   S.listeners.add(render); render();
   return win;
