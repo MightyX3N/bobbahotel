@@ -28,6 +28,381 @@ index c639d7b..549ab7d 100644
      </script>
      <script type="module" src="./src/index.tsx"></script>
    </body>
+diff --git a/apps/frontend/src/components/bobba/BobbaLinksView.tsx b/apps/frontend/src/components/bobba/BobbaLinksView.tsx
+new file mode 100644
+index 0000000..79499e6
+--- /dev/null
++++ b/apps/frontend/src/components/bobba/BobbaLinksView.tsx
+@@ -0,0 +1,35 @@
++// Bobba Hotel's own links ("bobba/..."), used by our buttons and by messages from the game server:
++//   bobba/getroom        ask the server for your first room (the lobby bot)
++//   bobba/delete/<id>    staff: delete a furni for good (not into anyone's inventory)
++// They reach our game server plugin as hidden chat commands.
++import {ILinkEventTracker, RoomUnitChatComposer} from "@nitro/renderer";
++import {FC, useEffect} from "react";
++
++import {AddEventLinkTracker, RemoveLinkEventTracker, SendMessageComposer} from "../../api";
++
++export const BobbaLinksView: FC<{}> = () => {
++  useEffect(() => {
++    const tracker: ILinkEventTracker = {
++      linkReceived: (url: string) => {
++        const parts = url.split("/");
++        switch (parts[1]) {
++          case "getroom":
++            SendMessageComposer(new RoomUnitChatComposer(":getroom"));
++            return;
++          case "delete": {
++            const id = parseInt(parts[2]);
++            if (id > 0) SendMessageComposer(new RoomUnitChatComposer(`:deletefurni ${id}`));
++            return;
++          }
++        }
++      },
++      eventUrlPrefix: "bobba/",
++    };
++
++    AddEventLinkTracker(tracker);
++
++    return () => RemoveLinkEventTracker(tracker);
++  }, []);
++
++  return null;
++};
+diff --git a/apps/frontend/src/components/catalog/views/page/widgets/CatalogPurchaseWidgetView.tsx b/apps/frontend/src/components/catalog/views/page/widgets/CatalogPurchaseWidgetView.tsx
+index 29433af..b5407d4 100644
+--- a/apps/frontend/src/components/catalog/views/page/widgets/CatalogPurchaseWidgetView.tsx
++++ b/apps/frontend/src/components/catalog/views/page/widgets/CatalogPurchaseWidgetView.tsx
+@@ -6,6 +6,7 @@ import {
+   CreateLinkEvent,
+   DispatchUiEvent,
+   GetClubMemberLevel,
++  GetSessionDataManager,
+   LocalStorageKeys,
+   LocalizeText,
+   Offer,
+@@ -32,7 +33,7 @@ export const CatalogPurchaseWidgetView: FC<CatalogPurchaseWidgetViewProps> = pro
+   const [purchaseWillBeGift, setPurchaseWillBeGift] = useState(false);
+   const [purchaseState, setPurchaseState] = useState(CatalogPurchaseState.NONE);
+   const [catalogSkipPurchaseConfirmation, setCatalogSkipPurchaseConfirmation] = useLocalStorage(LocalStorageKeys.CATALOG_SKIP_PURCHASE_CONFIRMATION, false);
+-  const {currentOffer = null, currentPage = null, purchaseOptions = null, setPurchaseOptions = null} = useCatalog();
++  const {currentOffer = null, currentPage = null, purchaseOptions = null, setPurchaseOptions = null, requestOfferToMover = null, isDraggable = null} = useCatalog();
+   const {getCurrencyAmount = null} = usePurse();
+ 
+   const onCatalogEvent = useCallback((event: CatalogEvent) => {
+@@ -181,9 +182,17 @@ export const CatalogPurchaseWidgetView: FC<CatalogPurchaseWidgetViewProps> = pro
+     }
+   };
+ 
++  // Bobba: staff can put a furni straight into the room they are in (free for staff).
++  const canStaffPlace = GetSessionDataManager().isModerator && isDraggable && isDraggable(currentOffer);
++
+   return (
+     <>
+       <PurchaseButton />
++      {canStaffPlace && (
++        <Button variant="success" onClick={() => requestOfferToMover(currentOffer, true)}>
++          Place
++        </Button>
++      )}
+       {!noGiftOption && !currentOffer.isRentOffer && (
+         <Button
+           disabled={
+diff --git a/apps/frontend/src/components/main/MainView.tsx b/apps/frontend/src/components/main/MainView.tsx
+index a6f4b5e..4127628 100644
+--- a/apps/frontend/src/components/main/MainView.tsx
++++ b/apps/frontend/src/components/main/MainView.tsx
+@@ -6,6 +6,7 @@ import {Base, TransitionAnimation, TransitionAnimationTypes} from "../../common"
+ import {useRoomSessionManagerEvent} from "../../hooks";
+ import {AchievementsView} from "../achievements/AchievementsView";
+ import {AvatarEditorView} from "../avatar-editor/AvatarEditorView";
++import {BobbaLinksView} from "../bobba/BobbaLinksView";
+ import {CameraWidgetView} from "../camera/CameraWidgetView";
+ import {CampaignView} from "../campaign/CampaignView";
+ import {CatalogView} from "../catalog/CatalogView";
+@@ -81,6 +82,7 @@ export const MainView: FC<{}> = props => {
+       <ToolbarView isInRoom={!landingViewVisible} />
+       <ModToolsView />
+       <RoomView />
++      <BobbaLinksView />
+       <ChatHistoryView />
+       <WiredView />
+       <AvatarEditorView />
+diff --git a/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetBotView.tsx b/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetBotView.tsx
+index 1d530da..3f12dc5 100644
+--- a/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetBotView.tsx
++++ b/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetBotView.tsx
+@@ -1,8 +1,8 @@
+ import {FC} from "react";
+ import {FaTimes} from "react-icons/fa";
+ 
+-import {AvatarInfoUser, LocalizeText} from "../../../../../api";
+-import {Column, Flex, LayoutAvatarImageView, LayoutBadgeImageView, Text} from "../../../../../common";
++import {AvatarInfoUser, CreateLinkEvent, LocalizeText} from "../../../../../api";
++import {Button, Column, Flex, LayoutAvatarImageView, LayoutBadgeImageView, Text} from "../../../../../common";
+ 
+ interface InfoStandWidgetBotViewProps {
+   avatarInfo: AvatarInfoUser;
+@@ -45,6 +45,12 @@ export const InfoStandWidgetBotView: FC<InfoStandWidgetBotViewProps> = props =>
+             {avatarInfo.motto}
+           </Text>
+         </Flex>
++        {avatarInfo.name === "Bobba" && (
++          // Bobba: the lobby bot hands out first rooms.
++          <Button variant="success" onClick={() => CreateLinkEvent("bobba/getroom")}>
++            Get my own room
++          </Button>
++        )}
+         {avatarInfo.carryItem > 0 && (
+           <Column gap={1}>
+             <hr className="m-0" />
+diff --git a/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetFurniView.tsx b/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetFurniView.tsx
+index eef4a17..aa5f1bc 100644
+--- a/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetFurniView.tsx
++++ b/apps/frontend/src/components/room/widgets/avatar-info/infostand/InfoStandWidgetFurniView.tsx
+@@ -16,7 +16,7 @@ import {
+ import {FC, useCallback, useEffect, useState} from "react";
+ import {FaTimes} from "react-icons/fa";
+ 
+-import {AvatarInfoFurni, CreateLinkEvent, GetGroupInformation, GetNitroInstance, GetRoomEngine, LocalizeText, SendMessageComposer} from "../../../../../api";
++import {AvatarInfoFurni, CreateLinkEvent, GetGroupInformation, GetNitroInstance, GetRoomEngine, GetSessionDataManager, LocalizeText, SendMessageComposer} from "../../../../../api";
+ import {
+   Base,
+   Button,
+@@ -507,6 +507,17 @@ export const InfoStandWidgetFurniView: FC<InfoStandWidgetFurniViewProps> = props
+             {LocalizeText(pickupMode === PICKUP_MODE_EJECT ? "infostand.button.eject" : "infostand.button.pickup")}
+           </Button>
+         )}
++        {GetSessionDataManager().isModerator && (
++          <Button
++            variant="danger"
++            onClick={() => {
++              // Bobba: staff delete a furni for good (it doesn't go into anyone's inventory).
++              if (window.confirm(`Delete "${avatarInfo.name}" for good? It won't go into anyone's inventory.`)) CreateLinkEvent(`bobba/delete/${avatarInfo.id}`);
++            }}
++          >
++            Delete
++          </Button>
++        )}
+         {canUse && (
+           <Button variant="dark" onClick={event => processButtonAction("use")}>
+             {LocalizeText("infostand.button.use")}
+diff --git a/apps/frontend/src/components/room/widgets/chat-input/ChatInputView.tsx b/apps/frontend/src/components/room/widgets/chat-input/ChatInputView.tsx
+index 21213ed..989541a 100644
+--- a/apps/frontend/src/components/room/widgets/chat-input/ChatInputView.tsx
++++ b/apps/frontend/src/components/room/widgets/chat-input/ChatInputView.tsx
+@@ -1,4 +1,4 @@
+-import {HabboClubLevelEnum, RoomControllerLevel} from "@nitro/renderer";
++import {HabboClubLevelEnum, RoomControllerLevel, RoomEngineObjectEvent, RoomObjectCategory, RoomObjectOperationType} from "@nitro/renderer";
+ import {FC, useCallback, useEffect, useMemo, useRef, useState} from "react";
+ import {createPortal} from "react-dom";
+ 
+@@ -7,12 +7,13 @@ import {
+   CreateLinkEvent,
+   GetClubMemberLevel,
+   GetConfiguration,
++  GetRoomEngine,
+   GetSessionDataManager,
+   LocalizeText,
+   RoomWidgetUpdateChatInputContentEvent,
+ } from "../../../../api";
+ import {Base, Flex, Text} from "../../../../common";
+-import {useChatInputWidget, useRoom, useSessionInfo, useUiEvent} from "../../../../hooks";
++import {useChatInputWidget, useRoom, useRoomEngineEvent, useSessionInfo, useUiEvent} from "../../../../hooks";
+ import {ChatInputEmojiSelectorView} from "./ChatInputEmojiSelectorView";
+ import {ChatInputStyleSelectorView} from "./ChatInputStyleSelectorView";
+ 
+@@ -23,6 +24,13 @@ export const ChatInputView: FC<{}> = props => {
+   const {roomSession = null} = useRoom();
+ 
+   const inputRef = useRef<HTMLInputElement>();
++  // Bobba: the furni that is selected (clicked), so R can turn it instead of typing.
++  const selectedFurni = useRef<{id: number; category: number} | null>(null);
++
++  useRoomEngineEvent<RoomEngineObjectEvent>([RoomEngineObjectEvent.SELECTED, RoomEngineObjectEvent.DESELECTED], event => {
++    const furni = event.category === RoomObjectCategory.FLOOR || event.category === RoomObjectCategory.WALL;
++    selectedFurni.current = event.type === RoomEngineObjectEvent.SELECTED && furni ? {id: event.objectId, category: event.category} : null;
++  });
+   const chatModeIdWhisper = useMemo(() => LocalizeText("widgets.chatinput.mode.whisper"), []);
+   const chatModeIdShout = useMemo(() => LocalizeText("widgets.chatinput.mode.shout"), []);
+   const chatModeIdSpeak = useMemo(() => LocalizeText("widgets.chatinput.mode.speak"), []);
+@@ -124,6 +132,17 @@ export const ChatInputView: FC<{}> = props => {
+     (event: KeyboardEvent) => {
+       if (floodBlocked || !inputRef.current || anotherInputHasFocus()) return;
+ 
++      // Bobba: R turns the furni that is selected or being moved (when nothing is typed yet).
++      if ((event.key === "r" || event.key === "R") && !event.ctrlKey && !event.altKey && !event.metaKey && !inputRef.current.value && roomSession) {
++        const moving = GetRoomEngine().getSelectedRoomObjectData(roomSession.roomId);
++        const target = moving && moving.id > 0 ? {id: moving.id, category: moving.category} : selectedFurni.current;
++        if (target) {
++          event.preventDefault();
++          GetRoomEngine().processRoomObjectOperation(target.id, target.category, RoomObjectOperationType.OBJECT_ROTATE_POSITIVE);
++          return;
++        }
++      }
++
+       if (document.activeElement !== inputRef.current) setInputFocus();
+ 
+       const value = (event.target as HTMLInputElement).value;
+@@ -148,7 +167,7 @@ export const ChatInputView: FC<{}> = props => {
+           return;
+       }
+     },
+-    [floodBlocked, inputRef, chatModeIdWhisper, anotherInputHasFocus, setInputFocus, checkSpecialKeywordForInput, sendChatValue]
++    [floodBlocked, inputRef, chatModeIdWhisper, anotherInputHasFocus, setInputFocus, checkSpecialKeywordForInput, sendChatValue, roomSession]
+   );
+ 
+   useUiEvent<RoomWidgetUpdateChatInputContentEvent>(RoomWidgetUpdateChatInputContentEvent.CHAT_INPUT_CONTENT, event => {
+diff --git a/apps/frontend/src/components/room/widgets/chat/ChatWidgetMessageView.tsx b/apps/frontend/src/components/room/widgets/chat/ChatWidgetMessageView.tsx
+index 36eef9b..7e300f5 100644
+--- a/apps/frontend/src/components/room/widgets/chat/ChatWidgetMessageView.tsx
++++ b/apps/frontend/src/components/room/widgets/chat/ChatWidgetMessageView.tsx
+@@ -44,8 +44,11 @@ export const ChatWidgetMessageView: FC<ChatWidgetMessageViewProps> = props => {
+     let top = chat.top;
+ 
+     if (!left && !top) {
++      // Bobba: the bubble starts just above the speaker's head (in the room, not on a fixed line on
++      // the screen); avatars are about 90 px tall at normal zoom.
++      const scale = GetRoomEngine().getRoomInstanceRenderingCanvasScale(chat.roomId, 1) || 1;
+       left = chat.location.x - width / 2;
+-      top = element.parentElement.offsetHeight - height;
++      top = chat.location.y - 90 * scale - height;
+ 
+       chat.left = left;
+       chat.top = top;
+diff --git a/apps/frontend/src/components/room/widgets/chat/ChatWidgetView.tsx b/apps/frontend/src/components/room/widgets/chat/ChatWidgetView.tsx
+index a5eb2d3..8c63947 100644
+--- a/apps/frontend/src/components/room/widgets/chat/ChatWidgetView.tsx
++++ b/apps/frontend/src/components/room/widgets/chat/ChatWidgetView.tsx
+@@ -47,7 +47,9 @@ export const ChatWidgetView: FC<{}> = props => {
+ 
+   const makeRoom = useCallback(
+     (chat: ChatBubbleMessage) => {
+-      if (chatSettings.mode === RoomChatSettings.CHAT_MODE_FREE_FLOW) {
++      // Bobba: bubbles start above the speaker's head, so they always make room the free-flow way
++      // (older bubbles that overlap a new one move up).
++      if (chatSettings.mode === RoomChatSettings.CHAT_MODE_FREE_FLOW || true) {
+         chat.skipMovement = true;
+ 
+         checkOverlappingChats(chat, 0, [chat]);
+diff --git a/apps/frontend/src/hooks/catalog/useCatalog.ts b/apps/frontend/src/hooks/catalog/useCatalog.ts
+index 408232b..1baa785 100644
+--- a/apps/frontend/src/hooks/catalog/useCatalog.ts
++++ b/apps/frontend/src/hooks/catalog/useCatalog.ts
+@@ -10,6 +10,7 @@ import {
+   ClubGiftInfoEvent,
+   FrontPageItem,
+   FurniturePlaceComposer,
++  FurnitureListComposer,
+   FurniturePlacePaintComposer,
+   GetCatalogIndexComposer,
+   GetCatalogPageComposer,
+@@ -54,6 +55,7 @@ import {
+   GetProductDataForLocalization,
+   GetRoomEngine,
+   GetRoomSession,
++  GetSessionDataManager,
+   GiftWrappingConfiguration,
+   ICatalogNode,
+   ICatalogOptions,
+@@ -108,6 +110,9 @@ const useCatalogState = () => {
+   const [purchaseOptions, setPurchaseOptions] = useState<IPurchaseOptions>({quantity: 1, extraData: null, extraParamRequired: false, previewStuffData: null});
+   const [catalogOptions, setCatalogOptions] = useState<ICatalogOptions>({});
+   const [objectMoverRequested, setObjectMoverRequested] = useState(false);
++  // Bobba: staff "Place": buys (free for staff) and puts the furni where they drop it, in any room.
++  const [staffPlacing, setStaffPlacing] = useState(false);
++  const staffPlacedPurchase = useRef(false);
+   const [catalogPlaceMultipleObjects, setCatalogPlaceMultipleObjects] = useCatalogPlaceMultipleItems();
+   const [catalogSkipPurchaseConfirmation, setCatalogSkipPurchaseConfirmation] = useCatalogSkipPurchaseConfirmation();
+   const [purchasableOffer, setPurchaseableOffer] = useState<IPurchasableOffer>(null);
+@@ -177,7 +182,8 @@ const useCatalogState = () => {
+           offer.page &&
+           offer.page.layoutCode !== "sold_ltd_items" &&
+           currentType === CatalogType.NORMAL &&
+-          (roomSession.isRoomOwner || (roomSession.isGuildRoom && roomSession.controllerLevel >= RoomControllerLevel.GUILD_MEMBER))) ||
++          (roomSession.isRoomOwner ||
++            GetSessionDataManager().isModerator || (roomSession.isGuildRoom && roomSession.controllerLevel >= RoomControllerLevel.GUILD_MEMBER))) ||
+           (currentType === CatalogType.BUILDER && getBuilderFurniPlaceableStatus(offer) === BuilderFurniPlaceableStatus.OKAY)) &&
+         offer.pricingModel !== Offer.PRICING_MODEL_BUNDLE &&
+         offer.product.productType !== ProductTypeEnum.EFFECT &&
+@@ -191,9 +197,11 @@ const useCatalogState = () => {
+   );
+ 
+   const requestOfferToMover = useCallback(
+-    (offer: IPurchasableOffer) => {
++    (offer: IPurchasableOffer, staff: boolean = false) => {
+       if (!isDraggable(offer)) return;
+ 
++      if (staff) setStaffPlacing(true);
++
+       const product = offer.product;
+ 
+       if (!product) return;
+@@ -256,6 +264,7 @@ const useCatalogState = () => {
+   }, [purchasableOffer]);
+ 
+   const resetObjectMover = useCallback((flag: boolean = true) => {
++    setStaffPlacing(false);
+     setObjectMoverRequested(prevValue => {
+       if (prevValue && flag) {
+         CreateLinkEvent("catalog/open");
+@@ -593,6 +602,13 @@ const useCatalogState = () => {
+   useMessageEvent<PurchaseOKMessageEvent>(PurchaseOKMessageEvent, event => {
+     const parser = event.getParser();
+ 
++    // Bobba: after a staff Place, fetch the inventory, so the new furni arrives as "added" and is
++    // put where it was dropped (the server only says the inventory changed).
++    if (staffPlacedPurchase.current) {
++      staffPlacedPurchase.current = false;
++      SendMessageComposer(new FurnitureListComposer());
++    }
++
+     DispatchUiEvent(new CatalogPurchasedEvent(parser.offer));
+   });
+ 
+@@ -874,10 +890,12 @@ const useCatalogState = () => {
+ 
+         if (roomObject) roomObject.model.setValue(RoomObjectVariable.FURNITURE_ALPHA_MULTIPLIER, 0.5);
+ 
+-        if (catalogSkipPurchaseConfirmation) {
++        if (catalogSkipPurchaseConfirmation || staffPlacing) {
++          if (staffPlacing) staffPlacedPurchase.current = true;
+           SendMessageComposer(new PurchaseFromCatalogComposer(pageId, purchasableOffer.offerId, product.extraParam, 1));
+ 
+-          if (catalogPlaceMultipleObjects) requestOfferToMover(purchasableOffer);
++          if (catalogPlaceMultipleObjects) requestOfferToMover(purchasableOffer, staffPlacing);
++          else setStaffPlacing(false);
+         } else {
+           // confirm
+ 
+@@ -1047,6 +1065,7 @@ const useCatalogState = () => {
+     openPageById,
+     openPageByName,
+     openPageByOfferId,
++    isDraggable,
+     requestOfferToMover,
+   };
+ };
+diff --git a/apps/frontend/src/hooks/rooms/widgets/useChatWidget.ts b/apps/frontend/src/hooks/rooms/widgets/useChatWidget.ts
+index a243c5f..3086eb0 100644
+--- a/apps/frontend/src/hooks/rooms/widgets/useChatWidget.ts
++++ b/apps/frontend/src/hooks/rooms/widgets/useChatWidget.ts
+@@ -254,8 +254,14 @@ const useChatWidgetState = () => {
+     if (!chatMessages.length || event.roomId !== roomSession.roomId) return;
+ 
+     const offsetX = event.offsetX;
++    const offsetY = event.offsetY;
+ 
+-    chatMessages.forEach(chat => chat.elementRef && (chat.left += offsetX));
++    // Bobba: bubbles move with the room both ways (they belong above the speakers' heads).
++    chatMessages.forEach(chat => {
++      if (!chat.elementRef) return;
++      chat.left += offsetX;
++      chat.top += offsetY;
++    });
+   });
+ 
+   useMessageEvent<GetGuestRoomResultEvent>(GetGuestRoomResultEvent, event => {
 diff --git a/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts b/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
 index c506e92..93e9530 100644
 --- a/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
@@ -117,6 +492,29 @@ index 6bfd813..3777c30 100644
 +  id: "Sit",
 +  parts: BOBBA_PART_TYPES.map((setType) => ({ setType, frames: bobbaFrames("sit", 3) })),
 +});
+diff --git a/libs/renderer/src/nitro/room/RoomObjectEventHandler.ts b/libs/renderer/src/nitro/room/RoomObjectEventHandler.ts
+index 482e7f4..c516d1a 100644
+--- a/libs/renderer/src/nitro/room/RoomObjectEventHandler.ts
++++ b/libs/renderer/src/nitro/room/RoomObjectEventHandler.ts
+@@ -109,7 +109,8 @@ export class RoomObjectEventHandler extends Disposable implements IRoomCanvasMou
+     this._selectedAvatarId = -1;
+     this._selectedObjectId = -1;
+     this._selectedObjectCategory = -2;
+-    this._whereYouClickIsWhereYouGo = true;
++    // Bobba: clicking a furni selects it (double-click uses it); it doesn't walk you there (Habbo).
++    this._whereYouClickIsWhereYouGo = false;
+     this._objectPlacementSource = null;
+ 
+     this.onRoomEngineObjectEvent = this.onRoomEngineObjectEvent.bind(this);
+@@ -500,6 +501,8 @@ export class RoomObjectEventHandler extends Disposable implements IRoomCanvasMou
+               didMove = true;
+             }
+           } else if (category === RoomObjectCategory.FLOOR || category === RoomObjectCategory.WALL) {
++            // Bobba: a click on a furni is used up by the furni, the floor under it doesn't get it.
++            if (!this._roomEngine.isPlayingGame()) didWalk = true;
+             if (event.altKey || event.ctrlKey || event.shiftKey) {
+               if (!event.ctrlKey && !event.altKey && event.shiftKey) {
+                 if (category === RoomObjectCategory.FLOOR) {
 diff --git a/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts b/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts
 index 530b823..6122730 100644
 --- a/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts
