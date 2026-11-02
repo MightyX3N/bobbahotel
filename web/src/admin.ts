@@ -10,6 +10,7 @@ import type { Account, Db } from './db.ts';
 import { esc, layout } from './pages.ts';
 import { rcon, RCON } from './rcon.ts';
 import { readBody, redirect, send } from './app.ts';
+import { deletePack, listPacks, MAX_UPLOAD, PACK_FOLDERS, storePack } from './art.ts';
 
 const CURRENCIES: Record<string, string> = { credits: 'Credits', '0': 'Duckets', '5': 'Diamonds' };
 
@@ -19,7 +20,7 @@ export function adminRoutes({ config, db }: { config: Config; db: Db }) {
   const page = (title: string, body: string, note?: string) =>
     layout(`${title} - Bobba Hotel admin`, `
 <div class="card">
-  <div class="row" style="margin:0 0 12px"><a href="/admin">Players</a> · <a href="/admin/catalogue">Catalogue</a> · <a href="/admin/staff">Staff</a> · <a href="/">Back to the hotel</a></div>
+  <div class="row" style="margin:0 0 12px"><a href="/admin">Players</a> · <a href="/admin/catalogue">Catalogue</a> · <a href="/admin/staff">Staff</a> · <a href="/admin/art">Art packs</a> · <a href="/">Back to the hotel</a></div>
   <h1>${esc(title)}</h1>
   ${note ? `<div class="error" style="background:#e3f6dd;border-color:#8bc480">${esc(note)}</div>` : ''}
   ${body}
@@ -101,11 +102,58 @@ ${items.map((i) => `<tr><td>${esc(String(i.public_name))}</td>
     return r ? 'Done (the player is offline; they get it when they log in).' : 'Done in the database (the game server did not answer).';
   }
 
+  async function art(): Promise<string> {
+    const packs = await listPacks(db);
+    const date = (t: number) => new Date(t * 1000).toISOString().slice(0, 16).replace('T', ' ');
+    const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
+    const waiting = packs.some((p) => !p.applied);
+    return `<p>Upload a zip with the licensed pictures. In it, one folder per pack:
+<b>${PACK_FOLDERS.map(esc).join(', ')}</b> (the pictures go in the sprites folder on the server; they are never put on GitHub).</p>
+<form id="up" class="row"><input type="file" id="file" accept=".zip,application/zip"> <button class="btn small" id="go">Upload</button> <span id="msg"></span></form>
+${waiting ? `<div class="error" style="background:#fff6d8;border-color:#e0c25a">Uploads marked "waiting" go into the hotel at the next deploy. To deploy now: open
+<a href="https://github.com/MightyX3N/bobbahotel/actions/workflows/ci.yml" target="_blank" rel="noopener">CI on GitHub</a>, press <b>Run workflow</b>, then the green <b>Run workflow</b> button
+(main). It takes about 5 minutes; the game server restarts at the end.</div>` : ''}
+<table><tr><th>Zip</th><th>Size</th><th>Pictures</th><th>Folders</th><th>Uploaded</th><th>In the hotel</th><th></th></tr>
+${packs.map((p) => `<tr><td>${esc(p.name)}</td><td>${mb(Number(p.size))}</td><td>${p.files}</td><td>${esc(p.folders)}</td><td>${date(Number(p.uploaded))} by ${esc(p.uploaded_by)}</td>
+<td>${p.applied ? date(Number(p.applied)) : '<b>waiting</b>'}</td><td>${p.applied ? '' : `<form method="post" action="/admin/art/delete" class="inline"><input type="hidden" name="id" value="${p.id}"><button class="btn small">Remove</button></form>`}</td></tr>`).join('')}
+</table>
+<script>
+document.getElementById('go').onclick = async (e) => {
+  e.preventDefault();
+  const f = document.getElementById('file').files[0], msg = document.getElementById('msg');
+  if (!f) { msg.textContent = 'Pick a zip first.'; return; }
+  if (f.size > ${MAX_UPLOAD}) { msg.textContent = 'That zip is too big (at most ${MAX_UPLOAD / 1024 / 1024} MB).'; return; }
+  msg.textContent = 'Uploading...';
+  const r = await fetch('/admin/art/upload?name=' + encodeURIComponent(f.name), { method: 'POST', body: f, headers: { 'Content-Type': 'application/zip' } });
+  const t = await r.text();
+  if (r.ok) location.href = '/admin/art?note=' + encodeURIComponent(t); else msg.textContent = t;
+};
+</script>`;
+  }
+
   return async function handle(req: IncomingMessage, res: ServerResponse, url: URL, me: Account): Promise<void> {
     if (req.method === 'POST') {
       // Forms only from our own pages.
       const origin = req.headers.origin;
       if (origin && origin !== config.publicUrl) return send(res, 403, 'Forbidden', 'text/plain');
+      if (url.pathname === '/admin/art/upload') {
+        // A zip of pictures (raw body, from the page's script).
+        const chunks: Buffer[] = [];
+        let size = 0;
+        for await (const chunk of req) {
+          size += (chunk as Buffer).length;
+          if (size > MAX_UPLOAD) return send(res, 413, 'That zip is too big.', 'text/plain');
+          chunks.push(chunk as Buffer);
+        }
+        const name = (url.searchParams.get('name') ?? 'upload.zip').replace(/[^\w .()-]/g, '_');
+        try {
+          const { files, folders } = await storePack(db, name, Buffer.concat(chunks), me.username);
+          console.log(`admin ${me.username}: uploaded art ${name} (${files} pictures)`);
+          return send(res, 200, `Uploaded ${files} pictures (${folders.join(', ')}). They go into the hotel at the next deploy.`, 'text/plain');
+        } catch (e) {
+          return send(res, 400, (e as Error).message, 'text/plain');
+        }
+      }
       const f = new URLSearchParams(await readBody(req));
       const id = Number(f.get('id'));
       const back = (note: string) => redirect(res, `/admin/player?id=${id}&note=${encodeURIComponent(note)}`);
@@ -139,6 +187,9 @@ ${items.map((i) => `<tr><td>${esc(String(i.public_name))}</td>
           console.log(`admin ${me.username}: rank ${rank} for user ${id}`);
           return back(note);
         }
+        case '/admin/art/delete':
+          await deletePack(db, id);
+          return redirect(res, '/admin/art?note=' + encodeURIComponent('Removed.'));
         case '/admin/catalogue': {
           const pageId = Number(f.get('page'));
           for (const [k, v] of f) {
@@ -168,6 +219,8 @@ ${items.map((i) => `<tr><td>${esc(String(i.public_name))}</td>
         return send(res, 200, page('Catalogue prices', await catalogue(url), note));
       case '/admin/staff':
         return send(res, 200, page('Staff', await staff(), note));
+      case '/admin/art':
+        return send(res, 200, page('Art packs', await art(), note));
     }
     return send(res, 404, 'Not found', 'text/plain');
   };

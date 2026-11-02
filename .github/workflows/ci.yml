@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # "Run workflow" on GitHub: deploys main again (e.g. after uploading art packs on the admin pages).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -47,14 +49,14 @@ jobs:
           emu-plugin/build.sh emu/arcturus.jar emu/plugins/BobbaHotel.jar
 
       - name: Pack the release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           echo "$GITHUB_SHA" > VERSION
           npm prune --omit=dev
           tar -czf release.tar.gz VERSION LICENSE package.json package-lock.json node_modules web tools content sql nitro deploy client emu
           ls -la release.tar.gz
       - uses: actions/upload-artifact@v4
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:
           name: release
           path: release.tar.gz
@@ -62,7 +64,7 @@ jobs:
 
   deploy:
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     concurrency:
       group: deploy
