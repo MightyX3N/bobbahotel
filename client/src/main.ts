@@ -241,6 +241,9 @@ function itemAt(px: number, py: number): IV | null {
 
 // ---- selecting, placing, moving ---------------------------------------------------
 let ghost: { kind: 'place' | 'move'; id: number; furni: string; flip: number; sp: Sprite; x: number; y: number } | null = null;
+const ghostImg = document.createElement('img');
+ghostImg.style.cssText = 'position:fixed;z-index:50;pointer-events:none;display:none;image-rendering:pixelated;opacity:.85;transform-origin:50% 85%';
+document.body.append(ghostImg);
 const ghostG = new Graphics(); ghostG.zIndex = 99998; world.addChild(ghostG);
 function select(iv: IV | null) {
   for (const o of itemViews.values()) o.sp.tint = 0xffffff;
@@ -248,14 +251,14 @@ function select(iv: IV | null) {
 }
 function cancelGhost() {
   if (!ghost) return;
-  world.removeChild(ghost.sp); ghost.sp.destroy(); ghost = null; ghostG.clear(); S.placing = false; changed();
+  world.removeChild(ghost.sp); ghost.sp.destroy(); ghost = null; ghostG.clear(); ghostImg.style.display = 'none'; S.placing = false; changed();
   for (const iv of itemViews.values()) iv.sp.alpha = 1;
 }
 function startGhost(kind: 'place' | 'move', id: number, furni: string, flip: number, x = 0, y = 0) {
   cancelGhost(); const d = S.defs[furni]; if (!d) return;
   const sp = new Sprite(); const t = texNow.get('furni/' + d.file); if (t) sp.texture = t; else loadTex('furni/' + d.file).then(tt => { if (tt && ghost?.sp === sp) { sp.texture = tt; updateGhost(); } });
   sp.alpha = 0.8; world.addChild(sp);
-  ghost = { kind, id, furni, flip, sp, x, y }; S.placing = true; changed();
+  ghostImg.src = HTTP + '/sprites/furni/' + d.file; ghost = { kind, id, furni, flip, sp, x, y }; S.placing = true; changed();
   if (kind === 'move') { const iv = itemViews.get(id); if (iv) iv.sp.alpha = 0.25; }
   updateGhost();
 }
@@ -327,6 +330,11 @@ window.addEventListener('pointermove', e => {
   const r = app.canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
   const overWindow = (e.target as HTMLElement)?.closest?.('.win, #toolbar, #bar, #itemcard');
   ptr = [px, py];
+  if (ghost) { // over a window the room is hidden, so the piece floats with the mouse above it
+    const d = S.defs[ghost.furni]; ghostImg.style.display = overWindow ? 'block' : 'none';
+    ghostImg.style.left = e.clientX - (d.art?.fx ?? 20) + 'px'; ghostImg.style.top = e.clientY - (d.art?.fy ?? 40) + 'px';
+    ghostImg.style.transform = ghost.flip ? 'scaleX(-1)' : '';
+  }
   const t = ghost ? tileFree(px, py) : overWindow ? null : tileAt(px, py);
   if (t) lastTile = t;
   if (ghost) { if (t) { const [gx, gy] = centred(t); if (gx !== ghost.x || gy !== ghost.y) { ghost.x = gx; ghost.y = gy; updateGhost(); } } hover.clear(); return; }
