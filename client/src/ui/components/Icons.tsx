@@ -16,6 +16,22 @@ export function NavigatorIcon() {
   );
 }
 
+/** Zoom: a magnifying glass. */
+export function ZoomIcon() {
+  return (
+    <svg viewBox="0 0 17 17" aria-hidden="true" style={pixel}>
+      <rect x="3" y="1" width="6" height="1" fill="#1c1c20" />
+      <rect x="1" y="3" width="1" height="6" fill="#1c1c20" />
+      <rect x="2" y="2" width="8" height="8" fill="#e8e8e8" />
+      <rect x="3" y="3" width="6" height="6" fill="#9fd3ea" />
+      <rect x="4" y="4" width="2" height="2" fill="#ffffff" />
+      <rect x="10" y="10" width="2" height="2" fill="#6b4226" />
+      <rect x="12" y="12" width="3" height="3" fill="#6b4226" />
+      <rect x="14" y="14" width="2" height="2" fill="#6b4226" />
+    </svg>
+  );
+}
+
 /** Log out: a door with an arrow. */
 export function LogoutIcon() {
   return (

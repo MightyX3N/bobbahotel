@@ -115,6 +115,7 @@ async function enterHotel(): Promise<void> {
     saveLayout: (plan) => conn.send({ t: 'saveLayout', d: plan }),
     deleteLayout: (id) => conn.send({ t: 'deleteLayout', d: { id } }),
     saveRoomFloor: (roomId, map, door) => conn.send({ t: 'saveRoomFloor', d: { roomId, map, door } }),
+    zoom: () => room.toggleZoom(),
     logout: async () => {
       await post('/api/auth/logout');
       location.reload();

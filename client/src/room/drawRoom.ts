@@ -29,6 +29,13 @@ const COLORS = {
 const FLOOR_THICKNESS = 0.25 * STEP_PX;
 /** Wall top, in height steps above the highest floor (measured from Habbo: ~144 px on 64 px tiles). */
 const WALL_STEPS = 4.5;
+/**
+ * Nitro gives every wall the same top: the highest floor plus WALL_STEPS. In rooms with floors on
+ * very different levels that makes walls next to low floors tower over everything. A wall is
+ * kept that high only when its own floor is at most this many steps lower; otherwise it ends
+ * WALL_STEPS above the floor next to it, so rooms with levels stay usable.
+ */
+const WALL_TOP_SLACK = 1;
 /** Door opening height: just taller than the avatar (88 px), so its head fits under the lintel. */
 export const DOOR_HEIGHT = 2.9 * STEP_PX;
 
@@ -84,6 +91,20 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
   // Nitro puts tile centres on whole numbers; our tile (x, y) spans x..x+1.
   const ours = (v: V3): V3 => ({ x: v.x + 0.5, y: v.y + 0.5, z: v.z });
   const project = (v: V3): Point => corner(v.x, v.y, v.z);
+  const maxZ = Math.max(0, ...grid.flat());
+  // Nitro's wall top (RoomPlaneParser: wallHeight + min(MAX_WALL_ADDITIONAL_HEIGHT = 20, floorHeight)).
+  const highTop = Math.min(20, maxZ) + WALL_STEPS;
+  /** Wall top at grid point (gx, gy): see WALL_TOP_SLACK. */
+  const topAt = (gx: number, gy: number) => {
+    let near = -1;
+    for (let ty = Math.floor(gy - 0.5); ty <= Math.floor(gy + 0.5); ty++) {
+      for (let tx = Math.floor(gx - 0.5); tx <= Math.floor(gx + 0.5); tx++) near = Math.max(near, heightAt(grid, tx, ty));
+    }
+    if (near < 0) return highTop;
+    const own = near + WALL_STEPS;
+    return highTop - own > WALL_TOP_SLACK ? own : highTop;
+  };
+  const lowerTop = (v: V3): V3 => (Math.abs(v.z - highTop) < 1e-3 ? { ...v, z: topAt(v.x, v.y) } : v);
   const doorTop = heightAt(grid, doorX, doorY) + DOOR_HEIGHT / STEP_PX;
 
   // Which wall planes are seen: Nitro's own rule (RoomPlane.update). A plane is drawn only when
@@ -112,7 +133,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     for (let k = 0; k < count; k++) {
       const a = add(loc, step, k);
       const b = add(a, step);
-      const corners = [a, b, add(b, side), add(a, side)];
+      const corners = [a, b, add(b, side), add(a, side)].map(lowerTop);
       const depth = corners.reduce((s, v) => s + v.x + v.y, 0) / 4;
       // The door opening: the left-wall face in front of the door tile is cut out below the door height.
       const midY = corners.reduce((s, v) => s + v.y, 0) / 4;
@@ -135,7 +156,6 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
   // Holes inside the room (with floor before them in their row and column) get no walls, and only
   // pieces that join up with Nitro's walls are drawn.
   const T = 0.25;
-  const top = Math.max(0, ...grid.flat()) + WALL_STEPS;
   const solid = (x: number, y: number) => isFloor(grid, x, y) && !(x === doorX && y === doorY);
   /** Empty tile outside the back of the room: no floor before it in its row, or in its column. */
   const isBehind = (x: number, y: number) => {
@@ -159,20 +179,20 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       // Inside face on the tile's left edge (grid line x), facing +x.
       if (isBehind(x - 1, y) && !nitroFaces.has(`x${x},${y}`)) piece([x, y], [x, y + 1], () => {
         const y0 = isBehind(x, y - 1) ? y - T : y;
-        poly(depth, [corner(x, y, z), corner(x, y + 1, z), corner(x, y + 1, top), corner(x, y, top)], COLORS.wallLeft);
-        poly(depth, [corner(x - T, y0, top), corner(x - T, y + 1, top), corner(x, y + 1, top), corner(x, y0, top)], COLORS.wallTop);
+        poly(depth, [corner(x, y, z), corner(x, y + 1, z), corner(x, y + 1, topAt(x, y + 1)), corner(x, y, topAt(x, y))], COLORS.wallLeft);
+        poly(depth, [corner(x - T, y0, topAt(x - T, y0)), corner(x - T, y + 1, topAt(x - T, y + 1)), corner(x, y + 1, topAt(x, y + 1)), corner(x, y0, topAt(x, y0))], COLORS.wallTop);
         // Where this wall ends (no wall continues on the next tile), its end shows its thickness.
         if (!solid(x, y + 1) && isBehind(x - 1, y + 1)) {
-          poly(depth, [corner(x - T, y + 1, z - T), corner(x, y + 1, z - T), corner(x, y + 1, top), corner(x - T, y + 1, top)], COLORS.wallRight);
+          poly(depth, [corner(x - T, y + 1, z - T), corner(x, y + 1, z - T), corner(x, y + 1, topAt(x, y + 1)), corner(x - T, y + 1, topAt(x - T, y + 1))], COLORS.wallRight);
         }
       });
       // Inside face on the tile's back edge (grid line y), facing +y.
       if (isBehind(x, y - 1) && !nitroFaces.has(`y${y},${x}`)) piece([x, y], [x + 1, y], () => {
         const x0 = isBehind(x - 1, y) ? x - T : x;
-        poly(depth, [corner(x, y, z), corner(x + 1, y, z), corner(x + 1, y, top), corner(x, y, top)], COLORS.wallRight);
-        poly(depth, [corner(x0, y - T, top), corner(x + 1, y - T, top), corner(x + 1, y, top), corner(x0, y, top)], COLORS.wallTop);
+        poly(depth, [corner(x, y, z), corner(x + 1, y, z), corner(x + 1, y, topAt(x + 1, y)), corner(x, y, topAt(x, y))], COLORS.wallRight);
+        poly(depth, [corner(x0, y - T, topAt(x0, y - T)), corner(x + 1, y - T, topAt(x + 1, y - T)), corner(x + 1, y, topAt(x + 1, y)), corner(x0, y, topAt(x0, y))], COLORS.wallTop);
         if (!solid(x + 1, y) && isBehind(x + 1, y - 1)) {
-          poly(depth, [corner(x + 1, y - T, z - T), corner(x + 1, y, z - T), corner(x + 1, y, top), corner(x + 1, y - T, top)], COLORS.wallLeft);
+          poly(depth, [corner(x + 1, y - T, z - T), corner(x + 1, y, z - T), corner(x + 1, y, topAt(x + 1, y)), corner(x + 1, y - T, topAt(x + 1, y - T))], COLORS.wallLeft);
         }
       });
       const base = z - T;
@@ -184,8 +204,8 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
         const y0 = isBehind(x, y - 1) || isBehind(x + 1, y - 1) ? y - T : y;
         const gx = x + 1 + T;
         const d = tileDepth(x + 1, y) - 0.2;
-        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, top), corner(gx, y0, top)], COLORS.wallLeft);
-        poly(d, [corner(x + 1, y0, top), corner(x + 1, y + 1, top), corner(gx, y + 1, top), corner(gx, y0, top)], COLORS.wallTop);
+        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallLeft);
+        poly(d, [corner(x + 1, y0, topAt(x + 1, y0)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallTop);
       });
       // Nothing below, but floor further right in that empty row: the left wall steps right here.
       // Outside face along grid y+1, facing +y.
@@ -195,8 +215,8 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
         const x0 = isBehind(x - 1, y) || isBehind(x - 1, y + 1) ? x - T : x;
         const gy = y + 1 + T;
         const d = tileDepth(x, y + 1) - 0.2;
-        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, top), corner(x0, gy, top)], COLORS.wallRight);
-        poly(d, [corner(x0, y + 1, top), corner(x + 1, y + 1, top), corner(x + 1, gy, top), corner(x0, gy, top)], COLORS.wallTop);
+        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallRight);
+        poly(d, [corner(x0, y + 1, topAt(x0, y + 1)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallTop);
       });
     }
   }

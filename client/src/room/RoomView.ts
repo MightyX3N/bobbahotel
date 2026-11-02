@@ -1,5 +1,5 @@
 // A room on screen: floor and walls, avatars, the hover outline, clicks to walk, dragging to look
-// around, and chat bubbles.
+// around, zooming (mouse wheel or the toolbar) and chat bubbles.
 import { Container, Graphics, type Application, type FederatedPointerEvent } from 'pixi.js';
 import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
@@ -11,6 +11,8 @@ const TICK_MS = 500;
 /** Height of the UI toolbar along the bottom (see the theme). */
 const TOOLBAR_HEIGHT = 55;
 const DRAG_THRESHOLD = 5;
+/** Zoom levels, like Habbo: half size for big rooms and small screens, double for big screens. */
+const ZOOMS = [0.5, 1, 2];
 
 export class RoomView {
   private readonly app: Application;
@@ -25,6 +27,7 @@ export class RoomView {
   private roomPieces: Graphics[] = [];
   private tilesFrontToBack: [number, number][] = [];
   private hoveredAvatar: AvatarView | null = null;
+  private zoom = 1;
   private drag: { startX: number; startY: number; worldX: number; worldY: number; moved: boolean } | null = null;
 
   /** Called when the player clicks a floor tile. */
@@ -45,6 +48,30 @@ export class RoomView {
     app.stage.on('pointerupoutside', () => (this.drag = null));
     app.ticker.add(() => this.update());
     app.renderer.on('resize', () => this.center());
+    app.canvas.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        const i = ZOOMS.indexOf(this.zoom) + (e.deltaY < 0 ? 1 : -1);
+        if (i >= 0 && i < ZOOMS.length) this.setZoom(ZOOMS[i]!, e.offsetX, e.offsetY);
+      },
+      { passive: false },
+    );
+  }
+
+  /** Zoom to a level, keeping the point under (sx, sy) (default: the middle of the screen) in place. */
+  setZoom(zoom: number, sx = this.app.screen.width / 2, sy = (this.app.screen.height - TOOLBAR_HEIGHT) / 2): void {
+    const wx = (sx - this.world.x) / this.zoom;
+    const wy = (sy - this.world.y) / this.zoom;
+    this.zoom = zoom;
+    this.world.scale.set(zoom);
+    this.world.position.set(Math.round(sx - wx * zoom), Math.round(sy - wy * zoom));
+    this.hover.clear();
+  }
+
+  /** The toolbar's zoom button: between normal size and half size. */
+  toggleZoom(): void {
+    this.setZoom(this.zoom === 1 ? 0.5 : 1);
   }
 
   enter(room: DataOf<ServerMessage, 'room'>): void {
@@ -67,6 +94,11 @@ export class RoomView {
     }
     this.hover.clear();
     for (const u of room.users) this.addUser(u);
+    // Start at normal size, or half size when the room doesn't fit the screen.
+    const b = this.roomBounds();
+    const fits = b.width <= this.app.screen.width && b.height <= this.app.screen.height - TOOLBAR_HEIGHT;
+    this.zoom = fits ? 1 : 0.5;
+    this.world.scale.set(this.zoom);
     this.center();
   }
 
@@ -92,7 +124,7 @@ export class RoomView {
     const a = this.avatars.get(id);
     if (!a) return;
     const head = a.headPoint();
-    this.bubbles.add(a.name, text, head.x + this.world.x, head.y + this.world.y, this.app.screen.width, performance.now());
+    this.bubbles.add(a.name, text, head.x * this.zoom + this.world.x, head.y * this.zoom + this.world.y, this.app.screen.width, performance.now());
   }
 
   /** Puts the room in the middle of the screen (or the door, for rooms bigger than the screen). */
@@ -106,9 +138,10 @@ export class RoomView {
     // (drag to look around).
     const [dx, dy] = this.door;
     const door = tileCenter(dx, dy, heightAt(this.grid, dx, dy));
-    const x = b.width > width ? door.x : b.x + b.width / 2;
-    const y = b.height > height ? door.y - 40 : b.y + b.height / 2;
-    this.world.position.set(Math.round(width / 2 - x), Math.round(height / 2 - y));
+    const z = this.zoom;
+    const x = b.width * z > width ? door.x : b.x + b.width / 2;
+    const y = b.height * z > height ? door.y - 40 : b.y + b.height / 2;
+    this.world.position.set(Math.round(width / 2 - x * z), Math.round(height / 2 - y * z));
   }
 
   /** Bounds of the room's floor and walls (avatars left out, so the room doesn't shift as they move). */
@@ -131,15 +164,15 @@ export class RoomView {
 
 
   private tileAt(sx: number, sy: number): [number, number] | null {
-    const px = sx - this.world.x;
-    const py = sy - this.world.y;
+    const px = (sx - this.world.x) / this.zoom;
+    const py = (sy - this.world.y) / this.zoom;
     for (const [x, y] of this.tilesFrontToBack) if (pointInTile(px, py, x, y, heightAt(this.grid, x, y))) return [x, y];
     return null;
   }
 
   private avatarAt(sx: number, sy: number): AvatarView | null {
-    const px = sx - this.world.x;
-    const py = sy - this.world.y;
+    const px = (sx - this.world.x) / this.zoom;
+    const py = (sy - this.world.y) / this.zoom;
     let best: AvatarView | null = null;
     for (const a of this.avatars.values()) if (a.hits(px, py) && (!best || a.container.zIndex > best.container.zIndex)) best = a;
     return best;

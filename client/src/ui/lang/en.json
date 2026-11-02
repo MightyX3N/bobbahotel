@@ -27,6 +27,7 @@
   "status.unreachable": "Can't reach the hotel. Retrying…",
   "toolbar.navigator": "Navigator",
   "toolbar.logout": "Log out",
+  "toolbar.zoom": "Zoom in or out (mouse wheel works too)",
   "chat.placeholder": "Click here to chat…",
   "navigator.title": "Navigator",
   "navigator.tab.public": "Public",

@@ -11,6 +11,8 @@ export interface UiActions {
   saveLayout(plan: { id?: string; name: string; club: boolean; map: string[]; door: [number, number] }): void;
   deleteLayout(id: string): void;
   saveRoomFloor(roomId: string, map: string[], door: [number, number]): void;
+  /** Room zoom: between normal size and half size. */
+  zoom(): void;
   logout(): void;
 }
 
@@ -23,6 +25,7 @@ export const actions: UiActions = {
   saveLayout: () => {},
   deleteLayout: () => {},
   saveRoomFloor: () => {},
+  zoom: () => {},
   logout: () => {},
 };
 

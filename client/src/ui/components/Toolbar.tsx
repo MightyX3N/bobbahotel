@@ -4,7 +4,7 @@ import { CHAT_MAX, clubDaysLeft } from '@bobba/shared';
 import { actions } from '../actions.ts';
 import { t } from '../i18n.ts';
 import { getUi, setNavigator, setUi, useUi } from '../store.ts';
-import { FloorPlanIcon, LogoutIcon, NavigatorIcon } from './Icons.tsx';
+import { FloorPlanIcon, LogoutIcon, NavigatorIcon, ZoomIcon } from './Icons.tsx';
 
 export function Toolbar() {
   const navOpen = useUi((s) => s.navigator.open);
@@ -39,6 +39,9 @@ export function Toolbar() {
       <div className="toolbar-icons">
         <button type="button" className={`toolbar-btn${navOpen ? ' active' : ''}`} title={t('toolbar.navigator')} onClick={toggleNavigator}>
           <NavigatorIcon />
+        </button>
+        <button type="button" className="toolbar-btn" title={t('toolbar.zoom')} onClick={() => actions.zoom()}>
+          <ZoomIcon />
         </button>
         {showEditor && (
           <button type="button" className={`toolbar-btn${editorOpen ? ' active' : ''}`} title={t('toolbar.floorplan')} onClick={() => setUi({ editorOpen: !editorOpen })}>
