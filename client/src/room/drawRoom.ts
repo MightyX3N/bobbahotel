@@ -25,7 +25,6 @@ const COLORS = {
   wallEndLeft: 0xc98f3a,
   wallEndRight: 0xb57e2e,
   doorway: 0x0c0c0c,
-  doorJamb: 0xb07a2c,
 };
 
 /** Floor thickness (a quarter tile), shown at the room's front edges and under the walls. */
@@ -99,13 +98,9 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
       const lBase = down(left, FLOOR_THICKNESS);
       const tBase = down(top, FLOOR_THICKNESS);
       if (isDoor(x - 1, y)) {
-        // Door opening across this whole tile edge: wall only above it, dark inside, and the
-        // wall's thickness showing on the opening's back edge.
-        const dl = down(left, -DOOR_HEIGHT);
-        const dt = down(top, -DOOR_HEIGHT);
-        quad(dl, dt, tTop, lTop, COLORS.wallLeft);
-        quad(left, top, dt, dl, COLORS.doorway);
-        quad(top, dt, minusX(dt), minusX(top), COLORS.doorJamb);
+        // Door opening across this whole tile edge: the wall is cut out below DOOR_HEIGHT, so the
+        // dark doorway and the door tile's floor (drawn earlier, behind the wall) show through.
+        quad(down(left, -DOOR_HEIGHT), down(top, -DOOR_HEIGHT), tTop, lTop, COLORS.wallLeft);
       } else {
         quad(lBase, tBase, tTop, lTop, COLORS.wallLeft);
       }
@@ -149,6 +144,11 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
     }
 
     // ---- floor ----
+    if (isDoor(x, y)) {
+      // Behind the door opening: darkness first, then the door tile's floor in front of it.
+      const [dl, dt] = [corner(x + 1, y + 1, z), corner(x + 1, y, z)];
+      quad(down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT), COLORS.doorway);
+    }
     // Side facing down-left (towards +y): visible if the tile in front is lower or missing.
     const frontY = heightAt(grid, x, y + 1);
     const dropLeft = frontY < 0 ? z * STEP_PX + FLOOR_THICKNESS : (z - frontY) * STEP_PX;
