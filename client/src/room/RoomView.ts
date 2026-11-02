@@ -6,14 +6,18 @@
 import { Container, Graphics, type Application, type FederatedPointerEvent } from 'pixi.js';
 import {
   furniDirs,
-  furniHeight,
+  furniFootprint,
   furniTiles,
+  furniTop,
+  standHeight,
+  wallItemFits,
   heightAt,
   isFloor,
   parseMap,
   WALL_ITEM_MAX_Z,
   WALL_ITEM_MIN_Z,
   type DataOf,
+  type FurniBelow,
   type FurniDef,
   type FurniDir,
   type FurniSheet,
@@ -21,7 +25,7 @@ import {
   type RoomFurni,
   type ServerMessage,
 } from '@bobba/shared';
-import { AvatarView } from './AvatarView.ts';
+import { AvatarView, type RestingOn } from './AvatarView.ts';
 import { toolbarHeight } from '../layout.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
 import { FurniView } from './FurniView.ts';
@@ -221,7 +225,7 @@ export class RoomView {
 
   status(updates: DataOf<ServerMessage, 'status'>): void {
     const now = performance.now();
-    for (const s of updates) this.avatars.get(s.id)?.moveTo(s.x, s.y, s.z, s.dir, s.moving, TICK_MS, now, s.sit);
+    for (const s of updates) this.avatars.get(s.id)?.moveTo(s.x, s.y, s.z, s.dir, s.moving, TICK_MS, now, s.sit, s.lay);
   }
 
   furniState(uid: number, state: number): void {
@@ -337,8 +341,8 @@ export class RoomView {
 
   private showGhost(spot: RoomFurni): void {
     const p = this.placing!;
-    const z = p.def.kind === 'wall' ? spot.z : this.stackZ(p.def, spot, p.uid);
-    const shown = { ...spot, z: z ?? heightAt(this.grid, spot.x, spot.y), dir: p.def.kind === 'wall' ? spot.dir : p.dir };
+    const z = p.def.kind === 'wall' ? (this.wallFits(p.def, spot) ? spot.z : null) : this.stackZ(p.def, spot, p.uid);
+    const shown = { ...spot, z: z ?? (p.def.kind === 'wall' ? spot.z : heightAt(this.grid, spot.x, spot.y)), dir: p.def.kind === 'wall' ? spot.dir : p.dir };
     p.spot = { ...shown };
     p.ghost.place(shown, heightAt(this.grid, spot.x, spot.y));
     p.ghost.setGhost(z !== null);
@@ -353,25 +357,39 @@ export class RoomView {
     let z = 0;
     for (const [tx, ty] of furniTiles(def, spot)) {
       if (!isFloor(this.grid, tx, ty) || (tx === this.door[0] && ty === this.door[1])) return null;
-      let top = heightAt(this.grid, tx, ty);
-      let highest: FurniView | null = null;
-      let highestTop = -Infinity;
+      const below: FurniBelow[] = [];
       for (const f of this.furni.values()) {
         if (f.uid === except || f.def.kind !== 'floor') continue;
         if (!furniTiles(f.def, f.data).some(([x, y]) => x === tx && y === ty)) continue;
-        const t = f.data.z + furniHeight(f.def, this.sheets.get(f.def.id));
-        if (t > highestTop) {
-          highestTop = t;
-          highest = f;
-        }
+        below.push({ def: f.def, top: furniTop(f.def, f.data, this.sheets.get(f.def.id)) });
       }
-      if (highest) {
-        if (!(highest.def.stack || highest.def.walk)) return null;
-        top = Math.max(top, highestTop);
-      }
+      const top = standHeight(def, heightAt(this.grid, tx, ty), below);
+      if (top === null) return null;
       z = Math.max(z, top);
     }
     return Math.round(z * 100) / 100;
+  }
+
+  /** Does a wall furni fit there: wall all along its picture (the same rule as the server)? */
+  private wallFits(def: FurniDef, spot: RoomFurni): boolean {
+    const [dx, dy] = this.door;
+    const dir = spot.dir;
+    const wallAt = (tx: number, ty: number) =>
+      isFloor(this.grid, tx, ty) && !(tx === dx && ty === dy) && !(dir === 4 ? isFloor(this.grid, tx - 1, ty) : isFloor(this.grid, tx, ty - 1));
+    return wallAt(spot.x, spot.y) && wallItemFits(def, this.sheets.get(def.id), { x: spot.x, y: spot.y, dir, off: spot.off ?? 0.5 }, wallAt);
+  }
+
+  /** The seat (or bed) on a tile, the highest. */
+  private seatAt(x: number, y: number, how: 'sit' | 'lay'): RestingOn | null {
+    let best: FurniView | null = null;
+    for (const f of this.furni.values()) {
+      if (!(how === 'lay' ? f.def.lay : f.def.sit) || f.def.kind !== 'floor') continue;
+      if (!furniTiles(f.def, f.data).some(([tx, ty]) => tx === x && ty === y)) continue;
+      if (!best || f.data.z > best.data.z) best = f;
+    }
+    if (!best) return null;
+    const [w, l] = furniFootprint(best.def, best.data.dir);
+    return { zIndex: best.container.zIndex, length: best.data.dir === 2 || best.data.dir === 6 ? w : l };
   }
 
   /** The wall under a screen point, where on it, and how high. */
@@ -402,6 +420,7 @@ export class RoomView {
     if (!p?.spot || !p.ghost.container.visible) return;
     const { x, y, dir, off, z } = p.spot;
     if (p.def.kind === 'floor' && this.stackZ(p.def, p.spot, p.uid) === null) return;
+    if (p.def.kind === 'wall' && !this.wallFits(p.def, p.spot)) return;
     const where = p.def.kind === 'wall' ? { x, y, dir, off: off ?? 0.5, z } : { x, y, dir };
     if (p.uid === null) this.onPlaceFurni(p.def.id, where);
     else this.onMoveFurni(p.uid, where);
@@ -446,7 +465,11 @@ export class RoomView {
 
   private update(): void {
     const now = performance.now();
-    for (const a of this.avatars.values()) a.update(now);
+    for (const a of this.avatars.values()) {
+      const r = a.resting();
+      a.restingOn = r ? this.seatAt(r.x, r.y, r.how) : null;
+      a.update(now);
+    }
     for (const f of this.furni.values()) f.update(now);
     this.placing?.ghost.update(now);
     this.bubbles.update(now);

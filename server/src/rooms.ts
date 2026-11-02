@@ -3,6 +3,7 @@
 import {
   cleanChat,
   floorPlanProblem,
+  furniStateCount,
   FLOORPLAN_LIMITS,
   ROOM_DESC_MAX,
   ROOM_NAME_MAX,
@@ -286,8 +287,16 @@ export class Rooms {
   private furniOptions(roomId: string): { furni: RoomFurni[]; store: FurniStore } {
     const rows = this.db.prepare('SELECT id, def, x, y, z, dir, state, off FROM room_furni WHERE room = ? ORDER BY id').all(roomId) as unknown as FurniRow[];
     const furni = rows
-      .filter((r) => this.content.furni.has(r.def))
-      .map((r) => ({ uid: r.id, def: r.def, x: r.x, y: r.y, z: r.z, dir: r.dir as FurniDir, state: r.state, ...(r.off !== null ? { off: r.off } : {}) }));
+      // Furni whose definition is gone, or changed from floor to wall furni (or back), are left out.
+      .filter((r) => {
+        const def = this.content.furni.get(r.def);
+        return !!def && (def.kind === 'wall') === (r.off !== null) && r.dir in def.dirs;
+      })
+      .map((r) => {
+        const def = this.content.furni.get(r.def)!;
+        const state = Math.min(r.state, furniStateCount(def) - 1);
+        return { uid: r.id, def: r.def, x: r.x, y: r.y, z: r.z, dir: r.dir as FurniDir, state, ...(r.off !== null ? { off: r.off } : {}) };
+      });
     const store: FurniStore = {
       add: (f) =>
         Number(

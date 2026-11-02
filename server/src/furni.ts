@@ -24,9 +24,14 @@ const defSchema = z.object({
   fps: z.number().positive().max(60).optional(),
   scale: z.number().positive().max(8).optional(),
   offset: z.tuple([z.number(), z.number()]).optional(),
+  height: z.number().min(0).max(40).optional(),
+  sitHeight: z.number().min(0).max(40).optional(),
   sit: z.boolean().optional(),
+  lay: z.boolean().optional(),
   walk: z.boolean().optional(),
   stack: z.boolean().optional(),
+  hang: z.number().min(0).max(20).optional(),
+  once: z.boolean().optional(),
 });
 const packSchema = z.object({ pack: z.string(), source: z.string().regex(/^[A-Za-z0-9_-]+$/), items: z.array(defSchema) });
 

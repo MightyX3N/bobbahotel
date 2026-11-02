@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { lookSchema } from './look.ts';
 
 /** Bump when a change means old clients can't talk to the new server. */
-export const PROTOCOL_VERSION = 6;
+export const PROTOCOL_VERSION = 7;
 
 export const CHAT_MAX = 100;
 export const NAME_MIN = 3;
@@ -28,6 +28,8 @@ export const roomUserSchema = z.object({
   dir: z.number().int().min(0).max(7),
   /** Sitting (on a seat). */
   sit: z.boolean(),
+  /** Lying down (on a bed). */
+  lay: z.boolean(),
 });
 export type RoomUser = z.output<typeof roomUserSchema>;
 
@@ -163,6 +165,7 @@ export const serverMessages = {
       dir: z.number().int().min(0).max(7),
       moving: z.boolean(),
       sit: z.boolean(),
+      lay: z.boolean(),
     }),
   ),
   chat: z.object({ id: z.number().int(), text: z.string() }),

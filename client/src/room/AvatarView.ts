@@ -1,5 +1,5 @@
 // One avatar in the room: the Cozy layers, walking smoothly between tiles.
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
 import { AVATAR_FRAME, lookLayers, SHEET_ROW, type Look, type Pose, type RoomUser } from '@bobba/shared';
 import { loadSprite, sheetFrame } from '../sprites.ts';
 import { depthToZIndex, tileDepth } from './drawRoom.ts';
@@ -10,6 +10,21 @@ import { tileCenter } from './iso.ts';
 const SCALE = 1.2;
 const WALK_FPS = 12;
 const IDLE_FPS = 4;
+/**
+ * Lying down: the Cozy kit has no lying pictures, so the standing figure (seen from the front) is
+ * laid flat along the bed: its up-down runs along the bed, its left-right across it. Head to feet
+ * it is this many tiles long (less on a short bed).
+ */
+const LAY_LENGTH = 2.1;
+/** Where the head is: tiles from the middle of the head tile, towards the headboard. */
+const LAY_HEAD = 0.38;
+
+/** The seat or bed someone is on: they're drawn just in front of it, or behind it when they face away. */
+export interface RestingOn {
+  zIndex: number;
+  /** Beds: how many tiles long. */
+  length: number;
+}
 
 export class AvatarView {
   readonly id: number;
@@ -30,6 +45,9 @@ export class AvatarView {
   private dir: number;
   private moving = false;
   private sitting = false;
+  private lying = false;
+  /** Set by the room while sitting or lying: the furni it's on. */
+  restingOn: RestingOn | null = null;
   private readonly shadow: Graphics;
   private readonly seed: number;
 
@@ -41,6 +59,7 @@ export class AvatarView {
     this.seed = (user.id * 9301) % 1000;
     this.from = this.to = { x: user.x, y: user.y, z: user.z };
     this.sitting = user.sit;
+    this.lying = user.lay;
 
     const shadow = new Graphics().ellipse(0, 0, 13, 6).fill({ color: 0x000000, alpha: 0.2 });
     this.shadow = shadow;
@@ -56,9 +75,10 @@ export class AvatarView {
     this.setPose('idle');
   }
 
-  /** Start walking to a tile (arrives in `ms`) or stop there (sitting, on a seat). */
-  moveTo(x: number, y: number, z: number, dir: number, moving: boolean, ms: number, now: number, sit = false): void {
+  /** Start walking to a tile (arrives in `ms`) or stop there (sitting on a seat, lying on a bed). */
+  moveTo(x: number, y: number, z: number, dir: number, moving: boolean, ms: number, now: number, sit = false, lay = false): void {
     this.sitting = sit;
+    this.lying = lay;
     const cur = this.positionAt(now);
     this.from = cur;
     this.to = { x, y, z };
@@ -66,6 +86,12 @@ export class AvatarView {
     this.moveMs = moving ? ms : 1;
     this.dir = dir;
     this.moving = moving;
+  }
+
+  /** Sitting or lying (not walking), on the tile it's going to. */
+  resting(): { x: number; y: number; how: 'sit' | 'lay' } | null {
+    if (this.moving || !(this.sitting || this.lying)) return null;
+    return { x: this.to.x, y: this.to.y, how: this.lying ? 'lay' : 'sit' };
   }
 
   /** Where the avatar is right now, in tiles (fractional while walking). */
@@ -99,12 +125,22 @@ export class AvatarView {
     this.container.zIndex = depthToZIndex(tileDepth(p.x, p.y) + 0.6);
 
     const walking = this.moving && now - this.moveStart < this.moveMs + 120;
+    const lying = this.lying && !walking;
+    const resting = (this.sitting || this.lying) && !walking;
+    // On a seat or bed: drawn just in front of it, or behind it when facing away (its back hides
+    // your legs), so the rest of a long sofa or bed never covers you.
+    if (resting && this.restingOn) {
+      const away = !lying && (this.dir === 0 || this.dir === 6 || this.dir === 7);
+      this.container.zIndex = this.restingOn.zIndex + (away ? -1 : 1);
+    }
     this.setPose(walking ? 'walk' : this.sitting ? 'sit' : 'idle');
-    // No shadow while sitting: the seat is under you.
-    this.shadow.visible = !(this.sitting && !walking);
+    this.layDown(lying, this.restingOn?.length ?? 2);
+    // No shadow while sitting or lying: the seat is under you.
+    this.shadow.visible = !resting;
     const fps = walking ? WALK_FPS : IDLE_FPS;
-    const frame = Math.floor(((now + this.seed * 37) / 1000) * fps) % AVATAR_FRAME.frames;
-    const row = SHEET_ROW[this.dir] ?? 0;
+    const frame = lying ? 0 : Math.floor(((now + this.seed * 37) / 1000) * fps) % AVATAR_FRAME.frames;
+    // Lying, the figure is seen from the front, turned towards the room.
+    const row = lying ? (this.dir === 2 || this.dir === 6 ? SHEET_ROW[4] : SHEET_ROW[2]) : (SHEET_ROW[this.dir] ?? 0);
     for (let i = 0; i < this.layers.length; i++) {
       const t = sheetFrame(this.layerPaths[i]!, frame, row, AVATAR_FRAME.w, AVATAR_FRAME.h);
       if (t) this.layers[i]!.texture = t;
@@ -114,6 +150,34 @@ export class AvatarView {
 
   destroy(): void {
     this.container.destroy({ children: true });
+  }
+
+  /**
+   * Lays the figure flat along the bed (or stands it up again). The bed's foot faces `dir`: the
+   * figure's head goes to the other end, its feet towards the foot.
+   */
+  private layDown(lying: boolean, bedLength: number): void {
+    if (!lying) {
+      this.body.setFromMatrix(new Matrix());
+      this.body.pivot.set(0, 0);
+      this.label.y = -AVATAR_FRAME.footY * SCALE + 2;
+      return;
+    }
+    // Screen direction of one tile towards the foot: dir 4 = +y, 2 = +x, 0 = -y, 6 = -x.
+    const along = ({ 4: [-32, 16], 2: [32, 16], 0: [32, -16], 6: [-32, -16] } as Record<number, [number, number]>)[this.dir] ?? [-32, 16];
+    // Across the bed (the figure's left-right), the other floor axis, pointing down the screen.
+    const across: [number, number] = [along[1] * 2 * (along[0] < 0 ? 1 : -1), Math.abs(along[1])];
+    // The figure is AVATAR_FRAME.footY * SCALE units tall (feet to the top of the frame).
+    const tiles = Math.min(LAY_LENGTH, bedLength - 0.35);
+    const k = tiles / (AVATAR_FRAME.footY * SCALE * 0.95);
+    // Figure x (left-right) -> across, figure y (head to feet, downwards) -> along.
+    const m = new Matrix(across[0] * k, across[1] * k, along[0] * k, along[1] * k, 0, 0);
+    this.body.setFromMatrix(m);
+    // Turn around the figure's middle, which lies half its length past its head.
+    const centre = tiles / 2 - LAY_HEAD;
+    this.body.pivot.set(0, -AVATAR_FRAME.footY * SCALE * 0.5);
+    this.body.position.set(along[0] * centre, along[1] * centre);
+    this.label.y = -40;
   }
 
   private positionAt(now: number): { x: number; y: number; z: number } {

@@ -14,8 +14,9 @@
 //   - Real brand names (consoles, computers) get made-up ones.
 //   - Floor or wall, sit / walk / stack, from the name.
 //   - How many tiles it covers, from the width of the picture and where its front corner is.
-// Furni already in the definitions file are left exactly as they are (hand fixes are kept);
-// only new ones are added. The pictures themselves are never changed.
+// The definitions file is written from scratch every time, so fixes belong in the tables below
+// (HAND, MERGE, NAMES and the guesses), not in the file. Ids stay the same between runs. The
+// pictures themselves are never changed.
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -104,6 +105,42 @@ for (const f of allFiles) {
   files.push(f);
 }
 
+// Furni put together by hand, where the names and pictures don't say how they belong together:
+// per direction, its states (each a list of frames). Taken before the guessing below.
+const HAND = [
+  // A front and a back view (directions 4 and 6; the other two are those mirrored).
+  { base: 'Sofa_4', dirs: { 4: [['Sofa_4_A_Tile']], 6: [['Sofa_4_B_Tile']] } },
+  { base: 'Fridge', dirs: { 4: [['Fridge']], 0: [['Fridge_Back']] } },
+  { base: 'Fridge_2', dirs: { 4: [['Fridge_2_A_Tile']], 0: [['Fridge_2_C_Tile']] } },
+  // Off and on, closed and open, empty and full.
+  { base: 'Sink', dirs: { 4: [['Sink'], ['Sink_1']] } },
+  { base: 'TrashBin', dirs: { 4: [['TrashBin_Closed'], ['TrashBin_Open']] } },
+  { base: 'Trash', dirs: { 4: [['Trash_Empty'], ['Trash_Full']] } },
+  { base: 'Plastic_Box_1', dirs: { 4: [['Plastic_Box_1_Empty'], ['Plastic_Box_1_Full']] } },
+  { base: 'Plastic_Box_2', dirs: { 4: [['Plastic_Box_2_Empty'], ['Plastic_Box_2_Full']] } },
+  { base: 'Pot', dirs: { 4: [['Pot'], ['Pot_Full']] } },
+  { base: 'Light_Switch', dirs: { 4: [['Switch_C'], ['Switch_B']] } },
+  { base: 'RotationScreen', dirs: { 4: [['RotationScreen_A_Tile'], ['RotationScreen_B_Tile'], ['RotationScreen_C_Tile']] } },
+  // Blinds open, half and closed.
+  { base: 'Window_7', dirs: { 4: [['Window_7_A_Tile'], ['Window_7_B_Tile'], ['Window_7_C_Tile']] } },
+  { base: 'Window_8', dirs: { 4: [['Window_8'], ['Window_B_8'], ['Window_C_8']] } },
+  { base: 'Window_11', dirs: { 4: [['Window_11'], ['Window_11_B'], ['Window_11_C']] } },
+  // Its beam flickers.
+  { base: 'Projector_2', dirs: { 4: [['Projector_2', 'Projector_3', 'Projector_4']] }, fps: 4 },
+  // A present: closed, then opening (played once, then it stays open).
+  { base: 'Present_100', dirs: { 4: [['Present_100'], ['Present_100_B', 'Present_100_C', 'Present_100_D', 'Present_100_E']] }, fps: 6, once: true },
+];
+// Pictures left out: the same picture as another furni.
+const SKIP = new Set(['Present_2']);
+for (const f of SKIP) used.add(f);
+for (const g of HAND) {
+  const all = Object.values(g.dirs).flat(2);
+  if (!all.every((f) => allFiles.includes(f))) continue;
+  all.forEach((f) => used.add(f));
+  if (!files.includes(all[0])) files.push(all[0]);
+  groups.push(g);
+}
+
 // Animations: Name_<n> with at least 3 numbers that look alike. Name_Off is its switched-off state.
 const numbered = new Map();
 for (const f of files) {
@@ -114,6 +151,7 @@ for (const [base, list] of numbered) {
   if (list.length < 3) continue;
   list.sort((a, b) => a[0] - b[0]);
   const first = load(list[0][1]);
+  if (list.some(([, f]) => used.has(f))) continue;
   const second = load(list[1][1]);
   // Frames of one animation look alike; long runs of same-size pictures (a book opening) count too.
   const sameSize = list.every(([, f]) => load(f).width === first.width && load(f).height === first.height);
@@ -213,34 +251,62 @@ const NAMES = {
   Rumba_Robot: ['Robot Vacuum', 'robot_vacuum'],
   Server_2: ['Server Cabinet', 'server_cabinet'],
   Tool_Box: ['Toolbox', 'toolbox'],
+  TrashBin: ['Trash Bin', 'trashbin_closed'],
+  Trash: ['Trash Can', 'trash_empty'],
+  Plastic_Box_1: ['Plastic Box', 'plastic_box_1_empty'],
+  Plastic_Box_2: ['Plastic Box 2', 'plastic_box_2_empty'],
+  Light_Switch: ['Light Switch', 'switch_b'],
+  RotationScreen: ['Rotating Screen', 'rotationscreen_a'],
+  Window_7: ['Window 7', 'window_7_a'],
+  Window_8: ['Window 8', 'window_8'],
+  Window_11: ['Window 11', 'window_11'],
+  Projector_2: ['Projector', 'projector_2'],
+  Present_100: ['Present', 'present_100'],
+  Sofa_4: ['Sofa 4', 'sofa_4_a'],
+  Fridge_2: ['Fridge 2', 'fridge_2'],
 };
 
 // ---- guesses ----
-const WALL = /(poster|picture|painting|wall_clock|window|diploma|corkboard|^switch|tap_wall|canvas|mirror|hanging_towel|^ac$|ac_big|aircc|pipe_|cable_|projector_screen|wall_protection|wall_(l|r|top|window)_|sticky_note|^photos|blueprint|^board_)/i;
-const SIT = /(chair|sofa|stool|seat|bench|couch|bed_)/i;
+const WALL = /(poster|picture|painting|wall_clock|window|diploma|corkboard|^switch|^light_switch|tap_wall|canvas|mirror|hanging_towel|^ac$|pipe_|cable_|wall_protection|wall_(l|r|top|window)_|sticky_note|^photos|blueprint|^board_|^camera|^hanger$|^rack$|^long_rack$|^shower_tap$|^tap_shower$|^big_tv)/i;
+// Floor furni that hang in the air (over a counter, on a wall) at this height: they don't stand on
+// the floor, block nobody, and can share a tile with other furni.
+// Shelves hold other furni, and sit at the back of their tile (against a wall), [x, y] pixels.
+const HANG = [
+  [/^kitchen_furniture_[a-z]+_[4-7]$/i, 2.4, false],
+  [/^(shelf|long_shelf|small_shelf|shelving_6)$/i, 1.6, true, [10, -5]],
+];
+const SIT = /(chair|sofa|stool|seat|bench|couch)/i;
+const LAY = /^bed_/i;
 const WALK = /(carpet|rug|^bath_carpet|shower_floor)/i;
 const STACK = /(table|desk|shelf|shelving|counter|kitchen_furniture|kitchen_a|cabinet|closet|drawer|dishwasher|oven|fridge|washingmachine|rack)/i;
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 const title = (s) => s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 
-/** Does the picture's top edge go down to the right (drawn for a back wall)? */
+/**
+ * Is the picture drawn for a back wall (its edges run down to the right) rather than a left wall?
+ * Counts the 2:1 steps of its top and bottom outline (only solid pixels, so glows and light
+ * beams don't count).
+ */
 function slopesDownRight(file) {
   const png = load(file);
-  const box = bbox(png);
-  if (!box) return true;
-  const [l, , r] = box;
-  const topAt = (x) => {
-    for (let y = 0; y < png.height; y++) if (png.data[(y * png.width + x) * 4 + 3] > 16) return y;
-    return png.height;
-  };
-  const third = Math.max(1, Math.floor((r - l) / 3));
-  let left = 0, right = 0;
-  for (let i = 0; i < third; i++) {
-    left += topAt(l + i);
-    right += topAt(r - 1 - i);
+  const solid = (x, y) => png.data[(y * png.width + x) * 4 + 3] > 200;
+  const top = [], bottom = [];
+  for (let x = 0; x < png.width; x++) {
+    let t = null, b = null;
+    for (let y = 0; y < png.height; y++) if (solid(x, y)) { t ??= y; b = y; }
+    top.push(t);
+    bottom.push(b);
   }
-  return right >= left;
+  let down = 0, up = 0;
+  for (const edge of [top, bottom]) {
+    for (let x = 0; x + 2 < edge.length; x++) {
+      if (edge[x] === null || edge[x + 2] === null) continue;
+      if (edge[x + 2] - edge[x] === 1) down++;
+      else if (edge[x] - edge[x + 2] === 1) up++;
+    }
+  }
+  return down >= up;
 }
 
 /** Tiles covered, from the picture: its width says how many tiles across, the front corner how they split. */
@@ -262,14 +328,11 @@ function guessSize(frames) {
   return [alongX, across - alongX];
 }
 
-const existing = existsSync(outFile) ? JSON.parse(readFileSync(outFile, 'utf8')) : { items: [] };
-const known = new Set(existing.items.map((d) => d.id));
 const added = [];
-const ids = new Set(known);
+const ids = new Set();
 for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
   const [name, slugName] = NAMES[g.base] ?? [title(g.base), slug(g.base)];
   let id = `${pack}_${slugName}`;
-  if (known.has(id)) continue;
   for (let i = 2; ids.has(id); i++) id = `${pack}_${slugName}_${i}`;
   ids.add(id);
   const dirs = {};
@@ -283,13 +346,23 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
     dirs[forBack ? 4 : 2] = { mirror: forBack ? 2 : 4 };
   } else {
     for (const [d, states] of Object.entries(g.dirs)) dirs[d] = { states };
-    // Only pictures facing one way: the other way round is the same picture mirrored, like Habbo.
-    if (!g.dirs[2]) dirs[2] = { mirror: 4 };
+    // Directions without their own pictures are the opposite side's mirrored, like Habbo: 2 is 4
+    // mirrored (front views), 6 and 0 are each other mirrored (back views).
+    if (g.dirs[4] && !g.dirs[2]) dirs[2] = { mirror: 4 };
+    if (g.dirs[0] && !g.dirs[6]) dirs[6] = { mirror: 0 };
+    if (g.dirs[6] && !g.dirs[0]) dirs[0] = { mirror: 6 };
   }
   const def = { id, name, source, kind, size: guessSize(g.dirs[4][0]), dirs };
   if (g.dirs[4].some((st) => st.length > 1)) def.fps = g.fps ?? 8;
-  if (def.kind === 'floor') {
-    if (SIT.test(g.base)) def.sit = true;
+  if (g.once) def.once = true;
+  const hang = HANG.find(([re]) => re.test(g.base));
+  if (def.kind === 'floor' && hang) {
+    def.hang = hang[1];
+    if (hang[2]) def.stack = true;
+    if (hang[3]) def.offset = hang[3];
+  } else if (def.kind === 'floor') {
+    if (LAY.test(g.base)) def.lay = true;
+    else if (SIT.test(g.base) && !/pillow/i.test(g.base)) def.sit = true;
     else if (WALK.test(g.base)) def.walk = true;
     else if (STACK.test(g.base)) def.stack = true;
   }
@@ -297,8 +370,8 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
 }
 
 mkdirSync(join(root, 'content', 'furni'), { recursive: true });
-const out = { pack, source, items: [...existing.items, ...added] };
+const out = { pack, source, items: added };
 writeFileSync(outFile, JSON.stringify(out, null, 1) + '\n');
 const count = (k) => added.filter((d) => d.kind === k).length;
-console.log(`${files.length} pictures → ${groups.length} furni. Added ${added.length} (${count('floor')} floor, ${count('wall')} wall), kept ${known.size}.`);
+console.log(`${files.length} pictures → ${groups.length} furni: ${count('floor')} floor, ${count('wall')} wall.`);
 console.log(`Animated: ${added.filter((d) => d.fps).length}, with states: ${added.filter((d) => Object.values(d.dirs).some((v) => v.states?.length > 1)).length}, with real directions: ${added.filter((d) => d.dirs[2] && 'states' in d.dirs[2]).length}`);

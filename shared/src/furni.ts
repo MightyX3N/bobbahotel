@@ -27,9 +27,11 @@ export interface FurniDef {
   dirs: Partial<Record<FurniDir, FurniDirImages>>;
   /** Frames per second for states with more than one frame. */
   fps?: number;
+  /** Animations play once and then stay on their last frame (a present opening). */
+  once?: boolean;
   /** Picture size multiplier (1 = the pack's own size, which matches our 64x32 tiles). */
   scale?: number;
-  /** Fine-tuning of where the picture sits, in screen pixels at scale 1. */
+  /** Fine-tuning of where the picture sits, in screen pixels at scale 1 (mirrored with the picture). */
   offset?: [number, number];
   /** How high its top is, in height steps (things stacked on it stand there). Default: measured from the picture. */
   height?: number;
@@ -37,10 +39,17 @@ export interface FurniDef {
   sitHeight?: number;
   /** Avatars can sit on it. */
   sit?: boolean;
+  /** Avatars lie down on it (beds): on its head end, along its length. */
+  lay?: boolean;
   /** Avatars can walk over it (rugs, mats). */
   walk?: boolean;
   /** Other furni can be put on top of it (tables, cabinets). */
   stack?: boolean;
+  /**
+   * Hangs this many height steps above its floor (kitchen wall cabinets, wall shelves): it blocks
+   * nobody, and other furni can stand under it on the same tiles.
+   */
+  hang?: number;
 }
 
 /** One built frame in a furni's sprite sheet. ax/ay: the anchor (the footprint's front corner) inside the frame. */
@@ -84,6 +93,8 @@ export interface RoomFurni {
  * ordinary chair this is 0.
  */
 export const SIT_HEIGHT = 0;
+/** How high you lie on a bed that doesn't say (its mattress), in height steps above where it stands. */
+export const LAY_HEIGHT = 0.5;
 /** Wall furni hang between these heights above the floor (height steps). */
 export const WALL_ITEM_MIN_Z = 0.3;
 export const WALL_ITEM_MAX_Z = 4.2;
@@ -98,6 +109,41 @@ export function furniHeight(def: FurniDef, sheet?: FurniSheet): number {
   const [fx, fy] = furniFootprint(def, Number(dir) as FurniDir);
   // The picture's height above the footprint's diamond, in steps (32 px each).
   return Math.max(0, Math.round(((frame.h - (fx + fy) * 16) / 32) * 10) / 10);
+}
+
+/** How high a placed furni's top is (height steps): where it stands, plus how high it hangs, plus its height. */
+export function furniTop(def: FurniDef, f: Pick<RoomFurni, 'z'>, sheet?: FurniSheet): number {
+  return f.z + (def.hang ?? 0) + furniHeight(def, sheet);
+}
+
+/** Furni higher than this above their floor stand on hanging furni (a shelf) and block nobody. */
+export const ABOVE_HEADS = 1.5;
+
+/** A floor furni already on a tile, for working out where another one can go. */
+export interface FurniBelow {
+  def: FurniDef;
+  /** Its top (furniTop). */
+  top: number;
+}
+
+/**
+ * Where a floor furni would stand on one tile (the same rules on the server and in the game):
+ * on the floor, or on top of the highest furni there if things can go on it (tables, rugs, wall
+ * shelves). Hanging furni hang over anything, and things stand under them. null: it can't go there.
+ */
+export function standHeight(def: FurniDef, floorZ: number, below: FurniBelow[]): number | null {
+  if (def.hang !== undefined) return floorZ;
+  const under = below.filter((b) => b.def.hang === undefined || b.def.stack);
+  if (under.length === 0) return floorZ;
+  const highest = under.reduce((a, b) => (b.top > a.top ? b : a));
+  if (!(highest.def.stack || highest.def.walk)) return null;
+  return Math.max(floorZ, highest.top);
+}
+
+/** Does a furni standing at z on a floor at floorZ keep avatars off its tiles? */
+export function furniBlocks(def: FurniDef, z: number, floorZ: number): boolean {
+  if (def.kind !== 'floor' || def.walk || def.sit || def.lay || def.hang !== undefined) return false;
+  return z - floorZ < ABOVE_HEADS;
 }
 
 /** How many states a furni has (switched off/on, closed/open…). */
@@ -122,4 +168,33 @@ export function furniTiles(def: Pick<FurniDef, 'size'>, f: Pick<RoomFurni, 'x' |
   const out: [number, number][] = [];
   for (let dy = 0; dy < l; dy++) for (let dx = 0; dx < w; dx++) out.push([f.x + dx, f.y + dy]);
   return out;
+}
+
+/** Half a wall furni's picture width, in tiles along its wall (a tile's edge is 32 px wide on screen). */
+export function wallHalfWidth(def: FurniDef, sheet: FurniSheet | undefined, dir: FurniDir): number {
+  const images = def.dirs[dir];
+  const source = images && 'mirror' in images ? images.mirror : dir;
+  const frame = sheet?.dirs[source]?.[0]?.[0];
+  return frame ? (frame.w * (def.scale ?? 1)) / 2 / 32 : 0.5;
+}
+
+/**
+ * Does a wall furni fit on its wall: is there wall all along its picture? `wallAt(x, y)` says if
+ * floor tile (x, y) has a wall on the side the furni hangs on (direction 4: its x edge, 2: its y edge).
+ */
+export function wallItemFits(
+  def: FurniDef,
+  sheet: FurniSheet | undefined,
+  spot: Pick<RoomFurni, 'x' | 'y' | 'dir'> & { off: number },
+  wallAt: (x: number, y: number) => boolean,
+): boolean {
+  // A little overhang is fine (pictures have a soft edge); a quarter tile or more is not.
+  const half = Math.max(0, wallHalfWidth(def, sheet, spot.dir) - 0.15);
+  const from = Math.floor(spot.off - half);
+  const to = Math.floor(spot.off + half - 1e-6);
+  for (let k = from; k <= to; k++) {
+    const [x, y] = spot.dir === 4 ? [spot.x, spot.y + k] : [spot.x + k, spot.y];
+    if (!wallAt(x, y)) return false;
+  }
+  return true;
 }

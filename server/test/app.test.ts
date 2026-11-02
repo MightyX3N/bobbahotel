@@ -591,6 +591,49 @@ describe('placing furni', () => {
     expect(last.z).toBe(0); // an ordinary chair: you sit at its height (SIT_HEIGHT)
   });
 
+  it('you lie down on a bed, moved to its head end', async () => {
+    const { staff, roomId } = await staffInOwnRoom();
+    const bed = content.furni.get('salvaje_bed_k_4')!;
+    expect(bed.lay).toBe(true);
+    // Facing 4: along y, its head at the lowest y.
+    staff.send({ t: 'placeFurni', d: { def: bed.id, x: 6, y: 5, dir: 4 } });
+    await staff.waitFor('furniAdd');
+    const me = (await staff.waitFor('welcome')).d.me;
+    const [, length] = bed.size;
+    staff.send({ t: 'walk', d: { x: 6, y: 5 + length - 1 } });
+    await new Promise((r) => setTimeout(r, 50));
+    const live = app!.rooms.get(roomId)!;
+    for (let i = 1; i <= 14; i++) live.tick(Date.now() + i * TICK_MS);
+    await new Promise((r) => setTimeout(r, 50));
+    const last = staff.inbox.filter((m) => m.t === 'status').flatMap((m) => m.d).filter((s) => s.id === me.id).at(-1)!;
+    expect(last).toMatchObject({ x: 6, y: 5, lay: true, sit: false, dir: 4, moving: false });
+  });
+
+  it('hanging furni hang over other furni and block nobody', async () => {
+    const { staff, roomId } = await staffInOwnRoom();
+    const counter = 'salvaje_kitchen_furniture_wood_2';
+    const cabinet = 'salvaje_kitchen_furniture_wood_4';
+    expect(content.furni.get(cabinet)!.hang).toBeGreaterThan(0);
+    staff.send({ t: 'placeFurni', d: { def: counter, x: 6, y: 6, dir: 4 } });
+    await staff.waitFor('furniAdd', (m) => m.d.def === counter);
+    // Over the counter, and the counter's top is still free for a lamp.
+    staff.send({ t: 'placeFurni', d: { def: cabinet, x: 6, y: 6, dir: 4 } });
+    expect((await staff.waitFor('furniAdd', (m) => m.d.def === cabinet)).d.z).toBe(0);
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_lava_lamp', x: 6, y: 6, dir: 4 } });
+    expect((await staff.waitFor('furniAdd', (m) => m.d.def === 'salvaje_lava_lamp')).d.z).toBeGreaterThan(0);
+    // A cabinet on its own blocks nobody: you can walk under it.
+    staff.send({ t: 'placeFurni', d: { def: cabinet, x: 8, y: 8, dir: 4 } });
+    await staff.waitFor('furniAdd', (m) => m.d.def === cabinet && m.d.x === 8);
+    const me = (await staff.waitFor('welcome')).d.me;
+    staff.send({ t: 'walk', d: { x: 8, y: 8 } });
+    await new Promise((r) => setTimeout(r, 50));
+    const live = app!.rooms.get(roomId)!;
+    for (let i = 1; i <= 14; i++) live.tick(Date.now() + i * TICK_MS);
+    await new Promise((r) => setTimeout(r, 50));
+    const last = staff.inbox.filter((m) => m.t === 'status').flatMap((m) => m.d).filter((s) => s.id === me.id).at(-1)!;
+    expect(last).toMatchObject({ x: 8, y: 8, moving: false });
+  });
+
   it('hangs wall furni on walls only', async () => {
     const { staff } = await staffInOwnRoom();
     // model_a: row y=0 is the first floor row at x >= 4? Find a tile with no floor behind it.
