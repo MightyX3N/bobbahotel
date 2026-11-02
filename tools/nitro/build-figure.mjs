@@ -28,7 +28,7 @@
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { blank, box, crop, half, load } from './png.mjs';
+import { blank, box, crop, half, load, transformed } from './png.mjs';
 import { writeBundle } from './bundle.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -67,6 +67,32 @@ function frameOf(img, row, col, small = false) {
   if (small) f = half(f);
   const b = box(f, 0);
   return b ? { img: crop(f, b), left: b[0], top: b[1] } : null;
+}
+
+/**
+ * Lying: how long the figure is on the bed in tiles, and where its head is (picture pixel) and
+ * goes (tiles from the avatar's point towards the bed's head end). LAY_FIX moves the result onto
+ * the point, as measured in the client (Nitro draws lying avatars on a wider canvas).
+ */
+const LAY_LENGTH = 1.7;
+const LAY_HEAD = [32, 18];
+const LAY_HEAD_AT = 0.1;
+const LAY_FIX = [35, 32];
+
+/** One frame (64x80) laid flat along the floor for Nitro direction `dir`, at 1/k size. */
+function layDown(frame, dir, k) {
+  // Screen pixels per tile along the bed (towards the feet) and across it.
+  const along = dir === 2 ? [32, 16] : [-32, 16];
+  const across = dir === 2 ? [-32, 16] : [32, 16];
+  const s = LAY_LENGTH / FRAME.footY / k;
+  const m = [across[0] * s, across[1] * s, along[0] * s, along[1] * s];
+  const t = transformed(frame, m, LAY_HEAD);
+  const b = box(t.img, 0);
+  if (!b) return null;
+  // The head goes a little towards the bed's head end from the point.
+  const hx = t.point[0] - b[0] + (along[0] * LAY_HEAD_AT) / k;
+  const hy = t.point[1] - b[1] + (along[1] * LAY_HEAD_AT) / k;
+  return { img: crop(t.img, b), x: Math.round(hx - 32 / k + LAY_FIX[0] / k), y: Math.round(hy + LAY_FIX[1] / k) };
 }
 
 /** A soft oval for the shadow under the feet (Nitro draws it at half strength). */
@@ -131,6 +157,21 @@ for (const sex of ['m', 'f']) {
         }
       }
     }
+    // Lying (beds): the standing front view laid flat along the bed, head at the avatar's point.
+    // Nitro only lies in directions 2 (feet towards +x) and 4 (feet towards +y).
+    {
+      const img = sheet(join(kit, sex, 'idle', file));
+      for (const [dir, row] of [[2, 1], [4, 0]]) {
+        const frame = crop(img, [0, row * FRAME.h, FRAME.w, (row + 1) * FRAME.h]);
+        for (const [scale, k] of [['h', 1], ['sh', 2]]) {
+          const t = layDown(frame, dir, k);
+          if (!t) continue;
+          const name = `${scale}_lay_${type}_${id}_${dir}_0`;
+          images[`${lib}_${name}`] = t.img;
+          assets[name] = { x: t.x, y: t.y };
+        }
+      }
+    }
     if (piece === 'body') {
       images[`${lib}_h_std_sd_1_0_0`] = shadow(34, 16);
       assets.h_std_sd_1_0_0 = { x: 0, y: 0 };
@@ -152,6 +193,7 @@ const actions = {
   actions: [
     { id: 'Default', state: 'std', precedence: 1000, main: true, isDefault: true, geometryType: 'vertical', activePartSet: 'figure', assetPartDefinition: 'std' },
     { id: 'Move', state: 'mv', precedence: 900, main: true, geometryType: 'vertical', activePartSet: 'walk', assetPartDefinition: 'wlk' },
+    { id: 'Lay', state: 'lay', precedence: 900, main: true, geometryType: 'horizontal', activePartSet: 'figure', assetPartDefinition: 'lay' },
     { id: 'Sit', state: 'sit', precedence: 900, main: true, geometryType: 'sitting', activePartSet: 'sit', assetPartDefinition: 'sit' },
     { id: 'Talk', state: 'talk', precedence: 500, geometryType: 'vertical', activePartSet: 'speak', assetPartDefinition: 'spk' },
     { id: 'CarryItem', state: 'cri', precedence: 300, geometryType: 'vertical', activePartSet: 'handRight', assetPartDefinition: 'crr', params: [{ id: 'default', value: '1' }] },
