@@ -2,27 +2,36 @@
 hotel.playbobba.com {
 	encode zstd gzip
 
-	# Game server: API and WebSocket.
-	@backend path /api/* /ws /ws/*
-	handle @backend {
-		reverse_proxy 127.0.0.1:8080
+	# The game connection: Nitro client <-> Arcturus (its websocket plugin listens locally).
+	handle_path /ws* {
+		reverse_proxy 127.0.0.1:2096
 	}
 
-	# Licensed sprites, served from the VPS only (never in git).
-	handle_path /sprites/* {
-		root * /opt/bobbahotel/sprites
-		header Cache-Control "public, max-age=86400"
+	# What the client loads: furni, rooms, avatars, texts, pictures. Built on the VPS from the
+	# licensed pictures at every deploy (tools/nitro). Bundles must be sent as exactly
+	# application/octet-stream.
+	handle_path /nitro/* {
+		root * /var/lib/bobbahotel/nitro
+		header Access-Control-Allow-Origin *
+		header Cache-Control "no-cache"
+		@bundle path *.nitro
+		header @bundle Content-Type application/octet-stream
 		file_server
 	}
 
-	# The built client of the current release.
-	handle {
-		root * /opt/bobbahotel/current/client/dist
-		@assets path /assets/*
+	# The Nitro game client of the current release.
+	handle /client/* {
+		root * /opt/bobbahotel/current
+		@assets path /client/assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
-		@page path / /index.html
+		@page path /client/ /client/index.html /client/*.json
 		header @page Cache-Control "no-cache"
-		try_files {path} /index.html
+		try_files {path} /client/index.html
 		file_server
+	}
+
+	# The website: Steam login, accounts, admin.
+	handle {
+		reverse_proxy 127.0.0.1:8080
 	}
 }

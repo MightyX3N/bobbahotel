@@ -26,6 +26,8 @@ export function createApp({ config, db, fetch: fetchImpl }: AppOptions) {
     const route = `${req.method} ${url.pathname}`;
     const ip = clientIp(req);
     try {
+      // The old version of the hotel installed a service worker; this one removes itself.
+      if (route === 'GET /sw.js') return send(res, 200, OLD_WORKER_REMOVER, 'text/javascript');
       if (route === 'GET /health') return send(res, 200, JSON.stringify({ ok: true, version: config.version }), 'application/json');
 
       if (route === 'GET /auth/steam') return redirect(res, auth.steamLoginUrl());
@@ -85,6 +87,13 @@ export function createApp({ config, db, fetch: fetchImpl }: AppOptions) {
     }
   };
 }
+
+const OLD_WORKER_REMOVER = `self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil((async () => {
+  for (const key of await caches.keys()) await caches.delete(key);
+  await self.registration.unregister();
+  for (const c of await self.clients.matchAll({ type: 'window' })) c.navigate(c.url);
+})()));`;
 
 export function send(res: ServerResponse, status: number, body: string, type = 'text/html; charset=utf-8', cookies: string[] = []): void {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store', ...(cookies.length ? { 'Set-Cookie': cookies } : {}) });

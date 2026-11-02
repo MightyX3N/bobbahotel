@@ -2,14 +2,20 @@
 # Installed to /usr/local/bin/bobbahotel-deploy by deploy/setup.sh.
 #
 # GitHub Actions runs this on the VPS (as user bobba, through an SSH key that can do nothing else)
-# with the command "deploy <commit sha>" and the release tarball on stdin. It unpacks the release,
-# points /opt/bobbahotel/current at it, restarts the server and checks that the new version answers.
-# If it doesn't, it switches back to the previous release.
+# with the command "deploy <commit sha>" and the release tarball on stdin. It:
+#   1. unpacks the release,
+#   2. builds the client's assets from the licensed pictures (tools/nitro),
+#   3. brings the database up to date (sql/migrations once each, the furni list every time),
+#   4. writes the client's configs for this domain,
+#   5. switches to the new release and restarts what changed,
+#   6. checks the website and the game server answer, and switches back if not.
 set -euo pipefail
 
 APP="${BOBBA_APP:-/opt/bobbahotel}"
 ENV_FILE="${BOBBA_ENV_FILE:-/etc/bobbahotel/env}"
-RESTART="${BOBBA_RESTART:-sudo -n /usr/bin/systemctl restart bobbahotel}"
+STATE="${BOBBA_STATE:-/var/lib/bobbahotel/deploy-state}"
+RESTART_WEB="${BOBBA_RESTART_WEB:-sudo -n /usr/bin/systemctl restart bobbahotel-web}"
+RESTART_EMU="${BOBBA_RESTART_EMU:-sudo -n /usr/bin/systemctl restart bobbahotel-emu}"
 KEEP=5
 
 CMD="${SSH_ORIGINAL_COMMAND:-$*}"
@@ -24,6 +30,9 @@ set -a
 . "$ENV_FILE"
 set +a
 PORT="${PORT:-8080}"
+NITRO_DIR="${NITRO_DIR:-/var/lib/bobbahotel/nitro}"
+SPRITES_DIR="${SPRITES_DIR:-$APP/sprites}"
+sql() { MYSQL_PWD="$DB_PASSWORD" mariadb -h "${DB_HOST:-127.0.0.1}" -u "$DB_USER" "$DB_NAME" "$@"; }
 
 exec 9>"$APP/.deploy.lock"
 flock -n 9 || { echo "Another deploy is running" >&2; exit 1; }
@@ -41,31 +50,75 @@ fi
 rm -rf "$REL"
 mv "$REL.tmp" "$REL"
 
+echo "Building the client's assets"
+[ -d "$SPRITES_DIR/furni" ] || { echo "No pictures in $SPRITES_DIR (furni, cozy, tiles)" >&2; exit 1; }
+rm -rf "$NITRO_DIR.new"
+node "$REL/tools/nitro/build-all.mjs" "$NITRO_DIR.new" "$SPRITES_DIR" | sed 's/^/  /'
+
+echo "Updating the database"
+sql -e "CREATE TABLE IF NOT EXISTS bobba_migrations (name VARCHAR(100) NOT NULL PRIMARY KEY, applied INT NOT NULL)"
+MIGRATED=0
+for f in "$REL"/sql/migrations/*.sql; do
+  name="$(basename "$f")"
+  if [ -z "$(sql -N -e "SELECT 1 FROM bobba_migrations WHERE name='$name'")" ]; then
+    echo "  $name"
+    sql < "$f"
+    sql -e "INSERT INTO bobba_migrations VALUES ('$name', UNIX_TIMESTAMP())"
+    MIGRATED=1
+  fi
+done
+sql < "$NITRO_DIR.new/sql/furni.sql"
+
+node "$REL/deploy/nitro-config.mjs" "$REL/client" "$PUBLIC_URL" | sed 's/^/  /'
+
+# The game server only restarts when something it reads changed (it kicks everyone out).
+mkdir -p "$STATE"
+EMU_HASH="$( (cat "$REL/emu/arcturus.jar" "$REL"/emu/plugins/*.jar "$NITRO_DIR.new/sql/furni.sql"; echo "$MIGRATED") | sha256sum | cut -d' ' -f1)"
+EMU_RESTART=1
+[ -f "$STATE/emu" ] && [ "$(cat "$STATE/emu")" = "$EMU_HASH" ] && EMU_RESTART=0
+
 PREV="$(readlink -f "$APP/current" 2>/dev/null || true)"
 
 switch_to() {
   ln -sfn "$1" "$APP/current.new"
   mv -Tf "$APP/current.new" "$APP/current"
-  $RESTART 9>&-  # don't let the restarted server inherit (and hold) the deploy lock
+  $RESTART_WEB 9>&-
+  if [ "$EMU_RESTART" = 1 ]; then $RESTART_EMU 9>&-; fi
 }
 
-healthy() {  # $1 = expected version
+web_ok() {  # $1 = expected version
   for _ in $(seq 1 20); do
-    if curl -fsS "http://127.0.0.1:$PORT/api/health" 2>/dev/null | grep -q "\"version\":\"$1\""; then return 0; fi
+    curl -fsS "http://127.0.0.1:$PORT/health" 2>/dev/null | grep -q "\"version\":\"$1\"" && return 0
     sleep 1
   done
   return 1
 }
 
+game_ok() {  # the websocket plugin listens once Arcturus has loaded
+  for _ in $(seq 1 90); do
+    ss -ltn 2>/dev/null | grep -q ':2096 ' && return 0
+    sleep 1
+  done
+  return 1
+}
+
+# The new assets go live together with the new release.
+rm -rf "$NITRO_DIR.old"
+[ -d "$NITRO_DIR" ] && mv "$NITRO_DIR" "$NITRO_DIR.old"
+mv "$NITRO_DIR.new" "$NITRO_DIR"
+
 switch_to "$REL"
-if healthy "$SHA"; then
-  echo "Live: ${SHA:0:7}"
+if web_ok "$SHA" && game_ok; then
+  echo "$EMU_HASH" > "$STATE/emu"
+  echo "Live: ${SHA:0:7}$([ "$EMU_RESTART" = 1 ] && echo ' (game server restarted)')"
+  rm -rf "$NITRO_DIR.old"
 else
-  echo "The new version did not answer its health check." >&2
-  if [ -n "$PREV" ] && [ -d "$PREV" ] && [ "$PREV" != "$REL" ]; then
-    echo "Rolling back to $(basename "$PREV" | cut -c1-7)" >&2
+  echo "The new version did not start properly." >&2
+  if [ -n "$PREV" ] && [ -d "$PREV" ] && [ "$PREV" != "$REL" ] && [ -f "$PREV/emu/arcturus.jar" ]; then
+    echo "Switching back to $(basename "$PREV" | cut -c1-7)" >&2
+    if [ -d "$NITRO_DIR.old" ]; then rm -rf "$NITRO_DIR"; mv "$NITRO_DIR.old" "$NITRO_DIR"; fi
+    EMU_RESTART=1
     switch_to "$PREV"
-    healthy "$(basename "$PREV")" && echo "Rolled back." >&2 || echo "The previous version does not answer either!" >&2
     rm -rf "$REL"
   fi
   exit 1

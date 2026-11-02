@@ -149,3 +149,10 @@ console.log(`UI pictures -> ${join(out, 'images')}${existsSync(view) ? ' (with t
     writeFileSync(join(dir, `${name}.png`), encode(img));
   }
 }
+
+// Game data files that are written by hand: texts, effects (none), product data (none).
+{
+  const gamedata = join(out, 'gamedata');
+  mkdirSync(gamedata, { recursive: true });
+  for (const f of ['ExternalTexts.json', 'UITexts.json', 'EffectMap.json', 'ProductData.json']) copyFileSync(join(root, 'content', 'nitro', f), join(gamedata, f));
+}

@@ -371,35 +371,39 @@ for (const [classname, [, sprite, name]] of Object.entries(PAINT)) {
   });
 }
 const PAINT_PRICE = 3;
-const paintRows = [
-  ...Object.keys(paints.floors).map((code, i) => `('${PAINT.floor[0]}',9050,'floor_single_${code}',${PAINT_PRICE},0,0,1,${i + 1},-1)`),
-  ...Object.keys(paints.walls).map((code, i) => `('${PAINT.wallpaper[0]}',9050,'wallpaper_single_${code}',${PAINT_PRICE},0,0,1,${100 + i + 1},-1)`),
-];
 
 writeFileSync(join(out, 'gamedata', 'FurnitureData.json'), JSON.stringify(furnidata));
-const pageRows = [];
-const itemRows = [];
+// The SQL can run on every deploy: it adds new furni and catalogue entries and updates what the
+// furni are, but keeps the prices owners set on the admin pages.
+const q = (v) => (typeof v === 'number' ? String(v) : `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`);
+const offers = []; // [catalog_name, item_ids, page_id, credits, order]
+const pageRows = [`(9000,-1,'bobba','Furni','default_3x3',1,1,1,'1','1','','','')`];
 let pageId = 9001;
-pageRows.push(`(9000,-1,'bobba','Furni','default_3x3',1,1,1,'1','1')`);
 for (const [name, items] of pages) {
   const pid = pageId++;
-  pageRows.push(`(${pid},9000,'${name.toLowerCase().replace(/[^a-z]+/g, '_')}','${name.replace(/'/g, "\\'")}','default_3x3',1,1,${pid - 9000},'1','1')`);
-  items.forEach((it, i) => itemRows.push(`('${it.sprite}',${pid},'${it.id}',${it.price},0,0,1,${i + 1},-1)`));
+  pageRows.push(`(${pid},9000,${q(name.toLowerCase().replace(/[^a-z]+/g, '_'))},${q(name)},'default_3x3',1,1,${pid - 9000},'1','1','','','')`);
+  items.forEach((it, i) => offers.push([it.id, it.sprite, pid, it.price, i + 1]));
 }
+pageRows.push(`(9050,-1,'spaces','Floors & Walls','spaces_new',1,1,2,'1','1','','','Floors and wallpapers for your rooms: try them on in the preview, then buy.')`);
+Object.keys(paints.floors).forEach((code, i) => offers.push([`floor_single_${code}`, PAINT.floor[0], 9050, PAINT_PRICE, i + 1]));
+Object.keys(paints.walls).forEach((code, i) => offers.push([`wallpaper_single_${code}`, PAINT.wallpaper[0], 9050, PAINT_PRICE, 100 + i + 1]));
+
+const BASE_COLS = 'id,sprite_id,public_name,item_name,type,width,length,stack_height,allow_stack,allow_sit,allow_lay,allow_walk,interaction_type,interaction_modes_count';
+const update = (cols) => cols.split(',').filter((c) => c !== 'id').map((c) => `${c}=VALUES(${c})`).join(',');
+const PAGE_COLS = 'id,parent_id,caption_save,caption,page_layout,icon_image,min_rank,order_num,visible,enabled,page_headline,page_teaser,page_text1';
 writeFileSync(
   join(out, 'sql', 'furni.sql'),
   [
-    '-- Bobba Hotel furni (built by tools/nitro/build-furni.mjs). Replaces the hotel furni and their catalogue.',
-    'DELETE FROM catalog_items WHERE page_id >= 9000 AND page_id < 9100;',
-    'DELETE FROM catalog_pages WHERE id >= 9000 AND id < 9100;',
-    'DELETE FROM items_base WHERE id >= 10000 AND id < 20000;',
-    `INSERT INTO items_base (id,sprite_id,public_name,item_name,type,width,length,stack_height,allow_stack,allow_sit,allow_lay,allow_walk,interaction_type,interaction_modes_count) VALUES\n${sql.join(',\n')};`,
-    `INSERT INTO catalog_pages (id,parent_id,caption_save,caption,page_layout,icon_image,min_rank,order_num,visible,enabled) VALUES\n${pageRows.join(',\n')};`,
-    `INSERT INTO catalog_items (item_ids,page_id,catalog_name,cost_credits,cost_points,points_type,amount,order_number,offer_id) VALUES\n${itemRows.join(',\n')};`,
-    'DELETE FROM items_base WHERE id IN (9901, 9902, 9903);',
-    `INSERT INTO items_base (id,sprite_id,public_name,item_name,type,width,length,stack_height,allow_stack,allow_sit,allow_lay,allow_walk,interaction_type,interaction_modes_count) VALUES\n${Object.entries(PAINT).map(([cls, [id, sprite, name]]) => `(${id},${sprite},'${name}','${cls}','i',0,0,1.00,0,0,0,0,'roomeffect',1)`).join(',\n')};`,
-    `INSERT INTO catalog_pages (id,parent_id,caption_save,caption,page_layout,icon_image,min_rank,order_num,visible,enabled,page_headline,page_teaser,page_text1) VALUES\n(9050,-1,'spaces','Floors & Walls','spaces_new',1,1,2,'1','1','','','Floors and wallpapers for your rooms: try them on in the preview, then buy.');`,
-    paintRows.length ? `INSERT INTO catalog_items (item_ids,page_id,catalog_name,cost_credits,cost_points,points_type,amount,order_number,offer_id) VALUES\n${paintRows.join(',\n')};` : '',
+    '-- Bobba Hotel furni and catalogue (built by tools/nitro/build-furni.mjs; safe to run again).',
+    `INSERT INTO items_base (${BASE_COLS}) VALUES\n${sql.join(',\n')}\nON DUPLICATE KEY UPDATE ${update(BASE_COLS)};`,
+    `INSERT INTO items_base (${BASE_COLS}) VALUES\n${Object.entries(PAINT).map(([cls, [id, sprite, name]]) => `(${id},${sprite},'${name}','${cls}','i',0,0,1.00,0,0,0,0,'roomeffect',1)`).join(',\n')}\nON DUPLICATE KEY UPDATE ${update(BASE_COLS)};`,
+    `INSERT INTO catalog_pages (${PAGE_COLS}) VALUES\n${pageRows.join(',\n')}\nON DUPLICATE KEY UPDATE ${update(PAGE_COLS)};`,
+    `DELETE FROM catalog_pages WHERE id >= 9000 AND id < 9100 AND id NOT IN (${pageRows.map((r) => r.slice(1, r.indexOf(','))).join(',')});`,
+    `DELETE FROM catalog_items WHERE page_id >= 9000 AND page_id < 9100 AND catalog_name NOT IN (${offers.map((o) => q(o[0])).join(',')});`,
+    ...offers.map(([name, item, page, credits, order]) =>
+      `UPDATE catalog_items SET item_ids=${q(String(item))}, page_id=${page}, order_number=${order} WHERE catalog_name=${q(name)} AND page_id >= 9000 AND page_id < 9100;\n` +
+      `INSERT INTO catalog_items (item_ids,page_id,catalog_name,cost_credits,cost_points,points_type,amount,order_number,offer_id) SELECT ${q(String(item))},${page},${q(name)},${credits},0,0,1,${order},-1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM catalog_items WHERE catalog_name=${q(name)} AND page_id >= 9000 AND page_id < 9100);`,
+    ),
     '',
   ].join('\n'),
 );
