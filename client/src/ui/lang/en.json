@@ -60,7 +60,6 @@
   "error.plan_too_high": "Floor heights can go up to {step}.",
   "error.plan_no_door": "Place the door on a floor tile.",
   "error.plan_door_not_out": "The door must stick out of the left wall: floor only to its right.",
-  "error.plan_unreachable": "Every tile must be reachable from the door (one step up or down at a time).",
   "info.floor_saved": "Floor plan saved. Everyone in the room starts again at the door.",
   "info.layout_saved": "Layout saved.",
   "command.not_allowed": "Only staff can use that command.",

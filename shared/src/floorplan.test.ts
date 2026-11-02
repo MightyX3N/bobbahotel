@@ -11,9 +11,10 @@ describe('floorPlanProblem', () => {
     expect(floorPlanProblem(['0000', '0000'], [0, 0], club)).toBe('plan_door_not_out');
     expect(floorPlanProblem(['x000', 'x000'], [0, 0], club)).toBe('plan_no_door');
   });
-  it('wants every tile reachable', () => {
-    expect(floorPlanProblem(['x00x0', '000x0', 'x00x0'], [0, 1], club)).toBe('plan_unreachable');
-    expect(floorPlanProblem(['x002', '0000'], [0, 1], club)).toBe('plan_unreachable'); // a 2-step jump
+  it('allows tiles you cannot walk to', () => {
+    // Tiles you can't walk to are allowed (teleporters and wired can take you there).
+    expect(floorPlanProblem(['x00x0', '000x0', 'x00x0'], [0, 1], club)).toBe(null);
+    expect(floorPlanProblem(['x002', '0000'], [0, 1], club)).toBe(null); // a 2-step jump
   });
   it('keeps to the limits', () => {
     expect(floorPlanProblem(['x' + '0'.repeat(30), '0'.repeat(31)], [0, 1], club)).toBe('plan_too_big');

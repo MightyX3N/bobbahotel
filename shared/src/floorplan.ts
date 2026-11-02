@@ -1,7 +1,5 @@
 // Rules for floor plans made in the editor. Both sides use them: the editor to show problems
 // while drawing, the server to refuse anything that breaks them.
-import { DIRS } from './room.ts';
-
 export interface FloorPlanLimits {
   /** Grid size (columns, rows). */
   maxWidth: number;
@@ -22,14 +20,13 @@ export type FloorPlanProblem =
   | 'plan_bad_tiles'
   | 'plan_too_high'
   | 'plan_no_door'
-  | 'plan_door_not_out'
-  | 'plan_unreachable';
+  | 'plan_door_not_out';
 
 /**
  * Checks a floor plan. Returns the first problem, or null if it's fine.
  * - map: rows of "x" (no floor) or 0-9/a-z (floor height), all rows the same length
  * - door: must be a floor tile that sticks out of the left wall (floor only to its right, Habbo-style)
- * - every floor tile must be reachable from the door (walking up or down one step at a time)
+ * Tiles don't have to be reachable from the door: teleporters and wired can take you there later.
  */
 export function floorPlanProblem(map: string[], door: [number, number], limits: FloorPlanLimits): FloorPlanProblem | null {
   const h = map.length;
@@ -55,23 +52,7 @@ export function floorPlanProblem(map: string[], door: [number, number], limits: 
   if (height(dx, dy) < 0) return 'plan_no_door';
   if (height(dx - 1, dy) >= 0 || height(dx, dy - 1) >= 0 || height(dx, dy + 1) >= 0 || height(dx + 1, dy) < 0) return 'plan_door_not_out';
 
-  // Every tile reachable from the door, one step up or down at a time, no corner cutting.
-  const seen = new Set<number>([dy * w + dx]);
-  const queue: [number, number][] = [[dx, dy]];
-  while (queue.length > 0) {
-    const [x, y] = queue.pop()!;
-    for (const [sx, sy] of DIRS) {
-      const nx = x + sx;
-      const ny = y + sy;
-      const key = ny * w + nx;
-      if (seen.has(key) || height(nx, ny) < 0) continue;
-      if (Math.abs(height(nx, ny) - height(x, y)) > 1) continue;
-      if (sx !== 0 && sy !== 0 && (height(x + sx, y) < 0 || height(x, y + sy) < 0)) continue;
-      seen.add(key);
-      queue.push([nx, ny]);
-    }
-  }
-  return seen.size === tiles ? null : 'plan_unreachable';
+  return null;
 }
 
 /** Club status: active until this time (ms since 1970), or not. */
