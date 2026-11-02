@@ -95,13 +95,20 @@ export class RoomView {
     this.bubbles.add(a.name, text, head.x + this.world.x, head.y + this.world.y, this.app.screen.width, performance.now());
   }
 
-  /** Puts the room in the middle of the screen. */
+  /** Puts the room in the middle of the screen (or the door, for rooms bigger than the screen). */
   center(): void {
     const b = this.roomBounds();
     if (b.width === 0) return;
     // Centred in the space above the toolbar.
+    const width = this.app.screen.width;
     const height = this.app.screen.height - TOOLBAR_HEIGHT;
-    this.world.position.set(Math.round(this.app.screen.width / 2 - (b.x + b.width / 2)), Math.round(height / 2 - (b.y + b.height / 2)));
+    // A room bigger than the screen is centred on the door instead, so you see yourself come in
+    // (drag to look around).
+    const [dx, dy] = this.door;
+    const door = tileCenter(dx, dy, heightAt(this.grid, dx, dy));
+    const x = b.width > width ? door.x : b.x + b.width / 2;
+    const y = b.height > height ? door.y - 40 : b.y + b.height / 2;
+    this.world.position.set(Math.round(width / 2 - x), Math.round(height / 2 - y));
   }
 
   /** Bounds of the room's floor and walls (avatars left out, so the room doesn't shift as they move). */
