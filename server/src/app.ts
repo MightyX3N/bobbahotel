@@ -33,6 +33,8 @@ export interface AppOptions {
   fetch?: Fetch;
   /** For tests: rooms don't tick on their own; call room.tick(). */
   manualTicks?: boolean;
+  /** For tests: how long an avatar stays after its connection drops (default RECONNECT_GRACE_MS). */
+  reconnectGraceMs?: number;
 }
 
 export interface App {
@@ -48,7 +50,17 @@ interface Client {
   ws: WebSocket;
   room: Room | null;
   send(message: ServerMessage): void;
+  /** Answered the last heartbeat. */
+  alive: boolean;
 }
+
+/**
+ * How long an avatar stays in its room after the connection drops (a phone switching apps, a
+ * network blip). Coming back within this time picks up right where you were.
+ */
+export const RECONNECT_GRACE_MS = 60_000;
+/** The server checks every connection this often; one that doesn't answer is closed. */
+const HEARTBEAT_MS = 30_000;
 
 export function createApp(opts: AppOptions): App {
   const { config, db, content } = opts;
@@ -56,6 +68,8 @@ export function createApp(opts: AppOptions): App {
   const auth = new Auth(db, { publicUrl: config.publicUrl, ...(opts.fetch ? { fetch: opts.fetch } : {}) });
   const rooms = new Rooms(db, content, { autoTick: !opts.manualTicks });
   const clients = new Map<number, Client>();
+  /** Players whose connection dropped, kept in their room for RECONNECT_GRACE_MS. */
+  const awayClients = new Map<number, { client: Client; timer: ReturnType<typeof setTimeout> }>();
   const staffIds = config.staffSteamIds ?? new Set<string>();
   const isStaff = (u: User) => u.steamId !== null && staffIds.has(u.steamId);
   /** Fresh account info (Club may have changed since login). */
@@ -194,14 +208,6 @@ export function createApp(opts: AppOptions): App {
   });
 
   function onConnection(ws: WebSocket, user: User): void {
-    // One connection per account: a new login replaces the old one.
-    const old = clients.get(user.id);
-    if (old) {
-      old.send({ t: 'error', d: { code: 'replaced', message: 'You logged in somewhere else' } });
-      old.ws.close(4002, 'replaced');
-      leave(old);
-    }
-    users.touch(user.id);
     const client: Client = {
       user,
       ws,
@@ -209,9 +215,27 @@ export function createApp(opts: AppOptions): App {
       send: (message) => {
         if (ws.readyState === ws.OPEN) ws.send(encodeMessage(message));
       },
+      alive: true,
     };
-    let greeted = false;
+    // One connection per account. The new one takes over the avatar where it is: the same player
+    // coming back (from another app, a dropped network), or logging in somewhere else, which
+    // closes the old connection.
+    const old = clients.get(user.id);
+    const away = awayClients.get(user.id);
     clients.set(user.id, client);
+    if (old) {
+      old.send({ t: 'error', d: { code: 'replaced', message: 'You logged in somewhere else' } });
+      old.ws.close(4002, 'replaced');
+    }
+    if (away) {
+      clearTimeout(away.timer);
+      awayClients.delete(user.id);
+    }
+    const previous = old ?? away?.client;
+    if (previous?.room?.rebind({ id: user.id, name: user.name, look: user.look, send: client.send })) client.room = previous.room;
+    users.touch(user.id);
+    let greeted = false;
+    ws.on('pong', () => (client.alive = true));
 
     ws.on('message', (data, isBinary) => {
       if (isBinary) return ws.close(1003, 'text only');
@@ -221,11 +245,17 @@ export function createApp(opts: AppOptions): App {
       handle(message);
     });
     ws.on('close', () => {
-      if (clients.get(user.id) === client) {
-        clients.delete(user.id);
+      if (clients.get(user.id) !== client) return;
+      clients.delete(user.id);
+      users.touch(user.id);
+      if (!client.room) return;
+      // Keep the avatar in the room for a while, in case they come straight back.
+      const timer = setTimeout(() => {
+        awayClients.delete(user.id);
         leave(client);
-        users.touch(user.id);
-      }
+      }, opts.reconnectGraceMs ?? RECONNECT_GRACE_MS);
+      timer.unref();
+      awayClients.set(user.id, { client, timer });
     });
 
     function goTo(id: string): void {
@@ -249,8 +279,13 @@ export function createApp(opts: AppOptions): App {
           }
           greeted = true;
           client.send({ t: 'welcome', d: { server: config.version, protocol: PROTOCOL_VERSION, me: meOf(user) } });
-          // Everyone starts in the lobby (until there is a hotel view).
-          goTo(rooms.lobbyId);
+          // Back from a dropped connection: the same room, the avatar where it was.
+          if (client.room) client.room.sendSnapshot(user.id);
+          // Everyone else starts in the lobby (until there is a hotel view).
+          else goTo(rooms.lobbyId);
+          return;
+        case 'ping':
+          client.send({ t: 'pong', d: {} });
           return;
         case 'navigator':
           client.send({ t: 'navigator', d: { tab: message.d.tab, query: message.d.query ?? '', rooms: rooms.list(message.d.tab, message.d.query ?? '', user.id, isStaff(user)) } });
@@ -283,7 +318,10 @@ export function createApp(opts: AppOptions): App {
           const result = rooms.saveRoomFloor(askerOf(user), message.d.roomId, message.d.map, message.d.door);
           if (!result.ok) return client.send({ t: 'error', d: { code: result.error, message: result.error } });
           // Everyone in the room was moved into the rebuilt room.
-          if (result.room) for (const c of clients.values()) if (c.room?.id === message.d.roomId) c.room = result.room;
+          if (result.room) {
+            for (const c of clients.values()) if (c.room?.id === message.d.roomId) c.room = result.room;
+            for (const a of awayClients.values()) if (a.client.room?.id === message.d.roomId) a.client.room = result.room;
+          }
           client.send({ t: 'info', d: { code: 'floor_saved' } });
           return;
         }
@@ -332,6 +370,19 @@ export function createApp(opts: AppOptions): App {
   cleanup();
   const cleanupTimer = setInterval(cleanup, 3600 * 1000);
   cleanupTimer.unref();
+  // Connections that went quiet without closing (a phone that lost signal) are closed, so their
+  // avatar's grace period starts.
+  const heartbeat = setInterval(() => {
+    for (const c of clients.values()) {
+      if (!c.alive) {
+        c.ws.terminate();
+        continue;
+      }
+      c.alive = false;
+      c.ws.ping();
+    }
+  }, HEARTBEAT_MS);
+  heartbeat.unref();
 
   return {
     server,
@@ -342,6 +393,8 @@ export function createApp(opts: AppOptions): App {
     close: () =>
       new Promise<void>((resolve) => {
         clearInterval(cleanupTimer);
+        clearInterval(heartbeat);
+        for (const a of awayClients.values()) clearTimeout(a.timer);
         rooms.stopAll();
         for (const ws of wss.clients) ws.terminate();
         wss.close();

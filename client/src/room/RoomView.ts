@@ -31,6 +31,7 @@ export class RoomView {
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
   private furni: FurniView[] = [];
+  private roomId: string | null = null;
   /** Bumped on every room change, so furni loading for an old room is dropped. */
   private roomSerial = 0;
   private hoveredFurni: FurniView | null = null;
@@ -118,6 +119,9 @@ export class RoomView {
     const serial = ++this.roomSerial;
 
     this.bubbles.clear();
+    // The same room again (after reconnecting): keep the view as it was.
+    const sameRoom = room.id === this.roomId;
+    this.roomId = room.id;
     this.grid = parseMap(room.map);
     this.door = room.door;
     this.tilesFrontToBack = [];
@@ -141,6 +145,7 @@ export class RoomView {
         this.objects.addChild(view.container);
       }
     });
+    if (sameRoom) return;
     // Start at normal size, or half size when the room doesn't fit the screen.
     const b = this.roomBounds();
     const fits = b.width <= this.app.screen.width && b.height <= this.app.screen.height - toolbarHeight();

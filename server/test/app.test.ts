@@ -19,7 +19,7 @@ afterEach(async () => {
 
 const STAFF_STEAM = '76561198000000099';
 
-async function start(opts: { allowOrigin?: string[]; steamValid?: boolean } = {}): Promise<string> {
+async function start(opts: { allowOrigin?: string[]; steamValid?: boolean; graceMs?: number } = {}): Promise<string> {
   const fakeSteam = (async () => new Response(`ns:http://specs.openid.net/auth/2.0\nis_valid:${opts.steamValid ? 'true' : 'false'}\n`)) as typeof fetch;
   app = createApp({
     config: { allowOrigin: opts.allowOrigin ?? [], version: 'test', publicUrl: PUBLIC, staffSteamIds: new Set([STAFF_STEAM]) },
@@ -27,6 +27,7 @@ async function start(opts: { allowOrigin?: string[]; steamValid?: boolean } = {}
     content,
     fetch: fakeSteam,
     manualTicks: true,
+    reconnectGraceMs: opts.graceMs ?? 60_000,
   });
   await new Promise<void>((resolve) => app!.server.listen(0, '127.0.0.1', resolve));
   return `127.0.0.1:${(app.server.address() as AddressInfo).port}`;
@@ -208,7 +209,7 @@ describe('hotel', () => {
   });
 
   it('puts players in the lobby where they see each other walk and chat', async () => {
-    const host = await start();
+    const host = await start({ graceMs: 30 });
     const alice = await Player.join(host, await guest(host, 'Alice'));
     const room = await alice.waitFor('room');
     expect(room.d.name).toBe('Lobby');
@@ -263,6 +264,30 @@ describe('hotel', () => {
     await Player.join(host, cookie);
     expect((await first.waitFor('error')).d.code).toBe('replaced');
     expect(app!.lobby.count).toBe(1);
+  });
+
+  it('keeps you in your room when the connection drops, and picks up there on reconnecting', async () => {
+    const host = await start();
+    const cookie = await guest(host, 'Phone');
+    const me = await Player.join(host, cookie);
+    const other = await Player.join(host, await guest(host, 'Watcher'));
+    const myId = (await me.waitFor('welcome')).d.me.id;
+    // Walk a bit, then the phone switches apps and the connection closes.
+    me.send({ t: 'walk', d: { x: 3, y: 9 } });
+    await new Promise((r) => setTimeout(r, 50));
+    for (let i = 1; i <= 6; i++) app!.lobby.tick(Date.now() + i * TICK_MS);
+    me.ws.close();
+    await new Promise((r) => setTimeout(r, 100));
+    expect(app!.lobby.count).toBe(2);
+    expect(other.inbox.some((m) => m.t === 'userLeave')).toBe(false);
+    // Back again: same room, the avatar where it was, nobody saw them leave.
+    const back = await Player.join(host, cookie);
+    const room = await back.waitFor('room');
+    expect(room.d.id).toBe('p:lobby');
+    expect(room.d.users.find((u) => u.id === myId)).toMatchObject({ x: 3, y: 9 });
+    expect(other.inbox.some((m) => m.t === 'userLeave' || (m.t === 'userJoin' && m.d.id === myId))).toBe(false);
+    back.send({ t: 'ping', d: {} });
+    await back.waitFor('pong');
   });
 });
 

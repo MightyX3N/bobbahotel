@@ -2,7 +2,7 @@
 // Draws the app icon (a golden pixel room key on Bobba blue) and saves it in the sizes phones and
 // browsers want: client/public/icons/*.png. Our own drawing, no licensed art.
 //   node tools/make-icons.mjs
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -63,5 +63,7 @@ for (const [name, size, opts] of shots) {
   writeFileSync(out + name, await page.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } }));
 }
 writeFileSync(out + 'icon.svg', svg(512, { padding: 0.12, round: true }));
+// iPhone/iPad look for this one at the site root.
+writeFileSync(out + '../apple-touch-icon.png', readFileSync(out + 'apple-touch-icon.png'));
 await browser.close();
 console.log('Icons written to', out);

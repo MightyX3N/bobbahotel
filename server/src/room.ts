@@ -128,7 +128,16 @@ export class Room {
       chatTimes: [],
     };
     this.occupants.set(visitor.id, occupant);
-    visitor.send({
+    this.sendSnapshot(visitor.id);
+    this.broadcast({ t: 'userJoin', d: toRoomUser(occupant) }, visitor.id);
+    this.startTicking();
+  }
+
+  /** Everything needed to draw the room, to one visitor (on entering, or after reconnecting). */
+  sendSnapshot(id: number): void {
+    const o = this.occupants.get(id);
+    if (!o) return;
+    o.visitor.send({
       t: 'room',
       d: {
         id: this.id,
@@ -142,8 +151,14 @@ export class Room {
         furni: this.furni,
       },
     });
-    this.broadcast({ t: 'userJoin', d: toRoomUser(occupant) }, visitor.id);
-    this.startTicking();
+  }
+
+  /** A visitor reconnected: their avatar stays where it is, messages go to the new connection. */
+  rebind(visitor: Visitor): boolean {
+    const o = this.occupants.get(visitor.id);
+    if (!o) return false;
+    o.visitor = visitor;
+    return true;
   }
 
   leave(id: number): void {

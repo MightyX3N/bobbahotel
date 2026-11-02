@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { lookSchema } from './look.ts';
 
 /** Bump when a change means old clients can't talk to the new server. */
-export const PROTOCOL_VERSION = 4;
+export const PROTOCOL_VERSION = 5;
 
 export const CHAT_MAX = 100;
 export const NAME_MIN = 3;
@@ -101,6 +101,8 @@ export const clientMessages = {
   /** Owner with Bobba Club (or staff): give a room its own floor plan. */
   saveRoomFloor: floorPlan.extend({ roomId }),
   hello: z.object({ protocol: z.number().int() }),
+  /** Are you still there? (The client asks when it comes back from the background.) */
+  ping: z.object({}),
   /** Walk to a tile. */
   walk: z.object({ x: tile, y: tile }),
   /** Say something in the room. */
@@ -153,6 +155,8 @@ export const serverMessages = {
     }),
   ),
   chat: z.object({ id: z.number().int(), text: z.string() }),
+  /** Answer to ping. */
+  pong: z.object({}),
   /** A furni in your room changed state. */
   furniState: z.object({ uid: z.number().int(), state: z.number().int().min(0) }),
   error: z.object({ code: z.string(), message: z.string() }),
