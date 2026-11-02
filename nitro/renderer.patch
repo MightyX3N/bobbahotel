@@ -117,3 +117,20 @@ index 6bfd813..3777c30 100644
 +  id: "Sit",
 +  parts: BOBBA_PART_TYPES.map((setType) => ({ setType, frames: bobbaFrames("sit", 3) })),
 +});
+diff --git a/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts b/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts
+index 530b823..6122730 100644
+--- a/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts
++++ b/libs/renderer/src/nitro/room/object/visualization/room/RoomVisualization.ts
+@@ -332,7 +332,11 @@ export class RoomVisualization extends RoomObjectSpriteVisualization implements
+     const wallVisibility = model.getValue<number>(RoomObjectVariable.ROOM_WALL_VISIBILITY) === 1;
+     const landscapeVisibility = model.getValue<number>(RoomObjectVariable.ROOM_LANDSCAPE_VISIBILITY) === 1;
+ 
+-    return this.updatePlaneTypes(floorType, wallType, landscapeType) || this.updatePlaneVisibility(floorVisibility, wallVisibility, landscapeVisibility);
++    // Both, always (with || a change of plane types hid a change of visibility, e.g. hidden walls).
++    const typesChanged = this.updatePlaneTypes(floorType, wallType, landscapeType);
++    const visibilityChanged = this.updatePlaneVisibility(floorVisibility, wallVisibility, landscapeVisibility);
++
++    return typesChanged || visibilityChanged;
+   }
+ 
+   private clearPlanes(): void {

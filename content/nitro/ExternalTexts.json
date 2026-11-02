@@ -2364,5 +2364,10 @@
 "wiredfurni.pickfurnis.desc": "Click furni in the room to pick them.",
 "wiredfurni.ready": "Ready",
 "wiredfurni.title": "Wired",
-"wiredfurni.tooltip.effectid": "Effect ID"
+"wiredfurni.tooltip.effectid": "Effect ID",
+"pet.breed.1.0": "Ginger cat",
+"pet.breed.1.1": "Black cat",
+"pet.breed.1.2": "Grey cat",
+"pet.type.1": "Cat",
+"pet.name.1": "Cat"
 }

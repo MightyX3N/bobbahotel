@@ -14,11 +14,12 @@
 //
 // Usage: node tools/nitro/build-generic.mjs [outDir] [spritesDir]
 
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { blank, box, crop, encode, half, load, solid } from './png.mjs';
 import { writeBundle } from './bundle.mjs';
+import { derivedTiles } from './packs.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const out = process.argv[2] ?? join(root, 'build', 'nitro');
@@ -73,16 +74,28 @@ function flatWall(img, rising) {
   return t;
 }
 
-const tiles = readdirSync(join(spritesDir, 'tiles')).filter((f) => f.endsWith('.png'));
+// Floor and wall styles: our tile pictures (sprites/tiles), plus the ones made from other packs.
+const derived = derivedTiles(spritesDir);
+const tiles = [...readdirSync(join(spritesDir, 'tiles')).filter((f) => f.endsWith('.png')), ...Object.keys(derived)];
+const tile = (file) => derived[file] ?? load(join(spritesDir, 'tiles', file));
 const floors = tiles.filter((f) => f.startsWith('floor_')).map((f) => f.slice(6, -4)).sort();
 const walls = tiles.filter((f) => f.startsWith('wall_l_')).map((f) => f.slice(7, -4)).filter((n) => tiles.includes(`wall_r_${n}.png`)).sort();
 const DEFAULT_FLOOR = 'woodlight';
 const DEFAULT_WALL = 'beigeyellow';
 // The server keeps a room's floor and wall as a short code (rooms.paper_floor / paper_wall, at most
-// 5 characters), so each style gets a number in name order: floors 1001, 1002, ..., walls 2001,
-// 2002, ... (Nitro's own defaults, 111 and 201, stay free so a room without a style gets the
-// "default" plane). They are written to gamedata/paints.json for the catalogue.
-const code = (list, n) => String((list === floors ? 1001 : 2001) + list.indexOf(n));
+// 5 characters): floors 1001, 1002, ..., walls 2001, 2002, ... (Nitro's own defaults, 111 and 201,
+// stay free so a room without a style gets the "default" plane). A style's code never changes once
+// given (content/nitro/paint-codes.json; a new style gets the next free one there); they are
+// written to gamedata/paints.json for the catalogue.
+const paintCodes = JSON.parse(readFileSync(join(fileURLToPath(new URL('../..', import.meta.url)), 'content', 'nitro', 'paint-codes.json'), 'utf8'));
+for (const [list, key, first] of [[floors, 'floors', 1001], [walls, 'walls', 2001]]) {
+  for (const n of list) {
+    if (paintCodes[key][n]) continue;
+    paintCodes[key][n] = Math.max(first - 1, ...Object.values(paintCodes[key])) + 1;
+    console.warn(`  new ${key.slice(0, -1)} style "${n}" got code ${paintCodes[key][n]}: add it to content/nitro/paint-codes.json`);
+  }
+}
+const code = (list, n) => String(paintCodes[list === floors ? 'floors' : 'walls'][n]);
 
 const roomImages = {};
 const roomAssets = {};
@@ -94,7 +107,7 @@ const floorData = { textures: [], materials: [], planes: [] };
 const wallData = { textures: [], materials: [], planes: [] };
 
 for (const n of floors) {
-  const img = load(join(spritesDir, 'tiles', `floor_${n}.png`));
+  const img = tile(`floor_${n}.png`);
   const top = flatFloor(img);
   // The edge: the tile's left side, as seen under its left corner. Nitro shades edges itself
   // (0xDD on the left), so it is stored lightened by that much.
@@ -129,8 +142,8 @@ if (process.env.GRID) {
 }
 
 for (const n of walls) {
-  const l = load(join(spritesDir, 'tiles', `wall_l_${n}.png`));
-  const r = load(join(spritesDir, 'tiles', `wall_r_${n}.png`));
+  const l = tile(`wall_l_${n}.png`);
+  const r = tile(`wall_r_${n}.png`);
   const left = flatWall(l, true);
   const right = flatWall(r, false);
   add(`wall_${n}_l_64`, left);
@@ -250,7 +263,9 @@ furniBundle('selection_arrow', 'selection_arrow', 'furniture_animated', [
 // Placeholders: a faint tile while the real picture loads.
 const faint = [255, 255, 255, 70];
 for (const [name, x64, y64] of [['place_holder', 16, 8], ['place_holder_wall', 16, 8], ['place_holder_pet', 16, 8]]) {
-  furniBundle(name, 'furniture_basic', 'furniture_static', [
+  // The pet one keeps Nitro's pet logic, so the pet's colour (from the server) is kept while the
+  // real picture loads.
+  furniBundle(name, name === 'place_holder_pet' ? 'pet' : 'furniture_basic', 'furniture_static', [
     [`${name}_64_a_0_0`, diamond(32, faint), x64, y64],
     [`${name}_32_a_0_0`, diamond(16, faint), x64 / 2, y64 / 2],
   ], { extra: { logic: { model: { dimensions: { x: 1, y: 1, z: 1 } } } } });
@@ -310,7 +325,7 @@ mkdirSync(join(out, 'gamedata'), { recursive: true });
   const icons = join(out, 'dcr', 'hof_furni', 'icons');
   mkdirSync(icons, { recursive: true });
   const icon = (file) => {
-    const img = load(join(spritesDir, 'tiles', file));
+    const img = tile(file);
     const b = box(img) ?? [0, 0, img.width, img.height];
     return encode(half(crop(img, b)));
   };
@@ -321,7 +336,7 @@ mkdirSync(join(out, 'gamedata'), { recursive: true });
   const thumbs = join(out, 'c_images', 'catalogue');
   mkdirSync(thumbs, { recursive: true });
   const thumb = (file) => {
-    const img = load(join(spritesDir, 'tiles', file));
+    const img = tile(file);
     return encode(crop(img, box(img) ?? [0, 0, img.width, img.height]));
   };
   for (const n of floors) writeFileSync(join(thumbs, `th_floor_${code(floors, n)}.png`), thumb(`floor_${n}.png`));
