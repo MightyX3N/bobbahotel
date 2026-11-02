@@ -4,7 +4,7 @@ import { Container, Graphics, type Application, type FederatedPointerEvent } fro
 import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
-import { doorOpening, drawRoom, drawTileOutline } from './drawRoom.ts';
+import { drawRoom, drawTileOutline } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
@@ -20,9 +20,7 @@ export class RoomView {
   private readonly avatars = new Map<number, AvatarView>();
   private grid: Grid = [];
   private door: [number, number] = [0, 0];
-  /** Clip shapes for avatars standing in the doorway (one each; Pixi masks can't be shared). */
-  private readonly doorClips = new Map<number, Graphics>();
-  private hoverClip: Graphics | null = null;
+  private occluders: Graphics[] = [];
   private tilesFrontToBack: [number, number][] = [];
   private hoveredAvatar: AvatarView | null = null;
   private drag: { startX: number; startY: number; worldX: number; worldY: number; moved: boolean } | null = null;
@@ -49,11 +47,8 @@ export class RoomView {
   enter(room: DataOf<ServerMessage, 'room'>): void {
     for (const a of this.avatars.values()) a.destroy();
     this.avatars.clear();
-    for (const c of this.doorClips.values()) c.destroy();
-    this.doorClips.clear();
-    this.hover.mask = null;
-    this.hoverClip?.destroy();
-    this.hoverClip = null;
+    for (const o of this.occluders) o.destroy();
+    this.occluders = [];
 
     this.bubbles.clear();
     this.grid = parseMap(room.map);
@@ -63,7 +58,14 @@ export class RoomView {
     this.tilesFrontToBack.sort((a, b) => b[0] + b[1] - (a[0] + a[1]) || heightAt(this.grid, b[0], b[1]) - heightAt(this.grid, a[0], a[1]));
 
     this.floorLayer.removeChildren().forEach((c) => c.destroy());
-    this.floorLayer.addChild(drawRoom(this.grid, room.door));
+    const drawing = drawRoom(this.grid, room.door);
+    this.floorLayer.addChild(drawing.background);
+    // Walls also take part in depth sorting, so they hide avatars standing behind them.
+    for (const o of drawing.occluders) {
+      o.graphics.zIndex = o.depth;
+      this.objects.addChild(o.graphics);
+      this.occluders.push(o.graphics);
+    }
     this.hover.clear();
     for (const u of room.users) this.addUser(u);
     this.center();
@@ -80,8 +82,6 @@ export class RoomView {
   removeUser(id: number): void {
     this.avatars.get(id)?.destroy();
     this.avatars.delete(id);
-    this.doorClips.get(id)?.destroy();
-    this.doorClips.delete(id);
   }
 
   status(updates: DataOf<ServerMessage, 'status'>): void {
@@ -105,39 +105,10 @@ export class RoomView {
 
   private update(): void {
     const now = performance.now();
-    for (const a of this.avatars.values()) {
-      a.update(now);
-      this.clipInDoorway(a, now);
-    }
+    for (const a of this.avatars.values()) a.update(now);
     this.bubbles.update(now);
   }
 
-
-  /**
-   * The door tile is behind the wall: someone on it (or walking through) is only seen through the
-   * door opening, like in Habbo, where the wall hides the part of the avatar beside the opening.
-   */
-  private clipInDoorway(a: AvatarView, now: number): void {
-    const p = a.tilePosition(now);
-    const [dx, dy] = this.door;
-    const inDoorway = p.x < dx + 0.99 && Math.abs(p.y - dy) < 0.5;
-    const clip = this.doorClips.get(a.id);
-    if (!inDoorway) {
-      if (clip) {
-        // A released mask would be drawn as a plain shape, so it is removed completely.
-        a.container.mask = null;
-        clip.destroy();
-        this.doorClips.delete(a.id);
-      }
-      return;
-    }
-    if (!clip) {
-      const shape = new Graphics().poly(doorOpening(this.grid, this.door)).fill(0xffffff);
-      this.world.addChild(shape);
-      this.doorClips.set(a.id, shape);
-      a.container.mask = shape;
-    }
-  }
 
   private tileAt(sx: number, sy: number): [number, number] | null {
     const px = sx - this.world.x;
@@ -167,17 +138,7 @@ export class RoomView {
     const t = this.tileAt(e.global.x, e.global.y);
     if (t) drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
     else this.hover.clear();
-    // The door tile is behind the wall, so its outline only shows through the door opening.
-    const onDoor = !!t && t[0] === this.door[0] && t[1] === this.door[1];
-    if (onDoor && !this.hoverClip) {
-      this.hoverClip = new Graphics().poly(doorOpening(this.grid, this.door)).fill(0xffffff);
-      this.world.addChild(this.hoverClip);
-      this.hover.mask = this.hoverClip;
-    } else if (!onDoor && this.hoverClip) {
-      this.hover.mask = null;
-      this.hoverClip.destroy();
-      this.hoverClip = null;
-    }
+
 
     const a = this.avatarAt(e.global.x, e.global.y);
     if (a !== this.hoveredAvatar) {

@@ -87,9 +87,9 @@ export class AvatarView {
     const p = this.positionAt(now);
     const s = tileCenter(p.x, p.y, p.z);
     this.container.position.set(Math.round(s.x), Math.round(s.y));
-    // Sort by the tile being walked onto so the avatar isn't hidden behind the floor in front of it.
-    const sortTile = this.moving ? this.to : p;
-    this.container.zIndex = depthOf(Math.max(p.x, sortTile.x), Math.max(p.y, sortTile.y), 0) + 50;
+    // Sorted by where the avatar actually is (also mid-step), so walls in front hide it at the right
+    // moment, e.g. while stepping through the door opening.
+    this.container.zIndex = depthOf(p.x, p.y, 0) + 50;
 
     const walking = this.moving && now - this.moveStart < this.moveMs + 120;
     this.setPose(walking ? 'walk' : 'idle');

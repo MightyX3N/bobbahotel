@@ -5,9 +5,12 @@
 // Habbo screenshot):
 // - The door tile sticks out of the left wall. The wall runs straight past it, and has a door
 //   opening exactly in front of the door tile: one tile wide, lined up with the door tile's row.
-//   Someone standing on the door tile is seen through that opening (see RoomView's door clip).
+//   Someone standing on the door tile is seen through that opening.
+// - Walls are depth-sorted together with avatars (like Nitro), so a wall hides whoever is behind
+//   it: the part of an avatar beside the door opening, or someone behind a wall that steps forward.
 // - Walls stand on the back edges of the room, are a quarter tile thick and reach a little
-//   below the floor. Where the back outline steps forward (a notch), the wall goes around it.
+//   below the floor. Where the back outline steps forward (a notch), the earlier wall carries on
+//   behind the next one, joined by a top edge.
 // - Everything is drawn tile by tile from back to front, each tile's walls together with the
 //   tile, so whatever stands in front covers what is behind it.
 import { Graphics } from 'pixi.js';
@@ -41,8 +44,23 @@ export function corner(gx: number, gy: number, z: number): Point {
   return [(gx - gy) * (TILE_W / 2), (gx + gy) * (TILE_H / 2) - z * STEP_PX];
 }
 
-export function drawRoom(grid: Grid, door: [number, number]): Graphics {
+/**
+ * A room drawing: the background (floor, walls, door darkness) plus, for every tile with walls,
+ * a copy of those walls to sort together with avatars, so a wall hides whoever stands behind it
+ * (in the doorway, or behind a wall that steps forward), like Habbo does.
+ */
+export interface RoomDrawing {
+  background: Graphics;
+  occluders: { graphics: Graphics; depth: number }[];
+}
+
+/** Sort depth of a wall belonging to tile (x, y): above avatars further back, below those on this tile or in front. */
+export const wallDepth = (x: number, y: number) => (x + y) * 100 + 10;
+
+export function drawRoom(grid: Grid, door: [number, number]): RoomDrawing {
   const g = new Graphics();
+  const occluders: RoomDrawing['occluders'] = [];
+  let occ: Graphics | null = null;
   const rows = grid.length;
   const cols = Math.max(...grid.map((r) => r.length));
   const maxZ = Math.max(0, ...grid.flat());
@@ -68,13 +86,14 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
     for (let j = 0; j < y; j++) if (solid(x - 1, j)) return hasRightWall(x - 1, j) ? j : -1;
     return -1;
   };
-  /** Does the right wall ending at grid x on row y continue as a notch wall further forward? */
-  const turnsForward = (x: number, y: number) => {
-    for (let j = y + 1; j < rows; j++) if (notchFrom(x, j) === y) return true;
-    return false;
-  };
-
   const quad = (a: Point, b: Point, c: Point, d: Point, color: number) => g.poly([...a, ...b, ...c, ...d]).fill(color);
+  /** A wall shape: drawn in the background and in this tile's occluder. `a2`/`b2` replace the
+   *  first two points in the occluder (wall faces stop at the floor line there, so they never
+   *  cover the floor in front). */
+  const wall = (a: Point, b: Point, c: Point, d: Point, color: number, a2: Point = a, b2: Point = b) => {
+    quad(a, b, c, d, color);
+    (occ ??= new Graphics()).poly([...a2, ...b2, ...c, ...d]).fill(color);
+  };
   const down = (p: Point, px: number): Point => [p[0], p[1] + px];
   /** Offsets for wall thickness: a quarter tile in grid direction -x, -y or +x. */
   const minusX = (p: Point): Point => [p[0] - T, p[1] - T / 2];
@@ -90,6 +109,7 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
     const [top, right, bottom, left] = tileCorners(x, y, z);
     const leftWall = hasLeftWall(x, y);
     const rightWall = hasRightWall(x, y);
+    occ = null;
 
     // ---- left wall, along the tile's top-left edge (left corner -> top corner) ----
     if (leftWall) {
@@ -100,13 +120,13 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
       if (isDoor(x - 1, y)) {
         // Door opening across this whole tile edge: the wall is cut out below DOOR_HEIGHT, so the
         // dark doorway and the door tile's floor (drawn earlier, behind the wall) show through.
-        quad(down(left, -DOOR_HEIGHT), down(top, -DOOR_HEIGHT), tTop, lTop, COLORS.wallLeft);
+        wall(down(left, -DOOR_HEIGHT), down(top, -DOOR_HEIGHT), tTop, lTop, COLORS.wallLeft);
       } else {
-        quad(lBase, tBase, tTop, lTop, COLORS.wallLeft);
+        wall(lBase, tBase, tTop, lTop, COLORS.wallLeft, left, top);
       }
-      quad(lTop, tTop, minusX(tTop), minusX(lTop), COLORS.wallTop);
+      wall(lTop, tTop, minusX(tTop), minusX(lTop), COLORS.wallTop);
       // End piece where the wall stops at the front.
-      if (!hasLeftWall(x, y + 1)) quad(lBase, lTop, minusX(lTop), minusX(lBase), COLORS.wallEndLeft);
+      if (!hasLeftWall(x, y + 1)) wall(lBase, lTop, minusX(lTop), minusX(lBase), COLORS.wallEndLeft, left, lTop);
     }
 
     // ---- right wall, along the tile's top-right edge (top corner -> right corner) ----
@@ -116,32 +136,30 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
       const tBase = down(top, FLOOR_THICKNESS);
       const rBase = down(right, FLOOR_THICKNESS);
 
-      // Coming out of a notch: the wall turns the corner. The short piece runs forward along this
-      // tile's left edge, from the earlier wall's row to here, and faces the camera.
+      // Coming out of a notch (the back outline steps forward): like Nitro, the short piece
+      // between the two walls faces away from the camera, so only its top edge is drawn; the
+      // earlier wall carries on behind this one and ends with its end piece.
       const from = notchFrom(x, y);
       if (from >= 0) {
-        const zBack = heightAt(grid, x - 1, from);
-        const a = corner(x, from, zBack);
-        const b = corner(x, y, z);
-        const aTop: Point = [a[0], wallTop(x, from)];
-        const bTop: Point = [b[0], tTop[1]];
-        quad(down(a, FLOOR_THICKNESS), down(b, FLOOR_THICKNESS), bTop, aTop, COLORS.wallLeft);
-        quad(aTop, bTop, plusX(bTop), plusX(aTop), COLORS.wallTop);
+        const aTop: Point = [corner(x, from, 0)[0], wallTop(x, from)];
+        const bTop: Point = [top[0], tTop[1]];
+        wall(aTop, bTop, plusX(bTop), plusX(aTop), COLORS.wallTop);
         // Outer corner where it meets the earlier wall's top.
-        g.poly([...aTop, ...minusY(aTop), aTop[0] + 2 * T, aTop[1], ...plusX(aTop)]).fill(COLORS.wallTop);
+        wall(aTop, minusY(aTop), [aTop[0] + 2 * T, aTop[1]], plusX(aTop), COLORS.wallTop);
       }
 
-      quad(tBase, rBase, rTop, tTop, COLORS.wallRight);
-      quad(tTop, rTop, minusY(rTop), minusY(tTop), COLORS.wallTop);
-      // End piece where the wall stops, unless the wall turns forward into a notch here.
-      if (!hasRightWall(x + 1, y) && !turnsForward(x + 1, y)) quad(rBase, rTop, minusY(rTop), minusY(rBase), COLORS.wallEndRight);
+      wall(tBase, rBase, rTop, tTop, COLORS.wallRight, top, right);
+      wall(tTop, rTop, minusY(rTop), minusY(tTop), COLORS.wallTop);
+      // End piece where the wall stops.
+      if (!hasRightWall(x + 1, y)) wall(rBase, rTop, minusY(rTop), minusY(rBase), COLORS.wallEndRight, right, rTop);
     }
 
     // Back corner where a left and a right wall meet: fill the gap between the two top strips.
     if (leftWall && rightWall) {
       const c: Point = [top[0], wallTop(x, y)];
-      g.poly([...c, ...minusX(c), c[0], c[1] - T, ...minusY(c)]).fill(COLORS.wallTop);
+      wall(c, minusX(c), [c[0], c[1] - T], minusY(c), COLORS.wallTop);
     }
+    if (occ) occluders.push({ graphics: occ, depth: wallDepth(x, y) });
 
     // ---- floor ----
     if (isDoor(x, y)) {
@@ -162,17 +180,7 @@ export function drawRoom(grid: Grid, door: [number, number]): Graphics {
       .fill(COLORS.floor)
       .stroke({ color: COLORS.floorLine, width: 1, alignment: 1 });
   }
-  return g;
-}
-
-/** The door opening's outline, for clipping avatars standing in the doorway. */
-export function doorOpening(grid: Grid, door: [number, number]): number[] {
-  const [dx, dy] = door;
-  const z = heightAt(grid, dx + 1, dy);
-  const a = corner(dx + 1, dy, z);
-  const b = corner(dx + 1, dy + 1, z);
-  // A little below the floor line so feet and shadow aren't cut off.
-  return [a[0], a[1] + 14, b[0], b[1] + 14, b[0], b[1] - DOOR_HEIGHT, a[0], a[1] - DOOR_HEIGHT];
+  return { background: g, occluders };
 }
 
 /** Outline shown on the tile under the mouse. */

@@ -65,6 +65,8 @@ async function enterHotel(): Promise<void> {
   conn.connect();
 
   room.onWalk = (x, y) => conn.send({ t: 'walk', d: { x, y } });
+  // Development only: lets automated tests walk to a tile. Not in production builds.
+  if (import.meta.env.DEV) Object.assign(window, { bobbaWalk: (x: number, y: number) => conn.send({ t: 'walk', d: { x, y } }) });
 
   chatbar.hidden = false;
   logout.hidden = false;
