@@ -3,7 +3,7 @@
 #
 # GitHub Actions runs this on the VPS (as user bobba, through an SSH key that can do nothing else)
 # with the command "deploy <commit sha>" and the release tarball on stdin. It:
-#   1. unpacks the release,
+#   1. unpacks the release (and art packs uploaded on the admin pages into the sprites folder),
 #   2. builds the client's assets from the licensed pictures (tools/nitro),
 #   3. brings the database up to date (sql/migrations once each, the furni list every time),
 #   4. writes the client's configs for this domain,
@@ -49,6 +49,9 @@ if [ "$(cat "$REL.tmp/VERSION" 2>/dev/null)" != "$SHA" ]; then
 fi
 rm -rf "$REL"
 mv "$REL.tmp" "$REL"
+
+echo "Art packs uploaded on the admin pages"
+node --disable-warning=ExperimentalWarning "$REL/web/src/art.ts" apply "$SPRITES_DIR" | sed 's/^/  /'
 
 echo "Building the client's assets"
 [ -d "$SPRITES_DIR/furni" ] || { echo "No pictures in $SPRITES_DIR (furni, cozy, tiles)" >&2; exit 1; }
