@@ -44,6 +44,25 @@ export const tileDepth = (x: number, y: number) => x + y + 1;
 export const depthToZIndex = (depth: number) => Math.round(depth * 1000);
 
 /** Screen point of grid corner (gx, gy) at height z (fractions allowed). Tile (x, y) spans x..x+1. */
+/**
+ * Sort depth of a floor tile. Everything is depth-sorted together (floor, walls, furni, avatars),
+ * so a wall in front of an avatar hides it, and a raised floor in front of someone lower hides
+ * them. A tile only needs that when it is higher or lower than the floor behind it (a raised edge,
+ * or stairs on it); flat floor is sorted below everything, so furni wider than their tiles are
+ * never covered by the floor next to them.
+ */
+export function floorDepth(grid: Grid, x: number, y: number): number {
+  const h = heightAt(grid, x, y);
+  const differs = (nx: number, ny: number) => {
+    const n = heightAt(grid, nx, ny);
+    return n >= 0 && n !== h;
+  };
+  const sorted = differs(x - 1, y) || differs(x, y - 1);
+  return tileDepth(x, y) - 0.1 - (sorted ? 0 : FLAT_FLOOR_BELOW);
+}
+/** How far below everything flat floor is sorted. */
+const FLAT_FLOOR_BELOW = 10_000;
+
 export function corner(gx: number, gy: number, z: number): Point {
   return [(gx - gy) * (TILE_W / 2), (gx + gy) * (TILE_H / 2) - z * STEP_PX];
 }
@@ -51,10 +70,7 @@ export function corner(gx: number, gy: number, z: number): Point {
 export interface RoomPiece {
   graphics: Graphics;
   depth: number;
-  /** 'floor': the floor and walls, depth-sorted among themselves and drawn below everything else
-   *  (furni and avatars always stand on top, like Habbo). 'objects': the wall beside and above the
-   *  door opening, depth-sorted with furni and avatars so it hides whoever stands in the doorway. */
-  layer: 'floor' | 'objects';
+
 }
 
 /** Nitro's camera direction (RoomGeometry(64, (-135, 30, 0), (11, 11, 5)).directionAxis). */
@@ -73,8 +89,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
 
   // Pieces with the same depth share one Graphics.
   const byDepth = new Map<number, Graphics>();
-  const floorByDepth = new Map<number, Graphics>();
-  const at = (depth: number, map = floorByDepth) => {
+  const at = (depth: number, map = byDepth) => {
     const key = depthToZIndex(depth);
     let g = map.get(key);
     if (!g) map.set(key, (g = new Graphics()));
@@ -154,9 +169,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       const inFrontOfDoor = color === COLORS.wallLeft && corners.every((v) => Math.abs(v.x - (doorX + 1)) < 0.01) && midY > doorY && midY < doorY + 1;
       const shown = inFrontOfDoor ? corners.map((v) => ({ ...v, z: Math.max(v.z, doorTop) })) : corners;
       // The wall above the opening (the lintel) and beside it are drawn over anyone standing in the doorway.
-      const besideDoor = color === COLORS.wallLeft && corners.every((v) => Math.abs(v.x - (doorX + 1)) < 0.01) && midY > doorY + 1 && midY < doorY + 2;
-      if (inFrontOfDoor || besideDoor) at(inFrontOfDoor ? tileDepth(doorX, doorY) + 0.7 : depth, byDepth).poly(shown.map(project).flat()).fill(color);
-      else poly(depth, shown.map(project), color);
+      poly(inFrontOfDoor ? tileDepth(doorX, doorY) + 0.7 : depth, shown.map(project), color);
       if (color === COLORS.wallLeft) nitroFaces.add(`x${Math.round(a.x)},${Math.floor(Math.min(...corners.map((v) => v.y)) + 0.01)}`);
       if (color === COLORS.wallRight) nitroFaces.add(`y${Math.round(a.y)},${Math.floor(Math.min(...corners.map((v) => v.x)) + 0.01)}`);
     }
@@ -307,7 +320,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
         // The tile this piece belongs to: a side belongs to the tile it is the edge of.
         const cx = (x0 + x1) / 2 - n.x * 0.01;
         const cy = (y0 + y1) / 2 - n.y * 0.01;
-        const depth = tileDepth(Math.floor(cx), Math.floor(cy)) - 0.1;
+        const depth = floorDepth(grid, Math.floor(cx), Math.floor(cy));
         // Tile lines only along whole grid lines: stairs don't add extra lines to the floor.
         const lines: [Point, Point][] = [];
         if (flat) {
@@ -327,20 +340,19 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     const z = heightAt(grid, doorX, doorY);
     const dl = corner(doorX + 1, doorY + 1, z);
     const dt = corner(doorX + 1, doorY, z);
-    at(tileDepth(doorX, doorY) - 0.15, floorByDepth)
+    at(floorDepth(grid, doorX, doorY) - 0.05)
       .poly([down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)].flat())
       .fill(COLORS.doorway);
   }
   cells.sort((a, b) => a.depth - b.depth || a.order - b.order);
   for (const c of cells) {
-    const g = at(c.depth, floorByDepth).poly(c.pts.flat()).fill(c.color);
+    const g = at(c.depth).poly(c.pts.flat()).fill(c.color);
     for (const [a, b] of c.lines) g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
     if (c.lines.length > 0) g.stroke({ color: COLORS.floorLine, width: 2, alignment: 0.5 });
   }
 
   return [
-    ...[...floorByDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'floor' as const })),
-    ...[...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'objects' as const })),
+    ...[...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 })),
   ];
 }
 

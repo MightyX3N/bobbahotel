@@ -8,7 +8,7 @@ import { toolbarHeight } from '../layout.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
 import { FurniView } from './FurniView.ts';
 import { furniDefs } from './furniAssets.ts';
-import { depthToZIndex, drawRoom, drawTileOutline, tileDepth } from './drawRoom.ts';
+import { depthToZIndex, drawRoom, drawTileOutline, floorDepth } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
@@ -24,9 +24,7 @@ export class RoomView {
   private readonly app: Application;
   private readonly world = new Container();
   private readonly hover = new Graphics();
-  /** The floor, below everything else. */
-  private readonly floor = new Container();
-  /** Walls, furni and avatars, depth-sorted together. */
+  /** Floor, walls, furni and avatars, depth-sorted together. */
   private readonly objects = new Container();
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
@@ -58,11 +56,9 @@ export class RoomView {
   constructor(app: Application) {
     this.app = app;
     this.objects.sortableChildren = true;
-    this.floor.sortableChildren = true;
-    this.world.addChild(this.floor, this.objects);
+    this.world.addChild(this.objects);
     // The tile under the mouse: on the floor, under furni and avatars.
-    this.hover.zIndex = Number.MAX_SAFE_INTEGER;
-    this.floor.addChild(this.hover);
+    this.objects.addChild(this.hover);
     app.stage.addChild(this.world, this.bubbles.container);
 
     app.stage.eventMode = 'static';
@@ -130,7 +126,7 @@ export class RoomView {
 
     for (const piece of drawRoom(this.grid, room.door)) {
       piece.graphics.zIndex = depthToZIndex(piece.depth);
-      (piece.layer === 'floor' ? this.floor : this.objects).addChild(piece.graphics);
+      this.objects.addChild(piece.graphics);
       this.roomPieces.push(piece.graphics);
     }
     this.hover.clear();
@@ -263,6 +259,8 @@ export class RoomView {
     const t = this.tileAt(e.global.x, e.global.y);
     if (t) {
       drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
+      // Just above its tile's floor, under walls, furni and avatars.
+      this.hover.zIndex = depthToZIndex(floorDepth(this.grid, t[0], t[1]) + 0.05);
     } else this.hover.clear();
 
 
