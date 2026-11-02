@@ -277,7 +277,7 @@ function tileFree(px: number, py: number): [number, number] {
   const lx = px - world.x, ly = py - world.y, fx = lx / (TW / 2), fy = ly / (TH / 2);
   return [Math.floor((fx + fy) / 2 + 0.5), Math.floor((fy - fx) / 2 + 0.5)];
 }
-let lastTile: [number, number] | null = null;
+let lastTile: [number, number] | null = null, ptr: [number, number] | null = null;
 function centreTile(): [number, number] {
   const cx = (grid[0]?.length ?? 1) / 2, cy = grid.length / 2; let best: [number, number] = [0, 0], bd = 1e9;
   grid.forEach((row, y) => row.forEach((h, x) => { const d = (x - cx) ** 2 + (y - cy) ** 2; if (h >= 0 && d < bd) { bd = d; best = [x, y]; } }));
@@ -287,7 +287,7 @@ function rotateGhostOrSelected() {
   if (ghost) { ghost.flip = ghost.flip ? 0 : 1; updateGhost(); }
   else if (S.selected && S.edit) send({ t: 'rotate', id: S.selected.id });
 }
-S.startPlace = id => { const it = S.inv.find(i => i.id === id); if (it) { select(null); const c = centreTile(); startGhost('place', id, it.furni, 0, lastTile?.[0] ?? c[0], lastTile?.[1] ?? c[1]); } };
+S.startPlace = id => { const it = S.inv.find(i => i.id === id); if (it) { select(null); const c = ptr ? tileFree(ptr[0], ptr[1]) : centreTile(); startGhost('place', id, it.furni, 0, c[0], c[1]); } };
 S.itemAction = a => {
   const it = S.selected; if (!it) return;
   if (a === 'move' && S.edit) startGhost('move', it.id, it.furni, it.flip, it.x, it.y);
@@ -321,7 +321,8 @@ function tileAt(px: number, py: number): [number, number] | null {
 window.addEventListener('pointermove', e => {
   const r = app.canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
   const overWindow = (e.target as HTMLElement)?.closest?.('.win, #toolbar, #bar, #itemcard');
-  const t = ghost ? (overWindow ? null : tileFree(px, py)) : overWindow ? null : tileAt(px, py);
+  ptr = [px, py];
+  const t = ghost ? tileFree(px, py) : overWindow ? null : tileAt(px, py);
   if (t) lastTile = t;
   if (ghost) { if (t && (t[0] !== ghost.x || t[1] !== ghost.y)) { ghost.x = t[0]; ghost.y = t[1]; updateGhost(); } hover.clear(); return; }
   hover.clear(); if (!t || grid[t[1]]?.[t[0]] == null) return;

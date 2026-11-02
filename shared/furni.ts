@@ -59,7 +59,7 @@ export function seatHeight(d: Def): number {
   if (typeof d.sit === 'number') return d.sit;
   const A = d.art; if (!A) return 0.5;
   const tall = (A.fy - A.top) - (A.rx + A.ry) * A.T / 2; // how far the picture stands above its floor tiles, in pixels
-  return Math.max(0.1, Math.min(1, tall * 0.2 * artScale(d, 0) / 16)); // in height steps (16px each)
+  return Math.max(0.05, Math.min(1, tall * 0.08 * artScale(d, 0) / 16)); // in height steps (16px each)
 }
 /** How high stairs climb on a tile: one step per tile towards the back end. */
 export function stairStep(d: Def, it: Item, tx: number, ty: number) {
