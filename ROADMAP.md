@@ -19,7 +19,8 @@ Everything the Garry's Mod gamemode had, in the order it gets built. `[x]` = don
 ## 2. Furniture (880 sprites)
 - [x] Furni definitions (size from sprite, rotation, stack/top height, seat/bed flags, price, shop page)
 - [x] Draw furni in rooms with correct depth sorting
-- [x] Place / move (drag) / rotate / pick up, room rights
+- [x] Place / move / rotate / pick up (click to select, ghost preview, R rotates); owner-only for now
+- [ ] Drag-to-move, room rights for other players
 - [x] Stacking on tables, "can't pick up while something is on it"
 - [x] Sitting on chairs/sofas (double-click or walk onto them)
 - [ ] Lying in beds (2x2 beds fit two)
@@ -33,8 +34,10 @@ Everything the Garry's Mod gamemode had, in the order it gets built. `[x]` = don
 ## 3. Economy and shop
 - [x] Silver and gold coins (100 silver = 1 gold), balance in the HUD
 - [x] Inventory window ("My stuff"), place from inventory
-- [x] Catalogue window: Front Page, Furni (by kind and by room), Clothing, Pets, Memberships
-- [x] Buy flow: buy -> My stuff -> place; bundles; vouchers
+- [x] Catalogue window: Furni pages (by kind and by room), bundles
+- [ ] Catalogue: Front Page, Clothing, Pets, Memberships tabs
+- [x] Buy flow: buy -> My stuff -> place; bundles
+- [ ] Vouchers, room events
 - [ ] Gifts (furni and coins), opened visibly in the room
 - [ ] Coins as physical items
 - [ ] Bobba Club (buy with gold, gift days, admin grant, club-only layouts)
