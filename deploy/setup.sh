@@ -21,4 +21,5 @@ cp deploy/bobbahotel.service /etc/systemd/system/ && cp deploy/Caddyfile /etc/ca
 systemctl daemon-reload && systemctl enable --now bobbahotel && systemctl restart caddy
 # firewall: SSH + web only
 ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable
+bash /opt/bobbahotel/deploy/install-autoupdate.sh
 echo "Done. Now upload the sprites to /opt/bobbahotel/sprites (tiles/ and cozy/)."
