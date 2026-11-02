@@ -1,6 +1,10 @@
 // A window: header with title and close button, optional tabs, and a body. Drag it by the header.
 // Windows open next to the toolbar (bottom-left), like Habbo, and stay inside the screen.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+
+/** Height of the toolbar windows must stay above (see the theme). */
+const TOOLBAR_HEIGHT = 55;
+const MARGIN = 8;
 
 export interface Tab<K extends string> {
   key: K;
@@ -22,13 +26,31 @@ interface Props<K extends string> {
 export function Window<K extends string>({ title, onClose, tabs, activeTab, onTab, width = 400, start = { left: 12, bottom: 70 }, children }: Props<K>) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  /** Until the player drags it, the window keeps its bottom edge above the toolbar. */
+  const dragged = useRef(false);
 
-  // First placement: measure the window and put it above the toolbar on the left.
-  useEffect(() => {
+  // Place the window, and keep it on screen whenever its size (e.g. another tab) or the screen changes.
+  useLayoutEffect(() => {
     const el = ref.current;
-    if (!el || pos) return;
-    setPos({ x: start.left, y: Math.max(8, window.innerHeight - start.bottom - el.offsetHeight) });
-  }, [pos, start.left, start.bottom]);
+    if (!el) return;
+    const place = () => {
+      const h = el.offsetHeight;
+      const lowest = window.innerHeight - TOOLBAR_HEIGHT - MARGIN - h;
+      setPos((p) => {
+        const x = Math.min(Math.max(p?.x ?? start.left, 0), Math.max(0, window.innerWidth - el.offsetWidth));
+        const y = !p || !dragged.current ? window.innerHeight - start.bottom - h : p.y;
+        return { x, y: Math.max(MARGIN, Math.min(y, lowest)) };
+      });
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(el);
+    window.addEventListener('resize', place);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', place);
+    };
+  }, [start.left, start.bottom]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button') || !pos) return;
@@ -36,9 +58,10 @@ export function Window<K extends string>({ title, onClose, tabs, activeTab, onTa
     const dx = e.clientX - pos.x;
     const dy = e.clientY - pos.y;
     const move = (ev: PointerEvent) => {
+      dragged.current = true;
       const x = Math.min(Math.max(ev.clientX - dx, 0), window.innerWidth - el.offsetWidth);
-      const y = Math.min(Math.max(ev.clientY - dy, 0), window.innerHeight - 40);
-      setPos({ x, y });
+      const y = Math.min(Math.max(ev.clientY - dy, MARGIN), window.innerHeight - TOOLBAR_HEIGHT - MARGIN - el.offsetHeight);
+      setPos({ x, y: Math.max(MARGIN, y) });
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
