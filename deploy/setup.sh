@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Sets up the VPS for Bobba Hotel. Safe to run again (for example after the service or
-# Caddy config in deploy/ changes). Run as root on the VPS:
+# Sets up the VPS for Bobba Hotel (Nitro client, Arcturus game server, website). Safe to run
+# again. Run as root on the VPS:
 #
 #   curl -fsSL https://raw.githubusercontent.com/MightyX3N/bobbahotel/main/deploy/setup.sh | bash
 #
-# It installs Node 24, Caddy and sqlite3, retires the old auto-update setup, creates the folders,
-# the service and the web server config, a deploy key for GitHub Actions, the firewall rules and
-# a nightly database backup. At the end it prints the two secrets to add on GitHub.
+# It installs MariaDB, Java, Node 24 and Caddy, makes swap (the VPS has 2 GB of memory), creates
+# the database from Arcturus' base data, the services, the web server config, the deploy command
+# and the firewall. The licensed pictures stay in /opt/bobbahotel/sprites (never in git).
 set -euo pipefail
 
 RAW="${BOBBA_RAW:-https://raw.githubusercontent.com/MightyX3N/bobbahotel/main/deploy}"
@@ -15,6 +15,12 @@ APP=/opt/bobbahotel
 DATA=/var/lib/bobbahotel
 ETC=/etc/bobbahotel
 KEY="$ETC/deploy_key"
+DB_NAME=bobbahotel
+DB_USER=bobba
+# Arcturus' base database and its updates, at fixed versions.
+BASE_SQL="https://raw.githubusercontent.com/Gurkengewuerz/nitro-docker/aa5826938aa1f9f1660d75f0163e8af1f2fe5dcb/arcturus/arcturus_3.0.0-stable_base_database--compact.sql"
+ARCTURUS_RAW="https://raw.githubusercontent.com/UnfamiliarLegacy/Arcturus/eb2ecd71324134bfcc7fcb3c6eb432535fba2a21/sqlupdates"
+UPDATES=("3_0_0 to 3_5_0.sql" "Update 3_5_0 to 3_5_2.sql" "Update 3_5_2 to 3_5_3.sql")
 
 say() { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
 [ "$(id -u)" = 0 ] || { echo "Run this as root." >&2; exit 1; }
@@ -22,7 +28,8 @@ say() { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
 say "Installing packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
-apt-get install -yq curl ca-certificates gnupg sqlite3 ufw debian-keyring debian-archive-keyring apt-transport-https
+apt-get install -yq curl ca-certificates gnupg ufw mariadb-server mariadb-client openjdk-17-jre-headless \
+  debian-keyring debian-archive-keyring apt-transport-https
 if ! node --version 2>/dev/null | grep -q '^v24\.'; then
   curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
   apt-get install -yq nodejs
@@ -33,73 +40,112 @@ if ! command -v caddy >/dev/null; then
   apt-get update -q
   apt-get install -yq caddy
 fi
-echo "node $(node --version), $(caddy version | cut -d' ' -f1) caddy"
+echo "node $(node --version), java $(java -version 2>&1 | head -1), $(mariadb --version | cut -d, -f1)"
+
+say "Memory: swap and a small database"
+if ! swapon --show | grep -q .; then
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "2 GB swap made."
+fi
+cat > /etc/mysql/mariadb.conf.d/60-bobbahotel.cnf <<'EOF'
+# Bobba Hotel: a small database for a 2 GB VPS.
+[mysqld]
+bind-address = 127.0.0.1
+innodb_buffer_pool_size = 128M
+innodb_log_buffer_size = 8M
+key_buffer_size = 8M
+max_connections = 40
+performance_schema = OFF
+EOF
+systemctl enable mariadb >/dev/null 2>&1
+systemctl restart mariadb
 
 say "Retiring the old version"
-if systemctl list-unit-files bobbahotel-update.timer >/dev/null 2>&1; then
-  systemctl disable --now bobbahotel-update.timer 2>/dev/null || true
+if systemctl list-unit-files bobbahotel.service >/dev/null 2>&1 && [ -f /etc/systemd/system/bobbahotel.service ]; then
+  systemctl disable --now bobbahotel 2>/dev/null || true
+  rm -f /etc/systemd/system/bobbahotel.service
+  echo "Old game server stopped (its database is kept in $DATA)."
 fi
-rm -f /etc/systemd/system/bobbahotel-update.timer /etc/systemd/system/bobbahotel-update.service
-if [ -d "$APP/.git" ]; then
-  systemctl stop bobbahotel 2>/dev/null || true
-  OLD="/opt/bobbahotel-old-$(date +%Y%m%d-%H%M)"
-  mv "$APP" "$OLD"
-  mkdir -p "$APP"
-  [ -d "$OLD/sprites" ] && mv "$OLD/sprites" "$APP/sprites"
-  echo "Old code moved to $OLD (sprites kept). Delete it when you no longer need it."
-fi
-if [ -f "$DATA/hotel.db" ] && [ ! -f "$DATA/.v2" ]; then
-  for f in hotel.db hotel.db-wal hotel.db-shm; do [ -f "$DATA/$f" ] && mv "$DATA/$f" "$DATA/old-$f"; done
-  echo "Old database kept as $DATA/old-hotel.db"
-fi
+rm -f /etc/cron.daily/bobbahotel-backup
 
-say "User and folders"
+say "User, folders, settings"
 id bobba >/dev/null 2>&1 || useradd --system --user-group --home-dir /home/bobba --shell /bin/bash bobba
 mkdir -p /home/bobba/.ssh
-usermod --home /home/bobba --shell /bin/bash bobba
-install -d -o bobba -g bobba "$APP" "$APP/releases" "$APP/sprites" "$DATA"
-touch "$DATA/.v2" && chown bobba:bobba "$DATA/.v2"
+install -d -o bobba -g bobba "$APP" "$APP/releases" "$APP/sprites" "$DATA" "$DATA/emu" "$DATA/nitro"
 install -d -m 750 -o root -g bobba "$ETC"
-install -d -m 750 /var/backups/bobbahotel
-
-if [ ! -f "$ETC/env" ]; then
-  cat > "$ETC/env" <<EOF
-PORT=8080
-HOST=127.0.0.1
-PUBLIC_URL=https://$DOMAIN
-ALLOW_ORIGIN=https://$DOMAIN
-STAFF_STEAMIDS=76561198346473450
-DB_FILE=$DATA/hotel.db
-SPRITES_DIR=$APP/sprites
-EOF
-  echo "Wrote $ETC/env (edit it to change server settings)"
-fi
+touch "$ETC/env"
+setting() {  # adds KEY=value to the settings file unless it's there already
+  grep -q "^$1=" "$ETC/env" || echo "$1=$2" >> "$ETC/env"
+}
+setting PORT 8080
+setting HOST 127.0.0.1
+setting PUBLIC_URL "https://$DOMAIN"
+setting DOMAIN "$DOMAIN"
+setting STAFF_STEAMIDS 76561198346473450
+setting SPRITES_DIR "$APP/sprites"
+setting NITRO_DIR "$DATA/nitro"
+setting DB_HOST 127.0.0.1
+setting DB_NAME "$DB_NAME"
+setting DB_USER "$DB_USER"
+grep -q '^DB_PASSWORD=' "$ETC/env" || echo "DB_PASSWORD=$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 28)" >> "$ETC/env"
 chown root:bobba "$ETC/env"
 chmod 640 "$ETC/env"
+DB_PASSWORD="$(grep '^DB_PASSWORD=' "$ETC/env" | cut -d= -f2-)"
 
-say "Service, web server, deploy command, backups"
-curl -fsSL "$RAW/bobbahotel.service" -o /etc/systemd/system/bobbahotel.service
+say "Database"
+mariadb -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
+  ALTER USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
+  GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
+  CREATE USER IF NOT EXISTS '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASSWORD';
+  ALTER USER '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASSWORD';
+  GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'127.0.0.1'; FLUSH PRIVILEGES;"
+if [ "$(mariadb -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='users'")" = 0 ]; then
+  TMP=$(mktemp -d)
+  curl -fsSL "$BASE_SQL" -o "$TMP/base.sql"
+  mariadb "$DB_NAME" < "$TMP/base.sql"
+  for u in "${UPDATES[@]}"; do
+    curl -fsSL "$ARCTURUS_RAW/${u// /%20}" -o "$TMP/update.sql"
+    mariadb "$DB_NAME" < "$TMP/update.sql"
+  done
+  rm -rf "$TMP"
+  echo "Database created from Arcturus' base data; the first deploy adds the hotel's own."
+else
+  echo "Database already there."
+fi
+
+say "Game server folder"
+curl -fsSL "$RAW/emu-config.ini" | sed -e "s/@DB_NAME@/$DB_NAME/" -e "s/@DB_USER@/$DB_USER/" -e "s/@DB_PASSWORD@/$DB_PASSWORD/" > "$DATA/emu/config.ini"
+ln -sfn "$APP/current/emu/plugins" "$DATA/emu/plugins"
+chown -R bobba:bobba "$DATA/emu"
+chmod 600 "$DATA/emu/config.ini"
+
+say "Services, web server, deploy command"
+curl -fsSL "$RAW/bobbahotel-web.service" -o /etc/systemd/system/bobbahotel-web.service
+curl -fsSL "$RAW/bobbahotel-emu.service" -o /etc/systemd/system/bobbahotel-emu.service
 curl -fsSL "$RAW/deploy.sh" -o /usr/local/bin/bobbahotel-deploy
 chmod 755 /usr/local/bin/bobbahotel-deploy
-curl -fsSL "$RAW/backup.sh" -o /etc/cron.daily/bobbahotel-backup
-chmod 755 /etc/cron.daily/bobbahotel-backup
 curl -fsSL "$RAW/Caddyfile" | sed "s/hotel\.playbobba\.com/$DOMAIN/" > /etc/caddy/Caddyfile.new
 caddy validate --config /etc/caddy/Caddyfile.new --adapter caddyfile >/dev/null
 mv /etc/caddy/Caddyfile.new /etc/caddy/Caddyfile
 systemctl enable caddy >/dev/null 2>&1
 systemctl reload caddy 2>/dev/null || systemctl restart caddy
 
-# The deploy may restart the game server and nothing else.
-echo 'bobba ALL=(root) NOPASSWD: /usr/bin/systemctl restart bobbahotel' > /etc/sudoers.d/bobbahotel.new
+# The deploy may restart the two hotel services and nothing else.
+cat > /etc/sudoers.d/bobbahotel.new <<'EOF'
+bobba ALL=(root) NOPASSWD: /usr/bin/systemctl restart bobbahotel-web, /usr/bin/systemctl restart bobbahotel-emu
+EOF
 chmod 440 /etc/sudoers.d/bobbahotel.new
 visudo -cf /etc/sudoers.d/bobbahotel.new >/dev/null
 mv /etc/sudoers.d/bobbahotel.new /etc/sudoers.d/bobbahotel
 
 systemctl daemon-reload
-systemctl enable bobbahotel >/dev/null 2>&1
+systemctl enable bobbahotel-web bobbahotel-emu >/dev/null 2>&1
 
 say "Deploy key for GitHub Actions"
-[ -f "$KEY" ] || ssh-keygen -q -t ed25519 -N '' -C "github-actions-deploy" -f "$KEY"
+NEW_KEY=0
+[ -f "$KEY" ] || { ssh-keygen -q -t ed25519 -N '' -C "github-actions-deploy" -f "$KEY"; NEW_KEY=1; }
 chmod 600 "$KEY"
 AUTH=/home/bobba/.ssh/authorized_keys
 touch "$AUTH"
@@ -117,15 +163,16 @@ ufw allow 443/tcp >/dev/null
 ufw --force enable >/dev/null
 ufw status | head -n 8
 
-if [ -e "$APP/current" ]; then
-  systemctl restart bobbahotel
-  echo "Game server restarted on the current release."
+if [ -f "$APP/current/emu/arcturus.jar" ]; then
+  systemctl restart bobbahotel-emu bobbahotel-web
+  echo "Hotel restarted on the current release."
 else
-  echo "No release yet: the first push to main will deploy one."
+  echo "No new-style release yet: the next push to main deploys one."
 fi
 
-say "Add these two secrets on GitHub"
-cat <<EOF
+if [ "$NEW_KEY" = 1 ]; then
+  say "Add these two secrets on GitHub"
+  cat <<EOF
 Go to github.com/MightyX3N/bobbahotel -> Settings -> Secrets and variables -> Actions
 -> New repository secret, and add:
 
@@ -138,6 +185,7 @@ $(cat "$KEY")
 2) Name: DEPLOY_KNOWN_HOSTS
    Value:
 $DOMAIN $(cut -d' ' -f1,2 /etc/ssh/ssh_host_ed25519_key.pub)
-
-This key can only deploy Bobba Hotel; it cannot log in to a shell.
 EOF
+else
+  say "Done. The GitHub deploy key is unchanged."
+fi

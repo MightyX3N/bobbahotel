@@ -1,0 +1,21 @@
+# Installed to /etc/systemd/system/ by deploy/setup.sh. Logs: journalctl -u bobbahotel-web -f
+[Unit]
+Description=Bobba Hotel website (Steam login, accounts, admin)
+After=network.target mariadb.service
+
+[Service]
+User=bobba
+Group=bobba
+WorkingDirectory=/opt/bobbahotel/current/web
+EnvironmentFile=/etc/bobbahotel/env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning src/index.ts
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

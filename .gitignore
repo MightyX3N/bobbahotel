@@ -11,3 +11,4 @@ sprites/
 /release.tar.gz
 VERSION
 built/
+/build/

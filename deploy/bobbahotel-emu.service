@@ -1,0 +1,25 @@
+# Installed to /etc/systemd/system/ by deploy/setup.sh. Logs: journalctl -u bobbahotel-emu -f
+# The game server (Arcturus Morningstar). Its folder holds config.ini (with the database password)
+# and a link to the current release's plugins.
+[Unit]
+Description=Bobba Hotel game server (Arcturus)
+After=network.target mariadb.service
+Requires=mariadb.service
+
+[Service]
+User=bobba
+Group=bobba
+WorkingDirectory=/var/lib/bobbahotel/emu
+ExecStart=/usr/bin/java -Xms128m -Xmx512m -XX:+UseSerialGC -Dfile.encoding=UTF-8 -jar /opt/bobbahotel/current/emu/arcturus.jar
+StandardInput=null
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/bobbahotel/emu
+MemoryMax=800M
+
+[Install]
+WantedBy=multi-user.target

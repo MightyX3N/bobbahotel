@@ -1,0 +1,39 @@
+diff --git a/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts b/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
+index c506e92..93e9530 100644
+--- a/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
++++ b/libs/renderer/src/api/nitro/avatar/enum/AvatarDirectionAngle.ts
+@@ -1,6 +1,6 @@
+ ﻿export class AvatarDirectionAngle {
+   public static DIRECTION_TO_ANGLE: number[] = [45, 90, 135, 180, 225, 270, 315, 0]; //_Str_2204
+-  public static DIRECTION_IS_FLIPPED: boolean[] = [false, false, false, false, true, true, true, false]; //_Str_1859
++  public static DIRECTION_IS_FLIPPED: boolean[] = [false, false, false, false, false, false, false, false]; //_Str_1859
+   public static MIN_DIRECTION: number = 0; //_Str_1562
+   public static MAX_DIRECTION: number = 7; //_Str_1257
+ }
+diff --git a/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts b/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts
+index 6bfd813..3777c30 100644
+--- a/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts
++++ b/libs/renderer/src/nitro/avatar/data/HabboAvatarAnimations.ts
+@@ -2286,3 +2286,22 @@ export const HabboAvatarAnimations = {
+     },
+   ],
+ };
++
++// Bobba Hotel: our avatar kit draws 8 frames for standing, walking and sitting on every piece
++// (body bd, shoes lg, bottom ch, top wa/ca, hair cc). Walking runs at full speed, standing and
++// sitting at a third of it.
++const BOBBA_PART_TYPES = ["bd", "lg", "ch", "wa", "ca", "cc"];
++const bobbaFrames = (assetPartDefinition: string, repeats: number) =>
++  [0, 1, 2, 3, 4, 5, 6, 7].map((number) => ({ number, assetPartDefinition, repeats }));
++
++for (const animation of HabboAvatarAnimations.animations as any[]) {
++  if (animation.id !== "Move" && animation.id !== "Default") continue;
++  const move = animation.id === "Move";
++  animation.parts = animation.parts.filter((part: any) => !BOBBA_PART_TYPES.includes(part.setType));
++  for (const setType of BOBBA_PART_TYPES) animation.parts.push({ setType, frames: bobbaFrames(move ? "wlk" : "std", move ? 1 : 3) });
++}
++
++(HabboAvatarAnimations.animations as any[]).push({
++  id: "Sit",
++  parts: BOBBA_PART_TYPES.map((setType) => ({ setType, frames: bobbaFrames("sit", 3) })),
++});

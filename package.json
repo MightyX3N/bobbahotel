@@ -7,16 +7,16 @@
     "node": ">=22.18"
   },
   "workspaces": [
-    "shared",
-    "server",
-    "client"
+    "web"
   ],
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "check": "npm run check --workspaces --if-present && vitest run",
+    "check": "tsc -p web && vitest run",
     "test": "vitest run",
-    "build": "npm run build -w client",
-    "start": "npm start -w server"
+    "assets": "node tools/nitro/build-all.mjs build/nitro sprites",
+    "start": "npm start -w web"
+  },
+  "dependencies": {
+    "pngjs": "^7.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
