@@ -14,7 +14,7 @@
 //
 // Usage: node tools/nitro/build-generic.mjs [outDir] [spritesDir]
 
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { blank, box, crop, encode, half, load, solid } from './png.mjs';
@@ -77,7 +77,28 @@ function flatWall(img, rising) {
 // Floor and wall styles: our tile pictures (sprites/tiles), plus the ones made from other packs.
 const derived = derivedTiles(spritesDir);
 const tiles = [...readdirSync(join(spritesDir, 'tiles')).filter((f) => f.endsWith('.png')), ...Object.keys(derived)];
-const tile = (file) => derived[file] ?? load(join(spritesDir, 'tiles', file));
+// Floors: the pack's own 32 px tile (TinyHouse/Floor_Wall_Tiles_32, same name) when there is one,
+// made twice as big and put where our 64 px tile's top is, so Nitro's small view (32 px tiles,
+// TinyHouse scale) shows it pixel for pixel.
+const tiny32 = join(spritesDir, 'furni', 'TinyHouse', 'Floor_Wall_Tiles_32');
+const tiny32Files = existsSync(tiny32) ? readdirSync(tiny32) : [];
+function tinyFloor(file) {
+  const want = `floor_32_${file.slice(6, -4)}.png`;
+  const found = tiny32Files.find((f) => f.toLowerCase() === want);
+  if (!found) return null;
+  const small = load(join(tiny32, found));
+  const b = box(small, 0);
+  if (!b) return null;
+  const big = blank(64, 64);
+  // The 32 px tile's diamond starts at its first drawn row; ours at y 16.
+  for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+    const sx = x >> 1, sy = (y - 16 + 2 * b[1]) >> 1;
+    if (sy < 0 || sy >= small.height) continue;
+    small.data.copy(big.data, (y * 64 + x) * 4, (sy * small.width + sx) * 4, (sy * small.width + sx) * 4 + 4);
+  }
+  return big;
+}
+const tile = (file) => derived[file] ?? (file.startsWith('floor_') ? tinyFloor(file) : null) ?? load(join(spritesDir, 'tiles', file));
 const floors = tiles.filter((f) => f.startsWith('floor_')).map((f) => f.slice(6, -4)).sort();
 const walls = tiles.filter((f) => f.startsWith('wall_l_')).map((f) => f.slice(7, -4)).filter((n) => tiles.includes(`wall_r_${n}.png`)).sort();
 const DEFAULT_FLOOR = 'woodlight';
@@ -109,15 +130,12 @@ const wallData = { textures: [], materials: [], planes: [] };
 for (const n of floors) {
   const img = tile(`floor_${n}.png`);
   const top = flatFloor(img);
-  // The edge: the tile's left side, as seen under its left corner. Nitro shades edges itself
-  // (0xDD on the left), so it is stored lightened by that much.
-  const edge = solid(64, 8, untint(px(img, 4, 40), 0xdd));
+  // One picture for every face, like Habbo: tops, the room's edges and the fronts of stair steps
+  // (Nitro shades the sides itself). A separate edge picture made stair fronts dark stripes.
   add(`floor_${n}_64`, top);
   add(`floor_${n}_32`, half(top));
-  add(`floor_${n}_edge_64`, edge);
-  add(`floor_${n}_edge_32`, solid(32, 4, untint(px(img, 4, 40), 0xdd)));
   for (const s of [64, 32]) {
-    floorData.textures.push({ id: `floor_${n}_${s}`, bitmaps: [{ assetName: `floor_${n}_${s}`, normalMinY: 0 }, { assetName: `floor_${n}_edge_${s}`, normalMaxY: 0 }] });
+    floorData.textures.push({ id: `floor_${n}_${s}`, bitmaps: [{ assetName: `floor_${n}_${s}` }] });
     floorData.materials.push({ id: `floor_${n}_${s}`, matrices: [{ columns: [{ width: s / 2, cells: [{ textureId: `floor_${n}_${s}` }] }] }] });
   }
   const plane = (id) => ({
@@ -165,8 +183,9 @@ for (const n of walls) {
 }
 
 // The doorway: a hole in the wall, pure black where the wall is cut away, pinned at its bottom middle.
-add('door_64', solid(32, 104, [0, 0, 0]), 16, 104);
-add('door_32', solid(16, 52, [0, 0, 0]), 8, 52);
+// Sized for our avatar (72 px tall at TinyHouse scale, the small view) with a little room above.
+add('door_64', solid(32, 168, [0, 0, 0]), 16, 168);
+add('door_32', solid(16, 84, [0, 0, 0]), 8, 84);
 
 writeBundle(join(generic, 'room.nitro'), 'room', {
   type: 'room',

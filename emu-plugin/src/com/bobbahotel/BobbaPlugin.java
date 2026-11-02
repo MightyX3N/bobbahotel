@@ -56,6 +56,12 @@ public class BobbaPlugin extends HabboPlugin implements EventListener {
 
     @Override
     public void onEnable() {
+        // Before the emulator loads any layout or room (plugins load first).
+        try (Connection c = Emulator.getDatabase().getDataSource().getConnection()) {
+            TinyScale.run(c);
+        } catch (Exception e) {
+            System.err.println("[Bobba] TinyHouse scale conversion failed: " + e);
+        }
         Emulator.getPluginManager().registerEvents(this, this);
         CommandHandler.addCommand(new GetRoomCommand());
         CommandHandler.addCommand(new DeleteFurniCommand());
@@ -221,14 +227,15 @@ public class BobbaPlugin extends HabboPlugin implements EventListener {
 
     /** A new player's room: Habbo's small starter layout (model_c), some furni, a welcome gift. */
     static final String MODEL = "model_c";
+    // model_c at TinyHouse scale (see TinyScale): floor x 10..21, y 10..21, door at (9, 14).
     static final Object[][] FURNI = {
-        {"bobba_bed_g_4", 9, 5, 0, ""},
-        {"bobba_plant_2", 5, 5, 0, ""},
-        {"bobba_sofa_1", 6, 5, 4, ""},
-        {"bobba_lamp_10", 7, 5, 0, ""},
-        {"bobba_carpet_14", 6, 7, 0, ""},
-        {"bobba_smalltable_5", 6, 7, 2, ""},
-        {"bobba_window_8", 0, 0, 0, ":w=6,4 l=10,34 r"},
+        {"bobba_plant_2", 10, 10, 0, ""},
+        {"bobba_sofa_1", 12, 10, 4, ""},
+        {"bobba_lamp_10", 15, 10, 0, ""},
+        {"bobba_smalltable_5", 12, 12, 2, ""},
+        {"bobba_bed_g_4", 17, 10, 0, ""},
+        {"bobba_carpet_14", 16, 17, 0, ""},
+        {"bobba_window_8", 0, 0, 0, ":w=12,8 l=20,68 r"},
     };
     static final String[] GIFT_CONTENTS = {"bobba_lava_lamp", "bobba_plant_3", "bobba_picture_modern_1"};
     static final String GIFT_MESSAGE = "Welcome to Bobba Hotel! Here is something for your new room.";
@@ -288,7 +295,7 @@ public class BobbaPlugin extends HabboPlugin implements EventListener {
                 StringBuilder data = new StringBuilder().append(inside.size());
                 for (int id : inside) data.append('\t').append(id);
                 data.append("\t0\t0\t1\t").append(GIFT_MESSAGE).append("\tBobba\t").append(HOTEL_LOOK);
-                try (PreparedStatement s = c.prepareStatement("INSERT INTO items (user_id, room_id, item_id, wall_pos, x, y, z, rot, extra_data) VALUES (?, ?, ?, '', 8, 8, 0, 0, ?)")) {
+                try (PreparedStatement s = c.prepareStatement("INSERT INTO items (user_id, room_id, item_id, wall_pos, x, y, z, rot, extra_data) VALUES (?, ?, ?, '', 15, 16, 0, 0, ?)")) {
                     s.setInt(1, userId);
                     s.setInt(2, roomId);
                     s.setInt(3, gift);

@@ -70,6 +70,27 @@ function frameOf(img, row, col, small = false) {
 }
 
 /**
+ * Rooms are shown at TinyHouse scale: Nitro's small view (size 32, "sh") is what rooms use, and it
+ * gets the avatar at its own size too, like the full-size view (64, "h") that the rest of the
+ * client uses (avatar editor, info stand, heads). VIEWS: [Nitro size name, magnification, tile
+ * size]. Nitro puts a picture's left edge at -size/2 - x; our sums below were made for
+ * magnification m at size 64*m, so xfix moves them for the other combinations.
+ */
+const VIEWS = [['h', 1, 64], ['sh', 1, 32]];
+const xfix = (m, size) => 32 * m - size / 2;
+
+/** A frame (from frameOf) made `m` times bigger, nearest pixel. */
+function magnify(f, m) {
+  if (!f || m === 1) return f;
+  const out = blank(f.img.width * m, f.img.height * m);
+  for (let y = 0; y < out.height; y++) for (let x = 0; x < out.width; x++) {
+    const i = (Math.floor(y / m) * f.img.width + Math.floor(x / m)) * 4;
+    f.img.data.copy(out.data, (y * out.width + x) * 4, i, i + 4);
+  }
+  return { img: out, left: f.left * m, top: f.top * m };
+}
+
+/**
  * Lying: how long the figure is on the bed in tiles, and where its head is (picture pixel) and
  * goes (tiles from the avatar's point towards the bed's head end). LAY_FIX moves the result onto
  * the point, as measured in the client (Nitro draws lying avatars on a wider canvas).
@@ -144,12 +165,12 @@ for (const sex of ['m', 'f']) {
           // height).
           const anchor = def === 'sit' ? SEAT_ROW + 32 : FRAME.footY;
           const dx = def === 'sit' ? SEAT_DX[row] : 0;
-          for (const [scale, k] of [['h', 1], ['sh', 2]]) {
+          for (const [scale, m, size] of VIEWS) {
             const name = `${scale}_${def}_${type}_${id}_${own}_${col}`;
-            const g = k === 1 ? f : frameOf(img, row, col, true);
-            // Nitro puts the image's top-left at (-scale/2 - x, -y) from the avatar's point;
+            const g = magnify(f, m);
+            // Nitro puts the image's top-left at (-size/2 - x, -y) from the avatar's point;
             // NUDGE moves it onto the middle of the tile (measured in the client).
-            const x = -g.left - Math.round((NUDGE[0] + dx) / k), y = Math.round((anchor - NUDGE[1]) / k) - g.top;
+            const x = -g.left - Math.round((NUDGE[0] + dx) * m) + xfix(m, size), y = Math.round((anchor - NUDGE[1]) * m) - g.top;
             images[`${lib}_${name}`] = g.img;
             assets[name] = { x, y };
             for (const d of dirs.slice(1)) assets[`${scale}_${def}_${type}_${id}_${d}_${col}`] = { source: name, x, y };
@@ -163,19 +184,19 @@ for (const sex of ['m', 'f']) {
       const img = sheet(join(kit, sex, 'idle', file));
       for (const [dir, row] of [[2, 1], [4, 0]]) {
         const frame = crop(img, [0, row * FRAME.h, FRAME.w, (row + 1) * FRAME.h]);
-        for (const [scale, k] of [['h', 1], ['sh', 2]]) {
-          const t = layDown(frame, dir, k);
+        for (const [scale, m, size] of VIEWS) {
+          const t = layDown(frame, dir, 1 / m);
           if (!t) continue;
           const name = `${scale}_lay_${type}_${id}_${dir}_0`;
           images[`${lib}_${name}`] = t.img;
-          assets[name] = { x: t.x, y: t.y };
+          assets[name] = { x: t.x + xfix(m, size), y: t.y };
         }
       }
     }
     if (piece === 'body') {
       images[`${lib}_h_std_sd_1_0_0`] = shadow(34, 16);
       assets.h_std_sd_1_0_0 = { x: 0, y: 0 };
-      images[`${lib}_sh_std_sd_1_0_0`] = shadow(17, 8);
+      images[`${lib}_sh_std_sd_1_0_0`] = shadow(34, 16);
       assets.sh_std_sd_1_0_0 = { x: 0, y: 0 };
     }
     writeBundle(join(out, 'bundled', 'figure', `${lib}.nitro`), lib, { type: 'figure', assets }, images);

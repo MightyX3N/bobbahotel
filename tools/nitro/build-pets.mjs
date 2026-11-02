@@ -96,10 +96,11 @@ function buildCat() {
           const src = `${name}_${size}_a_${which === 'near' ? 2 : 0}_${fid}`;
           if (!flip && (d === '2' || d === '0')) {
             const img = frame(row, c);
-            images[`${name}_${asset}`] = size === 64 ? img : half(img);
-            assets[asset] = { x: size === 64 ? FEET[0] : FEET[0] / 2, y: size === 64 ? FEET[1] : FEET[1] / 2, usesPalette: true };
+            // Rooms use the small view (32) at TinyHouse scale: the cat at its own size there too.
+            images[`${name}_${asset}`] = img;
+            assets[asset] = { x: FEET[0], y: FEET[1], usesPalette: true };
           } else {
-            assets[asset] = { source: src, flipH: flip, x: size === 64 ? FEET[0] : FEET[0] / 2, y: size === 64 ? FEET[1] : FEET[1] / 2, usesPalette: true };
+            assets[asset] = { source: src, flipH: flip, x: FEET[0], y: FEET[1], usesPalette: true };
           }
         }
       }

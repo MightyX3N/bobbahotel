@@ -1,0 +1,5 @@
+-- Small layouts for wired setups and server rooms, already at TinyHouse scale (the start-up
+-- conversion in the plugin, TinyScale, leaves model_tiny* alone).
+INSERT INTO room_models (name, door_x, door_y, door_dir, heightmap, public_items, club_only) VALUES ('model_tiny_a', 0, 3, 2, 'xxxxx\r\nx0000\r\nx0000\r\n00000\r\nx0000', '', '0') ON DUPLICATE KEY UPDATE door_x = VALUES(door_x), door_y = VALUES(door_y), door_dir = 2, heightmap = VALUES(heightmap);
+INSERT INTO room_models (name, door_x, door_y, door_dir, heightmap, public_items, club_only) VALUES ('model_tiny_b', 0, 4, 2, 'xxxxxxx\r\nx000000\r\nx000000\r\nx000000\r\n0000000\r\nx000000\r\nx000000', '', '0') ON DUPLICATE KEY UPDATE door_x = VALUES(door_x), door_y = VALUES(door_y), door_dir = 2, heightmap = VALUES(heightmap);
+INSERT INTO room_models (name, door_x, door_y, door_dir, heightmap, public_items, club_only) VALUES ('model_tiny_c', 0, 6, 2, 'xxxx\r\nx000\r\nx000\r\nx000\r\nx000\r\nx000\r\n0000\r\nx000\r\nx000\r\nx000\r\nx000', '', '0') ON DUPLICATE KEY UPDATE door_x = VALUES(door_x), door_y = VALUES(door_y), door_dir = 2, heightmap = VALUES(heightmap);

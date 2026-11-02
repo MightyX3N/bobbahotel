@@ -29,178 +29,193 @@
  "navigator.room.models": [
   {
    "clubLevel": 0,
-   "tileSize": 104,
+   "tileSize": 416,
    "name": "a"
   },
   {
    "clubLevel": 0,
-   "tileSize": 94,
+   "tileSize": 376,
    "name": "b"
   },
   {
    "clubLevel": 0,
-   "tileSize": 36,
+   "tileSize": 144,
    "name": "c"
   },
   {
    "clubLevel": 0,
-   "tileSize": 84,
+   "tileSize": 336,
    "name": "d"
   },
   {
    "clubLevel": 0,
-   "tileSize": 80,
+   "tileSize": 320,
    "name": "e"
   },
   {
    "clubLevel": 0,
-   "tileSize": 80,
+   "tileSize": 320,
    "name": "f"
   },
   {
    "clubLevel": 0,
-   "tileSize": 416,
+   "tileSize": 1664,
    "name": "i"
   },
   {
    "clubLevel": 0,
-   "tileSize": 320,
+   "tileSize": 1280,
    "name": "j"
   },
   {
    "clubLevel": 0,
-   "tileSize": 448,
+   "tileSize": 1792,
    "name": "k"
   },
   {
    "clubLevel": 0,
-   "tileSize": 352,
+   "tileSize": 1408,
    "name": "l"
   },
   {
    "clubLevel": 0,
-   "tileSize": 384,
+   "tileSize": 1536,
    "name": "m"
   },
   {
    "clubLevel": 0,
-   "tileSize": 372,
+   "tileSize": 1488,
    "name": "n"
   },
   {
    "clubLevel": 1,
-   "tileSize": 80,
+   "tileSize": 320,
    "name": "g"
   },
   {
    "clubLevel": 1,
-   "tileSize": 74,
+   "tileSize": 296,
    "name": "h"
   },
   {
    "clubLevel": 1,
-   "tileSize": 416,
+   "tileSize": 1664,
    "name": "o"
   },
   {
    "clubLevel": 1,
-   "tileSize": 352,
+   "tileSize": 1408,
    "name": "p"
   },
   {
    "clubLevel": 1,
-   "tileSize": 304,
+   "tileSize": 1216,
    "name": "q"
   },
   {
    "clubLevel": 1,
-   "tileSize": 336,
+   "tileSize": 1344,
    "name": "r"
   },
   {
    "clubLevel": 1,
-   "tileSize": 748,
+   "tileSize": 2992,
    "name": "u"
   },
   {
    "clubLevel": 1,
-   "tileSize": 438,
+   "tileSize": 1752,
    "name": "v"
   },
   {
    "clubLevel": 1,
-   "tileSize": 540,
+   "tileSize": 2160,
    "name": "t"
   },
   {
    "clubLevel": 1,
-   "tileSize": 512,
+   "tileSize": 2048,
    "name": "w"
   },
   {
    "clubLevel": 1,
-   "tileSize": 396,
+   "tileSize": 1584,
    "name": "x"
   },
   {
    "clubLevel": 1,
-   "tileSize": 440,
+   "tileSize": 1760,
    "name": "y"
   },
   {
    "clubLevel": 1,
-   "tileSize": 456,
+   "tileSize": 1824,
    "name": "z"
   },
   {
    "clubLevel": 1,
-   "tileSize": 208,
+   "tileSize": 832,
    "name": "0"
   },
   {
    "clubLevel": 1,
-   "tileSize": 1009,
+   "tileSize": 4036,
    "name": "1"
   },
   {
    "clubLevel": 1,
-   "tileSize": 1044,
+   "tileSize": 4176,
    "name": "2"
   },
   {
    "clubLevel": 1,
-   "tileSize": 183,
+   "tileSize": 732,
    "name": "3"
   },
   {
    "clubLevel": 1,
-   "tileSize": 254,
+   "tileSize": 1016,
    "name": "4"
   },
   {
    "clubLevel": 1,
-   "tileSize": 1024,
+   "tileSize": 4096,
    "name": "5"
   },
   {
    "clubLevel": 1,
-   "tileSize": 801,
+   "tileSize": 3204,
    "name": "6"
   },
   {
    "clubLevel": 1,
-   "tileSize": 354,
+   "tileSize": 1416,
    "name": "7"
   },
   {
    "clubLevel": 1,
-   "tileSize": 888,
+   "tileSize": 3552,
    "name": "8"
   },
   {
    "clubLevel": 1,
-   "tileSize": 926,
+   "tileSize": 3704,
    "name": "9"
+  },
+  {
+   "clubLevel": 0,
+   "tileSize": 16,
+   "name": "tiny_a"
+  },
+  {
+   "clubLevel": 0,
+   "tileSize": 36,
+   "name": "tiny_b"
+  },
+  {
+   "clubLevel": 0,
+   "tileSize": 30,
+   "name": "tiny_c"
   }
  ],
  "hotelview": {

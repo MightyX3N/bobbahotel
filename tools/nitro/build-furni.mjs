@@ -27,13 +27,16 @@ const allFurni = JSON.parse(readFileSync(join(root, 'content', 'furni', 'catalog
 // a picture made from a pack by packs.mjs (cut from a sheet, ...).
 const derived = derivedFurni(spritesDir);
 // "<name>@1.5" is the picture enlarged that much (packs drawn smaller than ours).
+// Rooms are shown at TinyHouse scale: Nitro's small view (32 px tiles) shows every picture at its
+// own size, pixel for pixel. So the full-size view (64 px tiles) gets every picture twice as big.
+const SCALE = 2;
 const picFile = (f) => join(spritesDir, f.includes('/') ? '' : 'furni', `${f.split('@')[0]}.png`);
 const pics = new Map();
 const pic = (f) => {
   if (!pics.has(f)) {
     const [name, scale] = f.split('@');
     const img = derived[name] ?? load(picFile(name));
-    pics.set(f, scale ? enlarge(img, Number(scale)) : img);
+    pics.set(f, enlarge(img, SCALE * (scale ? Number(scale) : 1)));
   }
   return pics.get(f);
 };
@@ -338,11 +341,12 @@ for (const item of catalogue) {
   } else {
     // Each direction with its own pictures is measured on its first picture.
     const fits = {};
-    for (const d of own) fits[d] = fitFloor(pic(item.pics[d][0][0]), !!item.walk, !!item.keepScale);
+    for (const d of own) fits[d] = fitFloor(pic(item.pics[d][0][0]), !!item.walk, true);
     const main = fits[4] ? 4 : fits[2] ? 2 : own[0];
     const f = fits[main];
     const [a, b] = f.size;
-    size = item.size ?? (main === 2 || main === 6 ? [b, a] : [a, b]);
+    // The footprint is what the picture covers (nothing is shrunk to fit fewer tiles).
+    size = main === 2 || main === 6 ? [b, a] : [a, b];
     height = item.height ?? f.height;
     for (const d of own) {
       const fit = fits[d];
@@ -400,8 +404,9 @@ for (const item of catalogue) {
   };
   writeBundle(join(out, 'bundled', 'furniture', `${id}.nitro`), id, data, images);
 
-  // Icon: the first picture, at most 50 px.
+  // Icon: the first picture at its own size (pictures are built twice as big), at most 50 px.
   if (icon) {
+    icon = half(icon);
     const k = Math.min(1, 50 / Math.max(icon.width, icon.height));
     const small = k < 1 ? transformed(icon, [k, 0, 0, k], [0, 0]).img : icon;
     writeFileSync(join(out, 'dcr', 'hof_furni', 'icons', `${id}_icon.png`), encode(small));
