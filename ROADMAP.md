@@ -21,7 +21,7 @@ A step is ticked only after it has been played on the live server. One step at a
 ## 4. Layouts and Bobba Club
 - [x] In-game layout editor (draw floor, heights, door), save new layouts; Club members reshape their own rooms
 - [x] Bobba Club: Club-only layouts (incl. all of Habbo's standard layouts) and other extras, admin can grant Club time (`:club`)
-- [ ] Donations give Club time based on the amount (donation service tells the server automatically)
+- Donations moved to later (see the end)
 
 ## 5. Hotel systems, in order
 - [ ] Furni: definitions, drawing, place / move / rotate / pick up, stacking, sitting
@@ -35,3 +35,6 @@ A step is ticked only after it has been played on the live server. One step at a
 - [ ] Gifts, teleporters, dice, pets, wired (later)
 - [ ] Admin panel
 - [ ] Credits page (pixel_Salvaje, Klimmos)
+
+## Later
+- [ ] Donations give Club time based on the amount (donation service tells the server automatically)
