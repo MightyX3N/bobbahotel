@@ -34,11 +34,23 @@ export function Navigator() {
   );
 }
 
+/** How often an open room list refreshes, so user counts stay current. */
+const REFRESH_MS = 5000;
+
 function RoomList({ tab }: { tab: NavigatorTab }) {
   const { rooms, loading, query } = useUi((s) => s.navigator);
   const current = useUi((s) => s.room?.id);
   const [text, setText] = useState(query);
   useEffect(() => setText(query), [query, tab]);
+  // Keep the list (and its user counts) up to date while it's open.
+  useEffect(() => {
+    const timer = setInterval(() => actions.loadRooms(tab, query), REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [tab, query]);
+  // Also refresh right after moving to another room (its count changed).
+  useEffect(() => {
+    if (current) actions.loadRooms(tab, query);
+  }, [current]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const search = (e: React.FormEvent) => {
     e.preventDefault();
