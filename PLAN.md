@@ -38,6 +38,10 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
   - The admin picks one theme for the whole server.
 - **Language:** every piece of text comes from a language file. Only English is made now; other languages can be added later as new files, with no code changes. A missing key falls back to English.
 
+## Phones and tablets
+- One client for everything: touch works like the mouse (tap to walk, drag to look around, pinch to zoom, double-tap furni, hold for names). On narrow screens the chat box gets its own row and windows open full width.
+- Installable as an app (PWA): `client/public/manifest.webmanifest`, icons from `tools/make-icons.mjs`, and `client/public/sw.js`, which only keeps the game's own code (never sprites or game data) and always loads the page fresh when online.
+
 ## Furni
 - **Definitions** live in `content/furni/<pack>.json` (in git): name, floor or wall, tiles covered, pictures per direction (or mirrored from another direction) and per state (off/on, closed/open; double-click to switch), animation speed, and sit / walk / stack. Fix anything there by hand: size, `scale`, `offset`. No real brand names.
 - **Pictures** are the pack's own files under `sprites/<pack folder>/` (never in git, never changed). When the server starts it builds one sprite sheet plus frame list per furni into `sprites/built/furni/` (only when something changed), like Habbo's furni packages.

@@ -17,6 +17,7 @@ A step is ticked only after it has been played on the live server. One step at a
 - [x] Navigator: public rooms, all rooms, my rooms, search
 - [x] Create a room from the Habbo room layouts; move between rooms
 - [x] Room drawing from Nitro's room code: walls, stairs, doorway; zoom
+- [x] Phones and tablets: touch (tap to walk, drag, pinch to zoom, hold for names), phone layout, installable app (PWA)
 
 ## 4. Layouts and Bobba Club
 - [x] In-game layout editor (draw floor, heights, door), save new layouts; Club members reshape their own rooms

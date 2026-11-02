@@ -35,7 +35,21 @@ function infoText(code: string, vars?: Record<string, string | number>): string 
   return t(code.includes('.') ? code : `info.${code}`, vars);
 }
 
+/** Phones and tablets: installable as an app (see public/sw.js), and no page zooming while playing. */
+function setUpDevice(): void {
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
+  // iPhone/iPad: pinching the page would zoom the whole page instead of the room.
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  // iPhone/iPad: after typing, the keyboard can leave the page scrolled; put it back.
+  document.addEventListener('focusout', () => {
+    if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
+  });
+}
+
 async function main(): Promise<void> {
+  setUpDevice();
   await loadTheme();
   const params = new URLSearchParams(location.search);
   const loginFailed = params.get('login') === 'failed';

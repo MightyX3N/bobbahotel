@@ -14,6 +14,12 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
+  /* Phones: no pull-to-refresh, bounce, text selection or grey tap flashes while playing. */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
   background: #000;
   color: var(--text);
   font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -26,6 +32,28 @@ body {
   display: block;
 }
 
+/* The room handles every touch itself (tap, drag, pinch). */
+#game canvas {
+  touch-action: none;
+}
+
+/* Windows and buttons: no double-tap zoom. Text boxes can still be selected. */
+#ui,
+#screen {
+  touch-action: manipulation;
+}
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* 16px text boxes stop phones zooming in when you tap one. */
+@media (pointer: coarse) {
+  .panel input {
+    font-size: 16px;
+  }
+}
+
 [hidden] {
   display: none !important;
 }
@@ -34,6 +62,7 @@ body {
 #screen {
   position: absolute;
   inset: 0;
+  overflow: auto;
   display: grid;
   place-items: center;
   background: radial-gradient(circle at 50% 30%, #23384d, #070b10 70%);

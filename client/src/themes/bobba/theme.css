@@ -50,6 +50,7 @@
   min-width: 260px;
   max-width: calc(100vw - 16px);
   max-height: calc(100vh - var(--toolbar-height) - 16px);
+  max-height: calc(100dvh - var(--toolbar-height) - 16px);
   border: 1px solid var(--win-border);
   border-radius: var(--win-radius);
   background: var(--win-body);
@@ -290,6 +291,9 @@ textarea.ui-input {
   gap: 10px;
   height: var(--toolbar-height);
   padding: 0 10px;
+  /* Phones with a home bar: keep the buttons above it. */
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: content-box;
   background: var(--toolbar);
   border-top: 1px solid #000;
 }
@@ -386,4 +390,71 @@ textarea.ui-input {
   background: var(--win-body);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
   pointer-events: none;
+}
+
+/* ---- touch screens: bigger things to tap ---- */
+@media (pointer: coarse) {
+  .win-close {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  .win-tab {
+    padding: 8px 14px 9px;
+  }
+  .nav-row {
+    padding: 10px 10px;
+  }
+  .ui-btn {
+    padding: 8px 14px;
+  }
+  .ui-input {
+    padding: 8px 10px;
+    /* 16px stops phones zooming in when you tap a text box. */
+    font-size: 16px;
+  }
+  .toolbar-chat input {
+    font-size: 16px;
+  }
+}
+
+/* ---- phones: the chat box gets its own row under the buttons ---- */
+@media (max-width: 599px) {
+  :root[data-theme='bobba'] {
+    --toolbar-height: 104px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: 4px;
+    column-gap: 4px;
+    padding: 4px 8px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    height: auto;
+    min-height: calc(var(--toolbar-height) - 8px);
+    box-sizing: border-box;
+  }
+  .toolbar-icons,
+  .toolbar-right {
+    flex: 1 1 auto;
+  }
+  .toolbar-chat {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .club-badge {
+    padding: 0 6px;
+  }
+  .room-chip {
+    max-width: 60vw;
+    bottom: calc(var(--toolbar-height) + env(safe-area-inset-bottom) + 8px);
+  }
+  .win-body {
+    padding: 6px;
+  }
+}
+
+/* Dragging a window by its header with a finger moves the window, not the page. */
+.win-header {
+  touch-action: none;
 }

@@ -1,9 +1,9 @@
 // A window: header with title and close button, optional tabs, and a body. Drag it by the header.
-// Windows open next to the toolbar (bottom-left), like Habbo, and stay inside the screen.
+// Windows open next to the toolbar (bottom-left), like Habbo, and stay inside the screen. On
+// phones they open full width.
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { isNarrow, toolbarHeight } from '../../layout.ts';
 
-/** Height of the toolbar windows must stay above (see the theme). */
-const TOOLBAR_HEIGHT = 55;
 const MARGIN = 8;
 
 export interface Tab<K extends string> {
@@ -26,6 +26,7 @@ interface Props<K extends string> {
 export function Window<K extends string>({ title, onClose, tabs, activeTab, onTab, width = 400, start = { left: 12, bottom: 70 }, children }: Props<K>) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [narrow, setNarrow] = useState(isNarrow);
   /** Until the player drags it, the window keeps its bottom edge above the toolbar. */
   const dragged = useRef(false);
 
@@ -34,10 +35,11 @@ export function Window<K extends string>({ title, onClose, tabs, activeTab, onTa
     const el = ref.current;
     if (!el) return;
     const place = () => {
+      setNarrow(isNarrow());
       const h = el.offsetHeight;
-      const lowest = window.innerHeight - TOOLBAR_HEIGHT - MARGIN - h;
+      const lowest = window.innerHeight - toolbarHeight() - MARGIN - h;
       setPos((p) => {
-        const x = Math.min(Math.max(p?.x ?? start.left, 0), Math.max(0, window.innerWidth - el.offsetWidth));
+        const x = isNarrow() ? MARGIN : Math.min(Math.max(p?.x ?? start.left, 0), Math.max(0, window.innerWidth - el.offsetWidth));
         const y = !p || !dragged.current ? window.innerHeight - start.bottom - h : p.y;
         return { x, y: Math.max(MARGIN, Math.min(y, lowest)) };
       });
@@ -60,7 +62,7 @@ export function Window<K extends string>({ title, onClose, tabs, activeTab, onTa
     const move = (ev: PointerEvent) => {
       dragged.current = true;
       const x = Math.min(Math.max(ev.clientX - dx, 0), window.innerWidth - el.offsetWidth);
-      const y = Math.min(Math.max(ev.clientY - dy, MARGIN), window.innerHeight - TOOLBAR_HEIGHT - MARGIN - el.offsetHeight);
+      const y = Math.min(Math.max(ev.clientY - dy, MARGIN), window.innerHeight - toolbarHeight() - MARGIN - el.offsetHeight);
       setPos({ x, y: Math.max(MARGIN, y) });
     };
     const up = () => {
@@ -75,7 +77,7 @@ export function Window<K extends string>({ title, onClose, tabs, activeTab, onTa
     <div
       ref={ref}
       className="win"
-      style={{ width, left: pos?.x ?? -9999, top: pos?.y ?? -9999 }}
+      style={{ width: narrow ? `calc(100vw - ${MARGIN * 2}px)` : width, left: pos?.x ?? -9999, top: pos?.y ?? -9999 }}
       // Scrolling over a window must never zoom or scroll the room behind it.
       onWheel={(e) => e.stopPropagation()}
     >

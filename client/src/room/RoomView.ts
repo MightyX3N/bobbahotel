@@ -1,8 +1,10 @@
 // A room on screen: floor and walls, avatars, the hover outline, clicks to walk, dragging to look
-// around, zooming (mouse wheel or the toolbar) and chat bubbles.
+// around, zooming (mouse wheel, pinch or the toolbar) and chat bubbles. Works with a mouse and
+// with touch: tap to walk, drag to look around, pinch to zoom, hold to see a name.
 import { Container, Graphics, type Application, type FederatedPointerEvent } from 'pixi.js';
 import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
+import { toolbarHeight } from '../layout.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
 import { FurniView } from './FurniView.ts';
 import { furniDefs } from './furniAssets.ts';
@@ -10,11 +12,13 @@ import { depthToZIndex, drawRoom, drawTileOutline, tileDepth } from './drawRoom.
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
-/** Height of the UI toolbar along the bottom (see the theme). */
-const TOOLBAR_HEIGHT = 55;
 const DRAG_THRESHOLD = 5;
 /** Zoom levels, like Habbo: half size for big rooms and small screens, double for big screens. */
 const ZOOMS = [0.5, 1, 2];
+/** Holding a finger still this long on an avatar or furni shows its name (touch has no hover). */
+const LONG_PRESS_MS = 450;
+/** How long a name shown by holding stays up. */
+const NAME_SHOW_MS = 2500;
 
 export class RoomView {
   private readonly app: Application;
@@ -38,6 +42,11 @@ export class RoomView {
   private hoveredAvatar: AvatarView | null = null;
   private zoom = 1;
   private drag: { startX: number; startY: number; worldX: number; worldY: number; moved: boolean } | null = null;
+  /** Fingers (and the mouse) currently down, by pointer id. */
+  private readonly pointers = new Map<number, { x: number; y: number }>();
+  private pinch: { dist: number; zoom: number } | null = null;
+  private longPress: ReturnType<typeof setTimeout> | undefined;
+  private shownName: { hide: () => void; timer: ReturnType<typeof setTimeout> } | null = null;
 
   /** Called when the player clicks a floor tile. */
   onWalk: (x: number, y: number) => void = () => {};
@@ -60,9 +69,18 @@ export class RoomView {
     app.stage.on('pointermove', (e) => this.pointerMove(e));
     app.stage.on('pointerdown', (e) => this.pointerDown(e));
     app.stage.on('pointerup', (e) => this.pointerUp(e));
-    app.stage.on('pointerupoutside', () => (this.drag = null));
+    app.stage.on('pointerupoutside', (e) => this.pointerGone(e));
+    app.stage.on('pointercancel', (e) => this.pointerGone(e));
     app.ticker.add(() => this.update());
-    app.renderer.on('resize', () => this.center());
+    // When the screen changes size (window resized, phone turned, keyboard opened) the room keeps
+    // its middle in the middle, instead of jumping back to the start.
+    let size = { w: app.screen.width, h: app.screen.height };
+    app.renderer.on('resize', () => {
+      const w = app.screen.width;
+      const h = app.screen.height;
+      this.world.position.set(Math.round(this.world.x + (w - size.w) / 2), Math.round(this.world.y + (h - size.h) / 2));
+      size = { w, h };
+    });
     app.canvas.addEventListener(
       'wheel',
       (e) => {
@@ -75,7 +93,7 @@ export class RoomView {
   }
 
   /** Zoom to a level, keeping the point under (sx, sy) (default: the middle of the screen) in place. */
-  setZoom(zoom: number, sx = this.app.screen.width / 2, sy = (this.app.screen.height - TOOLBAR_HEIGHT) / 2): void {
+  setZoom(zoom: number, sx = this.app.screen.width / 2, sy = (this.app.screen.height - toolbarHeight()) / 2): void {
     const wx = (sx - this.world.x) / this.zoom;
     const wy = (sy - this.world.y) / this.zoom;
     this.zoom = zoom;
@@ -125,7 +143,7 @@ export class RoomView {
     });
     // Start at normal size, or half size when the room doesn't fit the screen.
     const b = this.roomBounds();
-    const fits = b.width <= this.app.screen.width && b.height <= this.app.screen.height - TOOLBAR_HEIGHT;
+    const fits = b.width <= this.app.screen.width && b.height <= this.app.screen.height - toolbarHeight();
     this.zoom = fits ? 1 : 0.5;
     this.world.scale.set(this.zoom);
     this.center();
@@ -166,7 +184,7 @@ export class RoomView {
     if (b.width === 0) return;
     // Centred in the space above the toolbar.
     const width = this.app.screen.width;
-    const height = this.app.screen.height - TOOLBAR_HEIGHT;
+    const height = this.app.screen.height - toolbarHeight();
     // A room bigger than the screen is centred on the door instead, so you see yourself come in
     // (drag to look around).
     const [dx, dy] = this.door;
@@ -221,15 +239,22 @@ export class RoomView {
   }
 
   private pointerMove(e: FederatedPointerEvent): void {
+    if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.global.x, y: e.global.y });
+    if (this.pinch) return this.pinchMove();
     if (this.drag) {
       const dx = e.global.x - this.drag.startX;
       const dy = e.global.y - this.drag.startY;
-      if (!this.drag.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD) this.drag.moved = true;
+      if (!this.drag.moved && Math.hypot(dx, dy) > (e.pointerType === 'touch' ? DRAG_THRESHOLD * 2 : DRAG_THRESHOLD)) {
+        this.drag.moved = true;
+        clearTimeout(this.longPress);
+      }
       if (this.drag.moved) {
         this.world.position.set(Math.round(this.drag.worldX + dx), Math.round(this.drag.worldY + dy));
         return;
       }
     }
+    // Hover (tile outline, names) is for the mouse; touch has no hover.
+    if (e.pointerType === 'touch') return;
     const t = this.tileAt(e.global.x, e.global.y);
     if (t) {
       drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
@@ -253,13 +278,71 @@ export class RoomView {
 
   private pointerDown(e: FederatedPointerEvent): void {
     if (e.button !== 0) return;
+    this.pointers.set(e.pointerId, { x: e.global.x, y: e.global.y });
+    if (this.pointers.size === 2) {
+      // Second finger: pinch to zoom (no walking or dragging until both are lifted).
+      const [a, b] = [...this.pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+      this.pinch = { dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), zoom: this.zoom };
+      this.drag = null;
+      clearTimeout(this.longPress);
+      return;
+    }
+    if (this.pointers.size > 2 || this.pinch) return;
     this.drag = { startX: e.global.x, startY: e.global.y, worldX: this.world.x, worldY: this.world.y, moved: false };
+    if (e.pointerType === 'touch') {
+      const { x, y } = e.global;
+      clearTimeout(this.longPress);
+      this.longPress = setTimeout(() => {
+        if (!this.drag || this.drag.moved) return;
+        if (this.showNameAt(x, y)) this.drag = null; // a hold is not a tap: don't walk
+      }, LONG_PRESS_MS);
+    }
+  }
+
+  private pinchMove(): void {
+    if (!this.pinch || this.pointers.size < 2) return;
+    const [a, b] = [...this.pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+    const dist = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+    const zoom = Math.min(ZOOMS[ZOOMS.length - 1]!, Math.max(ZOOMS[0]!, (this.pinch.zoom * dist) / this.pinch.dist));
+    this.setZoom(zoom, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  }
+
+  /** A finger lifted or lost: ends a pinch (snapping to the nearest zoom level). */
+  private pointerGone(e: FederatedPointerEvent): void {
+    const last = this.pointers.get(e.pointerId);
+    this.pointers.delete(e.pointerId);
+    clearTimeout(this.longPress);
+    if (this.pinch && this.pointers.size < 2) {
+      this.pinch = null;
+      const nearest = ZOOMS.reduce((best, z) => (Math.abs(Math.log(z / this.zoom)) < Math.abs(Math.log(best / this.zoom)) ? z : best), 1);
+      const other = [...this.pointers.values()][0] ?? last;
+      this.setZoom(nearest, other?.x, other?.y);
+      this.drag = null;
+    }
+    if (this.pointers.size === 0) this.drag = null;
+  }
+
+  /** Touch: show the name of the avatar or furni at a screen point for a moment. */
+  private showNameAt(sx: number, sy: number): boolean {
+    const target = this.avatarAt(sx, sy) ?? this.furniAt(sx, sy);
+    if (!target) return false;
+    if (this.shownName) {
+      clearTimeout(this.shownName.timer);
+      this.shownName.hide();
+    }
+    target.showName(true);
+    const hide = () => target.showName(false);
+    this.shownName = { hide, timer: setTimeout(() => (hide(), (this.shownName = null)), NAME_SHOW_MS) };
+    return true;
   }
 
   private pointerUp(e: FederatedPointerEvent): void {
     // Pixi hears pointer-ups anywhere on the page; only a click that also started on the room
     // (not on a window above it) walks.
     const started = this.drag;
+    const wasPinch = !!this.pinch;
+    this.pointerGone(e);
+    if (wasPinch) return;
     this.drag = null;
     if (!started || started.moved || e.button !== 0) return;
     // Double-click a furni to use it (switch it on/off, open it…).
