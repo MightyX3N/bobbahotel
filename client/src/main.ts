@@ -164,6 +164,7 @@ async function pose(v: View, time: number) {
     v.bodyC.removeChildren(); v.key = undefined; v.layers = texs.map(t => { const s = new Sprite(); s.position.set(-AX, -AY); s.visible = !!t; v.bodyC.addChild(s); return s; });
   }
   if (v.layers.length !== v.paths.length) return;
+  v.bodyC.y = v.sit ? 5 : 0;
   const key = anim + row + frame; if (key === v.key) return; v.key = key;
   v.paths.forEach((pth, i) => { const sp = v.layers[i], base = texCache.get(pth); if (!sp || !base) return;
     base.then(b => { if (b) sp.texture = frameTex(pth, b, row, frame); }); });
@@ -247,14 +248,14 @@ function select(iv: IV | null) {
 }
 function cancelGhost() {
   if (!ghost) return;
-  world.removeChild(ghost.sp); ghost.sp.destroy(); ghost = null; ghostG.clear();
+  world.removeChild(ghost.sp); ghost.sp.destroy(); ghost = null; ghostG.clear(); S.placing = false; changed();
   for (const iv of itemViews.values()) iv.sp.alpha = 1;
 }
 function startGhost(kind: 'place' | 'move', id: number, furni: string, flip: number, x = 0, y = 0) {
   cancelGhost(); const d = S.defs[furni]; if (!d) return;
   const sp = new Sprite(); const t = texNow.get('furni/' + d.file); if (t) sp.texture = t; else loadTex('furni/' + d.file).then(tt => { if (tt && ghost?.sp === sp) { sp.texture = tt; updateGhost(); } });
   sp.alpha = 0.8; world.addChild(sp);
-  ghost = { kind, id, furni, flip, sp, x, y };
+  ghost = { kind, id, furni, flip, sp, x, y }; S.placing = true; changed();
   if (kind === 'move') { const iv = itemViews.get(id); if (iv) iv.sp.alpha = 0.25; }
   updateGhost();
 }
@@ -277,6 +278,10 @@ function tileFree(px: number, py: number): [number, number] {
   const lx = px - world.x, ly = py - world.y, fx = lx / (TW / 2), fy = ly / (TH / 2);
   return [Math.floor((fx + fy) / 2 + 0.5), Math.floor((fy - fx) / 2 + 0.5)];
 }
+/** The back corner that puts the middle of the preview on the tile under the mouse. */
+function centred(t: [number, number]): [number, number] {
+  if (!ghost) return t; const [w, d] = size(S.defs[ghost.furni], ghost.flip); return [t[0] - Math.floor((w - 1) / 2), t[1] - Math.floor((d - 1) / 2)];
+}
 let lastTile: [number, number] | null = null, ptr: [number, number] | null = null;
 function centreTile(): [number, number] {
   const cx = (grid[0]?.length ?? 1) / 2, cy = grid.length / 2; let best: [number, number] = [0, 0], bd = 1e9;
@@ -287,7 +292,7 @@ function rotateGhostOrSelected() {
   if (ghost) { ghost.flip = ghost.flip ? 0 : 1; updateGhost(); }
   else if (S.selected && S.edit) send({ t: 'rotate', id: S.selected.id });
 }
-S.startPlace = id => { const it = S.inv.find(i => i.id === id); if (it) { select(null); const c = ptr ? tileFree(ptr[0], ptr[1]) : centreTile(); startGhost('place', id, it.furni, 0, c[0], c[1]); } };
+S.startPlace = id => { const it = S.inv.find(i => i.id === id); if (it) { select(null); const c = ptr ? tileFree(ptr[0], ptr[1]) : centreTile(); startGhost('place', id, it.furni, 0, c[0], c[1]); if (ptr) { const [gx, gy] = centred(c); ghost!.x = gx; ghost!.y = gy; updateGhost(); } } };
 S.itemAction = a => {
   const it = S.selected; if (!it) return;
   if (a === 'move' && S.edit) startGhost('move', it.id, it.furni, it.flip, it.x, it.y);
@@ -324,7 +329,7 @@ window.addEventListener('pointermove', e => {
   ptr = [px, py];
   const t = ghost ? tileFree(px, py) : overWindow ? null : tileAt(px, py);
   if (t) lastTile = t;
-  if (ghost) { if (t && (t[0] !== ghost.x || t[1] !== ghost.y)) { ghost.x = t[0]; ghost.y = t[1]; updateGhost(); } hover.clear(); return; }
+  if (ghost) { if (t) { const [gx, gy] = centred(t); if (gx !== ghost.x || gy !== ghost.y) { ghost.x = gx; ghost.y = gy; updateGhost(); } } hover.clear(); return; }
   hover.clear(); if (!t || grid[t[1]]?.[t[0]] == null) return;
   const p = iso(t[0], t[1], grid[t[1]][t[0]]);
   hover.poly([p.x, p.y - TH / 2, p.x + TW / 2, p.y, p.x, p.y + TH / 2, p.x - TW / 2, p.y]).fill({ color: 0xffffff, alpha: 0.35 }).stroke({ width: 2, color: 0xffffff });

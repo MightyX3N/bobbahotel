@@ -16,6 +16,7 @@ export function openInventory() {
   const b = build(spec, { place: () => { if (!S.edit) { const r = S.rooms.find(x => x.mine); if (r) S.send({ t: 'join', room: r.id }); return; } const it = S.inv.find(i => i.furni === sel); if (it) S.startPlace(it.id); } });
   b.root.style.cssText = 'height:400px'; b.refs.grid.style.minHeight = '0'; win.body.append(b.root);
   function render() {
+    win.el.style.display = S.placing ? 'none' : '';
     const groups = new Map<string, InvItem[]>();
     for (const i of S.inv) { if (!groups.has(i.furni)) groups.set(i.furni, []); groups.get(i.furni)!.push(i); }
     if (sel && !groups.has(sel)) sel = '';

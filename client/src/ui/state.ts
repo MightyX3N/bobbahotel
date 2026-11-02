@@ -9,7 +9,7 @@ export const S = {
   rooms: [] as RoomInfo[], layouts: [] as LayoutInfo[], roomId: '',
   me: null as null | { id: number; name: string; look: Look; steam: boolean },
   listeners: new Set<() => void>(),
-  defs: {} as Defs, pages: [] as Page[], inv: [] as InvItem[], silver: 0, gold: 0, edit: false, reconnecting: false,
+  defs: {} as Defs, pages: [] as Page[], inv: [] as InvItem[], silver: 0, gold: 0, edit: false, reconnecting: false, placing: false,
   /** the placed piece the player clicked in the room */
   selected: null as Item | null,
   /** set by the room view: start putting an inventory piece down / do something with the selected piece */
