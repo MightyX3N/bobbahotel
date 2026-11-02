@@ -28,8 +28,44 @@ export const roomUserSchema = z.object({
 });
 export type RoomUser = z.output<typeof roomUserSchema>;
 
+export const ROOM_NAME_MIN = 3;
+export const ROOM_NAME_MAX = 30;
+export const ROOM_DESC_MAX = 128;
+
+const roomId = z.string().min(1).max(40);
+
+export const roomInfoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  /** Owner's name; null for public rooms. */
+  owner: z.string().nullable(),
+  users: z.number().int(),
+  maxUsers: z.number().int(),
+});
+export type RoomInfo = z.output<typeof roomInfoSchema>;
+
+export const layoutInfoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  map: z.array(z.string()),
+  door: z.tuple([z.number().int(), z.number().int()]),
+  maxUsers: z.number().int(),
+  club: z.boolean(),
+});
+export type LayoutInfo = z.output<typeof layoutInfoSchema>;
+
+export const NAVIGATOR_TABS = ['public', 'all', 'mine'] as const;
+export type NavigatorTab = (typeof NAVIGATOR_TABS)[number];
+
 /** Client -> server */
 export const clientMessages = {
+  /** Room list for a navigator tab, optionally searched by name. */
+  navigator: z.object({ tab: z.enum(NAVIGATOR_TABS), query: z.string().max(40).optional() }),
+  /** The layouts a new room can be built from. */
+  layouts: z.object({}),
+  createRoom: z.object({ name: z.string().max(ROOM_NAME_MAX * 2), description: z.string().max(ROOM_DESC_MAX * 2), layout: z.string().max(40) }),
+  goToRoom: z.object({ id: roomId }),
   hello: z.object({ protocol: z.number().int() }),
   /** Walk to a tile. */
   walk: z.object({ x: tile, y: tile }),
@@ -44,10 +80,15 @@ export const serverMessages = {
     protocol: z.number().int(),
     me: z.object({ id: z.number().int(), name: z.string(), guest: z.boolean() }),
   }),
+  navigator: z.object({ tab: z.enum(NAVIGATOR_TABS), query: z.string(), rooms: z.array(roomInfoSchema) }),
+  layouts: z.object({ layouts: z.array(layoutInfoSchema) }),
+  roomCreated: z.object({ id: z.string() }),
   /** You entered a room: everything needed to draw it. */
   room: z.object({
     id: z.string(),
     name: z.string(),
+    description: z.string(),
+    owner: z.string().nullable(),
     map: z.array(z.string()),
     door: z.tuple([z.number().int(), z.number().int()]),
     users: z.array(roomUserSchema),

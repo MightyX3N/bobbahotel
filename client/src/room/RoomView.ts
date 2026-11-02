@@ -8,6 +8,8 @@ import { drawRoom, drawTileOutline } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
+/** Height of the UI toolbar along the bottom (see the theme). */
+const TOOLBAR_HEIGHT = 55;
 const DRAG_THRESHOLD = 5;
 
 export class RoomView {
@@ -100,7 +102,9 @@ export class RoomView {
   center(): void {
     const b = this.floorLayer.getLocalBounds();
     if (b.width === 0) return;
-    this.world.position.set(Math.round(this.app.screen.width / 2 - (b.x + b.width / 2)), Math.round(this.app.screen.height / 2 - (b.y + b.height / 2)));
+    // Centred in the space above the toolbar.
+    const height = this.app.screen.height - TOOLBAR_HEIGHT;
+    this.world.position.set(Math.round(this.app.screen.width / 2 - (b.x + b.width / 2)), Math.round(height / 2 - (b.y + b.height / 2)));
   }
 
   private update(): void {

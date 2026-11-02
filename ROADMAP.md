@@ -11,20 +11,26 @@ A step is ticked only after it has been played on the live server. One step at a
 - [x] Walk (click to walk, pathfinding, 500 ms room tick)
 - [x] See a second player walk and chat (chat bubbles)
 
-## 3. UI foundation
-- [ ] Theme loader (one theme: Bobba, R63B style)
-- [ ] Language file (English), all text from it; more languages can be added later
-- [ ] First windows: toolbar, navigator
+## 3. Rooms and the UI foundation
+- [ ] UI foundation: React UI layer, theme folder (Bobba theme based on Nitro's UI), English language file with all UI text
+- [ ] Toolbar (with the chat input)
+- [ ] Navigator: public rooms, all rooms, my rooms, search
+- [ ] Create a room from the Habbo room layouts; move between rooms
 
-## 4. Hotel systems, in order
+## 4. Layouts and Bobba Club
+- [ ] In-game layout editor (draw floor, heights, door), save new layouts
+- [ ] Bobba Club: Club-only layouts and other extras, admin can grant Club time
+- [ ] Donations give Club time based on the amount (donation service tells the server automatically)
+
+## 5. Hotel systems, in order
 - [ ] Furni: definitions, drawing, place / move / rotate / pick up, stacking, sitting
 - [ ] Inventory ("My stuff")
 - [ ] Catalogue and buying
 - [ ] Coins (silver and gold)
-- [ ] Rooms: create, settings, rights
+- [ ] Room settings, rights
 - [ ] Avatar looks (Cozy), wardrobe
 - [ ] Chat filter, commands, wave, AFK
 - [ ] Friends and messenger
-- [ ] Gifts, Bobba Club, teleporters, dice, pets, wired (later)
+- [ ] Gifts, teleporters, dice, pets, wired (later)
 - [ ] Admin panel
 - [ ] Credits page (pixel_Salvaje, Klimmos)

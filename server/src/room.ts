@@ -46,18 +46,28 @@ interface Occupant {
 const CHAT_BURST = 5;
 const CHAT_WINDOW_MS = 4000;
 
+/** What a room is called and who owns it. */
+export interface RoomDetails {
+  name: string;
+  description: string;
+  /** Owner's name; null for public rooms. */
+  owner: string | null;
+  ownerId: number | null;
+  maxUsers: number;
+}
+
 export class Room {
   readonly id: string;
-  readonly name: string;
+  details: RoomDetails;
   readonly layout: Layout;
   readonly grid: Grid;
   private readonly occupants = new Map<number, Occupant>();
   private timer: ReturnType<typeof setInterval> | undefined;
   private readonly autoTick: boolean;
 
-  constructor(id: string, name: string, layout: Layout, opts: { autoTick?: boolean } = {}) {
+  constructor(id: string, details: RoomDetails, layout: Layout, opts: { autoTick?: boolean } = {}) {
     this.id = id;
-    this.name = name;
+    this.details = details;
     this.layout = layout;
     this.grid = parseMap(layout.map);
     this.autoTick = opts.autoTick ?? true;
@@ -65,6 +75,14 @@ export class Room {
 
   get count(): number {
     return this.occupants.size;
+  }
+
+  get name(): string {
+    return this.details.name;
+  }
+
+  get isFull(): boolean {
+    return this.occupants.size >= this.details.maxUsers;
   }
 
   has(id: number): boolean {
@@ -89,7 +107,15 @@ export class Room {
     this.occupants.set(visitor.id, occupant);
     visitor.send({
       t: 'room',
-      d: { id: this.id, name: this.name, map: this.layout.map, door: this.layout.door, users: [...this.occupants.values()].map(toRoomUser) },
+      d: {
+        id: this.id,
+        name: this.details.name,
+        description: this.details.description,
+        owner: this.details.owner,
+        map: this.layout.map,
+        door: this.layout.door,
+        users: [...this.occupants.values()].map(toRoomUser),
+      },
     });
     this.broadcast({ t: 'userJoin', d: toRoomUser(occupant) }, visitor.id);
     this.startTicking();

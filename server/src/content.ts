@@ -10,6 +10,7 @@ const layoutSchema = z.object({
   map: z.array(z.string().regex(/^[0-9a-zA-Z]+$/)).min(1),
   door: z.tuple([z.number().int().min(0), z.number().int().min(0)]),
   maxUsers: z.number().int().positive().optional(),
+  access: z.enum(['free', 'club', 'admin']).default('free'),
 });
 
 const roomsFileSchema = z.object({
@@ -19,7 +20,7 @@ const roomsFileSchema = z.object({
 
 export interface Content {
   layouts: Map<string, Layout>;
-  publicRooms: { id: string; name: string; layout: Layout }[];
+  publicRooms: { id: string; name: string; description?: string; layout: Layout }[];
 }
 
 export function loadContent(dir: string): Content {
@@ -40,7 +41,7 @@ export function loadContent(dir: string): Content {
   const publicRooms = file.public.map((p) => {
     const layout = layouts.get(p.layout);
     if (!layout) throw new Error(`Public room ${p.id}: unknown layout ${p.layout}`);
-    return { id: p.id, name: p.name, layout };
+    return { id: p.id, name: p.name, ...(p.description ? { description: p.description } : {}), layout };
   });
   return { layouts, publicRooms };
 }

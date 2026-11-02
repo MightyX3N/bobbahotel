@@ -21,6 +21,16 @@ const MIGRATIONS: string[] = [
      created INTEGER NOT NULL,
      expires INTEGER NOT NULL
    );`,
+  // 2: guest rooms
+  `CREATE TABLE rooms (
+     id INTEGER PRIMARY KEY,
+     owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     name TEXT NOT NULL,
+     description TEXT NOT NULL DEFAULT '',
+     layout TEXT NOT NULL,
+     created INTEGER NOT NULL
+   );
+   CREATE INDEX rooms_owner ON rooms(owner_id);`,
 ];
 
 export type Db = DatabaseSync;

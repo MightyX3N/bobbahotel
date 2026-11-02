@@ -237,6 +237,56 @@ describe('hotel', () => {
   });
 });
 
+describe('rooms', () => {
+  it('lists public rooms with how many are inside', async () => {
+    const host = await start();
+    const p = await Player.join(host, await guest(host, 'Lister'));
+    p.send({ t: 'navigator', d: { tab: 'public' } });
+    const list = await p.waitFor('navigator');
+    expect(list.d.rooms[0]).toMatchObject({ id: 'p:lobby', name: 'Lobby', owner: null, users: 1 });
+    expect(list.d.rooms.length).toBe(content.publicRooms.length);
+  });
+
+  it('creates a room from a layout, goes there, and lists it as mine', async () => {
+    const host = await start();
+    const p = await Player.join(host, await guest(host, 'Builder'));
+    p.send({ t: 'layouts', d: {} });
+    const layouts = (await p.waitFor('layouts')).d.layouts;
+    expect(layouts.some((l) => l.id === 'model_a' && !l.club)).toBe(true);
+    expect(layouts.some((l) => l.id === 'pub_lobby')).toBe(false);
+
+    p.send({ t: 'createRoom', d: { name: '  My   Room ', description: 'cosy', layout: 'model_a' } });
+    const created = await p.waitFor('roomCreated');
+    const room = await p.waitFor('room', (m) => m.d.id === created.d.id);
+    expect(room.d).toMatchObject({ name: 'My Room', description: 'cosy', owner: 'Builder' });
+
+    p.send({ t: 'navigator', d: { tab: 'mine' } });
+    const mine = await p.waitFor('navigator', (m) => m.d.tab === 'mine');
+    expect(mine.d.rooms).toMatchObject([{ id: created.d.id, name: 'My Room', users: 1 }]);
+  });
+
+  it('refuses bad names, Club layouts and unknown rooms', async () => {
+    const host = await start();
+    const p = await Player.join(host, await guest(host, 'Picky'));
+    p.send({ t: 'createRoom', d: { name: 'ab', description: '', layout: 'model_a' } });
+    expect((await p.waitFor('error', (m) => m.d.code === 'bad_room_name')).d.code).toBe('bad_room_name');
+    p.send({ t: 'createRoom', d: { name: 'Fancy', description: '', layout: 'model_i' } });
+    await p.waitFor('error', (m) => m.d.code === 'layout_not_allowed');
+    p.send({ t: 'goToRoom', d: { id: 'r:999999' } });
+    await p.waitFor('error', (m) => m.d.code === 'room_not_found');
+  });
+
+  it('moves players between rooms and tells both rooms', async () => {
+    const host = await start();
+    const a = await Player.join(host, await guest(host, 'Mover'));
+    const b = await Player.join(host, await guest(host, 'Stayer'));
+    const moverId = (await b.waitFor('room')).d.users.find((u) => u.name === 'Mover')!.id;
+    a.send({ t: 'goToRoom', d: { id: 'p:cafe' } });
+    expect((await a.waitFor('room', (m) => m.d.id === 'p:cafe')).d.name).toBe('Corner Café');
+    expect((await b.waitFor('userLeave')).d.id).toBe(moverId);
+  });
+});
+
 describe('walking speed', () => {
   it('takes the first step right after the click, then one step per TICK_MS', async () => {
     const host = await start();

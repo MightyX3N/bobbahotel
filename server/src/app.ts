@@ -14,7 +14,8 @@ import { Auth, type Fetch, type Session } from './auth.ts';
 import type { Config } from './config.ts';
 import type { Content } from './content.ts';
 import type { Db } from './db.ts';
-import { Room } from './room.ts';
+import type { Room } from './room.ts';
+import { Rooms } from './rooms.ts';
 import { Users, type User } from './users.ts';
 
 const MAX_MESSAGE_BYTES = 16 * 1024;
@@ -32,7 +33,9 @@ export interface AppOptions {
 
 export interface App {
   server: http.Server;
-  lobby: Room;
+  rooms: Rooms;
+  /** The room everyone starts in. */
+  readonly lobby: Room;
   close(): Promise<void>;
 }
 
@@ -47,9 +50,7 @@ export function createApp(opts: AppOptions): App {
   const { config, db, content } = opts;
   const users = new Users(db);
   const auth = new Auth(db, { publicUrl: config.publicUrl, ...(opts.fetch ? { fetch: opts.fetch } : {}) });
-  const lobbyInfo = content.publicRooms[0];
-  if (!lobbyInfo) throw new Error('rooms.json has no public rooms');
-  const lobby = new Room(lobbyInfo.id, lobbyInfo.name, lobbyInfo.layout, { autoTick: !opts.manualTicks });
+  const rooms = new Rooms(db, content, { autoTick: !opts.manualTicks });
   const clients = new Map<number, Client>();
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
 
@@ -187,6 +188,16 @@ export function createApp(opts: AppOptions): App {
       }
     });
 
+    function goTo(id: string): void {
+      if (client.room?.id === id) return;
+      const room = rooms.get(id);
+      if (!room) return client.send({ t: 'error', d: { code: 'room_not_found', message: 'That room does not exist' } });
+      if (room.isFull) return client.send({ t: 'error', d: { code: 'room_full', message: 'That room is full' } });
+      leave(client);
+      client.room = room;
+      room.enter({ id: user.id, name: user.name, look: user.look, send: client.send });
+    }
+
     function handle(message: ClientMessage): void {
       switch (message.t) {
         case 'hello':
@@ -198,9 +209,24 @@ export function createApp(opts: AppOptions): App {
           }
           greeted = true;
           client.send({ t: 'welcome', d: { server: config.version, protocol: PROTOCOL_VERSION, me: { id: user.id, name: user.name, guest: user.guest } } });
-          // Until there is a navigator, everyone goes straight to the lobby.
-          client.room = lobby;
-          lobby.enter({ id: user.id, name: user.name, look: user.look, send: client.send });
+          // Everyone starts in the lobby (until there is a hotel view).
+          goTo(rooms.lobbyId);
+          return;
+        case 'navigator':
+          client.send({ t: 'navigator', d: { tab: message.d.tab, query: message.d.query ?? '', rooms: rooms.list(message.d.tab, message.d.query ?? '', user.id) } });
+          return;
+        case 'layouts':
+          client.send({ t: 'layouts', d: { layouts: rooms.layouts() } });
+          return;
+        case 'createRoom': {
+          const result = rooms.create(user.id, message.d.name, message.d.description, message.d.layout);
+          if (!result.ok) return client.send({ t: 'error', d: { code: result.error, message: result.error } });
+          client.send({ t: 'roomCreated', d: { id: result.id } });
+          goTo(result.id);
+          return;
+        }
+        case 'goToRoom':
+          goTo(message.d.id);
           return;
         case 'walk':
           client.room?.walkTo(user.id, message.d.x, message.d.y);
@@ -213,8 +239,11 @@ export function createApp(opts: AppOptions): App {
   }
 
   function leave(client: Client): void {
-    client.room?.leave(client.user.id);
+    const room = client.room;
+    if (!room) return;
+    room.leave(client.user.id);
     client.room = null;
+    rooms.left(room);
   }
 
   // ---- housekeeping ----
@@ -228,11 +257,14 @@ export function createApp(opts: AppOptions): App {
 
   return {
     server,
-    lobby,
+    rooms,
+    get lobby() {
+      return rooms.get(rooms.lobbyId)!;
+    },
     close: () =>
       new Promise<void>((resolve) => {
         clearInterval(cleanupTimer);
-        lobby.stop();
+        rooms.stopAll();
         for (const ws of wss.clients) ws.terminate();
         wss.close();
         server.close(() => resolve());

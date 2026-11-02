@@ -3,12 +3,21 @@
 /** grid[y][x] = floor height, or -1 where there is no floor. */
 export type Grid = number[][];
 
+/** Who may build a room with a layout: anyone, Bobba Club members, or staff only (public rooms). */
+export type LayoutAccess = 'free' | 'club' | 'admin';
+
 export interface Layout {
   id: string;
   name: string;
   map: string[];
   door: [number, number];
   maxUsers?: number;
+  access?: LayoutAccess;
+}
+
+/** Number of floor tiles in a layout (shown when choosing one). */
+export function tileCount(map: string[]): number {
+  return map.reduce((n, row) => n + [...row].filter((c) => c !== 'x' && c !== 'X').length, 0);
 }
 
 export function parseMap(map: string[]): Grid {

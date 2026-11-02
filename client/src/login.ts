@@ -2,17 +2,11 @@
 // Placeholder look; the real one comes with the UI theme.
 import { NAME_MAX, NAME_MIN } from '@bobba/shared';
 import { post } from './api.ts';
+import { t } from './ui/i18n.ts';
+import en from './ui/lang/en.json';
 
-// Moves into the language files in step 3.
-const ERRORS: Record<string, string> = {
-  too_short: `Names need at least ${NAME_MIN} characters.`,
-  too_long: `Names can have at most ${NAME_MAX} characters.`,
-  bad_characters: 'Use letters, numbers and - _ = ? ! @ : . , only.',
-  name_taken: 'That name is taken.',
-  bad_origin: 'Please open the hotel from its own address.',
-  offline: 'Can’t reach the hotel. Try again in a moment.',
-};
-const errorText = (code: string) => ERRORS[code] ?? 'Something went wrong. Try again.';
+const errorText = (code: string) =>
+  t(Object.hasOwn(en, `error.${code}`) ? `error.${code}` : 'error.unknown', { min: NAME_MIN, max: NAME_MAX });
 
 const screen = () => document.getElementById('screen')!;
 
@@ -31,26 +25,26 @@ export function hideScreens(): void {
 /** Shows the login screen; resolves once the player is logged in. */
 export function showLogin(failed: boolean): Promise<void> {
   const el = show(`
-    <h1>Bobba Hotel</h1>
-    <p>Check in, make friends, build your room.</p>
-    <a class="button wide" href="/api/auth/steam">Log in with Steam</a>
-    <div class="or">or play as a guest</div>
+    <h1>${t('login.title')}</h1>
+    <p>${t('login.tagline')}</p>
+    <a class="button wide" href="/api/auth/steam">${t('login.steam')}</a>
+    <div class="or">${t('login.or_guest')}</div>
     <form>
-      <input name="name" maxlength="${NAME_MAX}" placeholder="Pick a name" autocomplete="off" spellcheck="false" />
-      <button class="button" type="submit">Play</button>
+      <input name="name" maxlength="${NAME_MAX}" placeholder="${t('login.name_placeholder')}" autocomplete="off" spellcheck="false" />
+      <button class="button" type="submit">${t('login.play')}</button>
     </form>
-    <div class="error" role="alert">${failed ? 'Steam login failed. Try again.' : ''}</div>`);
+    <div class="error" role="alert">${failed ? t('login.steam_failed') : ''}</div>`);
   return nameForm(el, '/api/auth/guest');
 }
 
 /** After the first Steam login: pick a hotel name. */
 export function showChooseName(): Promise<void> {
   const el = show(`
-    <h1>Welcome!</h1>
-    <p>Choose your hotel name. Other players will see it.</p>
+    <h1>${t('name.title')}</h1>
+    <p>${t('name.text')}</p>
     <form>
-      <input name="name" maxlength="${NAME_MAX}" placeholder="Your name" autocomplete="off" spellcheck="false" />
-      <button class="button" type="submit">Check in</button>
+      <input name="name" maxlength="${NAME_MAX}" placeholder="${t('name.placeholder')}" autocomplete="off" spellcheck="false" />
+      <button class="button" type="submit">${t('name.submit')}</button>
     </form>
     <div class="error" role="alert"></div>`);
   return nameForm(el, '/api/auth/name');

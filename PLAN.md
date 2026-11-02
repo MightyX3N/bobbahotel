@@ -34,7 +34,7 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
 - **Room engine:** isometric 64×32 tiles, depth sorting, furni, avatars and chat bubbles. It knows nothing about windows.
 - **UI = logic + theme:**
   - Logic, for example "the inventory has these items, clicking Place does this", is written once.
-  - A **theme** is a folder holding only the look: window layouts, art and CSS. Only one theme is built: **Bobba, in the R63B (late Flash) style**. It uses that era's window structure (frames, title bars, tabs, list rows, bottom toolbar, where windows open) with our own icons and art. nitro-react and its flashUI fork (GPL-3) are the reference for layouts and behaviour. More themes can be added later as new folders, without touching the logic.
+  - A **theme** is a folder holding only the look: window layouts, art and CSS. The first theme, **Bobba**, is based on Nitro's UI (the same windows, layout and look: blue window headers, tab rows, a dark toolbar along the bottom), written as our own code with our own icons, since nitro-react has no licence. More themes can be added later as new folders, without touching the logic.
   - The admin picks one theme for the whole server.
 - **Language:** every piece of text comes from a language file. Only English is made now; other languages can be added later as new files, with no code changes. A missing key falls back to English.
 
@@ -54,6 +54,9 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
 1. One step at a time. Every step ends playable, checked and live before the next one starts.
 2. `ROADMAP.md` is the checklist. A step is ticked only after it has been played on the live server.
 3. Behaviour is matched to Habbo by checking how Habbo, Nitro or Arcturus does it, not by guessing.
+
+## Money: a donation project
+Bobba Hotel is not built around real money. People can donate, and a donation gives **Bobba Club** for a length of time based on the amount. Club gives extras (such as Club-only room layouts), never the basics of the game.
 
 ## First steps
 1. Empty repo setup: workspaces, `dev`, `check`, CI and auto-deploy, with a "hello" page live on hotel.playbobba.com.
