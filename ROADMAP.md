@@ -12,10 +12,10 @@ A step is ticked only after it has been played on the live server. One step at a
 - [x] See a second player walk and chat (chat bubbles)
 
 ## 3. Rooms and the UI foundation
-- [ ] UI foundation: React UI layer, theme folder (Bobba theme based on Nitro's UI), English language file with all UI text
-- [ ] Toolbar (with the chat input)
-- [ ] Navigator: public rooms, all rooms, my rooms, search
-- [ ] Create a room from the Habbo room layouts; move between rooms
+- [x] UI foundation: React UI layer, theme folder (Bobba theme based on Nitro's UI), English language file with all UI text
+- [x] Toolbar (with the chat input)
+- [x] Navigator: public rooms, all rooms, my rooms, search
+- [x] Create a room from the Habbo room layouts; move between rooms
 
 ## 4. Layouts and Bobba Club
 - [ ] In-game layout editor (draw floor, heights, door), save new layouts
