@@ -8,7 +8,12 @@
   </head>
   <body>
     <div id="game"></div>
-    <div id="status" role="status">Connecting…</div>
+    <div id="screen" hidden></div>
+    <form id="chatbar" hidden autocomplete="off">
+      <input id="chat" maxlength="100" placeholder="Click here to chat…" aria-label="Chat" />
+    </form>
+    <button id="logout" type="button" hidden>Log out</button>
+    <div id="status" role="status" hidden></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

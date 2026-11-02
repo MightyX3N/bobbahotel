@@ -1,11 +1,18 @@
 // Server settings come from environment variables. On the VPS they are in /etc/bobbahotel/env.
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 export interface Config {
   port: number;
   host: string;
-  /** Allowed browser origins for the WebSocket. Empty = allow any (local development). */
+  /** The address players use, e.g. https://hotel.playbobba.com. Used for the Steam login return. */
+  publicUrl: string;
+  /** Allowed browser origins for the WebSocket and login requests. Empty = allow any (local development). */
   allowOrigin: string[];
+  /** SQLite database file (":memory:" for tests). */
+  dbFile: string;
+  /** Folder with rooms.json and other content. */
+  contentDir: string;
   /** The git commit this server was built from ("dev" when run from a checkout). */
   version: string;
 }
@@ -24,10 +31,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     port,
     host: env.HOST ?? '127.0.0.1',
+    publicUrl: (env.PUBLIC_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
     allowOrigin: (env.ALLOW_ORIGIN ?? '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    dbFile: env.DB_FILE ?? 'hotel.db',
+    contentDir: env.CONTENT_DIR ?? fileURLToPath(new URL('../../content/', import.meta.url)),
     version: readVersion(),
   };
 }

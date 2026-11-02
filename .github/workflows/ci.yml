@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "$GITHUB_SHA" > VERSION
           npm prune --omit=dev
-          tar -czf release.tar.gz VERSION LICENSE package.json package-lock.json node_modules shared server client/package.json client/dist
+          tar -czf release.tar.gz VERSION LICENSE package.json package-lock.json node_modules content shared server client/package.json client/dist
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:

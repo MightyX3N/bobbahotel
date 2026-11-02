@@ -15,17 +15,18 @@ export class Connection {
   private ws: WebSocket | undefined;
   private handlers = new Map<string, Set<(data: unknown) => void>>();
   private retryMs = 1000;
+  private stopped = false;
+  private readonly url: string;
 
   onOpen: () => void = () => {};
   onClose: () => void = () => {};
-
-  private readonly url: string;
 
   constructor(url: string) {
     this.url = url;
   }
 
   connect(): void {
+    if (this.stopped) return;
     const ws = new WebSocket(this.url);
     this.ws = ws;
     ws.onopen = () => {
@@ -39,10 +40,17 @@ export class Connection {
       for (const handler of this.handlers.get(message.t) ?? []) handler(message.d);
     };
     ws.onclose = () => {
+      if (this.stopped) return;
       this.onClose();
       setTimeout(() => this.connect(), this.retryMs);
       this.retryMs = Math.min(this.retryMs * 2, 15000);
     };
+  }
+
+  /** Stops for good (no reconnecting), e.g. after logging in somewhere else. */
+  stop(): void {
+    this.stopped = true;
+    this.ws?.close();
   }
 
   on<T extends ServerMessage['t']>(type: T, handler: Handler<T>): void {
@@ -57,7 +65,5 @@ export class Connection {
 }
 
 export function serverUrl(): string {
-  const override = new URLSearchParams(location.search).get('server');
-  if (override) return override;
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
 }

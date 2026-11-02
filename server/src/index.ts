@@ -1,8 +1,12 @@
 import { createApp } from './app.ts';
 import { loadConfig } from './config.ts';
+import { loadContent } from './content.ts';
+import { openDb } from './db.ts';
 
 const config = loadConfig();
-const app = createApp(config);
+const db = openDb(config.dbFile);
+const content = loadContent(config.contentDir);
+const app = createApp({ config, db, content });
 
 app.server.listen(config.port, config.host, () => {
   console.log(`Bobba Hotel server ${config.version} listening on http://${config.host}:${config.port}`);
@@ -16,6 +20,7 @@ async function stop(signal: string): Promise<void> {
   const force = setTimeout(() => process.exit(1), 5000);
   force.unref();
   await app.close();
+  db.close();
   process.exit(0);
 }
 process.on('SIGINT', () => void stop('SIGINT'));

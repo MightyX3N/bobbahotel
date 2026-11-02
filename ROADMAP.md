@@ -3,10 +3,10 @@
 A step is ticked only after it has been played on the live server. One step at a time.
 
 ## 1. Foundation
-- [ ] Repo setup: workspaces, `npm run dev`, `npm run check`, CI, auto-deploy with rollback, placeholder page live
+- [x] Repo setup: workspaces, `npm run dev`, `npm run check`, CI, auto-deploy with rollback, placeholder page live
 
 ## 2. First slice
-- [ ] Log in (Steam and guest)
+- [ ] Log in (Steam and guest); choosing between up to 3 accounts per Steam account comes later
 - [ ] Enter one room (real room drawing: floor, walls, door)
 - [ ] Walk (click to walk, pathfinding, 500 ms room tick)
 - [ ] See a second player walk and chat (chat bubbles)

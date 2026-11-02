@@ -4,18 +4,71 @@
 //
 // Wire format: JSON `{ "t": <type>, "d": <data> }`.
 import { z } from 'zod';
+import { lookSchema } from './look.ts';
 
 /** Bump when a change means old clients can't talk to the new server. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
+
+export const CHAT_MAX = 100;
+export const NAME_MIN = 3;
+export const NAME_MAX = 15;
+/** Characters allowed in hotel names. */
+export const NAME_PATTERN = /^[A-Za-z0-9_\-=?!@:.,]+$/;
+
+const tile = z.number().int().min(0).max(4095);
+
+export const roomUserSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  look: lookSchema,
+  x: z.number().int(),
+  y: z.number().int(),
+  z: z.number(),
+  dir: z.number().int().min(0).max(7),
+});
+export type RoomUser = z.output<typeof roomUserSchema>;
 
 /** Client -> server */
 export const clientMessages = {
   hello: z.object({ protocol: z.number().int() }),
+  /** Walk to a tile. */
+  walk: z.object({ x: tile, y: tile }),
+  /** Say something in the room. */
+  chat: z.object({ text: z.string().max(CHAT_MAX * 2) }),
 } satisfies Schemas;
 
 /** Server -> client */
 export const serverMessages = {
-  welcome: z.object({ server: z.string(), protocol: z.number().int() }),
+  welcome: z.object({
+    server: z.string(),
+    protocol: z.number().int(),
+    me: z.object({ id: z.number().int(), name: z.string(), guest: z.boolean() }),
+  }),
+  /** You entered a room: everything needed to draw it. */
+  room: z.object({
+    id: z.string(),
+    name: z.string(),
+    map: z.array(z.string()),
+    door: z.tuple([z.number().int(), z.number().int()]),
+    users: z.array(roomUserSchema),
+  }),
+  userJoin: roomUserSchema,
+  userLeave: z.object({ id: z.number().int() }),
+  /**
+   * Sent every room tick (500 ms) for avatars that moved or stopped. `moving` means "now walking
+   * to this tile": the client animates from where the avatar is to (x, y, z) over one tick.
+   */
+  status: z.array(
+    z.object({
+      id: z.number().int(),
+      x: z.number().int(),
+      y: z.number().int(),
+      z: z.number(),
+      dir: z.number().int().min(0).max(7),
+      moving: z.boolean(),
+    }),
+  ),
+  chat: z.object({ id: z.number().int(), text: z.string() }),
   error: z.object({ code: z.string(), message: z.string() }),
 } satisfies Schemas;
 
@@ -49,4 +102,20 @@ export function parseMessage<S extends Schemas>(schemas: S, raw: string): Messag
 
 export function encodeMessage(message: ClientMessage | ServerMessage): string {
   return JSON.stringify(message);
+}
+
+/** Checks a hotel name. Returns an error key, or null if the name is fine. */
+export function nameProblem(name: string): 'too_short' | 'too_long' | 'bad_characters' | null {
+  if (name.length < NAME_MIN) return 'too_short';
+  if (name.length > NAME_MAX) return 'too_long';
+  if (!NAME_PATTERN.test(name)) return 'bad_characters';
+  return null;
+}
+
+/** Control characters, zero-width and direction-changing characters. */
+const INVISIBLE = new RegExp('[\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f\\u2028-\\u202e\\u2066-\\u2069\\ufeff]', 'g');
+
+/** Cleans chat text: no control characters, collapsed spaces, at most CHAT_MAX characters. */
+export function cleanChat(text: string): string {
+  return text.replace(INVISIBLE, '').replace(/\s+/g, ' ').trim().slice(0, CHAT_MAX);
 }
