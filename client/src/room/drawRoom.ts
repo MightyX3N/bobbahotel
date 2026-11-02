@@ -29,8 +29,8 @@ const COLORS = {
 const FLOOR_THICKNESS = 0.25 * STEP_PX;
 /** Wall top, in height steps above the highest floor (measured from Habbo: ~144 px on 64 px tiles). */
 const WALL_STEPS = 4.5;
-/** Door opening height (measured from Habbo: ~85 px, about the avatar's height). */
-export const DOOR_HEIGHT = 2.65 * STEP_PX;
+/** Door opening height: just taller than the avatar (88 px), so its head fits under the lintel. */
+export const DOOR_HEIGHT = 2.9 * STEP_PX;
 
 /** Sort depth of things standing on tile (x, y). Floor and walls use the same scale. */
 export const tileDepth = (x: number, y: number) => x + y + 1;
@@ -118,7 +118,8 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
       const midY = corners.reduce((s, v) => s + v.y, 0) / 4;
       const inFrontOfDoor = color === COLORS.wallLeft && corners.every((v) => Math.abs(v.x - (doorX + 1)) < 0.01) && midY > doorY && midY < doorY + 1;
       const shown = inFrontOfDoor ? corners.map((v) => ({ ...v, z: Math.max(v.z, doorTop) })) : corners;
-      poly(depth, shown.map(project), color);
+      // The wall above the opening (the lintel) is drawn over anyone standing in the doorway.
+      poly(inFrontOfDoor ? tileDepth(doorX, doorY) + 0.7 : depth, shown.map(project), color);
       if (color === COLORS.wallLeft) nitroFaces.add(`x${Math.round(a.x)},${Math.floor(Math.min(...corners.map((v) => v.y)) + 0.01)}`);
       if (color === COLORS.wallRight) nitroFaces.add(`y${Math.round(a.y)},${Math.floor(Math.min(...corners.map((v) => v.x)) + 0.01)}`);
     }
@@ -187,34 +188,73 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     }
   }
 
-  // ---- floor, per tile ----
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (!isFloor(grid, x, y)) continue;
-      const z = heightAt(grid, x, y);
-      const depth = tileDepth(x, y) - 0.1;
-      const [top, right, bottom, left] = tileCorners(x, y, z);
-      if (x === doorX && y === doorY) {
-        // Darkness behind the door opening, then the door tile's floor in front of it.
-        const dl = corner(x + 1, y + 1, z);
-        const dt = corner(x + 1, y, z);
-        poly(depth - 0.05, [down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)], COLORS.doorway);
+  // ---- floor, from Nitro's floor planes ----
+  // Nitro gives the floor's top, its thickness where it meets empty space, the sides between two
+  // levels and, where the floor goes one step down, stairs (like Habbo). Each plane is cut into
+  // one-tile pieces so it sorts with the tile it belongs to.
+  interface Cell {
+    depth: number;
+    order: number;
+    pts: Point[];
+    color: number;
+    outline: boolean;
+  }
+  const cells: Cell[] = [];
+  for (let i = 0; i < parser.planeCount; i++) {
+    if (parser.getPlaneType(i) !== RoomPlaneData.PLANE_FLOOR || !seen(i)) continue;
+    const n = parser.getPlaneNormal(i) as V3;
+    const flat = n.z > 0.001;
+    const color = flat ? COLORS.floor : n.y > 0.001 ? COLORS.floorLeft : n.x > 0.001 ? COLORS.floorRight : null;
+    if (color === null) continue;
+    const loc = ours(parser.getPlaneLocation(i) as V3);
+    const left = parser.getPlaneLeftSide(i) as V3;
+    const right = parser.getPlaneRightSide(i) as V3;
+    const corners = [loc, add(loc, left), add(add(loc, left), right), add(loc, right)];
+    const lo = (k: 'x' | 'y' | 'z') => Math.min(...corners.map((v) => v[k]));
+    const hi = (k: 'x' | 'y' | 'z') => Math.max(...corners.map((v) => v[k]));
+    // Cut points: the plane's own ends plus every whole grid line in between.
+    const cuts = (a: number, b: number) => {
+      const out = [a];
+      for (let g = Math.floor(a + 1e-6) + 1; g < b - 1e-6; g++) out.push(g);
+      out.push(b);
+      return out;
+    };
+    const xs = cuts(lo('x'), hi('x'));
+    const ys = cuts(lo('y'), hi('y'));
+    for (let a = 0; a + 1 < xs.length; a++) {
+      for (let b = 0; b + 1 < ys.length; b++) {
+        const x0 = xs[a]!;
+        const x1 = xs[a + 1]!;
+        const y0 = ys[b]!;
+        const y1 = ys[b + 1]!;
+        let pts: Point[];
+        if (flat) {
+          const z = lo('z');
+          pts = [corner(x0, y0, z), corner(x1, y0, z), corner(x1, y1, z), corner(x0, y1, z)];
+        } else {
+          // A side: x0 == x1 (facing +x) or y0 == y1 (facing +y), from its bottom to its top.
+          const [z0, z1] = [lo('z'), hi('z')];
+          pts = [corner(x0, y0, z1), corner(x1, y1, z1), corner(x1, y1, z0), corner(x0, y0, z0)];
+        }
+        // The tile this piece belongs to: a side belongs to the tile it is the edge of.
+        const cx = (x0 + x1) / 2 - n.x * 0.01;
+        const cy = (y0 + y1) / 2 - n.y * 0.01;
+        const depth = tileDepth(Math.floor(cx), Math.floor(cy)) - 0.1;
+        cells.push({ depth, order: cx + cy + (flat ? 0 : 0.001), pts, color, outline: flat });
       }
-      // Sides facing down-left (+y) and down-right (+x): only the floor's thickness towards empty
-      // space, a full step down towards a lower floor, nothing towards a floor as high or higher.
-      const drop = (nx: number, ny: number) => {
-        const nz = heightAt(grid, nx, ny);
-        return nz < 0 ? FLOOR_THICKNESS : z > nz ? (z - nz) * STEP_PX : 0;
-      };
-      const dropLeft = drop(x, y + 1);
-      const dropRight = drop(x + 1, y);
-      if (dropLeft > 0) poly(depth, [left, bottom, down(bottom, dropLeft), down(left, dropLeft)], COLORS.floorLeft);
-      if (dropRight > 0) poly(depth, [bottom, right, down(right, dropRight), down(bottom, dropRight)], COLORS.floorRight);
-      at(depth)
-        .poly([...top, ...right, ...bottom, ...left])
-        .fill(COLORS.floor)
-        .stroke({ color: COLORS.floorLine, width: 1, alignment: 1 });
     }
+  }
+  // Darkness behind the door opening, drawn before the door tile's floor.
+  {
+    const z = heightAt(grid, doorX, doorY);
+    const dl = corner(doorX + 1, doorY + 1, z);
+    const dt = corner(doorX + 1, doorY, z);
+    poly(tileDepth(doorX, doorY) - 0.15, [down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)], COLORS.doorway);
+  }
+  cells.sort((a, b) => a.depth - b.depth || a.order - b.order);
+  for (const c of cells) {
+    const g = at(c.depth).poly(c.pts.flat()).fill(c.color);
+    if (c.outline) g.stroke({ color: COLORS.floorLine, width: 1, alignment: 1 });
   }
 
   return [...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 }));
