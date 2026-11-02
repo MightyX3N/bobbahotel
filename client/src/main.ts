@@ -41,12 +41,20 @@ let ws: WebSocket, meId = 0, grid: number[][] = [], views = new Map<number, View
 let myName = '';
 let style = { floor: 'stone', wall: 'whitecheck' };
 
+let uiReady = false, wantClose = false, retry = 0, lastPos: { room: string; x: number; y: number } | null = null;
 function connect(name: string) {
   ws = new WebSocket(WS_URL);
   const token = localStorage.getItem('bh_token:' + name.toLowerCase()) ?? undefined;
-  ws.onopen = () => ws.send(JSON.stringify({ t: 'login', name, token }));
-  ws.onerror = () => ($('err').textContent = 'Cannot reach the hotel server');
-  ws.onclose = () => { hideUI(); $('login').classList.remove('hidden'); if (!$('err').textContent) $('err').textContent = 'Disconnected from the hotel'; };
+  ws.onopen = () => { retry = 0; ws.send(JSON.stringify({ t: 'login', name, token })); };
+  ws.onerror = () => { if (!uiReady) $('err').textContent = 'Cannot reach the hotel server'; };
+  ws.onclose = () => {
+    if (uiReady && !wantClose) { // the server restarted or the connection dropped: come back by ourselves
+      const me = views.get(meId); if (me) lastPos = { room: curRoom, x: me.u.x, y: me.u.y };
+      S.reconnecting = true; changed();
+      setTimeout(() => connect(name), Math.min(1000 + retry++ * 500, 5000)); return;
+    }
+    uiReady = false; hideUI(); $('login').classList.remove('hidden'); if (!$('err').textContent) $('err').textContent = 'Disconnected from the hotel';
+  };
   ws.onmessage = e => handle(JSON.parse(e.data));
 }
 const send = (o: object) => ws.readyState === 1 && ws.send(JSON.stringify(o));
@@ -54,13 +62,15 @@ const send = (o: object) => ws.readyState === 1 && ws.send(JSON.stringify(o));
 function handle(m: any) {
   uiHandle(m);
   switch (m.t) {
-    case 'error': case 'need_name': $('err').textContent = m.msg; break;
-    case 'kicked': $('err').textContent = m.msg; break;
+    case 'error': case 'need_name': if (!uiReady) $('err').textContent = m.msg; else if (S.reconnecting) ws.close(); break;
+    case 'kicked': wantClose = true; $('err').textContent = m.msg; break;
     case 'welcome':
       if (m.token) localStorage.setItem('bh_token:' + m.name.toLowerCase(), m.token);
       myName = m.name; meId = m.id;
       $('login').classList.add('hidden');
-      initUI({ http: HTTP, send, me: { id: m.id, name: m.name, look: m.look, steam: !!m.steam }, logout: () => { if (m.steam) location.href = HTTP + '/auth/logout?next=/'; else { ws.close(); } } });
+      S.reconnecting = false; if (uiReady) { changed(); if (lastPos) { send({ t: 'join', room: lastPos.room, x: lastPos.x, y: lastPos.y }); lastPos = null; } break; }
+      uiReady = true;
+      initUI({ http: HTTP, send, me: { id: m.id, name: m.name, look: m.look, steam: !!m.steam }, logout: () => { wantClose = true; if (m.steam) location.href = HTTP + '/auth/logout?next=/'; else { ws.close(); } } });
       break;
     case 'room': enterRoom(m); break;
     case 'look': { const v = views.get(m.id); if (v) { v.u.look = m.look; v.anim = ''; v.key = undefined; } break; }
@@ -261,6 +271,12 @@ function updateGhost() {
   ghostG.clear(); const [w, dd] = size(d, flip);
   for (let i = 0; i < w; i++) for (let j = 0; j < dd; j++) { const p = iso(x + i, y + j, (grid[y + j]?.[x + i] ?? base) + z); ghostG.poly([p.x, p.y - TH / 2, p.x + TW / 2, p.y, p.x, p.y + TH / 2, p.x - TW / 2, p.y]).fill({ color: ok ? 0x44ff44 : 0xff4444, alpha: 0.35 }); }
 }
+/** Tile under the mouse even outside the room (for the placing preview). */
+function tileFree(px: number, py: number): [number, number] {
+  const t = tileAt(px, py); if (t) return t;
+  const lx = px - world.x, ly = py - world.y, fx = lx / (TW / 2), fy = ly / (TH / 2);
+  return [Math.floor((fx + fy) / 2 + 0.5), Math.floor((fy - fx) / 2 + 0.5)];
+}
 let lastTile: [number, number] | null = null;
 function centreTile(): [number, number] {
   const cx = (grid[0]?.length ?? 1) / 2, cy = grid.length / 2; let best: [number, number] = [0, 0], bd = 1e9;
@@ -305,10 +321,10 @@ function tileAt(px: number, py: number): [number, number] | null {
 window.addEventListener('pointermove', e => {
   const r = app.canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
   const overWindow = (e.target as HTMLElement)?.closest?.('.win, #toolbar, #bar, #itemcard');
-  const t = overWindow && !ghost ? null : tileAt(px, py);
+  const t = ghost ? (overWindow ? null : tileFree(px, py)) : overWindow ? null : tileAt(px, py);
   if (t) lastTile = t;
   if (ghost) { if (t && (t[0] !== ghost.x || t[1] !== ghost.y)) { ghost.x = t[0]; ghost.y = t[1]; updateGhost(); } hover.clear(); return; }
-  hover.clear(); if (!t) return;
+  hover.clear(); if (!t || grid[t[1]]?.[t[0]] == null) return;
   const p = iso(t[0], t[1], grid[t[1]][t[0]]);
   hover.poly([p.x, p.y - TH / 2, p.x + TW / 2, p.y, p.x, p.y + TH / 2, p.x - TW / 2, p.y]).fill({ color: 0xffffff, alpha: 0.35 }).stroke({ width: 2, color: 0xffffff });
 });
@@ -317,7 +333,7 @@ app.canvas.addEventListener('pointerdown', e => {
   if (e.button !== 0) return;
   const t = tileAt(e.offsetX, e.offsetY);
   if (ghost) {
-    if (t && ghostValid()) { const g = ghost; send({ t: g.kind, id: g.id, x: g.x, y: g.y, flip: g.flip }); if (g.kind === 'move') cancelGhost(); else if (!S.inv.some(i => i.id !== g.id && i.furni === g.furni)) cancelGhost(); else { /* keep placing more of the same */ const next = S.inv.find(i => i.id !== g.id && i.furni === g.furni)!; startGhost('place', next.id, next.furni, g.flip, g.x, g.y); } }
+    if (ghostValid()) { const g = ghost; send({ t: g.kind, id: g.id, x: g.x, y: g.y, flip: g.flip }); if (g.kind === 'move') cancelGhost(); else if (!S.inv.some(i => i.id !== g.id && i.furni === g.furni)) cancelGhost(); else { /* keep placing more of the same */ const next = S.inv.find(i => i.id !== g.id && i.furni === g.furni)!; startGhost('place', next.id, next.furni, g.flip, g.x, g.y); } }
     return;
   }
   const iv = itemAt(e.offsetX, e.offsetY);

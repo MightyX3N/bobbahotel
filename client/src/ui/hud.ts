@@ -26,10 +26,12 @@ export function buildHud(onChat: (text: string) => void) {
   tb.append(home, rooms, cat, inv, me); ui.append(tb);
   const drawHead = async () => { if (S.me) drawFrame(head, await loadLayers(S.me.look, 'idle'), 0, 0, 2, [16, 2, 32, 32]); };
   S.listeners.add(drawHead); drawHead();
+  const toast = h('div'); toast.id = 'toast'; toast.hidden = true; ui.append(toast);
   // coins + item card
   const coins = h('div'); coins.id = 'coins'; ui.append(coins);
   const card = h('div'); card.id = 'itemcard'; card.hidden = true; ui.append(card);
   const draw = () => {
+    toast.textContent = S.reconnecting ? 'Connection lost. Reconnecting...' : toast.textContent; if (S.reconnecting) toast.hidden = false; else if (toast.textContent.startsWith('Connection lost')) toast.hidden = true;
     coins.innerHTML = `<b>${S.silver}</b> silver · <b>${S.gold}</b> gold`;
     const it = S.selected, d = it && S.defs[it.furni];
     if (!it || !d) { card.hidden = true; return; }
@@ -53,7 +55,6 @@ export function buildHud(onChat: (text: string) => void) {
   const say = h('input'); say.id = 'say'; say.placeholder = 'Click here to chat'; say.maxLength = 100; say.autocomplete = 'off';
   say.onkeydown = e => { if (e.key !== 'Enter') return; if (say.value.trim()) onChat(say.value); say.value = ''; };
   bar.append(name, say); ui.append(bar);
-  const toast = h('div'); toast.id = 'toast'; toast.hidden = true; ui.append(toast);
   return {
     setRoom: (n: string) => { name.textContent = n; },
     toast: (t: string) => { toast.textContent = t; toast.hidden = false; setTimeout(() => { toast.hidden = true; }, 8000); },

@@ -150,7 +150,7 @@ function leave(p: Player) {
   r.players.delete(p.id); p.room = null; p.path = [];
   r.send({ t: 'leave', id: p.id });
 }
-function join(p: Player, id: string) {
+function join(p: Player, id: string, at?: [number, number]) {
   const r = rooms.get(id);
   if (!r) return;
   if (r.players.size >= r.layout.maxUsers) return p.ws.send(JSON.stringify({ t: 'error', msg: 'Room is full' }));
@@ -160,7 +160,8 @@ function join(p: Player, id: string) {
   let [x, y] = d;
   if ((r.grid[y]?.[x] ?? -1) < 0) outer: for (let rad = 1; rad < 20; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++)
     if ((r.grid[y + dy]?.[x + dx] ?? -1) >= 0) { x += dx; y += dy; break outer; }
-  p.x = x; p.y = y; p.z = r.grid[y][x]; p.dir = 2; p.path = []; p.sit = null;
+  if (at && (r.walk[at[1]]?.[at[0]] ?? -1) >= 0 && ![...r.players.values()].some(o => o.x === at[0] && o.y === at[1])) [x, y] = at;
+  p.x = x; p.y = y; p.z = r.walk[y]?.[x] >= 0 ? r.walk[y][x] : r.grid[y][x]; p.dir = 2; p.path = []; p.sit = null;
   p.room = r; r.players.set(p.id, p);
   qLast.run(r.id, p.id);
   p.ws.send(JSON.stringify({ t: 'room', id: r.id, name: r.name, map: r.layout.map, floor: r.floor, wall: r.wall, door: d, you: p.id, edit: r.ownerId === p.id, items: [...r.items.values()], users: [...r.players.values()].map(u => r.pub(u)) }));
@@ -407,7 +408,7 @@ wss.on('connection', (ws, req) => {
       const l = m.look as Look; me.look = { sex: l.sex, body: l.body, hair: l.hair, top: l.top, bottom: l.bottom, shoes: l.shoes };
       qSetLook.run(JSON.stringify(me.look), me.id);
       me.room?.send({ t: 'look', id: me.id, look: me.look });
-    } else if (m.t === 'join' && typeof m.room === 'string') { join(me, m.room); log(`[room] ${me.name} -> ${me.room?.name}`); }
+    } else if (m.t === 'join' && typeof m.room === 'string') { join(me, m.room, Number.isInteger(m.x) && Number.isInteger(m.y) ? [m.x, m.y] : undefined); log(`[room] ${me.name} -> ${me.room?.name}`); }
     else if (m.t === 'walk' && me.room) {
       const x = Number(m.x) | 0, y = Number(m.y) | 0;
       const blocked = new Set<string>();
