@@ -17,22 +17,24 @@ Everything the Garry's Mod gamemode had, in the order it gets built. `[x]` = don
 - [ ] Hotel view / login screen with fake-login animation (skippable)
 
 ## 2. Furniture (880 sprites)
-- [ ] Furni definitions (size from sprite, rotation, stack/top height, seat/bed flags, price, shop page)
-- [ ] Draw furni in rooms with correct depth sorting
-- [ ] Place / move (drag) / rotate / pick up, room rights
-- [ ] Stacking on tables, "can't pick up while something is on it"
-- [ ] Sitting on chairs/sofas (facing), lying in beds (2x2 beds fit two)
-- [ ] Walkable stairs, walkable rugs
-- [ ] Double-click toggles (lamps, TVs, lava lamp, animated machines)
+- [x] Furni definitions (size from sprite, rotation, stack/top height, seat/bed flags, price, shop page)
+- [x] Draw furni in rooms with correct depth sorting
+- [x] Place / move (drag) / rotate / pick up, room rights
+- [x] Stacking on tables, "can't pick up while something is on it"
+- [x] Sitting on chairs/sofas (double-click or walk onto them)
+- [ ] Lying in beds (2x2 beds fit two)
+- [ ] Wall items (windows, posters, shelves) - 77 pieces, hidden from the shop until wall placement exists
+- [x] Walkable stairs, walkable rugs
+- [x] Double-click toggles (lamps, TVs, lava lamp, animated machines)
 - [ ] Teleporters with linking, room picker showing layouts
 - [ ] Dice
 - [ ] Wired (room logic) – later
 
 ## 3. Economy and shop
-- [ ] Silver and gold coins (100 silver = 1 gold), balance in the HUD
-- [ ] Inventory window ("My stuff"), place from inventory
-- [ ] Catalogue window: Front Page, Furni (by kind and by room), Clothing, Pets, Memberships
-- [ ] Buy flow: buy -> My stuff -> place; bundles; vouchers
+- [x] Silver and gold coins (100 silver = 1 gold), balance in the HUD
+- [x] Inventory window ("My stuff"), place from inventory
+- [x] Catalogue window: Front Page, Furni (by kind and by room), Clothing, Pets, Memberships
+- [x] Buy flow: buy -> My stuff -> place; bundles; vouchers
 - [ ] Gifts (furni and coins), opened visibly in the room
 - [ ] Coins as physical items
 - [ ] Bobba Club (buy with gold, gift days, admin grant, club-only layouts)

@@ -60,3 +60,22 @@
 #bar #roomname{flex:none;max-width:30%;color:#fff;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #bar input{flex:1;min-width:0;border:1px solid #1a1a1a;border-radius:14px;padding:6px 12px;background:#f2f2ee}
 #toast{position:absolute;left:50%;top:60px;transform:translateX(-50%);max-width:80%;text-align:center;background:#2b2b2b;border:2px solid #ffcb3d;border-radius:6px;color:#fff;padding:8px 14px;z-index:20}
+
+/* inventory + catalogue */
+.pc,.pt{position:relative;border:2px solid #c3c3bc;border-radius:6px;background:#f6f6f2;padding:2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pc{width:64px;height:64px}.pt{width:84px;height:84px;gap:1px}.pc.on,.pt.on{border-color:#f0a526;background:#fff6dc}
+.pc canvas,.pt canvas,.ct canvas{image-rendering:pixelated}
+.pcn{position:absolute;right:2px;bottom:2px;background:#3a8fc4;color:#fff;border-radius:8px;min-width:16px;padding:0 4px;font-size:11px;font-weight:700;text-align:center}
+.pp{font-size:11px;color:#555}
+.cat-tree{background:#f3f2ea;padding:2px 0}
+.ct{display:flex;align-items:center;gap:6px;padding:2px 8px;cursor:pointer;min-height:28px}.ct:hover{background:#dce8f0}.ct.sel{background:#b6d4ea;font-weight:700}.ct.fold{font-weight:700;color:#345}
+.cat-title{font-size:16px}.cat-buy{border-top:1px solid #c5c5bf;padding-top:6px}
+/* item card */
+#itemcard{position:absolute;left:92px;bottom:56px;width:236px;background:var(--hud);border:2px solid var(--hud-edge);border-radius:6px;box-shadow:0 0 0 1px #1a1a1a;color:#fff;padding:8px;display:flex;flex-direction:column;gap:6px}
+#itemcard canvas{align-self:center;image-rendering:pixelated;background:#2a2a2a;border-radius:4px}
+#itemcard .nm{font-weight:700;text-align:center}
+#itemcard .bt{display:flex;gap:4px;flex-wrap:wrap}#itemcard .bt button{flex:1;margin:0;padding:4px 8px;font:inherit;font-weight:700;background:#2b2b2b;border:1px solid #666;color:#fff;border-radius:4px;cursor:pointer}
+#itemcard .bt button:hover{background:#444}#itemcard .bt .red{background:#a43a2c}
+#coins{position:absolute;right:8px;top:38px;background:var(--hud);border:1px solid var(--hud-edge);border-radius:5px;color:#fff;font-weight:700;padding:3px 10px}
+#coins b{color:#ffcb3d}
+#itemcard[hidden],#toast[hidden]{display:none}
