@@ -9,7 +9,8 @@ describe('looks', () => {
 
   it('rejects parts that do not exist', () => {
     expect(lookSchema.safeParse({ sex: 'm', body: 1, hair: 11, top: 1, bottom: 1, shoes: 1 }).success).toBe(false);
-    expect(lookSchema.safeParse({ sex: 'f', body: 1, hair: 16, top: 1, bottom: 1, shoes: 1 }).success).toBe(true);
+    expect(lookSchema.safeParse({ sex: 'f', body: 1, hair: 11, top: 1, bottom: 1, shoes: 1 }).success).toBe(false);
+    expect(lookSchema.safeParse({ sex: 'f', body: 1, hair: 10, top: 1, bottom: 1, shoes: 1 }).success).toBe(true);
   });
 
   it('puts hair under high tops, tucked when available', () => {

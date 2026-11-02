@@ -1,10 +1,11 @@
-// One avatar in the room: the Cozy layers, drawn 2x, walking smoothly between tiles.
+// One avatar in the room: the Cozy layers, walking smoothly between tiles.
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { AVATAR_FRAME, lookLayers, SHEET_ROW, type Look, type Pose, type RoomUser } from '@bobba/shared';
 import { loadSprite, sheetFrame } from '../sprites.ts';
 import { depthOf, tileCenter } from './iso.ts';
 
-const SCALE = 2;
+// The Cozy figure is about 73 px tall at its own size, which matches Habbo's proportions on 64 px tiles.
+const SCALE = 1;
 const WALK_FPS = 12;
 const IDLE_FPS = 4;
 
@@ -36,14 +37,14 @@ export class AvatarView {
     this.seed = (user.id * 9301) % 1000;
     this.from = this.to = { x: user.x, y: user.y, z: user.z };
 
-    const shadow = new Graphics().ellipse(0, 0, 18, 8).fill({ color: 0x000000, alpha: 0.2 });
+    const shadow = new Graphics().ellipse(0, 0, 13, 6).fill({ color: 0x000000, alpha: 0.2 });
     this.label = new Text({
       text: user.name,
       style: { fontFamily: 'Verdana, sans-serif', fontSize: 11, fontWeight: 'bold', fill: 0xffffff, stroke: { color: 0x000000, width: 3 } },
       resolution: 2,
     });
     this.label.anchor.set(0.5, 1);
-    this.label.y = -AVATAR_FRAME.footY * SCALE + 8;
+    this.label.y = -AVATAR_FRAME.footY * SCALE + 2;
     this.label.visible = false;
     this.container.addChild(shadow, this.body, this.label);
     this.setPose('idle');
@@ -66,14 +67,14 @@ export class AvatarView {
 
   /** Screen point just above the head (for chat bubbles). */
   headPoint(): { x: number; y: number } {
-    return { x: this.container.x, y: this.container.y - (AVATAR_FRAME.footY - 10) * SCALE };
+    return { x: this.container.x, y: this.container.y - (AVATAR_FRAME.footY - 2) * SCALE };
   }
 
   /** Rough hit test in room coordinates. */
   hits(px: number, py: number): boolean {
     const dx = px - this.container.x;
     const dy = py - this.container.y;
-    return Math.abs(dx) < 16 * SCALE && dy < 0 && dy > -62 * SCALE;
+    return Math.abs(dx) < 15 * SCALE && dy < 2 && dy > -72 * SCALE;
   }
 
   update(now: number): void {

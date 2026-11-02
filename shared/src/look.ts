@@ -5,7 +5,7 @@ import { z } from 'zod';
 /** How many of each part exist, per body type. 0 for hair/top/bottom/shoes = none. */
 export const LOOK_PARTS = {
   m: { body: 4, hair: 10, top: 15, bottom: 10, shoes: 10 },
-  f: { body: 4, hair: 16, top: 15, bottom: 10, shoes: 10 },
+  f: { body: 4, hair: 10, top: 15, bottom: 10, shoes: 10 },
 } as const;
 
 /** Tops from this number up are high-necked: hair is drawn under them (tucked version if there is one). */

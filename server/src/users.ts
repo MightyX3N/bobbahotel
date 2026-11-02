@@ -29,12 +29,12 @@ export class Users {
 
   byId(id: number): User | null {
     const row = this.db.prepare('SELECT id, name, look, guest, steam_id FROM users WHERE id = ?').get(id) as Row | undefined;
-    return row ? toUser(row) : null;
+    return row ? toUser(row, this.db) : null;
   }
 
   bySteamId(steamId: string): User[] {
     const rows = this.db.prepare('SELECT id, name, look, guest, steam_id FROM users WHERE steam_id = ? ORDER BY id').all(steamId) as unknown as Row[];
-    return rows.map(toUser);
+    return rows.map((r) => toUser(r, this.db));
   }
 
   nameTaken(name: string): boolean {
@@ -64,12 +64,19 @@ export class Users {
   }
 }
 
-function toUser(row: Row): User {
+function toUser(row: Row, db: Db): User {
   const parsed = lookSchema.safeParse(JSON.parse(row.look));
+  let look: Look;
+  if (parsed.success) look = parsed.data;
+  else {
+    // A look that no longer fits the parts (e.g. after a sprite pack change): give a new one and keep it.
+    look = randomLook();
+    db.prepare('UPDATE users SET look = ? WHERE id = ?').run(JSON.stringify(look), row.id);
+  }
   return {
     id: row.id,
     name: row.name,
-    look: parsed.success ? parsed.data : randomLook(),
+    look,
     guest: row.guest === 1,
     steamId: row.steam_id,
   };
