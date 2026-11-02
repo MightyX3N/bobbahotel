@@ -29,7 +29,7 @@ jobs:
           cd nitro-src
           git checkout -q "$(cat ../nitro/NITRO_COMMIT)"
           git apply ../nitro/renderer.patch
-          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --ignore-scripts --no-audit --no-fund  # its lock file is out of date, so not npm ci
           cd apps/frontend
           npx vite build --base=/client/ --outDir ../../../client
           cd ../../..
