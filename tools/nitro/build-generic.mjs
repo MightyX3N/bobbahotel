@@ -14,7 +14,7 @@
 //
 // Usage: node tools/nitro/build-generic.mjs [outDir] [spritesDir]
 
-import { mkdirSync, readdirSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { blank, half, load, solid } from './png.mjs';
@@ -78,6 +78,11 @@ const floors = tiles.filter((f) => f.startsWith('floor_')).map((f) => f.slice(6,
 const walls = tiles.filter((f) => f.startsWith('wall_l_')).map((f) => f.slice(7, -4)).filter((n) => tiles.includes(`wall_r_${n}.png`)).sort();
 const DEFAULT_FLOOR = 'woodlight';
 const DEFAULT_WALL = 'beigeyellow';
+// The server keeps a room's floor and wall as a short code (rooms.paper_floor / paper_wall, at most
+// 5 characters), so each style gets a number in name order: floors 1001, 1002, ..., walls 2001,
+// 2002, ... (Nitro's own defaults, 111 and 201, stay free so a room without a style gets the
+// "default" plane). They are written to gamedata/paints.json for the catalogue.
+const code = (list, n) => String((list === floors ? 1001 : 2001) + list.indexOf(n));
 
 const roomImages = {};
 const roomAssets = {};
@@ -106,8 +111,21 @@ for (const n of floors) {
     id,
     visualizations: [32, 64].map((s) => ({ size: s, horizontalAngle: 45, verticalAngle: 30, allLayers: [{ materialId: `floor_${n}_${s}` }] })),
   });
-  floorData.planes.push(plane(n));
+  floorData.planes.push(plane(code(floors, n)));
   if (n === DEFAULT_FLOOR) floorData.planes.push(plane('default'));
+}
+
+// For checking furni placement (GRID=1): floor 9999 shows every tile's outline.
+if (process.env.GRID) {
+  const g = solid(32, 32, [200, 200, 200]);
+  for (let i = 0; i < 32; i++) { put(g, i, 0, [60, 60, 60]); put(g, 0, i, [60, 60, 60]); }
+  add('floor_grid_64', g);
+  add('floor_grid_32', half(g));
+  for (const s of [64, 32]) {
+    floorData.textures.push({ id: `floor_grid_${s}`, bitmaps: [{ assetName: `floor_grid_${s}` }] });
+    floorData.materials.push({ id: `floor_grid_${s}`, matrices: [{ columns: [{ width: s / 2, cells: [{ textureId: `floor_grid_${s}` }] }] }] });
+  }
+  floorData.planes.push({ id: '9999', visualizations: [32, 64].map((s) => ({ size: s, horizontalAngle: 45, verticalAngle: 30, allLayers: [{ materialId: `floor_grid_${s}` }] })) });
 }
 
 for (const n of walls) {
@@ -129,7 +147,7 @@ for (const n of walls) {
     id,
     visualizations: [32, 64].map((s) => ({ size: s, horizontalAngle: 45, verticalAngle: 30, allLayers: [{ color: topColour || 1 }, { materialId: `wall_${n}_${s}` }] })),
   });
-  wallData.planes.push(plane(n));
+  wallData.planes.push(plane(code(walls, n)));
   if (n === DEFAULT_WALL) wallData.planes.push(plane('default'));
 }
 
@@ -285,5 +303,11 @@ writeBundle(join(generic, 'avatar_additions.nitro'), 'avatar_additions', {}, {
   avatar_addition_user_idle_right_1_small: zz(2),
   avatar_addition_user_idle_right_2_small: zz(2),
 });
+
+mkdirSync(join(out, 'gamedata'), { recursive: true });
+writeFileSync(
+  join(out, 'gamedata', 'paints.json'),
+  JSON.stringify({ floors: Object.fromEntries(floors.map((n) => [code(floors, n), n])), walls: Object.fromEntries(walls.map((n) => [code(walls, n), n])) }, null, 1),
+);
 
 console.log(`generic bundles: ${floors.length} floors, ${walls.length} walls -> ${generic}`);
