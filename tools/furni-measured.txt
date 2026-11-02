@@ -103,6 +103,8 @@ salvaje_glass_wall measured 0.09x3 -> 1,3 x1 h3.5
 salvaje_grandfather_clock measured 0.77x0.48 -> 1,1 x1 h2.9
 salvaje_headset measured 0.3x0.2 -> 1,1 x1 h0.2
 salvaje_japanese_basecup measured 0.45x0.48 -> 1,1 x1 h0
+salvaje_japanese_canvas measured 0.03x1 -> 1,1 x1 h1
+salvaje_japanese_canvas_leters measured 0.41x0.06 -> 1,1 x1 h1.3
 salvaje_japanese_closet measured 1.42x0.67 -> 2,1 x1 h2.7
 salvaje_japanese_cup measured 0.23x0.17 -> 1,1 x1 h0
 salvaje_japanese_dish measured 0.31x0.34 -> 1,1 x1 h0
@@ -114,6 +116,10 @@ salvaje_japanese_table measured 0.89x1.86 -> 1,2 x1.076 h0.7
 salvaje_japanese_tea measured 0.27x0.3 -> 1,1 x1 h0.1
 salvaje_japanese_tori_gate measured 1.83x0.23 -> 2,1 x1.094 h3
 salvaje_japanese_vase measured 0.22x0.25 -> 1,1 x1 h0.3
+salvaje_japanese_wall measured 0.31x1.97 -> 1,2 x1 h2.3
+salvaje_japanese_wall_top measured 0.31x1.97 -> 1,2 x1 h1.8
+salvaje_japanese_wall_window measured 0.31x1.97 -> 1,2 x1 h2.3
+salvaje_japanese_window_wall measured 0.31x1.97 -> 1,2 x1 h1.8
 salvaje_ketel_7 measured 0.22x0.25 -> 1,1 x1 h0.2
 salvaje_kitchen_a measured 0.8x0.92 -> 1,1 x1.085 h1.5
 salvaje_kitchen_a_2 measured 0.8x0.92 -> 1,1 x1.085 h1.5

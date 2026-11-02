@@ -265,9 +265,8 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
         const y0 = isBehind(x, y - 1) || isBehind(x + 1, y - 1) ? y - T : y;
         const gx = x + 1 + T;
         const d = tileDepth(x + 1, y) - 0.2;
-        const t: [number, number] = [x + 1, y];
-        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallLeft, 'object', t);
-        poly(d, [corner(x + 1, y0, topAt(x + 1, y0)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallTop, 'object', t);
+        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallLeft);
+        poly(d, [corner(x + 1, y0, topAt(x + 1, y0)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallTop);
       });
       // Nothing below, but floor further right in that empty row: the left wall steps right here.
       // Outside face along grid y+1, facing +y.
@@ -277,9 +276,8 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
         const x0 = isBehind(x - 1, y) || isBehind(x - 1, y + 1) ? x - T : x;
         const gy = y + 1 + T;
         const d = tileDepth(x, y + 1) - 0.2;
-        const t: [number, number] = [x, y + 1];
-        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallRight, 'object', t);
-        poly(d, [corner(x0, y + 1, topAt(x0, y + 1)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallTop, 'object', t);
+        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallRight);
+        poly(d, [corner(x0, y + 1, topAt(x0, y + 1)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallTop);
       });
     }
   }
@@ -375,7 +373,7 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
     const z = heightAt(grid, doorX, doorY);
     const dl = corner(doorX + 1, doorY + 1, z);
     const dt = corner(doorX + 1, doorY, z);
-    at(-1, 'door')
+    at(floorDepth(grid, doorX, doorY) - 0.05, 'door')
       .poly([down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)].flat())
       .fill(COLORS.doorway);
   }

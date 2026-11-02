@@ -119,6 +119,11 @@ const HAND = [
   { base: 'Plastic_Box_1', dirs: { 4: [['Plastic_Box_1_Empty'], ['Plastic_Box_1_Full']] } },
   { base: 'Plastic_Box_2', dirs: { 4: [['Plastic_Box_2_Empty'], ['Plastic_Box_2_Full']] } },
   { base: 'Pot', dirs: { 4: [['Pot'], ['Pot_Full']] } },
+  // Free-standing Japanese wall panels (room dividers, standing on the floor): left and right.
+  { base: 'Japanese_Wall', dirs: { 4: [['Wall_L_Japanese_128']], 2: [['Wall_R_Japanese_128']] } },
+  { base: 'Japanese_Wall_Top', dirs: { 4: [['Wall_Top_L_Japanese_128']], 2: [['Wall_Top_R_Japanese_128']] } },
+  { base: 'Japanese_Wall_Window', dirs: { 4: [['Wall_Window_L_Japanese_128']], 2: [['Wall_Window_R_Japanese_128']] } },
+  { base: 'Japanese_Window_Wall', dirs: { 4: [['Window_L_128_Japanese']], 2: [['Window_R_128_Japanese']] } },
   { base: 'Lamp_8', dirs: { 4: [['Lamp_8_A_Tile'], ['Lamp_8_B_Tile']] } },
   { base: 'Light_Switch', dirs: { 4: [['Switch_C'], ['Switch_B']] } },
   { base: 'RotationScreen', dirs: { 4: [['RotationScreen_A_Tile'], ['RotationScreen_B_Tile'], ['RotationScreen_C_Tile']] } },
@@ -269,7 +274,7 @@ const NAMES = {
 };
 
 // ---- guesses ----
-const WALL = /(poster|picture|painting|wall_clock|window|diploma|corkboard|^switch|^light_switch|tap_wall|canvas|mirror|hanging_towel|^ac$|pipe_|cable_|wall_protection|wall_(l|r|top|window)_|sticky_note|^photos|blueprint|^board_|^camera|^hanger$|^rack$|^long_rack$|^shower_tap$|^tap_shower$|^big_tv|^kitchen_furniture_[a-z]+_[4-7]$|^(shelf|long_shelf|small_shelf|shelving_6)$|^lamp_7$|^lamp_modern$|^toilet_paper$|^tools$|^rag$|^medical_kit_closed$|^screen_small$)/i;
+const WALL = /(poster|picture|painting|wall_clock|window|diploma|corkboard|^switch|^light_switch|tap_wall|canvas|mirror|hanging_towel|^ac$|pipe_|cable_|wall_protection|sticky_note|^photos|blueprint|^board_|^camera|^hanger$|^rack$|^long_rack$|^shower_tap$|^tap_shower$|^big_tv|^kitchen_furniture_[a-z]+_[4-7]$|^(shelf|long_shelf|small_shelf|shelving_6)$|^lamp_7$|^lamp_modern$|^toilet_paper$|^tools$|^rag$|^medical_kit_closed$|^screen_small$)/i;
 // Wall furni that stick out of the wall (tiles), and which wall their picture is drawn for when
 // their outline can't tell (boxes show both slopes): 2 = a back wall, 4 = a left wall.
 const WALL_DEPTH = [
@@ -277,10 +282,13 @@ const WALL_DEPTH = [
   [/^(shelf|long_shelf|small_shelf|shelving_6)$/i, 0.5],
   [/^medical_kit_closed$/i, 0.4],
 ];
+// Wall shelves: small furni can be put on them. Their top is this many height steps above the
+// middle of their picture.
+const SHELF = [[/^(shelf|long_shelf|small_shelf|shelving_6)$/i, 0.15]];
 const SIT = /(chair|sofa|stool|seat|bench|couch)/i;
 const LAY = /^bed_/i;
 const WALK = /(carpet|rug|^bath_carpet|shower_floor)/i;
-const STACK = /(table|desk|shelf|shelving|counter|kitchen_furniture|kitchen_a|cabinet|closet|drawer|dishwasher|oven|fridge|washingmachine|rack)/i;
+// Like Habbo, other furni can go on top of nearly everything (not seats and beds).
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 const title = (s) => s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
@@ -391,7 +399,8 @@ function fitFloor(file, flat) {
   const at = [Math.round(((m.left + m.right) / 2) * 2) / 2, Math.round(((yAt(m.left) + yAt(m.right)) / 2) * 2) / 2];
   // Height: from the top of its footprint diamond (seen from above) to the top of the picture.
   const [W, L] = size;
-  const height = flat ? 0 : Math.max(0, Math.round(((at[1] - m.top) / 32 * scale - (W + L) / 4) * 10) / 10);
+  // (The top's diamond is as big as the measured footprint, not the tiles: a table can be smaller.)
+  const height = flat ? 0 : Math.max(0, Math.round((((at[1] - m.top) / 32 - (w + l) / 4) * scale) * 10) / 10);
   return { size, scale, stretch, at, height, measured: [Math.round(w * 100) / 100, Math.round(l * 100) / 100] };
 }
 
@@ -405,7 +414,7 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
   for (let i = 2; ids.has(id); i++) id = `${pack}_${slugName}_${i}`;
   ids.add(id);
   const dirs = {};
-  const kind = WALL.test(g.base) ? 'wall' : 'floor';
+  const kind = WALL.test(g.base) && !/^japanese_/i.test(g.base) ? 'wall' : 'floor';
   if (kind === 'wall' && !g.dirs[2]) {
     // Wall items: direction 2 hangs on the back walls (running down to the right), 4 on the left
     // walls. The picture is drawn for one of them (seen from how its top edge slopes); the other
@@ -459,11 +468,18 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
   if (g.once) def.once = true;
   const depth = WALL_DEPTH.find(([re]) => re.test(g.base));
   if (def.kind === 'wall' && depth) def.depth = depth[1];
+  const shelf = SHELF.find(([re]) => re.test(g.base));
+  if (def.kind === 'wall' && shelf) {
+    def.stack = true;
+    def.surface = shelf[1];
+  }
   if (def.kind === 'floor') {
     if (LAY.test(g.base)) def.lay = true;
     else if (SIT.test(g.base) && !/pillow/i.test(g.base)) def.sit = true;
-    else if (WALK.test(g.base)) def.walk = true;
-    else if (STACK.test(g.base)) def.stack = true;
+    else {
+      if (WALK.test(g.base)) def.walk = true;
+      def.stack = true;
+    }
   }
   added.push(def);
 }
