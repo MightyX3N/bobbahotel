@@ -5,9 +5,9 @@ apt-get update && apt-get install -y curl git ufw debian-keyring debian-archive-
 # Node 22
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs
 # Caddy
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy.list
-sed -i 's#^deb #deb [signed-by=/usr/share/keyrings/caddy.gpg] #' /etc/apt/sources.list.d/caddy.list
+rm -f /etc/apt/sources.list.d/caddy.list
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
 apt-get update && apt-get install -y caddy
 # app
 id bobba >/dev/null 2>&1 || useradd -r -m -s /usr/sbin/nologin bobba
