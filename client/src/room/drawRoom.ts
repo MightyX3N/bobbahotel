@@ -89,6 +89,11 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomDrawing {
     for (let j = 0; j < y; j++) if (solid(x - 1, j)) return hasRightWall(x - 1, j) ? j : -1;
     return -1;
   };
+  /** Does the right wall ending at grid x on row y turn forward into a notch piece? */
+  const turnsForward = (x: number, y: number) => {
+    for (let j = y + 1; j < rows; j++) if (notchFrom(x, j) === y) return true;
+    return false;
+  };
   const quad = (a: Point, b: Point, c: Point, d: Point, color: number) => g.poly([...a, ...b, ...c, ...d]).fill(color);
   /** A wall shape: drawn in the background and in this tile's occluder. `a2`/`b2` replace the
    *  first two points in the occluder (wall faces stop at the floor line there, so they never
@@ -139,16 +144,23 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomDrawing {
       const tBase = down(top, FLOOR_THICKNESS);
       const rBase = down(right, FLOOR_THICKNESS);
 
-      // Coming out of a notch (the back outline steps forward): like Nitro, the short piece
-      // between the two walls faces away from the camera, so only its top edge is drawn; the
-      // earlier wall carries on behind this one and ends with its end piece.
+      // Coming out of a notch (the back outline steps forward): a short wall piece runs forward
+      // from the earlier wall's end to here. Its outside face (a quarter tile out, like a left
+      // wall's) is drawn with its top edge, so the corner is one solid wall; this wall stands in
+      // front of it and hides most of it.
       const from = notchFrom(x, y);
       if (from >= 0) {
-        const aTop: Point = [corner(x, from, 0)[0], wallTop(x, from)];
-        const bTop: Point = [top[0], tTop[1]];
-        wall(aTop, bTop, plusX(bTop), plusX(aTop), COLORS.wallTop);
-        // Outer corner where it meets the earlier wall's top.
-        wall(aTop, minusY(aTop), [aTop[0] + 2 * T, aTop[1]], plusX(aTop), COLORS.wallTop);
+        const a = corner(x, from, 0);
+        const b = corner(x, y, 0);
+        const aTop: Point = [a[0], wallTop(x, from)];
+        const bTop: Point = [b[0], tTop[1]];
+        // Face: from the back wall's outer edge (a quarter tile behind its line) to here.
+        const aOut = minusY(plusX(down(a, FLOOR_THICKNESS)));
+        const aOutTop = minusY(plusX(aTop));
+        wall(aOut, plusX(down(b, FLOOR_THICKNESS)), plusX(bTop), aOutTop, COLORS.wallLeft, aOut, plusX(b));
+        // Top edge on the wall's thickness.
+        wall(minusY(aTop), aTop, bTop, plusX(bTop), COLORS.wallTop);
+        wall(aTop, bTop, plusX(bTop), aOutTop, COLORS.wallTop);
       }
 
       wall(tBase, rBase, rTop, tTop, COLORS.wallRight, top, right);
@@ -159,7 +171,7 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomDrawing {
         wall(tBase, [tBase[0] + EDGE, tBase[1] + EDGE / 2], [tTop[0] + EDGE, tTop[1] + EDGE / 2], tTop, COLORS.wallEdge, top, [top[0] + EDGE, top[1] + EDGE / 2]);
       }
       // End piece where the wall stops.
-      if (!hasRightWall(x + 1, y)) wall(rBase, rTop, minusY(rTop), minusY(rBase), COLORS.wallEndRight, right, rTop);
+      if (!hasRightWall(x + 1, y) && !turnsForward(x + 1, y)) wall(rBase, rTop, minusY(rTop), minusY(rBase), COLORS.wallEndRight, right, rTop);
     }
 
     // Back corner where a left and a right wall meet: fill the gap between the two top strips.
