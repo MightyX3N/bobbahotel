@@ -19,3 +19,9 @@ Put the licensed sprites in `sprites/` next to `server/` (tiles/, cozy/). The se
 - `website/`  playbobba.com on GitHub Pages (login, groups, news - landing page for now).
 - `client/`   the game, built and served by Caddy from the VPS at hotel.playbobba.com (same host as the server: /ws and /sprites).
 - `server/`   the game server. `deploy/` has setup.sh (fresh Ubuntu 24.04), update.sh, Caddyfile and the systemd unit.
+
+## Accounts and admin
+- Players log in with Steam (OpenID) or play as a guest with a name. Steam accounts pick a hotel name on first login.
+- Staff = Steam IDs in `STAFF_STEAMIDS` (comma separated). The admin panel is at `/admin`: live players, rooms, server health,
+  live log, chat search, kick / mute / ban, announcements, restart. It only answers to logged-in staff and same-origin requests.
+- `ALLOW_DEV_LOGIN=1` (localhost only) enables a fake `/auth/dev?steamid=...` login for testing. Never set it on the VPS.

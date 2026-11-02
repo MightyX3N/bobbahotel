@@ -1,6 +1,6 @@
 hotel.playbobba.com {
 	encode gzip
-	@api path /ws* /sprites/*
+	@api path /ws* /sprites/* /auth/* /api/* /admin /admin/*
 	reverse_proxy @api localhost:8080
 	root * /opt/bobbahotel/client/dist
 	file_server

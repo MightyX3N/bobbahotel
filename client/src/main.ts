@@ -55,16 +55,18 @@ function connect(name: string) {
   const token = localStorage.getItem('bh_token:' + name.toLowerCase()) ?? undefined;
   ws.onopen = () => ws.send(JSON.stringify({ t: 'login', name, token }));
   ws.onerror = () => ($('err').textContent = 'Cannot reach the hotel server');
-  ws.onclose = () => { $('login').classList.remove('hidden'); ['title', 'rooms', 'chat'].forEach(i => $(i).classList.add('hidden')); };
+  ws.onclose = () => { $('login').classList.remove('hidden'); if (!$('err').textContent) $('err').textContent = 'Disconnected from the hotel'; ['title', 'rooms', 'chat'].forEach(i => $(i).classList.add('hidden')); };
   ws.onmessage = e => handle(JSON.parse(e.data));
 }
 const send = (o: object) => ws.readyState === 1 && ws.send(JSON.stringify(o));
 
 function handle(m: any) {
   switch (m.t) {
-    case 'error': $('err').textContent = m.msg; break;
+    case 'error': case 'need_name': $('err').textContent = m.msg; break;
+    case 'kicked': $('err').textContent = m.msg; break;
+    case 'announce': { const t = $('toast'); t.textContent = m.text; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 8000); break; }
     case 'welcome':
-      localStorage.setItem('bh_token:' + m.name.toLowerCase(), m.token);
+      if (m.token) localStorage.setItem('bh_token:' + m.name.toLowerCase(), m.token);
       myName = m.name; meId = m.id;
       $('login').classList.add('hidden'); ['title', 'rooms', 'chat'].forEach(i => $(i).classList.remove('hidden'));
       break;
@@ -207,6 +209,14 @@ app.ticker.add(tk => {
   }
 });
 
+let steamed = false;
+fetch(HTTP + '/api/me', { credentials: 'include' }).then(r => r.json()).then(me => {
+  if (!me.steam) return;
+  steamed = true; $('steam').classList.add('hidden');
+  $('who').textContent = me.name ? `Logged in with Steam as ${me.name}` : 'Logged in with Steam. Choose your hotel name:';
+  if (me.name) { ($('name') as HTMLInputElement).classList.add('hidden'); connect(me.name); }
+}).catch(() => {});
+$('steam').onclick = () => { location.href = HTTP + '/auth/steam?next=' + encodeURIComponent(location.pathname); };
 $('go').onclick = () => { $('err').textContent = ''; connect(($('name') as HTMLInputElement).value.trim()); };
 ($('name') as HTMLInputElement).onkeydown = e => { if (e.key === 'Enter') $('go').click(); };
 ($('say') as HTMLInputElement).onkeydown = e => {

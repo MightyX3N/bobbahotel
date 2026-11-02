@@ -9,6 +9,8 @@ Environment=PORT=8080
 Environment=DB_FILE=/var/lib/bobbahotel/hotel.db
 Environment=SPRITES_DIR=/opt/bobbahotel/sprites
 Environment=ALLOW_ORIGIN=https://hotel.playbobba.com
+Environment=PUBLIC_URL=https://hotel.playbobba.com
+Environment=STAFF_STEAMIDS=76561198346473450
 ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning src/index.ts
 Restart=always
 RestartSec=3
