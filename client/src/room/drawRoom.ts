@@ -27,6 +27,7 @@ const COLORS = {
   wallTop: 0xf9dd9c,
   wallEndLeft: 0xc98f3a,
   wallEndRight: 0xb57e2e,
+  wallEdge: 0x9a6a26,
   doorway: 0x0c0c0c,
 };
 
@@ -36,6 +37,8 @@ const FLOOR_THICKNESS = 8;
 const WALL_STEPS = 4.5;
 /** Wall thickness: how far the top strip and the end pieces stick out. */
 const T = 8;
+/** Width of the dark edge where a wall starts in front of another. */
+const EDGE = 2;
 /** Door opening height (measured from Habbo: ~85 px, about the avatar's height). */
 export const DOOR_HEIGHT = 2.65 * STEP_PX;
 
@@ -150,6 +153,11 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomDrawing {
 
       wall(tBase, rBase, rTop, tTop, COLORS.wallRight, top, right);
       wall(tTop, rTop, minusY(rTop), minusY(tTop), COLORS.wallTop);
+      if (from >= 0) {
+        // This wall stands in front of the earlier one: a dark edge where it starts shows that,
+        // otherwise both walls (same colour, side by side on screen) read as one flat wall.
+        wall(tBase, [tBase[0] + EDGE, tBase[1] + EDGE / 2], [tTop[0] + EDGE, tTop[1] + EDGE / 2], tTop, COLORS.wallEdge, top, [top[0] + EDGE, top[1] + EDGE / 2]);
+      }
       // End piece where the wall stops.
       if (!hasRightWall(x + 1, y)) wall(rBase, rTop, minusY(rTop), minusY(rBase), COLORS.wallEndRight, right, rTop);
     }
