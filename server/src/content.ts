@@ -35,6 +35,8 @@ export interface Content {
   furni: Map<string, FurniDef>;
   /** Frame lists of the built furni sprite sheets (filled in once they are built). */
   furniSheets: Map<string, FurniSheet>;
+  /** How building the sheets went (shown by /api/furni). */
+  furniStatus: string;
 }
 
 export function loadContent(dir: string): Content {
@@ -60,7 +62,7 @@ export function loadContent(dir: string): Content {
   const furni = loadFurniDefs(dir);
   const test = furniTestRoom(furni);
   if (test) publicRooms.push(test);
-  return { layouts, publicRooms, furni, furniSheets: new Map() };
+  return { layouts, publicRooms, furni, furniSheets: new Map(), furniStatus: 'not built' };
 }
 
 /**

@@ -91,7 +91,7 @@ export function createApp(opts: AppOptions): App {
       // Furni definitions (what each furni is) and their sheets' frame lists (the pictures
       // themselves come from /sprites/built/furni/<id>.png).
       case 'GET /api/furni':
-        return sendJson(res, 200, { furni: [...content.furni.values()], sheets: Object.fromEntries(content.furniSheets) });
+        return sendJson(res, 200, { status: content.furniStatus, furni: [...content.furni.values()], sheets: Object.fromEntries(content.furniSheets) });
 
       // Read-only: room lists and floor plans (the same public info the navigator shows), so
       // layouts can be checked outside the game.

@@ -67,4 +67,4 @@ jobs:
           DEPLOY_HOST: hotel.playbobba.com
         run: |
           # How many furni have sprite sheets on the server (built there from the licensed pictures).
-          curl -fsS "https://$DEPLOY_HOST/api/furni" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const b=JSON.parse(s);const n=Object.keys(b.sheets||{}).length;console.log(`::notice::Furni: ${b.furni.length} defined, ${n} with sprite sheets`)})' || echo "::warning::Could not read /api/furni"
+          curl -fsS "https://$DEPLOY_HOST/api/furni" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const b=JSON.parse(s);const n=Object.keys(b.sheets||{}).length;console.log(`::notice::Furni: ${b.furni.length} defined, ${n} with sprite sheets (${b.status})`)})' || echo "::warning::Could not read /api/furni"

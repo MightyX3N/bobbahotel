@@ -9,9 +9,13 @@ const db = openDb(config.dbFile);
 const content = loadContent(config.contentDir);
 // Furni sprite sheets from the licensed pictures (only rebuilt when something changed).
 try {
-  content.furniSheets = buildFurniSheets(content.furni, config.spritesDir, (msg) => console.log(msg));
+  content.furniSheets = buildFurniSheets(content.furni, config.spritesDir, (msg) => {
+    content.furniStatus = msg;
+    console.log(msg);
+  });
 } catch (err) {
-  console.error('Building furni sprite sheets failed:', err);
+  content.furniStatus = `Building furni sprite sheets failed: ${(err as Error).message}`;
+  console.error(content.furniStatus);
 }
 const app = createApp({ config, db, content });
 

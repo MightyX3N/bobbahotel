@@ -65,11 +65,15 @@ export function buildFurniSheets(defs: Map<string, FurniDef>, spritesDir: string
   const sheets = new Map<string, FurniSheet>();
   let ready = 0;
   let built = 0;
+  let missing = 0;
   for (const def of defs.values()) {
     const srcDir = join(spritesDir, def.source);
     const pictures = Object.values(def.dirs).flatMap((d) => ('frames' in d ? d.frames : []));
     const files = pictures.map((p) => join(srcDir, `${p}.png`));
-    if (!files.every((f) => existsSync(f))) continue;
+    if (!files.every((f) => existsSync(f))) {
+      missing++;
+      continue;
+    }
     const version = hashOf(def, files);
     const jsonFile = join(out, `${def.id}.json`);
     if (existsSync(jsonFile)) {
@@ -92,7 +96,7 @@ export function buildFurniSheets(defs: Map<string, FurniDef>, spritesDir: string
     ready++;
     built++;
   }
-  log(`Furni: ${ready} of ${defs.size} have sprite sheets${built ? ` (${built} built now)` : ''}`);
+  log(`Furni: ${ready} of ${defs.size} have sprite sheets${built ? ` (${built} built now)` : ''}${missing ? `, ${missing} without their pictures in ${spritesDir}` : ''}`);
   return sheets;
 }
 
