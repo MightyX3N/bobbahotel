@@ -1,0 +1,64 @@
+# On every push and pull request: type checks, tests and a build.
+# On pushes to main, if all of that passes: deploy to the VPS.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+      - name: Package the release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "$GITHUB_SHA" > VERSION
+          npm prune --omit=dev
+          tar -czf release.tar.gz VERSION LICENSE package.json package-lock.json node_modules shared server client/package.json client/dist
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: release
+          path: release.tar.gz
+          retention-days: 7
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+      - name: Deploy to the VPS
+        env:
+          DEPLOY_HOST: hotel.playbobba.com
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$DEPLOY_SSH_KEY" ] || [ -z "$DEPLOY_KNOWN_HOSTS" ]; then
+            echo "::warning::DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS secrets are not set yet, so nothing was deployed. Run deploy/setup.sh on the VPS and add them."
+            exit 0
+          fi
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "bobba@$DEPLOY_HOST" "deploy $GITHUB_SHA" < release.tar.gz

@@ -1,0 +1,28 @@
+# Installed to /etc/caddy/Caddyfile by deploy/setup.sh. HTTPS certificates are automatic.
+hotel.playbobba.com {
+	encode zstd gzip
+
+	# Game server: API and WebSocket.
+	@backend path /api/* /ws /ws/*
+	handle @backend {
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	# Licensed sprites, served from the VPS only (never in git).
+	handle_path /sprites/* {
+		root * /opt/bobbahotel/sprites
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	# The built client of the current release.
+	handle {
+		root * /opt/bobbahotel/current/client/dist
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@page path / /index.html
+		header @page Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

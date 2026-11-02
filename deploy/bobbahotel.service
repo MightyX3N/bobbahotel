@@ -1,0 +1,22 @@
+# Installed to /etc/systemd/system/bobbahotel.service by deploy/setup.sh.
+# Logs: journalctl -u bobbahotel -f
+[Unit]
+Description=Bobba Hotel game server
+After=network.target
+
+[Service]
+User=bobba
+Group=bobba
+WorkingDirectory=/opt/bobbahotel/current/server
+EnvironmentFile=/etc/bobbahotel/env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning src/index.ts
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/bobbahotel
+
+[Install]
+WantedBy=multi-user.target

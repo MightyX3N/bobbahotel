@@ -1,0 +1,26 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font: 12px/1.4 system-ui, sans-serif;
+}
+
+#game,
+#game canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+#status {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 8px;
+  background: rgb(0 0 0 / 0.6);
+  border-radius: 3px;
+  pointer-events: none;
+}

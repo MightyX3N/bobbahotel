@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist.*/
+*.log
+.env
+*.db
+*.db-*
+# Licensed art. Never commit it: it lives on the VPS and in your local copy only.
+sprites/
+/release/
+/release.tar.gz
+VERSION
