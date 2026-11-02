@@ -36,7 +36,7 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
   - Logic, for example "the inventory has these items, clicking Place does this", is written once.
   - A **theme** is a folder holding only the look: window layouts, art and CSS. Only one theme is built: **Bobba, in the R63B (late Flash) style**. It uses that era's window structure (frames, title bars, tabs, list rows, bottom toolbar, where windows open) with our own icons and art. nitro-react and its flashUI fork (GPL-3) are the reference for layouts and behaviour. More themes can be added later as new folders, without touching the logic.
   - The admin picks one theme for the whole server.
-- **Language:** every piece of text comes from a language file (English, plus Danish as the test language). A missing key falls back to English.
+- **Language:** every piece of text comes from a language file. Only English is made now; other languages can be added later as new files, with no code changes. A missing key falls back to English.
 
 ## Mods
 - **Content packs:** new furni, layouts, catalogue pages, languages and themes, added as folders, with no code needed.
