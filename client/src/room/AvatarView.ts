@@ -4,9 +4,9 @@ import { AVATAR_FRAME, lookLayers, SHEET_ROW, type Look, type Pose, type RoomUse
 import { loadSprite, sheetFrame } from '../sprites.ts';
 import { depthOf, tileCenter } from './iso.ts';
 
-// The Cozy figure is about 73 px tall at its own size. Habbo's avatar about fills the doorway
-// (DOOR_HEIGHT, ~101 px), so it is drawn at 4/3: ~97 px.
-const SCALE = 4 / 3;
+// The Cozy figure is about 73 px tall at its own size. Measured from Habbo, the avatar is about
+// as tall as the door opening (~85-88 px on 64 px tiles), so it is drawn at 1.2x: ~88 px.
+const SCALE = 1.2;
 const WALK_FPS = 12;
 const IDLE_FPS = 4;
 
