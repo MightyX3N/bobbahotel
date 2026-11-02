@@ -6,6 +6,7 @@ import { encodeMessage, parseMessage, PROTOCOL_VERSION, serverMessages, type Ser
 import { createApp, type App } from '../src/app.ts';
 import { loadContent } from '../src/content.ts';
 import { openDb } from '../src/db.ts';
+import { TICK_MS } from '../src/room.ts';
 
 const content = loadContent(fileURLToPath(new URL('../../content/', import.meta.url)));
 const PUBLIC = 'http://hotel.test';
@@ -193,7 +194,8 @@ describe('hotel', () => {
     const [dx, dy] = room.d.door;
     bob.send({ t: 'walk', d: { x: dx + 3, y: dy } });
     await new Promise((r) => setTimeout(r, 50));
-    for (let i = 0; i < 4; i++) app!.lobby.tick();
+    const t0 = Date.now();
+    for (let i = 0; i < 4; i++) app!.lobby.tick(t0 + i * TICK_MS);
     const steps = await alice.waitFor('status', (m) => m.d.some((s) => s.id === joined.d.id && !s.moving));
     expect(steps.d.find((s) => s.id === joined.d.id)).toMatchObject({ x: dx + 3, y: dy, moving: false });
 
@@ -211,7 +213,8 @@ describe('hotel', () => {
     const me = (await p.waitFor('room')).d.users[0]!;
     p.send({ t: 'walk', d: { x: 1, y: 0 } });
     await new Promise((r) => setTimeout(r, 50));
-    for (let i = 0; i < 20; i++) app!.lobby.tick();
+    const t0 = Date.now();
+    for (let i = 0; i < 20; i++) app!.lobby.tick(t0 + i * TICK_MS);
     const last = await p.waitFor('status', (m) => m.d.some((s) => s.id === me.id && s.x === 1 && s.y === 0 && !s.moving));
     expect(last.d[0]!.z).toBe(1);
   });
@@ -231,6 +234,25 @@ describe('hotel', () => {
     await Player.join(host, cookie);
     expect((await first.waitFor('error')).d.code).toBe('replaced');
     expect(app!.lobby.count).toBe(1);
+  });
+});
+
+describe('walking speed', () => {
+  it('takes the first step right after the click, then one step per TICK_MS', async () => {
+    const host = await start();
+    const p = await Player.join(host, await guest(host, 'Quick'));
+    const room = (await p.waitFor('room')).d;
+    const me = room.users[0]!;
+    p.send({ t: 'walk', d: { x: room.door[0] + 3, y: room.door[1] } });
+    await new Promise((r) => setTimeout(r, 50));
+    const t0 = Date.now();
+    app!.lobby.tick(t0); // first step: immediately
+    app!.lobby.tick(t0 + 100); // too early for the second
+    await new Promise((r) => setTimeout(r, 50));
+    expect(p.inbox.filter((m) => m.t === 'status' && m.d.some((s) => s.id === me.id))).toHaveLength(1);
+    app!.lobby.tick(t0 + TICK_MS); // second step on time
+    await new Promise((r) => setTimeout(r, 50));
+    expect(p.inbox.filter((m) => m.t === 'status' && m.d.some((s) => s.id === me.id))).toHaveLength(2);
   });
 });
 

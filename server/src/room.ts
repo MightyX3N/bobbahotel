@@ -14,7 +14,11 @@ import {
   type ServerMessage,
 } from '@bobba/shared';
 
+/** How long one step takes (Habbo's room cycle). */
 export const TICK_MS = 500;
+/** How often the room checks who is due a step. Each avatar keeps its own step rhythm, so the
+ *  first step after a click happens right away instead of waiting for a shared beat. */
+const CHECK_MS = 50;
 
 /** Someone who can be in a room. */
 export interface Visitor {
@@ -33,6 +37,8 @@ interface Occupant {
   path: [number, number][];
   goal: [number, number] | null;
   moving: boolean;
+  /** When this avatar may take its next step (or stop). */
+  nextStepAt: number;
   chatTimes: number[];
 }
 
@@ -77,6 +83,7 @@ export class Room {
       path: [],
       goal: null,
       moving: false,
+      nextStepAt: 0,
       chatTimes: [],
     };
     this.occupants.set(visitor.id, occupant);
@@ -114,10 +121,11 @@ export class Room {
     this.broadcast({ t: 'chat', d: { id, text } });
   }
 
-  /** One room cycle: everyone with somewhere to go takes one step. */
-  tick(): void {
+  /** Everyone whose step is due and who has somewhere to go takes one step. */
+  tick(now = Date.now()): void {
     const changes: ServerMessage & { t: 'status' } = { t: 'status', d: [] };
     for (const o of this.occupants.values()) {
+      if (now < o.nextStepAt) continue;
       let next = o.path[0];
       if (next && this.blockedFor(o.visitor.id).has(tileKey(next[0], next[1]))) {
         // Someone stepped in the way: find a new way to the same goal, or stop.
@@ -131,6 +139,7 @@ export class Room {
         [o.x, o.y] = next;
         o.z = heightAt(this.grid, o.x, o.y);
         o.moving = true;
+        o.nextStepAt = now + TICK_MS;
         if (o.path.length === 0) o.goal = null;
         changes.d.push({ id: o.visitor.id, x: o.x, y: o.y, z: o.z, dir: o.dir, moving: true });
       } else if (o.moving) {
@@ -160,7 +169,7 @@ export class Room {
   }
 
   private startTicking(): void {
-    if (this.autoTick && !this.timer) this.timer = setInterval(() => this.tick(), TICK_MS);
+    if (this.autoTick && !this.timer) this.timer = setInterval(() => this.tick(), CHECK_MS);
   }
 
   private stopTicking(): void {
