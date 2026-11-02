@@ -61,7 +61,7 @@ export function floorDepth(grid: Grid, x: number, y: number): number {
   return tileDepth(x, y) - 0.1 - (sorted ? 0 : FLAT_FLOOR_BELOW);
 }
 /** How far below everything flat floor is sorted. */
-const FLAT_FLOOR_BELOW = 10_000;
+export const FLAT_FLOOR_BELOW = 10_000;
 
 export function corner(gx: number, gy: number, z: number): Point {
   return [(gx - gy) * (TILE_W / 2), (gx + gy) * (TILE_H / 2) - z * STEP_PX];

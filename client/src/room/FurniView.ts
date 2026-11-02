@@ -2,7 +2,7 @@
 // if that state has frames, standing on its tiles and depth-sorted with avatars and walls.
 import { Container, Sprite, Text } from 'pixi.js';
 import { furniFootprint, type FurniDef, type FurniDir, type RoomFurni } from '@bobba/shared';
-import { corner, depthToZIndex, tileDepth } from './drawRoom.ts';
+import { corner, depthToZIndex, FLAT_FLOOR_BELOW, tileDepth } from './drawRoom.ts';
 import { furniFrames, type FurniTexture } from './furniAssets.ts';
 
 export class FurniView {
@@ -26,7 +26,10 @@ export class FurniView {
     const [px, py] = corner(furni.x + w, furni.y + l, furni.z);
     const [ox, oy] = def.offset ?? [0, 0];
     this.container.position.set(px + ox, py + oy);
-    this.container.zIndex = depthToZIndex(tileDepth(furni.x + w - 1, furni.y + l - 1) + 0.3);
+    // Rugs and mats lie flat on the floor: sorted with the flat floor (just above it), so they
+    // never cover the feet of someone standing behind them.
+    const front = tileDepth(furni.x + w - 1, furni.y + l - 1);
+    this.container.zIndex = depthToZIndex(def.walk ? front + 0.95 - FLAT_FLOOR_BELOW : front + 0.3);
 
     this.label = new Text({
       text: def.name,
