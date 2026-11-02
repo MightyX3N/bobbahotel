@@ -209,10 +209,10 @@ describe('hotel', () => {
     const host = await start();
     const p = await Player.join(host, await guest(host, 'Climber'));
     const me = (await p.waitFor('room')).d.users[0]!;
-    p.send({ t: 'walk', d: { x: 0, y: 0 } });
+    p.send({ t: 'walk', d: { x: 1, y: 0 } });
     await new Promise((r) => setTimeout(r, 50));
     for (let i = 0; i < 20; i++) app!.lobby.tick();
-    const last = await p.waitFor('status', (m) => m.d.some((s) => s.id === me.id && s.x === 0 && s.y === 0 && !s.moving));
+    const last = await p.waitFor('status', (m) => m.d.some((s) => s.id === me.id && s.x === 1 && s.y === 0 && !s.moving));
     expect(last.d[0]!.z).toBe(1);
   });
 
@@ -231,5 +231,12 @@ describe('hotel', () => {
     await Player.join(host, cookie);
     expect((await first.waitFor('error')).d.code).toBe('replaced');
     expect(app!.lobby.count).toBe(1);
+  });
+});
+
+describe('content', () => {
+  it('every layout has a Habbo-style door sticking out of the left wall', () => {
+    expect(content.layouts.size).toBeGreaterThan(40);
+    expect(content.layouts.get('pub_lobby')!.door).toEqual([0, 9]);
   });
 });

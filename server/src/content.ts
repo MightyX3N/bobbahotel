@@ -28,9 +28,13 @@ export function loadContent(dir: string): Content {
   for (const [id, raw] of Object.entries(file.layouts)) {
     const { maxUsers, ...rest } = raw;
     const layout: Layout = maxUsers === undefined ? rest : { ...rest, maxUsers };
+    // Like Habbo, the door tile sticks out of the left wall: floor only to its right.
     const [dx, dy] = layout.door;
-    const doorRow = layout.map[dy];
-    if (!doorRow || doorRow[dx] === undefined || doorRow[dx] === 'x') throw new Error(`Layout ${id}: the door is not on a floor tile`);
+    const at = (x: number, y: number) => layout.map[y]?.[x] ?? 'x';
+    if (at(dx, dy) === 'x') throw new Error(`Layout ${id}: the door is not on a floor tile`);
+    if (at(dx - 1, dy) !== 'x' || at(dx, dy - 1) !== 'x' || at(dx, dy + 1) !== 'x' || at(dx + 1, dy) === 'x') {
+      throw new Error(`Layout ${id}: the door tile must stick out of the left wall (floor only to its right)`);
+    }
     layouts.set(id, layout);
   }
   const publicRooms = file.public.map((p) => {

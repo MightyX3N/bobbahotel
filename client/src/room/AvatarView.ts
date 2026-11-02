@@ -4,8 +4,9 @@ import { AVATAR_FRAME, lookLayers, SHEET_ROW, type Look, type Pose, type RoomUse
 import { loadSprite, sheetFrame } from '../sprites.ts';
 import { depthOf, tileCenter } from './iso.ts';
 
-// The Cozy figure is about 73 px tall at its own size, which matches Habbo's proportions on 64 px tiles.
-const SCALE = 1;
+// The Cozy figure is about 73 px tall at its own size. Habbo's avatar about fills the doorway
+// (DOOR_HEIGHT, ~101 px), so it is drawn at 4/3: ~97 px.
+const SCALE = 4 / 3;
 const WALK_FPS = 12;
 const IDLE_FPS = 4;
 
@@ -59,6 +60,11 @@ export class AvatarView {
     this.moveMs = moving ? ms : 1;
     this.dir = dir;
     this.moving = moving;
+  }
+
+  /** Where the avatar is right now, in tiles (fractional while walking). */
+  tilePosition(now: number): { x: number; y: number; z: number } {
+    return this.positionAt(now);
   }
 
   showName(show: boolean): void {

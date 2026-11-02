@@ -4,7 +4,7 @@ import { Container, Graphics, type Application, type FederatedPointerEvent } fro
 import { heightAt, isFloor, parseMap, type DataOf, type Grid, type ServerMessage } from '@bobba/shared';
 import { AvatarView } from './AvatarView.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
-import { drawRoom, drawTileOutline } from './drawRoom.ts';
+import { doorHolePolygon, drawRoom, drawTileOutline } from './drawRoom.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
@@ -19,6 +19,9 @@ export class RoomView {
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
   private grid: Grid = [];
+  private door: [number, number] = [0, 0];
+  /** Per-avatar clip to the door hole, used while the avatar is still behind the wall. */
+  private readonly doorMasks = new Map<number, Graphics>();
   private tilesFrontToBack: [number, number][] = [];
   private hoveredAvatar: AvatarView | null = null;
   private drag: { startX: number; startY: number; worldX: number; worldY: number; moved: boolean } | null = null;
@@ -45,8 +48,11 @@ export class RoomView {
   enter(room: DataOf<ServerMessage, 'room'>): void {
     for (const a of this.avatars.values()) a.destroy();
     this.avatars.clear();
+    for (const m of this.doorMasks.values()) m.destroy();
+    this.doorMasks.clear();
     this.bubbles.clear();
     this.grid = parseMap(room.map);
+    this.door = room.door;
     this.tilesFrontToBack = [];
     this.grid.forEach((row, y) => row.forEach((h, x) => h >= 0 && this.tilesFrontToBack.push([x, y])));
     this.tilesFrontToBack.sort((a, b) => b[0] + b[1] - (a[0] + a[1]) || heightAt(this.grid, b[0], b[1]) - heightAt(this.grid, a[0], a[1]));
@@ -69,6 +75,8 @@ export class RoomView {
   removeUser(id: number): void {
     this.avatars.get(id)?.destroy();
     this.avatars.delete(id);
+    this.doorMasks.get(id)?.destroy();
+    this.doorMasks.delete(id);
   }
 
   status(updates: DataOf<ServerMessage, 'status'>): void {
@@ -92,8 +100,38 @@ export class RoomView {
 
   private update(): void {
     const now = performance.now();
-    for (const a of this.avatars.values()) a.update(now);
+    for (const a of this.avatars.values()) {
+      a.update(now);
+      this.clipAtDoor(a, now);
+    }
     this.bubbles.update(now);
+  }
+
+  /**
+   * The door tile is outside the wall: an avatar standing there (or walking through) is only
+   * visible through the door hole, like in Habbo.
+   */
+  private clipAtDoor(a: AvatarView, now: number): void {
+    const p = a.tilePosition(now);
+    const [dx, dy] = this.door;
+    const behindWall = p.x < dx + 0.98 && Math.abs(p.y - dy) < 0.5;
+    if (!behindWall) {
+      const old = this.doorMasks.get(a.id);
+      if (old) {
+        // A released mask would be drawn as a plain shape, so it goes away completely.
+        a.container.mask = null;
+        old.destroy();
+        this.doorMasks.delete(a.id);
+      }
+      return;
+    }
+    let mask = this.doorMasks.get(a.id);
+    if (!mask) {
+      mask = new Graphics().poly(doorHolePolygon(this.grid, this.door)).fill(0xffffff);
+      this.world.addChild(mask);
+      this.doorMasks.set(a.id, mask);
+    }
+    if (a.container.mask !== mask) a.container.mask = mask;
   }
 
   private tileAt(sx: number, sy: number): [number, number] | null {
