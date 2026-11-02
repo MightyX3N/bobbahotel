@@ -34,7 +34,7 @@ One repo, `MightyX3N/bobbahotel`, set up as npm workspaces:
 - **Room engine:** isometric 64×32 tiles, depth sorting, furni, avatars and chat bubbles. It knows nothing about windows.
 - **UI = logic + theme:**
   - Logic, for example "the inventory has these items, clicking Place does this", is written once.
-  - A **theme** is a folder holding only the look: window layouts, art and CSS. Only one theme is built: **Bobba, in the Origins style**. It uses Habbo's real window structure (frames, title bars, tabs, list rows, where windows open) with our own icons and art. More themes can be added later as new folders, without touching the logic.
+  - A **theme** is a folder holding only the look: window layouts, art and CSS. Only one theme is built: **Bobba, in the R63B (late Flash) style**. It uses that era's window structure (frames, title bars, tabs, list rows, bottom toolbar, where windows open) with our own icons and art. nitro-react and its flashUI fork (GPL-3) are the reference for layouts and behaviour. More themes can be added later as new folders, without touching the logic.
   - The admin picks one theme for the whole server.
 - **Language:** every piece of text comes from a language file (English, plus Danish as the test language). A missing key falls back to English.
 
