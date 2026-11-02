@@ -20,6 +20,9 @@ export class RoomView {
   private readonly app: Application;
   private readonly world = new Container();
   private readonly hover = new Graphics();
+  /** The floor, below everything else. */
+  private readonly floor = new Container();
+  /** Walls, furni and avatars, depth-sorted together. */
   private readonly objects = new Container();
   private readonly bubbles = new ChatBubbles();
   private readonly avatars = new Map<number, AvatarView>();
@@ -38,12 +41,18 @@ export class RoomView {
 
   /** Called when the player clicks a floor tile. */
   onWalk: (x: number, y: number) => void = () => {};
+  /** Called when the player double-clicks a furni. */
+  onUseFurni: (uid: number) => void = () => {};
+  private lastClick = { uid: -1, at: 0 };
 
   constructor(app: Application) {
     this.app = app;
     this.objects.sortableChildren = true;
-    this.world.addChild(this.objects);
-    this.objects.addChild(this.hover);
+    this.floor.sortableChildren = true;
+    this.world.addChild(this.floor, this.objects);
+    // The tile under the mouse: on the floor, under furni and avatars.
+    this.hover.zIndex = Number.MAX_SAFE_INTEGER;
+    this.floor.addChild(this.hover);
     app.stage.addChild(this.world, this.bubbles.container);
 
     app.stage.eventMode = 'static';
@@ -99,7 +108,7 @@ export class RoomView {
 
     for (const piece of drawRoom(this.grid, room.door)) {
       piece.graphics.zIndex = depthToZIndex(piece.depth);
-      this.objects.addChild(piece.graphics);
+      (piece.layer === 'floor' ? this.floor : this.objects).addChild(piece.graphics);
       this.roomPieces.push(piece.graphics);
     }
     this.hover.clear();
@@ -138,6 +147,10 @@ export class RoomView {
   status(updates: DataOf<ServerMessage, 'status'>): void {
     const now = performance.now();
     for (const s of updates) this.avatars.get(s.id)?.moveTo(s.x, s.y, s.z, s.dir, s.moving, TICK_MS, now);
+  }
+
+  furniState(uid: number, state: number): void {
+    this.furni.find((f) => f.uid === uid)?.setState(state);
   }
 
   chat(id: number, text: string): void {
@@ -220,8 +233,6 @@ export class RoomView {
     const t = this.tileAt(e.global.x, e.global.y);
     if (t) {
       drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
-      // Just above its tile, so walls and anything in front still cover it.
-      this.hover.zIndex = depthToZIndex(tileDepth(t[0], t[1]) - 0.05);
     } else this.hover.clear();
 
 
@@ -251,6 +262,15 @@ export class RoomView {
     const started = this.drag;
     this.drag = null;
     if (!started || started.moved || e.button !== 0) return;
+    // Double-click a furni to use it (switch it on/off, open it…).
+    const f = this.avatarAt(e.global.x, e.global.y) ? null : this.furniAt(e.global.x, e.global.y);
+    const now = performance.now();
+    if (f && this.lastClick.uid === f.uid && now - this.lastClick.at < 400) {
+      this.lastClick = { uid: -1, at: 0 };
+      this.onUseFurni(f.uid);
+      return;
+    }
+    this.lastClick = { uid: f?.uid ?? -1, at: now };
     const t = this.tileAt(e.global.x, e.global.y);
     if (t && isFloor(this.grid, t[0], t[1])) this.onWalk(t[0], t[1]);
   }

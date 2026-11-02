@@ -457,6 +457,27 @@ describe('furni', () => {
     expect(new Set(room.d.furni.map((f) => f.def)).size).toBe(floor.length);
   });
 
+  it('staff switch furni to their next state; others can not', async () => {
+    const host = await start({ steamValid: true });
+    const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));
+    staff.send({ t: 'goToRoom', d: { id: 'p:furni_test' } });
+    const room = await staff.waitFor('room', (m) => m.d.id === 'p:furni_test');
+    const box = room.d.furni.find((f) => f.def === 'salvaje_toolbox')!;
+    expect(box.state).toBe(0);
+    staff.send({ t: 'useFurni', d: { uid: box.uid } });
+    expect((await staff.waitFor('furniState')).d).toEqual({ uid: box.uid, state: 1 });
+    staff.send({ t: 'useFurni', d: { uid: box.uid } });
+    staff.send({ t: 'useFurni', d: { uid: box.uid } });
+    await staff.waitFor('furniState', (m) => m.d.state === 0);
+
+    const lobby = await Player.join(host, await guest(host, 'Pusher'));
+    const lobbyFurni = app!.lobby.furni.length;
+    lobby.send({ t: 'useFurni', d: { uid: 1 } });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(lobby.inbox.some((m) => m.t === 'furniState')).toBe(false);
+    expect(lobbyFurni).toBe(0);
+  });
+
   it("can't walk onto furni, only around it (rugs and seats excepted)", async () => {
     const host = await start({ steamValid: true });
     const staff = await Player.join(host, await steamLogin(host, STAFF_STEAM, 'Boss'));

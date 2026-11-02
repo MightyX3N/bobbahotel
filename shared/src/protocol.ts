@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { lookSchema } from './look.ts';
 
 /** Bump when a change means old clients can't talk to the new server. */
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 
 export const CHAT_MAX = 100;
 export const NAME_MIN = 3;
@@ -36,6 +36,7 @@ export const roomFurniSchema = z.object({
   y: z.number().int(),
   z: z.number(),
   dir: z.union([z.literal(0), z.literal(2), z.literal(4), z.literal(6)]),
+  state: z.number().int().min(0),
 });
 
 export const ROOM_NAME_MIN = 3;
@@ -104,6 +105,8 @@ export const clientMessages = {
   walk: z.object({ x: tile, y: tile }),
   /** Say something in the room. */
   chat: z.object({ text: z.string().max(CHAT_MAX * 2) }),
+  /** Use a furni (double-click): switches it to its next state, for those allowed to. */
+  useFurni: z.object({ uid: z.number().int() }),
 } satisfies Schemas;
 
 /** Server -> client */
@@ -150,6 +153,8 @@ export const serverMessages = {
     }),
   ),
   chat: z.object({ id: z.number().int(), text: z.string() }),
+  /** A furni in your room changed state. */
+  furniState: z.object({ uid: z.number().int(), state: z.number().int().min(0) }),
   error: z.object({ code: z.string(), message: z.string() }),
 } satisfies Schemas;
 

@@ -31,8 +31,8 @@ export interface FurniTexture {
   ay: number;
 }
 
-/** A furni's frames per direction it has pictures for (mirrored directions are drawn flipped). */
-export type FurniFrames = Partial<Record<FurniDir, FurniTexture[]>>;
+/** A furni's frames per direction it has pictures for (mirrored directions are drawn flipped), per state. */
+export type FurniFrames = Partial<Record<FurniDir, FurniTexture[][]>>;
 
 const frames = new Map<string, Promise<FurniFrames | null>>();
 
@@ -47,12 +47,14 @@ export function furniFrames(id: string): Promise<FurniFrames | null> {
       const base = await loadTexture(`/api/furni/${id}.png?v=${sheet.version}`);
       if (!base) return null;
       const out: FurniFrames = {};
-      for (const [dir, list] of Object.entries(sheet.dirs)) {
-        out[Number(dir) as FurniDir] = list.map((f) => ({
-          texture: new Texture({ source: base.source, frame: new Rectangle(f.x, f.y, f.w, f.h) }),
-          ax: f.ax,
-          ay: f.ay,
-        }));
+      for (const [dir, states] of Object.entries(sheet.dirs)) {
+        out[Number(dir) as FurniDir] = states.map((list) =>
+          list.map((f) => ({
+            texture: new Texture({ source: base.source, frame: new Rectangle(f.x, f.y, f.w, f.h) }),
+            ax: f.ax,
+            ay: f.ay,
+          })),
+        );
       }
       return out;
     })();

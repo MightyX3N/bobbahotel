@@ -290,6 +290,12 @@ export function createApp(opts: AppOptions): App {
         case 'walk':
           client.room?.walkTo(user.id, message.d.x, message.d.y);
           return;
+        case 'useFurni': {
+          // Staff anywhere; room owners in their own rooms.
+          const room = client.room;
+          if (room && (isStaff(user) || room.details.ownerId === user.id)) room.useFurni(message.d.uid);
+          return;
+        }
         case 'chat':
           // ":" starts a command (like Habbo); commands are never shown as chat.
           if (message.d.text.trimStart().startsWith(':')) {

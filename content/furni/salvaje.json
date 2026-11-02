@@ -16,23 +16,25 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "3D_Printer_Cup_1",
-      "3D_Printer_Cup_2",
-      "3D_Printer_Cup_3",
-      "3D_Printer_Cup_4",
-      "3D_Printer_Cup_5",
-      "3D_Printer_Cup_6",
-      "3D_Printer_Cup_7",
-      "3D_Printer_Cup_8",
-      "3D_Printer_Cup_9",
-      "3D_Printer_Cup_10",
-      "3D_Printer_Cup_11",
-      "3D_Printer_Cup_12",
-      "3D_Printer_Cup_13",
-      "3D_Printer_Cup_14",
-      "3D_Printer_Cup_15",
-      "3D_Printer_Cup_16"
+     "states": [
+      [
+       "3D_Printer_Cup_1",
+       "3D_Printer_Cup_2",
+       "3D_Printer_Cup_3",
+       "3D_Printer_Cup_4",
+       "3D_Printer_Cup_5",
+       "3D_Printer_Cup_6",
+       "3D_Printer_Cup_7",
+       "3D_Printer_Cup_8",
+       "3D_Printer_Cup_9",
+       "3D_Printer_Cup_10",
+       "3D_Printer_Cup_11",
+       "3D_Printer_Cup_12",
+       "3D_Printer_Cup_13",
+       "3D_Printer_Cup_14",
+       "3D_Printer_Cup_15",
+       "3D_Printer_Cup_16"
+      ]
      ]
     }
    },
@@ -52,23 +54,25 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "3D_Printer_Empty_1",
-      "3D_Printer_Empty_2",
-      "3D_Printer_Empty_3",
-      "3D_Printer_Empty_4",
-      "3D_Printer_Empty_5",
-      "3D_Printer_Empty_6",
-      "3D_Printer_Empty_7",
-      "3D_Printer_Empty_8",
-      "3D_Printer_Empty_9",
-      "3D_Printer_Empty_10",
-      "3D_Printer_Empty_11",
-      "3D_Printer_Empty_12",
-      "3D_Printer_Empty_13",
-      "3D_Printer_Empty_14",
-      "3D_Printer_Empty_15",
-      "3D_Printer_Empty_16"
+     "states": [
+      [
+       "3D_Printer_Empty_1",
+       "3D_Printer_Empty_2",
+       "3D_Printer_Empty_3",
+       "3D_Printer_Empty_4",
+       "3D_Printer_Empty_5",
+       "3D_Printer_Empty_6",
+       "3D_Printer_Empty_7",
+       "3D_Printer_Empty_8",
+       "3D_Printer_Empty_9",
+       "3D_Printer_Empty_10",
+       "3D_Printer_Empty_11",
+       "3D_Printer_Empty_12",
+       "3D_Printer_Empty_13",
+       "3D_Printer_Empty_14",
+       "3D_Printer_Empty_15",
+       "3D_Printer_Empty_16"
+      ]
      ]
     }
    },
@@ -88,8 +92,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "AC"
+     "states": [
+      [
+       "AC"
+      ]
      ]
     }
    }
@@ -108,8 +114,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ac_Big_1"
+     "states": [
+      [
+       "Ac_Big_1"
+      ]
      ]
     }
    }
@@ -128,8 +136,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ac_Big_2"
+     "states": [
+      [
+       "Ac_Big_2"
+      ]
      ]
     }
    }
@@ -148,15 +158,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "AirCC_Tile"
+     "states": [
+      [
+       "AirCC_Tile"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_atari",
-   "name": "Atari",
+   "id": "salvaje_comet_classic",
+   "name": "Comet Classic",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -168,8 +180,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Atari"
+     "states": [
+      [
+       "Atari"
+      ]
      ]
     }
    }
@@ -188,8 +202,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Basic_Office_Chair_A"
+     "states": [
+      [
+       "Basic_Office_Chair_A"
+      ]
      ]
     }
    },
@@ -209,8 +225,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Basic_Office_Chair_B"
+     "states": [
+      [
+       "Basic_Office_Chair_B"
+      ]
      ]
     }
    },
@@ -230,8 +248,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bath_1"
+     "states": [
+      [
+       "Bath_1"
+      ]
      ]
     }
    }
@@ -250,8 +270,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bath_Carpet"
+     "states": [
+      [
+       "Bath_Carpet"
+      ]
      ]
     }
    },
@@ -271,8 +293,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bath_window"
+     "states": [
+      [
+       "Bath_window"
+      ]
      ]
     }
    }
@@ -291,8 +315,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_A_4"
+     "states": [
+      [
+       "Bed_A_4"
+      ]
      ]
     }
    },
@@ -312,8 +338,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_B_4"
+     "states": [
+      [
+       "Bed_B_4"
+      ]
      ]
     }
    },
@@ -333,8 +361,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_C_4"
+     "states": [
+      [
+       "Bed_C_4"
+      ]
      ]
     }
    },
@@ -354,8 +384,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_D_4"
+     "states": [
+      [
+       "Bed_D_4"
+      ]
      ]
     }
    },
@@ -375,8 +407,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_E_4"
+     "states": [
+      [
+       "Bed_E_4"
+      ]
      ]
     }
    },
@@ -396,8 +430,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_F_4"
+     "states": [
+      [
+       "Bed_F_4"
+      ]
      ]
     }
    },
@@ -417,8 +453,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_G_4"
+     "states": [
+      [
+       "Bed_G_4"
+      ]
      ]
     }
    },
@@ -438,8 +476,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_H_4"
+     "states": [
+      [
+       "Bed_H_4"
+      ]
      ]
     }
    },
@@ -459,8 +499,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_I_4"
+     "states": [
+      [
+       "Bed_I_4"
+      ]
      ]
     }
    },
@@ -480,8 +522,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_J_4"
+     "states": [
+      [
+       "Bed_J_4"
+      ]
      ]
     }
    },
@@ -501,8 +545,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_K_4"
+     "states": [
+      [
+       "Bed_K_4"
+      ]
      ]
     }
    },
@@ -522,8 +568,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_L_4"
+     "states": [
+      [
+       "Bed_L_4"
+      ]
      ]
     }
    },
@@ -543,8 +591,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bed_M_4"
+     "states": [
+      [
+       "Bed_M_4"
+      ]
      ]
     }
    },
@@ -564,30 +614,34 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bended_Screen_1",
-      "Bended_Screen_2",
-      "Bended_Screen_3",
-      "Bended_Screen_4",
-      "Bended_Screen_5",
-      "Bended_Screen_6",
-      "Bended_Screen_7",
-      "Bended_Screen_8",
-      "Bended_Screen_9",
-      "Bended_Screen_10",
-      "Bended_Screen_11",
-      "Bended_Screen_12",
-      "Bended_Screen_13",
-      "Bended_Screen_14",
-      "Bended_Screen_15",
-      "Bended_Screen_16",
-      "Bended_Screen_17",
-      "Bended_Screen_18"
+     "states": [
+      [
+       "Bended_Screen_Off"
+      ],
+      [
+       "Bended_Screen_1",
+       "Bended_Screen_2",
+       "Bended_Screen_3",
+       "Bended_Screen_4",
+       "Bended_Screen_5",
+       "Bended_Screen_6",
+       "Bended_Screen_7",
+       "Bended_Screen_8",
+       "Bended_Screen_9",
+       "Bended_Screen_10",
+       "Bended_Screen_11",
+       "Bended_Screen_12",
+       "Bended_Screen_13",
+       "Bended_Screen_14",
+       "Bended_Screen_15",
+       "Bended_Screen_16",
+       "Bended_Screen_17",
+       "Bended_Screen_18"
+      ]
      ]
     }
    },
-   "fps": 8,
-   "off": "Bended_Screen_Off"
+   "fps": 8
   },
   {
    "id": "salvaje_bendedscreen_a",
@@ -603,8 +657,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "BendedScreen_A_Tile"
+     "states": [
+      [
+       "BendedScreen_A_Tile"
+      ]
      ]
     }
    }
@@ -623,31 +679,35 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Big_TV_1",
-      "Big_TV_2",
-      "Big_TV_3",
-      "Big_TV_4",
-      "Big_TV_5",
-      "Big_TV_6",
-      "Big_TV_7",
-      "Big_TV_8",
-      "Big_TV_9",
-      "Big_TV_10",
-      "Big_TV_11",
-      "Big_TV_12",
-      "Big_TV_13",
-      "Big_TV_14",
-      "Big_TV_15",
-      "Big_TV_16",
-      "Big_TV_17",
-      "Big_TV_18",
-      "Big_TV_19"
+     "states": [
+      [
+       "Big_TV_Off"
+      ],
+      [
+       "Big_TV_1",
+       "Big_TV_2",
+       "Big_TV_3",
+       "Big_TV_4",
+       "Big_TV_5",
+       "Big_TV_6",
+       "Big_TV_7",
+       "Big_TV_8",
+       "Big_TV_9",
+       "Big_TV_10",
+       "Big_TV_11",
+       "Big_TV_12",
+       "Big_TV_13",
+       "Big_TV_14",
+       "Big_TV_15",
+       "Big_TV_16",
+       "Big_TV_17",
+       "Big_TV_18",
+       "Big_TV_19"
+      ]
      ]
     }
    },
-   "fps": 8,
-   "off": "Big_TV_Off"
+   "fps": 8
   },
   {
    "id": "salvaje_big_tv_b",
@@ -663,32 +723,36 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Big_TV_B_1",
-      "Big_TV_B_2",
-      "Big_TV_B_3",
-      "Big_TV_B_4",
-      "Big_TV_B_5",
-      "Big_TV_B_6",
-      "Big_TV_B_7",
-      "Big_TV_B_8",
-      "Big_TV_B_9",
-      "Big_TV_B_10",
-      "Big_TV_B_11",
-      "Big_TV_B_12",
-      "Big_TV_B_13",
-      "Big_TV_B_14",
-      "Big_TV_B_15",
-      "Big_TV_B_16",
-      "Big_TV_B_17",
-      "Big_TV_B_18",
-      "Big_TV_B_19",
-      "Big_TV_B_20"
+     "states": [
+      [
+       "Big_TV_B_Off"
+      ],
+      [
+       "Big_TV_B_1",
+       "Big_TV_B_2",
+       "Big_TV_B_3",
+       "Big_TV_B_4",
+       "Big_TV_B_5",
+       "Big_TV_B_6",
+       "Big_TV_B_7",
+       "Big_TV_B_8",
+       "Big_TV_B_9",
+       "Big_TV_B_10",
+       "Big_TV_B_11",
+       "Big_TV_B_12",
+       "Big_TV_B_13",
+       "Big_TV_B_14",
+       "Big_TV_B_15",
+       "Big_TV_B_16",
+       "Big_TV_B_17",
+       "Big_TV_B_18",
+       "Big_TV_B_19",
+       "Big_TV_B_20"
+      ]
      ]
     }
    },
-   "fps": 8,
-   "off": "Big_TV_B_Off"
+   "fps": 8
   },
   {
    "id": "salvaje_bigtv_3_off",
@@ -704,8 +768,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "BigTV_3_Off_Tile"
+     "states": [
+      [
+       "BigTV_3_Off_Tile"
+      ]
      ]
     }
    }
@@ -724,8 +790,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Blueprint"
+     "states": [
+      [
+       "Blueprint"
+      ]
      ]
     }
    }
@@ -744,8 +812,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Board_Empty"
+     "states": [
+      [
+       "Board_Empty"
+      ]
      ]
     }
    }
@@ -764,8 +834,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Board_Full"
+     "states": [
+      [
+       "Board_Full"
+      ]
      ]
     }
    }
@@ -784,8 +856,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bonsai"
+     "states": [
+      [
+       "Bonsai"
+      ]
      ]
     }
    }
@@ -804,8 +878,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_8"
+     "states": [
+      [
+       "Book_8"
+      ]
      ]
     }
    }
@@ -824,23 +900,25 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Big_LightBlue_1",
-      "Book_Big_LightBlue_2",
-      "Book_Big_LightBlue_3",
-      "Book_Big_LightBlue_4",
-      "Book_Big_LightBlue_5",
-      "Book_Big_LightBlue_6",
-      "Book_Big_LightBlue_7",
-      "Book_Big_LightBlue_8",
-      "Book_Big_LightBlue_9",
-      "Book_Big_LightBlue_10",
-      "Book_Big_LightBlue_11",
-      "Book_Big_LightBlue_12",
-      "Book_Big_LightBlue_13",
-      "Book_Big_LightBlue_14",
-      "Book_Big_LightBlue_15",
-      "Book_Big_LightBlue_16"
+     "states": [
+      [
+       "Book_Big_LightBlue_1",
+       "Book_Big_LightBlue_2",
+       "Book_Big_LightBlue_3",
+       "Book_Big_LightBlue_4",
+       "Book_Big_LightBlue_5",
+       "Book_Big_LightBlue_6",
+       "Book_Big_LightBlue_7",
+       "Book_Big_LightBlue_8",
+       "Book_Big_LightBlue_9",
+       "Book_Big_LightBlue_10",
+       "Book_Big_LightBlue_11",
+       "Book_Big_LightBlue_12",
+       "Book_Big_LightBlue_13",
+       "Book_Big_LightBlue_14",
+       "Book_Big_LightBlue_15",
+       "Book_Big_LightBlue_16"
+      ]
      ]
     }
    },
@@ -860,28 +938,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Green"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_blue",
-   "name": "Book Small Blue",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_Blue"
+     "states": [
+      [
+       "Book_Green"
+      ]
      ]
     }
    }
@@ -900,8 +960,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Blue_Lying"
+     "states": [
+      [
+       "Book_Small_Blue_Lying"
+      ]
      ]
     }
    }
@@ -920,28 +982,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Blue_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_brightred",
-   "name": "Book Small BrightRed",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_BrightRed"
+     "states": [
+      [
+       "Book_Small_Blue_Standing"
+      ]
      ]
     }
    }
@@ -960,8 +1004,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_BrightRed_Lying"
+     "states": [
+      [
+       "Book_Small_BrightRed_Lying"
+      ]
      ]
     }
    }
@@ -980,28 +1026,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_BrightRed_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_green",
-   "name": "Book Small Green",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_Green"
+     "states": [
+      [
+       "Book_Small_BrightRed_Standing"
+      ]
      ]
     }
    }
@@ -1020,8 +1048,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Green_Lying"
+     "states": [
+      [
+       "Book_Small_Green_Lying"
+      ]
      ]
     }
    }
@@ -1040,28 +1070,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Green_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_grey",
-   "name": "Book Small Grey",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_Grey"
+     "states": [
+      [
+       "Book_Small_Green_Standing"
+      ]
      ]
     }
    }
@@ -1080,8 +1092,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Grey_Lying"
+     "states": [
+      [
+       "Book_Small_Grey_Lying"
+      ]
      ]
     }
    }
@@ -1100,28 +1114,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Grey_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_lightgreen",
-   "name": "Book Small LightGreen",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_LightGreen"
+     "states": [
+      [
+       "Book_Small_Grey_Standing"
+      ]
      ]
     }
    }
@@ -1140,8 +1136,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_LightGreen_Lying"
+     "states": [
+      [
+       "Book_Small_LightGreen_Lying"
+      ]
      ]
     }
    }
@@ -1160,28 +1158,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_LightGreen_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_lightred",
-   "name": "Book Small LightRed",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_LightRed"
+     "states": [
+      [
+       "Book_Small_LightGreen_Standing"
+      ]
      ]
     }
    }
@@ -1200,8 +1180,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_LightRed_Lying"
+     "states": [
+      [
+       "Book_Small_LightRed_Lying"
+      ]
      ]
     }
    }
@@ -1220,28 +1202,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_LightRed_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_orange",
-   "name": "Book Small Orange",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    3,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_Orange"
+     "states": [
+      [
+       "Book_Small_LightRed_Standing"
+      ]
      ]
     }
    }
@@ -1260,8 +1224,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Orange_Lying"
+     "states": [
+      [
+       "Book_Small_Orange_Lying"
+      ]
      ]
     }
    }
@@ -1280,28 +1246,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Orange_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_purple",
-   "name": "Book Small Purple",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_Purple"
+     "states": [
+      [
+       "Book_Small_Orange_Standing"
+      ]
      ]
     }
    }
@@ -1320,8 +1268,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Purple_Lying"
+     "states": [
+      [
+       "Book_Small_Purple_Lying"
+      ]
      ]
     }
    }
@@ -1340,28 +1290,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Purple_Standing"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_book_small_yellow",
-   "name": "Book Small Yellow",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Book_Small_Yellow"
+     "states": [
+      [
+       "Book_Small_Purple_Standing"
+      ]
      ]
     }
    }
@@ -1380,8 +1312,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Yellow_Lying"
+     "states": [
+      [
+       "Book_Small_Yellow_Lying"
+      ]
      ]
     }
    }
@@ -1400,8 +1334,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Book_Small_Yellow_Standing"
+     "states": [
+      [
+       "Book_Small_Yellow_Standing"
+      ]
      ]
     }
    }
@@ -1420,8 +1356,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Books_Pile"
+     "states": [
+      [
+       "Books_Pile"
+      ]
      ]
     }
    }
@@ -1440,8 +1378,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Bottle_12"
+     "states": [
+      [
+       "Bottle_12"
+      ]
      ]
     }
    }
@@ -1460,8 +1400,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Box_2"
+     "states": [
+      [
+       "Box_2"
+      ]
      ]
     }
    }
@@ -1480,8 +1422,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cable_Horizontal_1"
+     "states": [
+      [
+       "Cable_Horizontal_1"
+      ]
      ]
     }
    }
@@ -1500,8 +1444,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cable_Horizontal_2"
+     "states": [
+      [
+       "Cable_Horizontal_2"
+      ]
      ]
     }
    }
@@ -1520,8 +1466,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cable_Vertical"
+     "states": [
+      [
+       "Cable_Vertical"
+      ]
      ]
     }
    }
@@ -1540,8 +1488,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cactus_1"
+     "states": [
+      [
+       "Cactus_1"
+      ]
      ]
     }
    }
@@ -1560,8 +1510,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cactus_2"
+     "states": [
+      [
+       "Cactus_2"
+      ]
      ]
     }
    }
@@ -1580,8 +1532,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Calculator"
+     "states": [
+      [
+       "Calculator"
+      ]
      ]
     }
    }
@@ -1600,23 +1554,25 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Camera_1_1",
-      "Camera_1_2",
-      "Camera_1_3",
-      "Camera_1_4",
-      "Camera_1_5",
-      "Camera_1_6",
-      "Camera_1_7",
-      "Camera_1_8",
-      "Camera_1_9",
-      "Camera_1_10",
-      "Camera_1_11",
-      "Camera_1_12",
-      "Camera_1_13",
-      "Camera_1_14",
-      "Camera_1_15",
-      "Camera_1_16"
+     "states": [
+      [
+       "Camera_1_1",
+       "Camera_1_2",
+       "Camera_1_3",
+       "Camera_1_4",
+       "Camera_1_5",
+       "Camera_1_6",
+       "Camera_1_7",
+       "Camera_1_8",
+       "Camera_1_9",
+       "Camera_1_10",
+       "Camera_1_11",
+       "Camera_1_12",
+       "Camera_1_13",
+       "Camera_1_14",
+       "Camera_1_15",
+       "Camera_1_16"
+      ]
      ]
     }
    },
@@ -1636,8 +1592,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Camera_2"
+     "states": [
+      [
+       "Camera_2"
+      ]
      ]
     }
    }
@@ -1656,8 +1614,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Candle"
+     "states": [
+      [
+       "Candle"
+      ]
      ]
     }
    }
@@ -1676,8 +1636,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_13"
+     "states": [
+      [
+       "Carpet_13"
+      ]
      ]
     }
    },
@@ -1697,8 +1659,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_14"
+     "states": [
+      [
+       "Carpet_14"
+      ]
      ]
     }
    },
@@ -1718,8 +1682,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_3_Tile"
+     "states": [
+      [
+       "Carpet_3_Tile"
+      ]
      ]
     }
    },
@@ -1739,8 +1705,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_7"
+     "states": [
+      [
+       "Carpet_7"
+      ]
      ]
     }
    },
@@ -1760,8 +1728,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_Fluffy"
+     "states": [
+      [
+       "Carpet_Fluffy"
+      ]
      ]
     }
    },
@@ -1781,8 +1751,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_Modern"
+     "states": [
+      [
+       "Carpet_Modern"
+      ]
      ]
     }
    },
@@ -1802,8 +1774,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_Red"
+     "states": [
+      [
+       "Carpet_Red"
+      ]
      ]
     }
    },
@@ -1823,8 +1797,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carpet_Yellow"
+     "states": [
+      [
+       "Carpet_Yellow"
+      ]
      ]
     }
    },
@@ -1844,8 +1820,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Carton_Box"
+     "states": [
+      [
+       "Carton_Box"
+      ]
      ]
     }
    }
@@ -1864,8 +1842,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cereals"
+     "states": [
+      [
+       "Cereals"
+      ]
      ]
     }
    }
@@ -1881,23 +1861,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Chair_2_C_Tile"
+     "states": [
+      [
+       "Chair_2_C_Tile"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Chair_2_B_Tile"
+     "states": [
+      [
+       "Chair_2_B_Tile"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Chair_2_A_Tile"
+     "states": [
+      [
+       "Chair_2_A_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Chair_2_D_Tile"
+     "states": [
+      [
+       "Chair_2_D_Tile"
+      ]
      ]
     }
    },
@@ -1914,23 +1902,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Chair_3_C_Tile"
+     "states": [
+      [
+       "Chair_3_C_Tile"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Chair_3_B_Tile"
+     "states": [
+      [
+       "Chair_3_B_Tile"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Chair_3_A_Tile"
+     "states": [
+      [
+       "Chair_3_A_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Chair_3_D_Tile"
+     "states": [
+      [
+       "Chair_3_D_Tile"
+      ]
      ]
     }
    },
@@ -1947,23 +1943,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Chair_4_C_Tile"
+     "states": [
+      [
+       "Chair_4_C_Tile"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Chair_4_B_Tile"
+     "states": [
+      [
+       "Chair_4_B_Tile"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Chair_4_A_Tile"
+     "states": [
+      [
+       "Chair_4_A_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Chair_4_D_Tile"
+     "states": [
+      [
+       "Chair_4_D_Tile"
+      ]
      ]
     }
    },
@@ -1980,23 +1984,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Chair_5_C_Tile"
+     "states": [
+      [
+       "Chair_5_C_Tile"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Chair_5_B_Tile"
+     "states": [
+      [
+       "Chair_5_B_Tile"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Chair_5_A_Tile"
+     "states": [
+      [
+       "Chair_5_A_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Chair_5_D_Tile"
+     "states": [
+      [
+       "Chair_5_D_Tile"
+      ]
      ]
     }
    },
@@ -2013,23 +2025,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Chair_6_C_Tile"
+     "states": [
+      [
+       "Chair_6_C_Tile"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Chair_6_B_Tile"
+     "states": [
+      [
+       "Chair_6_B_Tile"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Chair_6_A_Tile"
+     "states": [
+      [
+       "Chair_6_A_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Chair_6_D_Tile"
+     "states": [
+      [
+       "Chair_6_D_Tile"
+      ]
      ]
     }
    },
@@ -2049,8 +2069,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Chair_7_D_Tile"
+     "states": [
+      [
+       "Chair_7_D_Tile"
+      ]
      ]
     }
    },
@@ -2070,23 +2092,25 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cleaning_Robot_1",
-      "Cleaning_Robot_2",
-      "Cleaning_Robot_3",
-      "Cleaning_Robot_4",
-      "Cleaning_Robot_5",
-      "Cleaning_Robot_6",
-      "Cleaning_Robot_7",
-      "Cleaning_Robot_8",
-      "Cleaning_Robot_9",
-      "Cleaning_Robot_10",
-      "Cleaning_Robot_11",
-      "Cleaning_Robot_12",
-      "Cleaning_Robot_13",
-      "Cleaning_Robot_14",
-      "Cleaning_Robot_15",
-      "Cleaning_Robot_16"
+     "states": [
+      [
+       "Cleaning_Robot_1",
+       "Cleaning_Robot_2",
+       "Cleaning_Robot_3",
+       "Cleaning_Robot_4",
+       "Cleaning_Robot_5",
+       "Cleaning_Robot_6",
+       "Cleaning_Robot_7",
+       "Cleaning_Robot_8",
+       "Cleaning_Robot_9",
+       "Cleaning_Robot_10",
+       "Cleaning_Robot_11",
+       "Cleaning_Robot_12",
+       "Cleaning_Robot_13",
+       "Cleaning_Robot_14",
+       "Cleaning_Robot_15",
+       "Cleaning_Robot_16"
+      ]
      ]
     }
    },
@@ -2106,8 +2130,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Clothes_Basket"
+     "states": [
+      [
+       "Clothes_Basket"
+      ]
      ]
     }
    }
@@ -2126,8 +2152,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Clothes_Case"
+     "states": [
+      [
+       "Clothes_Case"
+      ]
      ]
     }
    }
@@ -2146,8 +2174,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "CoffeMachine_Red"
+     "states": [
+      [
+       "CoffeMachine_Red"
+      ]
      ]
     }
    }
@@ -2166,8 +2196,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cola"
+     "states": [
+      [
+       "Cola"
+      ]
      ]
     }
    }
@@ -2186,26 +2218,28 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Copy_Machine_Dark_1",
-      "Copy_Machine_Dark_2",
-      "Copy_Machine_Dark_3",
-      "Copy_Machine_Dark_4",
-      "Copy_Machine_Dark_5",
-      "Copy_Machine_Dark_6",
-      "Copy_Machine_Dark_7",
-      "Copy_Machine_Dark_8",
-      "Copy_Machine_Dark_9",
-      "Copy_Machine_Dark_10",
-      "Copy_Machine_Dark_11",
-      "Copy_Machine_Dark_12",
-      "Copy_Machine_Dark_13",
-      "Copy_Machine_Dark_14",
-      "Copy_Machine_Dark_15",
-      "Copy_Machine_Dark_16",
-      "Copy_Machine_Dark_17",
-      "Copy_Machine_Dark_18",
-      "Copy_Machine_Dark_19"
+     "states": [
+      [
+       "Copy_Machine_Dark_1",
+       "Copy_Machine_Dark_2",
+       "Copy_Machine_Dark_3",
+       "Copy_Machine_Dark_4",
+       "Copy_Machine_Dark_5",
+       "Copy_Machine_Dark_6",
+       "Copy_Machine_Dark_7",
+       "Copy_Machine_Dark_8",
+       "Copy_Machine_Dark_9",
+       "Copy_Machine_Dark_10",
+       "Copy_Machine_Dark_11",
+       "Copy_Machine_Dark_12",
+       "Copy_Machine_Dark_13",
+       "Copy_Machine_Dark_14",
+       "Copy_Machine_Dark_15",
+       "Copy_Machine_Dark_16",
+       "Copy_Machine_Dark_17",
+       "Copy_Machine_Dark_18",
+       "Copy_Machine_Dark_19"
+      ]
      ]
     }
    },
@@ -2225,20 +2259,22 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Copy_Machine_White_1",
-      "Copy_Machine_White_2",
-      "Copy_Machine_White_3",
-      "Copy_Machine_White_4",
-      "Copy_Machine_White_5",
-      "Copy_Machine_White_6",
-      "Copy_Machine_White_7",
-      "Copy_Machine_White_8",
-      "Copy_Machine_White_9",
-      "Copy_Machine_White_10",
-      "Copy_Machine_White_11",
-      "Copy_Machine_White_12",
-      "Copy_Machine_White_13"
+     "states": [
+      [
+       "Copy_Machine_White_1",
+       "Copy_Machine_White_2",
+       "Copy_Machine_White_3",
+       "Copy_Machine_White_4",
+       "Copy_Machine_White_5",
+       "Copy_Machine_White_6",
+       "Copy_Machine_White_7",
+       "Copy_Machine_White_8",
+       "Copy_Machine_White_9",
+       "Copy_Machine_White_10",
+       "Copy_Machine_White_11",
+       "Copy_Machine_White_12",
+       "Copy_Machine_White_13"
+      ]
      ]
     }
    },
@@ -2258,8 +2294,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Corkboard_1"
+     "states": [
+      [
+       "Corkboard_1"
+      ]
      ]
     }
    }
@@ -2278,8 +2316,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Corkboard_2"
+     "states": [
+      [
+       "Corkboard_2"
+      ]
      ]
     }
    }
@@ -2298,8 +2338,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Cutting_Board"
+     "states": [
+      [
+       "Cutting_Board"
+      ]
      ]
     }
    }
@@ -2318,29 +2360,13 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Desk_1_Tile"
-     ]
-    }
-   },
-   "stack": true
-  },
-  {
-   "id": "salvaje_desk_1_b",
-   "name": "Desk 1 B",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    2,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Desk_1_B_Tile"
+     "states": [
+      [
+       "Desk_1_Tile"
+      ],
+      [
+       "Desk_1_B_Tile"
+      ]
      ]
     }
    },
@@ -2360,8 +2386,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Desk_2_Tile"
+     "states": [
+      [
+       "Desk_2_Tile"
+      ]
      ]
     }
    },
@@ -2381,8 +2409,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Desk_3"
+     "states": [
+      [
+       "Desk_3"
+      ]
      ]
     }
    },
@@ -2402,8 +2432,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Diploma"
+     "states": [
+      [
+       "Diploma"
+      ]
      ]
     }
    }
@@ -2422,8 +2454,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Dish"
+     "states": [
+      [
+       "Dish"
+      ]
      ]
     }
    }
@@ -2442,8 +2476,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Dish_Soap"
+     "states": [
+      [
+       "Dish_Soap"
+      ]
      ]
     }
    }
@@ -2462,8 +2498,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Dishwasher_1"
+     "states": [
+      [
+       "Dishwasher_1"
+      ]
      ]
     }
    },
@@ -2483,16 +2521,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Document_Shredder_1",
-      "Document_Shredder_2",
-      "Document_Shredder_3",
-      "Document_Shredder_4",
-      "Document_Shredder_5",
-      "Document_Shredder_6",
-      "Document_Shredder_7",
-      "Document_Shredder_8",
-      "Document_Shredder_9"
+     "states": [
+      [
+       "Document_Shredder_1",
+       "Document_Shredder_2",
+       "Document_Shredder_3",
+       "Document_Shredder_4",
+       "Document_Shredder_5",
+       "Document_Shredder_6",
+       "Document_Shredder_7",
+       "Document_Shredder_8",
+       "Document_Shredder_9"
+      ]
      ]
     }
    },
@@ -2512,16 +2552,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Drawing_Table"
+     "states": [
+      [
+       "Drawing_Table"
+      ]
      ]
     }
    },
    "stack": true
   },
   {
-   "id": "salvaje_dreamcast",
-   "name": "Dreamcast",
+   "id": "salvaje_hayate_dream",
+   "name": "Hayate Dream",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -2533,8 +2575,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Dreamcast"
+     "states": [
+      [
+       "Dreamcast"
+      ]
      ]
     }
    }
@@ -2553,8 +2597,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Duck"
+     "states": [
+      [
+       "Duck"
+      ]
      ]
     }
    }
@@ -2573,8 +2619,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Fidge_Red"
+     "states": [
+      [
+       "Fidge_Red"
+      ]
      ]
     }
    }
@@ -2593,8 +2641,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Fire_Extinguisher"
+     "states": [
+      [
+       "Fire_Extinguisher"
+      ]
      ]
     }
    }
@@ -2613,8 +2663,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Fork"
+     "states": [
+      [
+       "Fork"
+      ]
      ]
     }
    }
@@ -2633,16 +2685,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Fridge"
+     "states": [
+      [
+       "Fridge"
+      ]
      ]
     }
    },
    "stack": true
   },
   {
-   "id": "salvaje_fridge_2_a",
-   "name": "Fridge 2 A",
+   "id": "salvaje_fridge_2",
+   "name": "Fridge 2",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -2654,29 +2708,13 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Fridge_2_A_Tile"
-     ]
-    }
-   },
-   "stack": true
-  },
-  {
-   "id": "salvaje_fridge_2_c",
-   "name": "Fridge 2 C",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Fridge_2_C_Tile"
+     "states": [
+      [
+       "Fridge_2_A_Tile"
+      ],
+      [
+       "Fridge_2_C_Tile"
+      ]
      ]
     }
    },
@@ -2696,29 +2734,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Fridge_Back"
-     ]
-    }
-   },
-   "stack": true
-  },
-  {
-   "id": "salvaje_fridge_red",
-   "name": "Fridge Red",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Fridge_Red"
+     "states": [
+      [
+       "Fridge_Back"
+      ]
      ]
     }
    },
@@ -2738,15 +2757,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Frying_Pan"
+     "states": [
+      [
+       "Frying_Pan"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_gameboy",
-   "name": "Gameboy",
+   "id": "salvaje_kitsune_pocket",
+   "name": "Kitsune Pocket",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -2758,15 +2779,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Gameboy"
+     "states": [
+      [
+       "Gameboy"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_gameboy_advance",
-   "name": "Gameboy Advance",
+   "id": "salvaje_kitsune_pocket_plus",
+   "name": "Kitsune Pocket Plus",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -2778,15 +2801,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Gameboy_Advance"
+     "states": [
+      [
+       "Gameboy_Advance"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_gamecube",
-   "name": "Gamecube",
+   "id": "salvaje_kitsune_box",
+   "name": "Kitsune Box",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -2798,8 +2823,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Gamecube"
+     "states": [
+      [
+       "Gamecube"
+      ]
      ]
     }
    }
@@ -2815,23 +2842,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "GChair_9_C"
+     "states": [
+      [
+       "GChair_9_C"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "GChair_9_B"
+     "states": [
+      [
+       "GChair_9_B"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "GChair_9_A"
+     "states": [
+      [
+       "GChair_9_A"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "GChair_9_D"
+     "states": [
+      [
+       "GChair_9_D"
+      ]
      ]
     }
    },
@@ -2851,8 +2886,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Glass_1"
+     "states": [
+      [
+       "Glass_1"
+      ]
      ]
     }
    }
@@ -2871,8 +2908,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Glass_2"
+     "states": [
+      [
+       "Glass_2"
+      ]
      ]
     }
    }
@@ -2891,8 +2930,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Glass_Wall"
+     "states": [
+      [
+       "Glass_Wall"
+      ]
      ]
     }
    }
@@ -2911,14 +2952,16 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Grandfather_Clock_1",
-      "Grandfather_Clock_2",
-      "Grandfather_Clock_3",
-      "Grandfather_Clock_4",
-      "Grandfather_Clock_5",
-      "Grandfather_Clock_6",
-      "Grandfather_Clock_7"
+     "states": [
+      [
+       "Grandfather_Clock_1",
+       "Grandfather_Clock_2",
+       "Grandfather_Clock_3",
+       "Grandfather_Clock_4",
+       "Grandfather_Clock_5",
+       "Grandfather_Clock_6",
+       "Grandfather_Clock_7"
+      ]
      ]
     }
    },
@@ -2938,8 +2981,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Hanger"
+     "states": [
+      [
+       "Hanger"
+      ]
      ]
     }
    }
@@ -2958,8 +3003,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Hanging_Towel"
+     "states": [
+      [
+       "Hanging_Towel"
+      ]
      ]
     }
    }
@@ -2978,8 +3025,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Headset"
+     "states": [
+      [
+       "Headset"
+      ]
      ]
     }
    }
@@ -2998,8 +3047,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_BaseCup"
+     "states": [
+      [
+       "Japanese_BaseCup"
+      ]
      ]
     }
    }
@@ -3018,8 +3069,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Canvas"
+     "states": [
+      [
+       "Japanese_Canvas"
+      ]
      ]
     }
    }
@@ -3038,8 +3091,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Canvas_Leters"
+     "states": [
+      [
+       "Japanese_Canvas_Leters"
+      ]
      ]
     }
    }
@@ -3058,8 +3113,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Closet"
+     "states": [
+      [
+       "Japanese_Closet"
+      ]
      ]
     }
    },
@@ -3079,8 +3136,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Cup"
+     "states": [
+      [
+       "Japanese_Cup"
+      ]
      ]
     }
    }
@@ -3099,8 +3158,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Dish"
+     "states": [
+      [
+       "Japanese_Dish"
+      ]
      ]
     }
    }
@@ -3119,8 +3180,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Lamp"
+     "states": [
+      [
+       "Japanese_Lamp"
+      ]
      ]
     }
    }
@@ -3139,8 +3202,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Plant"
+     "states": [
+      [
+       "Japanese_Plant"
+      ]
      ]
     }
    }
@@ -3159,8 +3224,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Seat"
+     "states": [
+      [
+       "Japanese_Seat"
+      ]
      ]
     }
    },
@@ -3180,8 +3247,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Shelf"
+     "states": [
+      [
+       "Japanese_Shelf"
+      ]
      ]
     }
    },
@@ -3201,8 +3270,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Table"
+     "states": [
+      [
+       "Japanese_Table"
+      ]
      ]
     }
    },
@@ -3222,8 +3293,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Tea"
+     "states": [
+      [
+       "Japanese_Tea"
+      ]
      ]
     }
    }
@@ -3242,8 +3315,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Tori_Gate"
+     "states": [
+      [
+       "Japanese_Tori_Gate"
+      ]
      ]
     }
    }
@@ -3262,8 +3337,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Japanese_Vase"
+     "states": [
+      [
+       "Japanese_Vase"
+      ]
      ]
     }
    }
@@ -3282,8 +3359,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ketel_7"
+     "states": [
+      [
+       "Ketel_7"
+      ]
      ]
     }
    }
@@ -3302,8 +3381,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_A"
+     "states": [
+      [
+       "Kitchen_A"
+      ]
      ]
     }
    },
@@ -3323,8 +3404,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_A_Tile"
+     "states": [
+      [
+       "Kitchen_A_Tile"
+      ]
      ]
     }
    },
@@ -3344,8 +3427,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_1"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_1"
+      ]
      ]
     }
    },
@@ -3365,8 +3450,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_2"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_2"
+      ]
      ]
     }
    },
@@ -3386,8 +3473,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_3"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_3"
+      ]
      ]
     }
    },
@@ -3407,8 +3496,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_4"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_4"
+      ]
      ]
     }
    },
@@ -3428,8 +3519,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_5"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_5"
+      ]
      ]
     }
    },
@@ -3449,8 +3542,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_6"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_6"
+      ]
      ]
     }
    },
@@ -3470,8 +3565,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Black_7"
+     "states": [
+      [
+       "Kitchen_Furniture_Black_7"
+      ]
      ]
     }
    },
@@ -3491,8 +3588,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_1"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_1"
+      ]
      ]
     }
    },
@@ -3512,8 +3611,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_2"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_2"
+      ]
      ]
     }
    },
@@ -3533,8 +3634,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_3"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_3"
+      ]
      ]
     }
    },
@@ -3554,8 +3657,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_4"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_4"
+      ]
      ]
     }
    },
@@ -3575,8 +3680,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_5"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_5"
+      ]
      ]
     }
    },
@@ -3596,8 +3703,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_6"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_6"
+      ]
      ]
     }
    },
@@ -3617,8 +3726,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Green_7"
+     "states": [
+      [
+       "Kitchen_Furniture_Green_7"
+      ]
      ]
     }
    },
@@ -3638,8 +3749,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_1"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_1"
+      ]
      ]
     }
    },
@@ -3659,8 +3772,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_2"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_2"
+      ]
      ]
     }
    },
@@ -3680,8 +3795,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_3"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_3"
+      ]
      ]
     }
    },
@@ -3701,8 +3818,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_4"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_4"
+      ]
      ]
     }
    },
@@ -3722,8 +3841,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_5"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_5"
+      ]
      ]
     }
    },
@@ -3743,8 +3864,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_6"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_6"
+      ]
      ]
     }
    },
@@ -3764,8 +3887,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Orange_7"
+     "states": [
+      [
+       "Kitchen_Furniture_Orange_7"
+      ]
      ]
     }
    },
@@ -3785,8 +3910,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_1"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_1"
+      ]
      ]
     }
    },
@@ -3806,8 +3933,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_2"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_2"
+      ]
      ]
     }
    },
@@ -3827,8 +3956,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_3"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_3"
+      ]
      ]
     }
    },
@@ -3848,8 +3979,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_4"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_4"
+      ]
      ]
     }
    },
@@ -3869,8 +4002,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_5"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_5"
+      ]
      ]
     }
    },
@@ -3890,8 +4025,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_6"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_6"
+      ]
      ]
     }
    },
@@ -3911,8 +4048,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Pink_7"
+     "states": [
+      [
+       "Kitchen_Furniture_Pink_7"
+      ]
      ]
     }
    },
@@ -3932,8 +4071,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_1"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_1"
+      ]
      ]
     }
    },
@@ -3953,8 +4094,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_2"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_2"
+      ]
      ]
     }
    },
@@ -3974,8 +4117,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_3"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_3"
+      ]
      ]
     }
    },
@@ -3995,8 +4140,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_4"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_4"
+      ]
      ]
     }
    },
@@ -4016,8 +4163,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_5"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_5"
+      ]
      ]
     }
    },
@@ -4037,8 +4186,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_6"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_6"
+      ]
      ]
     }
    },
@@ -4058,8 +4209,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Red_7"
+     "states": [
+      [
+       "Kitchen_Furniture_Red_7"
+      ]
      ]
     }
    },
@@ -4079,8 +4232,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_1"
+     "states": [
+      [
+       "Kitchen_Furniture_White_1"
+      ]
      ]
     }
    },
@@ -4100,8 +4255,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_2"
+     "states": [
+      [
+       "Kitchen_Furniture_White_2"
+      ]
      ]
     }
    },
@@ -4121,8 +4278,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_3"
+     "states": [
+      [
+       "Kitchen_Furniture_White_3"
+      ]
      ]
     }
    },
@@ -4142,8 +4301,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_4"
+     "states": [
+      [
+       "Kitchen_Furniture_White_4"
+      ]
      ]
     }
    },
@@ -4163,8 +4324,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_5"
+     "states": [
+      [
+       "Kitchen_Furniture_White_5"
+      ]
      ]
     }
    },
@@ -4184,8 +4347,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_6"
+     "states": [
+      [
+       "Kitchen_Furniture_White_6"
+      ]
      ]
     }
    },
@@ -4205,8 +4370,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_White_7"
+     "states": [
+      [
+       "Kitchen_Furniture_White_7"
+      ]
      ]
     }
    },
@@ -4226,8 +4393,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_1"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_1"
+      ]
      ]
     }
    },
@@ -4247,8 +4416,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_2"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_2"
+      ]
      ]
     }
    },
@@ -4268,8 +4439,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_3"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_3"
+      ]
      ]
     }
    },
@@ -4289,8 +4462,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_4"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_4"
+      ]
      ]
     }
    },
@@ -4310,8 +4485,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_5"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_5"
+      ]
      ]
     }
    },
@@ -4331,8 +4508,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_6"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_6"
+      ]
      ]
     }
    },
@@ -4352,8 +4531,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Furniture_Wood_7"
+     "states": [
+      [
+       "Kitchen_Furniture_Wood_7"
+      ]
      ]
     }
    },
@@ -4373,8 +4554,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Knife"
+     "states": [
+      [
+       "Kitchen_Knife"
+      ]
      ]
     }
    }
@@ -4393,8 +4576,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Rug"
+     "states": [
+      [
+       "Kitchen_Rug"
+      ]
      ]
     }
    },
@@ -4414,8 +4599,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Soap"
+     "states": [
+      [
+       "Kitchen_Soap"
+      ]
      ]
     }
    }
@@ -4434,8 +4621,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Stool"
+     "states": [
+      [
+       "Kitchen_Stool"
+      ]
      ]
     }
    },
@@ -4455,8 +4644,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Table"
+     "states": [
+      [
+       "Kitchen_Table"
+      ]
      ]
     }
    },
@@ -4476,8 +4667,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Kitchen_Window"
+     "states": [
+      [
+       "Kitchen_Window"
+      ]
      ]
     }
    }
@@ -4496,8 +4689,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_10_Tile"
+     "states": [
+      [
+       "Lamp_10_Tile"
+      ]
      ]
     }
    }
@@ -4516,8 +4711,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_11_Tile"
+     "states": [
+      [
+       "Lamp_11_Tile"
+      ]
      ]
     }
    }
@@ -4536,8 +4733,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_7_Tile"
+     "states": [
+      [
+       "Lamp_7_Tile"
+      ]
      ]
     }
    }
@@ -4556,8 +4755,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_8_A_Tile"
+     "states": [
+      [
+       "Lamp_8_A_Tile"
+      ]
      ]
     }
    }
@@ -4576,8 +4777,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_8_B_Tile"
+     "states": [
+      [
+       "Lamp_8_B_Tile"
+      ]
      ]
     }
    }
@@ -4596,8 +4799,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_9_Tile"
+     "states": [
+      [
+       "Lamp_9_Tile"
+      ]
      ]
     }
    }
@@ -4616,8 +4821,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lamp_Modern"
+     "states": [
+      [
+       "Lamp_Modern"
+      ]
      ]
     }
    }
@@ -4636,55 +4843,40 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Lava_Lamp_1",
-      "Lava_Lamp_2",
-      "Lava_Lamp_3",
-      "Lava_Lamp_4",
-      "Lava_Lamp_5",
-      "Lava_Lamp_6",
-      "Lava_Lamp_7",
-      "Lava_Lamp_8",
-      "Lava_Lamp_9",
-      "Lava_Lamp_10",
-      "Lava_Lamp_11",
-      "Lava_Lamp_12",
-      "Lava_Lamp_13",
-      "Lava_Lamp_14",
-      "Lava_Lamp_15",
-      "Lava_Lamp_16",
-      "Lava_Lamp_17",
-      "Lava_Lamp_18",
-      "Lava_Lamp_19",
-      "Lava_Lamp_20",
-      "Lava_Lamp_21",
-      "Lava_Lamp_22",
-      "Lava_Lamp_23",
-      "Lava_Lamp_24"
+     "states": [
+      [
+       "LavaLamp_9_Off_Tile"
+      ],
+      [
+       "Lava_Lamp_1",
+       "Lava_Lamp_2",
+       "Lava_Lamp_3",
+       "Lava_Lamp_4",
+       "Lava_Lamp_5",
+       "Lava_Lamp_6",
+       "Lava_Lamp_7",
+       "Lava_Lamp_8",
+       "Lava_Lamp_9",
+       "Lava_Lamp_10",
+       "Lava_Lamp_11",
+       "Lava_Lamp_12",
+       "Lava_Lamp_13",
+       "Lava_Lamp_14",
+       "Lava_Lamp_15",
+       "Lava_Lamp_16",
+       "Lava_Lamp_17",
+       "Lava_Lamp_18",
+       "Lava_Lamp_19",
+       "Lava_Lamp_20",
+       "Lava_Lamp_21",
+       "Lava_Lamp_22",
+       "Lava_Lamp_23",
+       "Lava_Lamp_24"
+      ]
      ]
     }
    },
    "fps": 8
-  },
-  {
-   "id": "salvaje_lavalamp_9_off",
-   "name": "LavaLamp 9 Off",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "LavaLamp_9_Off_Tile"
-     ]
-    }
-   }
   },
   {
    "id": "salvaje_long_rack",
@@ -4700,8 +4892,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Long_Rack"
+     "states": [
+      [
+       "Long_Rack"
+      ]
      ]
     }
    },
@@ -4721,16 +4915,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Long_Shelf"
+     "states": [
+      [
+       "Long_Shelf"
+      ]
      ]
     }
    },
    "stack": true
   },
   {
-   "id": "salvaje_macbook",
-   "name": "Macbook",
+   "id": "salvaje_petal_laptop",
+   "name": "Petal Laptop",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -4742,42 +4938,27 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Macbook_1",
-      "Macbook_2",
-      "Macbook_3",
-      "Macbook_4",
-      "Macbook_5",
-      "Macbook_6",
-      "Macbook_7",
-      "Macbook_8",
-      "Macbook_9",
-      "Macbook_10",
-      "Macbook_11"
+     "states": [
+      [
+       "Macbook_1_Closed_Tile"
+      ],
+      [
+       "Macbook_1",
+       "Macbook_2",
+       "Macbook_3",
+       "Macbook_4",
+       "Macbook_5",
+       "Macbook_6",
+       "Macbook_7",
+       "Macbook_8",
+       "Macbook_9",
+       "Macbook_10",
+       "Macbook_11"
+      ]
      ]
     }
    },
    "fps": 8
-  },
-  {
-   "id": "salvaje_macbook_1_closed",
-   "name": "Macbook 1 Closed",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Macbook_1_Closed_Tile"
-     ]
-    }
-   }
   },
   {
    "id": "salvaje_medical_kit_closed",
@@ -4793,8 +4974,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Medical_Kit_Closed"
+     "states": [
+      [
+       "Medical_Kit_Closed"
+      ]
      ]
     }
    }
@@ -4813,8 +4996,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Metallic_Closet_Base"
+     "states": [
+      [
+       "Metallic_Closet_Base"
+      ]
      ]
     }
    },
@@ -4834,8 +5019,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Microscope"
+     "states": [
+      [
+       "Microscope"
+      ]
      ]
     }
    }
@@ -4851,23 +5038,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Microwave_5_Tile_C"
+     "states": [
+      [
+       "Microwave_5_Tile_C"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Microwave_5_Tile_B"
+     "states": [
+      [
+       "Microwave_5_Tile_B"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Microwave_5_Tile"
+     "states": [
+      [
+       "Microwave_5_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Microwave_5_Tile_D"
+     "states": [
+      [
+       "Microwave_5_Tile_D"
+      ]
      ]
     }
    }
@@ -4886,8 +5081,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Mirror"
+     "states": [
+      [
+       "Mirror"
+      ]
      ]
     }
    }
@@ -4906,8 +5103,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Mug_15"
+     "states": [
+      [
+       "Mug_15"
+      ]
      ]
     }
    }
@@ -4926,8 +5125,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Mug_Green"
+     "states": [
+      [
+       "Mug_Green"
+      ]
      ]
     }
    }
@@ -4946,15 +5147,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Mug_Red"
+     "states": [
+      [
+       "Mug_Red"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_nes",
-   "name": "NES",
+   "id": "salvaje_kitsune_home",
+   "name": "Kitsune Home Console",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -4966,15 +5169,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "NES"
+     "states": [
+      [
+       "NES"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_nes_4",
-   "name": "NES 4",
+   "id": "salvaje_kitsune_home_2",
+   "name": "Kitsune Home Console 2",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -4986,15 +5191,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "NES_4_Tile"
+     "states": [
+      [
+       "NES_4_Tile"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_nes_4_b",
-   "name": "NES 4 B",
+   "id": "salvaje_kitsune_home_3",
+   "name": "Kitsune Home Console 3",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -5006,15 +5213,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "NES_4_B_Tile"
+     "states": [
+      [
+       "NES_4_B_Tile"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_newimac_a",
-   "name": "NewImac A",
+   "id": "salvaje_petal_desktop",
+   "name": "Petal Desktop",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -5026,28 +5235,13 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "NewImac_A_Tile"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_newimac_b",
-   "name": "NewImac B",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "NewImac_B_Tile"
+     "states": [
+      [
+       "NewImac_A_Tile"
+      ],
+      [
+       "NewImac_B_Tile"
+      ]
      ]
     }
    }
@@ -5066,8 +5260,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "NewKeyboard_Tile"
+     "states": [
+      [
+       "NewKeyboard_Tile"
+      ]
      ]
     }
    }
@@ -5086,8 +5282,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Night_Table_Tile"
+     "states": [
+      [
+       "Night_Table_Tile"
+      ]
      ]
     }
    },
@@ -5107,16 +5305,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Night_Table_Tile_Drawer_1"
+     "states": [
+      [
+       "Night_Table_Tile_Drawer_1"
+      ]
      ]
     }
    },
    "stack": true
   },
   {
-   "id": "salvaje_night_table_drawer_2",
-   "name": "Night Table Drawer 2",
+   "id": "salvaje_kitsune_3d",
+   "name": "Kitsune 3D",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -5128,36 +5328,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Night_Table_Tile_Drawer_2"
-     ]
-    }
-   },
-   "stack": true
-  },
-  {
-   "id": "salvaje_nintendo_64",
-   "name": "Nintendo 64",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Nintendo_64"
+     "states": [
+      [
+       "Nintendo_64"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_nintendo_switch",
-   "name": "Nintendo Switch",
+   "id": "salvaje_kitsune_flip",
+   "name": "Kitsune Flip",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -5169,8 +5350,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Nintendo_Switch"
+     "states": [
+      [
+       "Nintendo_Switch"
+      ]
      ]
     }
    }
@@ -5189,8 +5372,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Notebooks"
+     "states": [
+      [
+       "Notebooks"
+      ]
      ]
     }
    }
@@ -5209,8 +5394,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Office_Kitchen_Table"
+     "states": [
+      [
+       "Office_Kitchen_Table"
+      ]
      ]
     }
    },
@@ -5230,8 +5417,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Office_Main_Chair"
+     "states": [
+      [
+       "Office_Main_Chair"
+      ]
      ]
     }
    },
@@ -5251,8 +5440,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Office_Main_Table_Base"
+     "states": [
+      [
+       "Office_Main_Table_Base"
+      ]
      ]
     }
    },
@@ -5272,8 +5463,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Office_Normal_Table_Base"
+     "states": [
+      [
+       "Office_Normal_Table_Base"
+      ]
      ]
     }
    },
@@ -5293,8 +5486,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Office_Partition"
+     "states": [
+      [
+       "Office_Partition"
+      ]
      ]
     }
    }
@@ -5313,16 +5508,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Office_Wood_Closet"
+     "states": [
+      [
+       "Office_Wood_Closet"
+      ]
      ]
     }
    },
    "stack": true
   },
   {
-   "id": "salvaje_oldimac_a",
-   "name": "OldImac A",
+   "id": "salvaje_petal_classic_desktop",
+   "name": "Petal Classic Desktop",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -5334,28 +5531,13 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "OldImac_A_Tile"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_oldimac_b",
-   "name": "OldImac B",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "OldImac_B_Tile"
+     "states": [
+      [
+       "OldImac_A_Tile"
+      ],
+      [
+       "OldImac_B_Tile"
+      ]
      ]
     }
    }
@@ -5374,8 +5556,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "OldKeyboard_Tile"
+     "states": [
+      [
+       "OldKeyboard_Tile"
+      ]
      ]
     }
    }
@@ -5394,8 +5578,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "OldPC_A_Tile"
+     "states": [
+      [
+       "OldPC_A_Tile"
+      ]
      ]
     }
    }
@@ -5414,8 +5600,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "OldPC_B_Tile"
+     "states": [
+      [
+       "OldPC_B_Tile"
+      ]
      ]
     }
    }
@@ -5434,23 +5622,25 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Oscilator_Machine_1",
-      "Oscilator_Machine_2",
-      "Oscilator_Machine_3",
-      "Oscilator_Machine_4",
-      "Oscilator_Machine_5",
-      "Oscilator_Machine_6",
-      "Oscilator_Machine_7",
-      "Oscilator_Machine_8",
-      "Oscilator_Machine_9",
-      "Oscilator_Machine_10",
-      "Oscilator_Machine_11",
-      "Oscilator_Machine_12",
-      "Oscilator_Machine_13",
-      "Oscilator_Machine_14",
-      "Oscilator_Machine_15",
-      "Oscilator_Machine_16"
+     "states": [
+      [
+       "Oscilator_Machine_1",
+       "Oscilator_Machine_2",
+       "Oscilator_Machine_3",
+       "Oscilator_Machine_4",
+       "Oscilator_Machine_5",
+       "Oscilator_Machine_6",
+       "Oscilator_Machine_7",
+       "Oscilator_Machine_8",
+       "Oscilator_Machine_9",
+       "Oscilator_Machine_10",
+       "Oscilator_Machine_11",
+       "Oscilator_Machine_12",
+       "Oscilator_Machine_13",
+       "Oscilator_Machine_14",
+       "Oscilator_Machine_15",
+       "Oscilator_Machine_16"
+      ]
      ]
     }
    },
@@ -5470,8 +5660,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Oven"
+     "states": [
+      [
+       "Oven"
+      ]
      ]
     }
    },
@@ -5491,8 +5683,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Painting"
+     "states": [
+      [
+       "Painting"
+      ]
      ]
     }
    }
@@ -5511,13 +5705,15 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Paper_1",
-      "Paper_2",
-      "Paper_3",
-      "Paper_4",
-      "Paper_5",
-      "Paper_6"
+     "states": [
+      [
+       "Paper_1",
+       "Paper_2",
+       "Paper_3",
+       "Paper_4",
+       "Paper_5",
+       "Paper_6"
+      ]
      ]
     }
    },
@@ -5537,16 +5733,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "PC_Tower_1",
-      "PC_Tower_2",
-      "PC_Tower_3",
-      "PC_Tower_4",
-      "PC_Tower_5",
-      "PC_Tower_6",
-      "PC_Tower_7",
-      "PC_Tower_8",
-      "PC_Tower_9"
+     "states": [
+      [
+       "PC_Tower_1",
+       "PC_Tower_2",
+       "PC_Tower_3",
+       "PC_Tower_4",
+       "PC_Tower_5",
+       "PC_Tower_6",
+       "PC_Tower_7",
+       "PC_Tower_8",
+       "PC_Tower_9"
+      ]
      ]
     }
    },
@@ -5566,8 +5764,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "PcTower_Tile"
+     "states": [
+      [
+       "PcTower_Tile"
+      ]
      ]
     }
    }
@@ -5586,8 +5786,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pencil_Holder"
+     "states": [
+      [
+       "Pencil_Holder"
+      ]
      ]
     }
    }
@@ -5606,8 +5808,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Photos_1"
+     "states": [
+      [
+       "Photos_1"
+      ]
      ]
     }
    }
@@ -5626,8 +5830,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Photos_2"
+     "states": [
+      [
+       "Photos_2"
+      ]
      ]
     }
    }
@@ -5646,8 +5852,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Picture_Cat"
+     "states": [
+      [
+       "Picture_Cat"
+      ]
      ]
     }
    }
@@ -5666,8 +5874,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Picture_Frame"
+     "states": [
+      [
+       "Picture_Frame"
+      ]
      ]
     }
    }
@@ -5686,8 +5896,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Picture_Modern_1"
+     "states": [
+      [
+       "Picture_Modern_1"
+      ]
      ]
     }
    }
@@ -5706,8 +5918,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Picture_Modern_2"
+     "states": [
+      [
+       "Picture_Modern_2"
+      ]
      ]
     }
    }
@@ -5726,8 +5940,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_10"
+     "states": [
+      [
+       "Pillow_10"
+      ]
      ]
     }
    }
@@ -5746,8 +5962,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_10_Sofa"
+     "states": [
+      [
+       "Pillow_10_Sofa"
+      ]
      ]
     }
    },
@@ -5767,8 +5985,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_11"
+     "states": [
+      [
+       "Pillow_11"
+      ]
      ]
     }
    }
@@ -5787,8 +6007,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_11_Sofa"
+     "states": [
+      [
+       "Pillow_11_Sofa"
+      ]
      ]
     }
    },
@@ -5808,8 +6030,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_12"
+     "states": [
+      [
+       "Pillow_12"
+      ]
      ]
     }
    }
@@ -5828,8 +6052,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_12_Sofa"
+     "states": [
+      [
+       "Pillow_12_Sofa"
+      ]
      ]
     }
    },
@@ -5849,8 +6075,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pillow_9"
+     "states": [
+      [
+       "Pillow_9"
+      ]
      ]
     }
    }
@@ -5869,8 +6097,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pipe_Corner"
+     "states": [
+      [
+       "Pipe_Corner"
+      ]
      ]
     }
    }
@@ -5889,8 +6119,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pipe_Horizontal"
+     "states": [
+      [
+       "Pipe_Horizontal"
+      ]
      ]
     }
    }
@@ -5909,8 +6141,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pipe_Horizontal_Box"
+     "states": [
+      [
+       "Pipe_Horizontal_Box"
+      ]
      ]
     }
    }
@@ -5929,8 +6163,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pipe_Vertical"
+     "states": [
+      [
+       "Pipe_Vertical"
+      ]
      ]
     }
    }
@@ -5949,8 +6185,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plant_1"
+     "states": [
+      [
+       "Plant_1"
+      ]
      ]
     }
    }
@@ -5969,8 +6207,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plant_2"
+     "states": [
+      [
+       "Plant_2"
+      ]
      ]
     }
    }
@@ -5989,8 +6229,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plant_3"
+     "states": [
+      [
+       "Plant_3"
+      ]
      ]
     }
    }
@@ -6009,8 +6251,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plant_5"
+     "states": [
+      [
+       "Plant_5"
+      ]
      ]
     }
    }
@@ -6029,8 +6273,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plant_Small"
+     "states": [
+      [
+       "Plant_Small"
+      ]
      ]
     }
    }
@@ -6049,8 +6295,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plastic_Box_1_Empty"
+     "states": [
+      [
+       "Plastic_Box_1_Empty"
+      ]
      ]
     }
    }
@@ -6069,8 +6317,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plastic_Box_1_Full"
+     "states": [
+      [
+       "Plastic_Box_1_Full"
+      ]
      ]
     }
    }
@@ -6089,8 +6339,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plastic_Box_2_Empty"
+     "states": [
+      [
+       "Plastic_Box_2_Empty"
+      ]
      ]
     }
    }
@@ -6109,15 +6361,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Plastic_Box_2_Full"
+     "states": [
+      [
+       "Plastic_Box_2_Full"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_playstation",
-   "name": "Playstation",
+   "id": "salvaje_orbit_1",
+   "name": "Orbit One",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -6129,15 +6383,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Playstation"
+     "states": [
+      [
+       "Playstation"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_playstation_2",
-   "name": "Playstation 2",
+   "id": "salvaje_orbit_2",
+   "name": "Orbit Two",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -6149,15 +6405,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Playstation_2"
+     "states": [
+      [
+       "Playstation_2"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_playstation_3",
-   "name": "Playstation 3",
+   "id": "salvaje_orbit_3",
+   "name": "Orbit Three",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -6169,15 +6427,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Playstation_3"
+     "states": [
+      [
+       "Playstation_3"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_playstation_4",
-   "name": "Playstation 4",
+   "id": "salvaje_orbit_4",
+   "name": "Orbit Four",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -6189,15 +6449,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Playstation_4"
+     "states": [
+      [
+       "Playstation_4"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_playstation_5",
-   "name": "Playstation 5",
+   "id": "salvaje_orbit_5",
+   "name": "Orbit Five",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -6209,8 +6471,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Playstation_5"
+     "states": [
+      [
+       "Playstation_5"
+      ]
      ]
     }
    }
@@ -6229,8 +6493,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_1"
+     "states": [
+      [
+       "Poster_1"
+      ]
      ]
     }
    }
@@ -6249,8 +6515,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_16"
+     "states": [
+      [
+       "Poster_16"
+      ]
      ]
     }
    }
@@ -6269,8 +6537,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_17"
+     "states": [
+      [
+       "Poster_17"
+      ]
      ]
     }
    }
@@ -6289,8 +6559,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_2"
+     "states": [
+      [
+       "Poster_2"
+      ]
      ]
     }
    }
@@ -6309,8 +6581,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_3"
+     "states": [
+      [
+       "Poster_3"
+      ]
      ]
     }
    }
@@ -6329,8 +6603,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_4"
+     "states": [
+      [
+       "Poster_4"
+      ]
      ]
     }
    }
@@ -6349,8 +6625,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_5"
+     "states": [
+      [
+       "Poster_5"
+      ]
      ]
     }
    }
@@ -6369,8 +6647,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_6"
+     "states": [
+      [
+       "Poster_6"
+      ]
      ]
     }
    }
@@ -6389,8 +6669,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_Fire"
+     "states": [
+      [
+       "Poster_Fire"
+      ]
      ]
     }
    }
@@ -6409,8 +6691,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_Map_6"
+     "states": [
+      [
+       "Poster_Map_6"
+      ]
      ]
     }
    }
@@ -6429,8 +6713,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Poster_Medical"
+     "states": [
+      [
+       "Poster_Medical"
+      ]
      ]
     }
    }
@@ -6449,8 +6735,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pot"
+     "states": [
+      [
+       "Pot"
+      ]
      ]
     }
    }
@@ -6469,8 +6757,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Pot_Full"
+     "states": [
+      [
+       "Pot_Full"
+      ]
      ]
     }
    }
@@ -6485,13 +6775,81 @@
     1
    ],
    "dirs": {
-    "4": {
-     "frames": [
-      "Present_100"
-     ]
-    },
     "2": {
      "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "Present_100"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_100_b",
+   "name": "Present 100 B",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "Present_100_B"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_100_c",
+   "name": "Present 100 C",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "Present_100_C"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "salvaje_present_100_d",
+   "name": "Present 100 D",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "Present_100_D"
+      ]
+     ]
     }
    }
   },
@@ -6509,8 +6867,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_100_E"
+     "states": [
+      [
+       "Present_100_E"
+      ]
      ]
     }
    }
@@ -6529,8 +6889,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_2"
+     "states": [
+      [
+       "Present_2"
+      ]
      ]
     }
    }
@@ -6549,8 +6911,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_3"
+     "states": [
+      [
+       "Present_3"
+      ]
      ]
     }
    }
@@ -6569,8 +6933,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_4"
+     "states": [
+      [
+       "Present_4"
+      ]
      ]
     }
    }
@@ -6589,8 +6955,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_5"
+     "states": [
+      [
+       "Present_5"
+      ]
      ]
     }
    }
@@ -6609,8 +6977,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_6"
+     "states": [
+      [
+       "Present_6"
+      ]
      ]
     }
    }
@@ -6629,8 +6999,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Present_7"
+     "states": [
+      [
+       "Present_7"
+      ]
      ]
     }
    }
@@ -6649,18 +7021,20 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Printer_1",
-      "Printer_2",
-      "Printer_3",
-      "Printer_4",
-      "Printer_5",
-      "Printer_6",
-      "Printer_7",
-      "Printer_8",
-      "Printer_9",
-      "Printer_10",
-      "Printer_11"
+     "states": [
+      [
+       "Printer_1",
+       "Printer_2",
+       "Printer_3",
+       "Printer_4",
+       "Printer_5",
+       "Printer_6",
+       "Printer_7",
+       "Printer_8",
+       "Printer_9",
+       "Printer_10",
+       "Printer_11"
+      ]
      ]
     }
    },
@@ -6680,8 +7054,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Printer_Filament"
+     "states": [
+      [
+       "Printer_Filament"
+      ]
      ]
     }
    }
@@ -6700,8 +7076,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Projector_1"
+     "states": [
+      [
+       "Projector_1"
+      ]
      ]
     }
    }
@@ -6720,8 +7098,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Projector_2"
+     "states": [
+      [
+       "Projector_2"
+      ]
      ]
     }
    }
@@ -6740,8 +7120,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Projector_3"
+     "states": [
+      [
+       "Projector_3"
+      ]
      ]
     }
    }
@@ -6760,8 +7142,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Projector_4"
+     "states": [
+      [
+       "Projector_4"
+      ]
      ]
     }
    }
@@ -6780,8 +7164,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Projector_Screen_Ani_7"
+     "states": [
+      [
+       "Projector_Screen_Ani_7"
+      ]
      ]
     }
    }
@@ -6800,15 +7186,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Projector_Stand"
+     "states": [
+      [
+       "Projector_Stand"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_psp",
-   "name": "PSP",
+   "id": "salvaje_orbit_portable",
+   "name": "Orbit Portable",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -6820,8 +7208,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "PSP"
+     "states": [
+      [
+       "PSP"
+      ]
      ]
     }
    }
@@ -6840,8 +7230,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Rack"
+     "states": [
+      [
+       "Rack"
+      ]
      ]
     }
    },
@@ -6861,8 +7253,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Rag"
+     "states": [
+      [
+       "Rag"
+      ]
      ]
     }
    }
@@ -6881,8 +7275,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ring_Binder_Blue"
+     "states": [
+      [
+       "Ring_Binder_Blue"
+      ]
      ]
     }
    }
@@ -6901,8 +7297,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ring_Binder_Dark"
+     "states": [
+      [
+       "Ring_Binder_Dark"
+      ]
      ]
     }
    }
@@ -6921,8 +7319,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ring_Binder_Green"
+     "states": [
+      [
+       "Ring_Binder_Green"
+      ]
      ]
     }
    }
@@ -6941,8 +7341,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ring_Binder_Orange"
+     "states": [
+      [
+       "Ring_Binder_Orange"
+      ]
      ]
     }
    }
@@ -6961,8 +7363,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ring_Binder_Red"
+     "states": [
+      [
+       "Ring_Binder_Red"
+      ]
      ]
     }
    }
@@ -6981,8 +7385,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ring_Binder_Yellow"
+     "states": [
+      [
+       "Ring_Binder_Yellow"
+      ]
      ]
     }
    }
@@ -7001,8 +7407,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Rolled_Papers"
+     "states": [
+      [
+       "Rolled_Papers"
+      ]
      ]
     }
    }
@@ -7021,8 +7429,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "RotationScreen_A_Tile"
+     "states": [
+      [
+       "RotationScreen_A_Tile"
+      ]
      ]
     }
    }
@@ -7041,8 +7451,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "RotationScreen_B_Tile"
+     "states": [
+      [
+       "RotationScreen_B_Tile"
+      ]
      ]
     }
    }
@@ -7061,8 +7473,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "RotationScreen_C_Tile"
+     "states": [
+      [
+       "RotationScreen_C_Tile"
+      ]
      ]
     }
    }
@@ -7081,15 +7495,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Ruler"
+     "states": [
+      [
+       "Ruler"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_rumba_robot",
-   "name": "Rumba Robot",
+   "id": "salvaje_robot_vacuum",
+   "name": "Robot Vacuum",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -7101,8 +7517,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Rumba_Robot"
+     "states": [
+      [
+       "Rumba_Robot"
+      ]
      ]
     }
    }
@@ -7121,8 +7539,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Scourer"
+     "states": [
+      [
+       "Scourer"
+      ]
      ]
     }
    }
@@ -7141,15 +7561,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Screen_Small"
+     "states": [
+      [
+       "Screen_Small"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_segagenesis",
-   "name": "SegaGenesis",
+   "id": "salvaje_hayate_drive",
+   "name": "Hayate Drive",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -7161,15 +7583,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "SegaGenesis"
+     "states": [
+      [
+       "SegaGenesis"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_server_1",
-   "name": "Server 1",
+   "id": "salvaje_server_cabinet",
+   "name": "Server Cabinet",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -7181,75 +7605,26 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Server_1_1",
-      "Server_1_2",
-      "Server_1_3",
-      "Server_1_4"
+     "states": [
+      [
+       "Server_2_A"
+      ],
+      [
+       "Server_2_B"
+      ],
+      [
+       "Server_2_C"
+      ],
+      [
+       "Server_1_1",
+       "Server_1_2",
+       "Server_1_3",
+       "Server_1_4"
+      ]
      ]
     }
    },
    "fps": 8
-  },
-  {
-   "id": "salvaje_server_2_a",
-   "name": "Server 2 A",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Server_2_A"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_server_2_b",
-   "name": "Server 2 B",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Server_2_B"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_server_2_c",
-   "name": "Server 2 C",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Server_2_C"
-     ]
-    }
-   }
   },
   {
    "id": "salvaje_server_3",
@@ -7265,8 +7640,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Server_3"
+     "states": [
+      [
+       "Server_3"
+      ]
      ]
     }
    }
@@ -7285,8 +7662,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Shelf"
+     "states": [
+      [
+       "Shelf"
+      ]
      ]
     }
    },
@@ -7306,8 +7685,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "shelving_6"
+     "states": [
+      [
+       "shelving_6"
+      ]
      ]
     }
    },
@@ -7327,8 +7708,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "shelving_7"
+     "states": [
+      [
+       "shelving_7"
+      ]
      ]
     }
    },
@@ -7348,8 +7731,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Shower_Bin"
+     "states": [
+      [
+       "Shower_Bin"
+      ]
      ]
     }
    }
@@ -7368,8 +7753,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Shower_Floor"
+     "states": [
+      [
+       "Shower_Floor"
+      ]
      ]
     }
    },
@@ -7389,8 +7776,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Shower_Tap"
+     "states": [
+      [
+       "Shower_Tap"
+      ]
      ]
     }
    }
@@ -7409,8 +7798,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Shower_Tray"
+     "states": [
+      [
+       "Shower_Tray"
+      ]
      ]
     }
    }
@@ -7429,8 +7820,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sink"
+     "states": [
+      [
+       "Sink"
+      ]
      ]
     }
    }
@@ -7449,8 +7842,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sink_1"
+     "states": [
+      [
+       "Sink_1"
+      ]
      ]
     }
    }
@@ -7469,8 +7864,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Small_Shelf"
+     "states": [
+      [
+       "Small_Shelf"
+      ]
      ]
     }
    },
@@ -7490,16 +7887,18 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "SmallTable_5"
+     "states": [
+      [
+       "SmallTable_5"
+      ]
      ]
     }
    },
    "stack": true
   },
   {
-   "id": "salvaje_snes",
-   "name": "SNES",
+   "id": "salvaje_kitsune_super",
+   "name": "Kitsune Super Console",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -7511,8 +7910,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "SNES"
+     "states": [
+      [
+       "SNES"
+      ]
      ]
     }
    }
@@ -7531,8 +7932,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Soap"
+     "states": [
+      [
+       "Soap"
+      ]
      ]
     }
    }
@@ -7551,8 +7954,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Soap_Green"
+     "states": [
+      [
+       "Soap_Green"
+      ]
      ]
     }
    }
@@ -7571,8 +7976,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Soap_Red"
+     "states": [
+      [
+       "Soap_Red"
+      ]
      ]
     }
    }
@@ -7591,8 +7998,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Soap_Yellow"
+     "states": [
+      [
+       "Soap_Yellow"
+      ]
      ]
     }
    }
@@ -7611,8 +8020,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Soda_Can"
+     "states": [
+      [
+       "Soda_Can"
+      ]
      ]
     }
    }
@@ -7631,8 +8042,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_1"
+     "states": [
+      [
+       "Sofa_1"
+      ]
      ]
     }
    },
@@ -7652,8 +8065,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_1_A"
+     "states": [
+      [
+       "Sofa_1_A"
+      ]
      ]
     }
    },
@@ -7673,8 +8088,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_1_B"
+     "states": [
+      [
+       "Sofa_1_B"
+      ]
      ]
     }
    },
@@ -7694,8 +8111,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_1_C"
+     "states": [
+      [
+       "Sofa_1_C"
+      ]
      ]
     }
    },
@@ -7715,8 +8134,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_2_A"
+     "states": [
+      [
+       "Sofa_2_A"
+      ]
      ]
     }
    },
@@ -7736,8 +8157,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_2_B"
+     "states": [
+      [
+       "Sofa_2_B"
+      ]
      ]
     }
    },
@@ -7754,23 +8177,31 @@
    ],
    "dirs": {
     "0": {
-     "frames": [
-      "Sofa_3_C_Tile"
+     "states": [
+      [
+       "Sofa_3_C_Tile"
+      ]
      ]
     },
     "2": {
-     "frames": [
-      "Sofa_3_B_Tile"
+     "states": [
+      [
+       "Sofa_3_B_Tile"
+      ]
      ]
     },
     "4": {
-     "frames": [
-      "Sofa_3_A_Tile"
+     "states": [
+      [
+       "Sofa_3_A_Tile"
+      ]
      ]
     },
     "6": {
-     "frames": [
-      "Sofa_3_D_Tile"
+     "states": [
+      [
+       "Sofa_3_D_Tile"
+      ]
      ]
     }
    },
@@ -7790,8 +8221,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_4_A_Tile"
+     "states": [
+      [
+       "Sofa_4_A_Tile"
+      ]
      ]
     }
    },
@@ -7811,8 +8244,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sofa_4_B_Tile"
+     "states": [
+      [
+       "Sofa_4_B_Tile"
+      ]
      ]
     }
    },
@@ -7832,8 +8267,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Speaker_6_Tile"
+     "states": [
+      [
+       "Speaker_6_Tile"
+      ]
      ]
     }
    }
@@ -7852,8 +8289,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Spoon"
+     "states": [
+      [
+       "Spoon"
+      ]
      ]
     }
    }
@@ -7872,8 +8311,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairCase_Back"
+     "states": [
+      [
+       "StairCase_Back"
+      ]
      ]
     }
    }
@@ -7892,8 +8333,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairCase_Front_1"
+     "states": [
+      [
+       "StairCase_Front_1"
+      ]
      ]
     }
    }
@@ -7912,8 +8355,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairCase_Front_2"
+     "states": [
+      [
+       "StairCase_Front_2"
+      ]
      ]
     }
    }
@@ -7932,8 +8377,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairRailing_1"
+     "states": [
+      [
+       "StairRailing_1"
+      ]
      ]
     }
    }
@@ -7952,8 +8399,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairRailing_2"
+     "states": [
+      [
+       "StairRailing_2"
+      ]
      ]
     }
    }
@@ -7972,8 +8421,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairRailing_3"
+     "states": [
+      [
+       "StairRailing_3"
+      ]
      ]
     }
    }
@@ -7992,8 +8443,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairRailing_4"
+     "states": [
+      [
+       "StairRailing_4"
+      ]
      ]
     }
    }
@@ -8012,8 +8465,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairRailing_5"
+     "states": [
+      [
+       "StairRailing_5"
+      ]
      ]
     }
    }
@@ -8032,8 +8487,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "StairRailing_Back"
+     "states": [
+      [
+       "StairRailing_Back"
+      ]
      ]
     }
    }
@@ -8052,8 +8509,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_1"
+     "states": [
+      [
+       "Sticky_Note_1"
+      ]
      ]
     }
    }
@@ -8072,8 +8531,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_2"
+     "states": [
+      [
+       "Sticky_Note_2"
+      ]
      ]
     }
    }
@@ -8092,8 +8553,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_3"
+     "states": [
+      [
+       "Sticky_Note_3"
+      ]
      ]
     }
    }
@@ -8112,8 +8575,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_4"
+     "states": [
+      [
+       "Sticky_Note_4"
+      ]
      ]
     }
    }
@@ -8132,8 +8597,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_5"
+     "states": [
+      [
+       "Sticky_Note_5"
+      ]
      ]
     }
    }
@@ -8152,8 +8619,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_6"
+     "states": [
+      [
+       "Sticky_Note_6"
+      ]
      ]
     }
    }
@@ -8172,8 +8641,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_Blue"
+     "states": [
+      [
+       "Sticky_Note_Blue"
+      ]
      ]
     }
    }
@@ -8192,8 +8663,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_Green"
+     "states": [
+      [
+       "Sticky_Note_Green"
+      ]
      ]
     }
    }
@@ -8212,8 +8685,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_Pink"
+     "states": [
+      [
+       "Sticky_Note_Pink"
+      ]
      ]
     }
    }
@@ -8232,8 +8707,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sticky_Note_Red"
+     "states": [
+      [
+       "Sticky_Note_Red"
+      ]
      ]
     }
    }
@@ -8252,8 +8729,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Stoves"
+     "states": [
+      [
+       "Stoves"
+      ]
      ]
     }
    }
@@ -8272,8 +8751,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sugar"
+     "states": [
+      [
+       "Sugar"
+      ]
      ]
     }
    }
@@ -8292,8 +8773,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Sun_Flower"
+     "states": [
+      [
+       "Sun_Flower"
+      ]
      ]
     }
    }
@@ -8312,8 +8795,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Switch"
+     "states": [
+      [
+       "Switch"
+      ]
      ]
     }
    }
@@ -8332,8 +8817,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Switch_A"
+     "states": [
+      [
+       "Switch_A"
+      ]
      ]
     }
    }
@@ -8352,8 +8839,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Switch_B"
+     "states": [
+      [
+       "Switch_B"
+      ]
      ]
     }
    }
@@ -8372,8 +8861,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Switch_C"
+     "states": [
+      [
+       "Switch_C"
+      ]
      ]
     }
    }
@@ -8392,8 +8883,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Table_10"
+     "states": [
+      [
+       "Table_10"
+      ]
      ]
     }
    },
@@ -8413,8 +8906,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Table_11"
+     "states": [
+      [
+       "Table_11"
+      ]
      ]
     }
    },
@@ -8434,8 +8929,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Table_12"
+     "states": [
+      [
+       "Table_12"
+      ]
      ]
     }
    },
@@ -8455,8 +8952,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Table_13"
+     "states": [
+      [
+       "Table_13"
+      ]
      ]
     }
    },
@@ -8476,8 +8975,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Table_14"
+     "states": [
+      [
+       "Table_14"
+      ]
      ]
     }
    },
@@ -8497,8 +8998,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Table_Corridor"
+     "states": [
+      [
+       "Table_Corridor"
+      ]
      ]
     }
    },
@@ -8518,8 +9021,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tap_Shower"
+     "states": [
+      [
+       "Tap_Shower"
+      ]
      ]
     }
    }
@@ -8538,8 +9043,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tap_Wall"
+     "states": [
+      [
+       "Tap_Wall"
+      ]
      ]
     }
    }
@@ -8558,8 +9065,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "TeaPot"
+     "states": [
+      [
+       "TeaPot"
+      ]
      ]
     }
    }
@@ -8578,8 +9087,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Telephone"
+     "states": [
+      [
+       "Telephone"
+      ]
      ]
     }
    }
@@ -8598,8 +9109,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tissues"
+     "states": [
+      [
+       "Tissues"
+      ]
      ]
     }
    }
@@ -8618,8 +9131,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Toast"
+     "states": [
+      [
+       "Toast"
+      ]
      ]
     }
    }
@@ -8638,28 +9153,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Toaster"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_toaster_1",
-   "name": "Toaster 1",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Toaster_1"
+     "states": [
+      [
+       "Toaster"
+      ]
      ]
     }
    }
@@ -8678,15 +9175,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Toilet_Paper"
+     "states": [
+      [
+       "Toilet_Paper"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_tool_box_a",
-   "name": "Tool Box A",
+   "id": "salvaje_toolbox",
+   "name": "Toolbox",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -8698,48 +9197,16 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tool_Box_A"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_tool_box_b",
-   "name": "Tool Box B",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Tool_Box_B"
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_tool_box_c",
-   "name": "Tool Box C",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "frames": [
-      "Tool_Box_C"
+     "states": [
+      [
+       "Tool_Box_A"
+      ],
+      [
+       "Tool_Box_B"
+      ],
+      [
+       "Tool_Box_C"
+      ]
      ]
     }
    }
@@ -8758,8 +9225,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tools"
+     "states": [
+      [
+       "Tools"
+      ]
      ]
     }
    }
@@ -8778,8 +9247,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tools_Electric"
+     "states": [
+      [
+       "Tools_Electric"
+      ]
      ]
     }
    }
@@ -8798,8 +9269,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Towel_Blue"
+     "states": [
+      [
+       "Towel_Blue"
+      ]
      ]
     }
    }
@@ -8818,8 +9291,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Towel_Green"
+     "states": [
+      [
+       "Towel_Green"
+      ]
      ]
     }
    }
@@ -8838,8 +9313,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Towel_Red"
+     "states": [
+      [
+       "Towel_Red"
+      ]
      ]
     }
    }
@@ -8858,8 +9335,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Trash_Empty"
+     "states": [
+      [
+       "Trash_Empty"
+      ]
      ]
     }
    }
@@ -8878,8 +9357,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Trash_Full"
+     "states": [
+      [
+       "Trash_Full"
+      ]
      ]
     }
    }
@@ -8898,8 +9379,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Trash_Square"
+     "states": [
+      [
+       "Trash_Square"
+      ]
      ]
     }
    }
@@ -8918,8 +9401,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "TrashBin_Closed"
+     "states": [
+      [
+       "TrashBin_Closed"
+      ]
      ]
     }
    }
@@ -8938,8 +9423,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "TrashBin_Open"
+     "states": [
+      [
+       "TrashBin_Open"
+      ]
      ]
     }
    }
@@ -8958,60 +9445,64 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "TV_DVD_1",
-      "TV_DVD_2",
-      "TV_DVD_3",
-      "TV_DVD_4",
-      "TV_DVD_5",
-      "TV_DVD_6",
-      "TV_DVD_7",
-      "TV_DVD_8",
-      "TV_DVD_9",
-      "TV_DVD_10",
-      "TV_DVD_11",
-      "TV_DVD_12",
-      "TV_DVD_13",
-      "TV_DVD_14",
-      "TV_DVD_15",
-      "TV_DVD_16",
-      "TV_DVD_17",
-      "TV_DVD_18",
-      "TV_DVD_19",
-      "TV_DVD_20",
-      "TV_DVD_21",
-      "TV_DVD_22",
-      "TV_DVD_23",
-      "TV_DVD_24",
-      "TV_DVD_25",
-      "TV_DVD_26",
-      "TV_DVD_27",
-      "TV_DVD_28",
-      "TV_DVD_29",
-      "TV_DVD_30",
-      "TV_DVD_31",
-      "TV_DVD_32",
-      "TV_DVD_33",
-      "TV_DVD_34",
-      "TV_DVD_35",
-      "TV_DVD_36",
-      "TV_DVD_37",
-      "TV_DVD_38",
-      "TV_DVD_39",
-      "TV_DVD_40",
-      "TV_DVD_41",
-      "TV_DVD_42",
-      "TV_DVD_43",
-      "TV_DVD_44",
-      "TV_DVD_45",
-      "TV_DVD_46",
-      "TV_DVD_47",
-      "TV_DVD_48"
+     "states": [
+      [
+       "TV_DVD_Off"
+      ],
+      [
+       "TV_DVD_1",
+       "TV_DVD_2",
+       "TV_DVD_3",
+       "TV_DVD_4",
+       "TV_DVD_5",
+       "TV_DVD_6",
+       "TV_DVD_7",
+       "TV_DVD_8",
+       "TV_DVD_9",
+       "TV_DVD_10",
+       "TV_DVD_11",
+       "TV_DVD_12",
+       "TV_DVD_13",
+       "TV_DVD_14",
+       "TV_DVD_15",
+       "TV_DVD_16",
+       "TV_DVD_17",
+       "TV_DVD_18",
+       "TV_DVD_19",
+       "TV_DVD_20",
+       "TV_DVD_21",
+       "TV_DVD_22",
+       "TV_DVD_23",
+       "TV_DVD_24",
+       "TV_DVD_25",
+       "TV_DVD_26",
+       "TV_DVD_27",
+       "TV_DVD_28",
+       "TV_DVD_29",
+       "TV_DVD_30",
+       "TV_DVD_31",
+       "TV_DVD_32",
+       "TV_DVD_33",
+       "TV_DVD_34",
+       "TV_DVD_35",
+       "TV_DVD_36",
+       "TV_DVD_37",
+       "TV_DVD_38",
+       "TV_DVD_39",
+       "TV_DVD_40",
+       "TV_DVD_41",
+       "TV_DVD_42",
+       "TV_DVD_43",
+       "TV_DVD_44",
+       "TV_DVD_45",
+       "TV_DVD_46",
+       "TV_DVD_47",
+       "TV_DVD_48"
+      ]
      ]
     }
    },
-   "fps": 8,
-   "off": "TV_DVD_Off"
+   "fps": 8
   },
   {
    "id": "salvaje_tv_off",
@@ -9027,8 +9518,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Tv_Off"
+     "states": [
+      [
+       "Tv_Off"
+      ]
      ]
     }
    }
@@ -9047,8 +9540,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Vertical_Screen"
+     "states": [
+      [
+       "Vertical_Screen"
+      ]
      ]
     }
    }
@@ -9067,15 +9562,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "VoltageMeter"
+     "states": [
+      [
+       "VoltageMeter"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_wacomtablet",
-   "name": "WacomTablet",
+   "id": "salvaje_drawing_tablet",
+   "name": "Drawing Tablet",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -9087,8 +9584,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "WacomTablet"
+     "states": [
+      [
+       "WacomTablet"
+      ]
      ]
     }
    },
@@ -9108,19 +9607,21 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_Clock_1",
-      "Wall_Clock_2",
-      "Wall_Clock_3",
-      "Wall_Clock_4",
-      "Wall_Clock_5",
-      "Wall_Clock_6",
-      "Wall_Clock_7",
-      "Wall_Clock_8",
-      "Wall_Clock_9",
-      "Wall_Clock_10",
-      "Wall_Clock_11",
-      "Wall_Clock_12"
+     "states": [
+      [
+       "Wall_Clock_1",
+       "Wall_Clock_2",
+       "Wall_Clock_3",
+       "Wall_Clock_4",
+       "Wall_Clock_5",
+       "Wall_Clock_6",
+       "Wall_Clock_7",
+       "Wall_Clock_8",
+       "Wall_Clock_9",
+       "Wall_Clock_10",
+       "Wall_Clock_11",
+       "Wall_Clock_12"
+      ]
      ]
     }
    },
@@ -9140,8 +9641,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_L_Japanese_128"
+     "states": [
+      [
+       "Wall_L_Japanese_128"
+      ]
      ]
     }
    }
@@ -9160,8 +9663,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_Protection"
+     "states": [
+      [
+       "Wall_Protection"
+      ]
      ]
     }
    }
@@ -9180,8 +9685,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_R_Japanese_128"
+     "states": [
+      [
+       "Wall_R_Japanese_128"
+      ]
      ]
     }
    }
@@ -9200,8 +9707,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_Top_L_Japanese_128"
+     "states": [
+      [
+       "Wall_Top_L_Japanese_128"
+      ]
      ]
     }
    }
@@ -9220,8 +9729,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_Top_R_Japanese_128"
+     "states": [
+      [
+       "Wall_Top_R_Japanese_128"
+      ]
      ]
     }
    }
@@ -9240,8 +9751,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_Window_L_Japanese_128"
+     "states": [
+      [
+       "Wall_Window_L_Japanese_128"
+      ]
      ]
     }
    }
@@ -9260,8 +9773,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wall_Window_R_Japanese_128"
+     "states": [
+      [
+       "Wall_Window_R_Japanese_128"
+      ]
      ]
     }
    }
@@ -9280,8 +9795,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "WashingMachine_Closed"
+     "states": [
+      [
+       "WashingMachine_Closed"
+      ]
      ]
     }
    },
@@ -9301,15 +9818,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Water_Dispenser_1",
-      "Water_Dispenser_2",
-      "Water_Dispenser_3",
-      "Water_Dispenser_4",
-      "Water_Dispenser_5",
-      "Water_Dispenser_6",
-      "Water_Dispenser_7",
-      "Water_Dispenser_8"
+     "states": [
+      [
+       "Water_Dispenser_1",
+       "Water_Dispenser_2",
+       "Water_Dispenser_3",
+       "Water_Dispenser_4",
+       "Water_Dispenser_5",
+       "Water_Dispenser_6",
+       "Water_Dispenser_7",
+       "Water_Dispenser_8"
+      ]
      ]
     }
    },
@@ -9329,8 +9848,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wc_Back_1"
+     "states": [
+      [
+       "Wc_Back_1"
+      ]
      ]
     }
    }
@@ -9349,8 +9870,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wc_Front_1"
+     "states": [
+      [
+       "Wc_Front_1"
+      ]
      ]
     }
    }
@@ -9369,8 +9892,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wc_Furniture"
+     "states": [
+      [
+       "Wc_Furniture"
+      ]
      ]
     }
    }
@@ -9389,8 +9914,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wc_Tap_1"
+     "states": [
+      [
+       "Wc_Tap_1"
+      ]
      ]
     }
    }
@@ -9409,8 +9936,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Welcome_Parcel"
+     "states": [
+      [
+       "Welcome_Parcel"
+      ]
      ]
     }
    }
@@ -9429,8 +9958,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Welder_Machine"
+     "states": [
+      [
+       "Welder_Machine"
+      ]
      ]
     }
    }
@@ -9449,8 +9980,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "White_Box"
+     "states": [
+      [
+       "White_Box"
+      ]
      ]
     }
    }
@@ -9469,15 +10002,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Whiteboard_Eraser"
+     "states": [
+      [
+       "Whiteboard_Eraser"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_wii",
-   "name": "Wii",
+   "id": "salvaje_kitsune_wave",
+   "name": "Kitsune Wave",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -9489,8 +10024,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wii"
+     "states": [
+      [
+       "Wii"
+      ]
      ]
     }
    }
@@ -9509,8 +10046,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_11"
+     "states": [
+      [
+       "Window_11"
+      ]
      ]
     }
    }
@@ -9529,8 +10068,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_11_B"
+     "states": [
+      [
+       "Window_11_B"
+      ]
      ]
     }
    }
@@ -9549,8 +10090,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_11_C"
+     "states": [
+      [
+       "Window_11_C"
+      ]
      ]
     }
    }
@@ -9569,8 +10112,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_7_A_Tile"
+     "states": [
+      [
+       "Window_7_A_Tile"
+      ]
      ]
     }
    }
@@ -9589,8 +10134,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_7_B_Tile"
+     "states": [
+      [
+       "Window_7_B_Tile"
+      ]
      ]
     }
    }
@@ -9609,8 +10156,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_7_C_Tile"
+     "states": [
+      [
+       "Window_7_C_Tile"
+      ]
      ]
     }
    }
@@ -9629,8 +10178,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_8"
+     "states": [
+      [
+       "Window_8"
+      ]
      ]
     }
    }
@@ -9649,8 +10200,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_B_8"
+     "states": [
+      [
+       "Window_B_8"
+      ]
      ]
     }
    }
@@ -9669,8 +10222,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_C_8"
+     "states": [
+      [
+       "Window_C_8"
+      ]
      ]
     }
    }
@@ -9689,8 +10244,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_L_128_Japanese"
+     "states": [
+      [
+       "Window_L_128_Japanese"
+      ]
      ]
     }
    }
@@ -9709,8 +10266,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Window_R_128_Japanese"
+     "states": [
+      [
+       "Window_R_128_Japanese"
+      ]
      ]
     }
    }
@@ -9729,8 +10288,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wine"
+     "states": [
+      [
+       "Wine"
+      ]
      ]
     }
    }
@@ -9749,15 +10310,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "Wrapped_Gift"
+     "states": [
+      [
+       "Wrapped_Gift"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_xbox",
-   "name": "XBox",
+   "id": "salvaje_vortex",
+   "name": "Vortex",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -9769,15 +10332,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "XBox"
+     "states": [
+      [
+       "XBox"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_xbox_360",
-   "name": "XBox 360",
+   "id": "salvaje_vortex_loop",
+   "name": "Vortex Loop",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -9789,15 +10354,17 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "XBox_360"
+     "states": [
+      [
+       "XBox_360"
+      ]
      ]
     }
    }
   },
   {
-   "id": "salvaje_xbox_x",
-   "name": "XBox X",
+   "id": "salvaje_vortex_prime",
+   "name": "Vortex Prime",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -9809,8 +10376,10 @@
      "mirror": 4
     },
     "4": {
-     "frames": [
-      "XBox_X"
+     "states": [
+      [
+       "XBox_X"
+      ]
      ]
     }
    }

@@ -4,6 +4,7 @@ import {
   dirTowards,
   doorFacing,
   findPath,
+  furniStateCount,
   furniTiles,
   heightAt,
   parseMap,
@@ -73,6 +74,7 @@ export class Room {
   readonly furni: RoomFurni[];
   /** Tiles furni stand on that you can't walk onto (rugs and seats don't count). */
   private readonly furniBlocked = new Set<number>();
+  private readonly defs: ReadonlyMap<string, FurniDef>;
 
   constructor(id: string, details: RoomDetails, layout: Layout, opts: { autoTick?: boolean; furni?: RoomFurni[]; defs?: ReadonlyMap<string, FurniDef> } = {}) {
     this.id = id;
@@ -80,7 +82,8 @@ export class Room {
     this.layout = layout;
     this.grid = parseMap(layout.map);
     this.autoTick = opts.autoTick ?? true;
-    this.furni = opts.furni ?? [];
+    this.furni = (opts.furni ?? []).map((f) => ({ ...f }));
+    this.defs = opts.defs ?? new Map();
     for (const f of this.furni) {
       const def = opts.defs?.get(f.def);
       if (!def || def.walk || def.sit) continue;
@@ -156,6 +159,15 @@ export class Room {
     if (!path || path.length === 0) return;
     o.goal = [x, y];
     o.path = path;
+  }
+
+  /** Switch a furni to its next state (the caller checks who may). */
+  useFurni(uid: number): void {
+    const f = this.furni.find((it) => it.uid === uid);
+    const def = f && this.defs.get(f.def);
+    if (!f || !def) return;
+    f.state = (f.state + 1) % furniStateCount(def);
+    this.broadcast({ t: 'furniState', d: { uid, state: f.state } });
   }
 
   say(id: number, raw: string, now = Date.now()): void {

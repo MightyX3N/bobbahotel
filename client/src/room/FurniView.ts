@@ -1,5 +1,5 @@
-// One furni in the room: its picture (mirrored for mirrored directions), animated if it has
-// frames, standing on its tiles and depth-sorted with avatars and walls.
+// One furni in the room: its picture for its state (mirrored for mirrored directions), animated
+// if that state has frames, standing on its tiles and depth-sorted with avatars and walls.
 import { Container, Sprite, Text } from 'pixi.js';
 import { furniFootprint, type FurniDef, type FurniDir, type RoomFurni } from '@bobba/shared';
 import { corner, depthToZIndex, tileDepth } from './drawRoom.ts';
@@ -11,13 +11,15 @@ export class FurniView {
   readonly container = new Container();
   private readonly sprite = new Sprite();
   private readonly label: Text;
-  private frames: FurniTexture[] = [];
+  private states: FurniTexture[][] = [];
+  private state: number;
   private flip = false;
   private destroyed = false;
 
   constructor(furni: RoomFurni, def: FurniDef) {
     this.uid = furni.uid;
     this.def = def;
+    this.state = furni.state;
     const dir = furni.dir;
     const [w, l] = furniFootprint(def, dir);
     // Stands with its footprint's front corner on the floor; sorts with its front tile.
@@ -41,7 +43,7 @@ export class FurniView {
     if (source === undefined) return;
     void furniFrames(def.id).then((frames) => {
       if (this.destroyed || !frames) return;
-      this.frames = frames[source] ?? [];
+      this.states = frames[source] ?? [];
       this.show(0);
     });
   }
@@ -49,6 +51,15 @@ export class FurniView {
   /** Advance the animation. */
   update(now: number): void {
     if (this.frames.length > 1) this.show(Math.floor((now / 1000) * (this.def.fps ?? 8)) % this.frames.length);
+  }
+
+  setState(state: number): void {
+    this.state = state;
+    this.show(0);
+  }
+
+  private get frames(): FurniTexture[] {
+    return this.states[Math.min(this.state, this.states.length - 1)] ?? [];
   }
 
   showName(show: boolean): void {

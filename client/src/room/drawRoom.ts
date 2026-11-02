@@ -51,6 +51,9 @@ export function corner(gx: number, gy: number, z: number): Point {
 export interface RoomPiece {
   graphics: Graphics;
   depth: number;
+  /** Floor pieces are drawn below everything (furni and avatars always stand on top, like Habbo);
+   *  wall pieces are depth-sorted with furni and avatars (so the doorway hides who's in it). */
+  layer: 'floor' | 'wall';
 }
 
 /** Nitro's camera direction (RoomGeometry(64, (-135, 30, 0), (11, 11, 5)).directionAxis). */
@@ -69,10 +72,11 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
 
   // Pieces with the same depth share one Graphics.
   const byDepth = new Map<number, Graphics>();
-  const at = (depth: number) => {
+  const floorByDepth = new Map<number, Graphics>();
+  const at = (depth: number, map = byDepth) => {
     const key = depthToZIndex(depth);
-    let g = byDepth.get(key);
-    if (!g) byDepth.set(key, (g = new Graphics()));
+    let g = map.get(key);
+    if (!g) map.set(key, (g = new Graphics()));
     return g;
   };
   const poly = (depth: number, pts: Point[], color: number) => at(depth).poly(pts.flat()).fill(color);
@@ -311,16 +315,21 @@ export function drawRoom(grid: Grid, door: [number, number]): RoomPiece[] {
     const z = heightAt(grid, doorX, doorY);
     const dl = corner(doorX + 1, doorY + 1, z);
     const dt = corner(doorX + 1, doorY, z);
-    poly(tileDepth(doorX, doorY) - 0.15, [down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)], COLORS.doorway);
+    at(tileDepth(doorX, doorY) - 0.15, floorByDepth)
+      .poly([down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)].flat())
+      .fill(COLORS.doorway);
   }
   cells.sort((a, b) => a.depth - b.depth || a.order - b.order);
   for (const c of cells) {
-    const g = at(c.depth).poly(c.pts.flat()).fill(c.color);
+    const g = at(c.depth, floorByDepth).poly(c.pts.flat()).fill(c.color);
     for (const [a, b] of c.lines) g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
     if (c.lines.length > 0) g.stroke({ color: COLORS.floorLine, width: 2, alignment: 0.5 });
   }
 
-  return [...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 }));
+  return [
+    ...[...floorByDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'floor' as const })),
+    ...[...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000, layer: 'wall' as const })),
+  ];
 }
 
 /** Outline shown on the tile under the mouse. */

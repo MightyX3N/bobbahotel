@@ -8,8 +8,11 @@
 export type FurniDir = 0 | 2 | 4 | 6;
 export const FURNI_DIRS: readonly FurniDir[] = [4, 2, 6, 0];
 
-/** The pictures for one direction: its own frames, or another direction's mirrored. */
-export type FurniDirImages = { frames: string[] } | { mirror: FurniDir };
+/**
+ * The pictures for one direction: per state (switched off/on, closed/open…) its frames (more than
+ * one: animated), or another direction's pictures mirrored.
+ */
+export type FurniDirImages = { states: string[][] } | { mirror: FurniDir };
 
 export interface FurniDef {
   /** Unique id, e.g. "salvaje_chair_2". */
@@ -22,7 +25,7 @@ export interface FurniDef {
   size: [number, number];
   /** Pictures per direction. The first listed direction is the one it is placed in by default. */
   dirs: Partial<Record<FurniDir, FurniDirImages>>;
-  /** Frames per second when it has more than one frame. */
+  /** Frames per second for states with more than one frame. */
   fps?: number;
   /** Picture size multiplier (1 = the pack's own size, which matches our 64x32 tiles). */
   scale?: number;
@@ -46,10 +49,10 @@ export interface FurniFrame {
   ay: number;
 }
 
-/** A built sprite sheet's frame list: frames per direction (mirrored directions are left out). */
+/** A built sprite sheet's frame list: per direction, per state, its frames (mirrored directions are left out). */
 export interface FurniSheet {
   version: number;
-  dirs: Partial<Record<FurniDir, FurniFrame[]>>;
+  dirs: Partial<Record<FurniDir, FurniFrame[][]>>;
 }
 
 /** A furni standing in a room. */
@@ -61,6 +64,13 @@ export interface RoomFurni {
   y: number;
   z: number;
   dir: FurniDir;
+  /** Which of its states it shows (0 = the first). */
+  state: number;
+}
+
+/** How many states a furni has (switched off/on, closed/open…). */
+export function furniStateCount(def: Pick<FurniDef, 'dirs'>): number {
+  return Math.max(1, ...Object.values(def.dirs).map((d) => ('states' in d ? d.states.length : 1)));
 }
 
 /** The tiles a furni covers facing `dir`: [along x, along y]. */

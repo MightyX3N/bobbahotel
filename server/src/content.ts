@@ -85,7 +85,11 @@ export function furniTestRoom(defs: Map<string, FurniDef>): PublicRoom | null {
       y += rowDepth + 1;
       rowDepth = 0;
     }
-    placed.push({ uid: placed.length + 1, def: def.id, x, y, z: 0, dir });
+    // Shown in its liveliest state (an animation rather than switched off); double-click to change.
+    const images = def.dirs[dir];
+    const states = images && 'states' in images ? images.states : [];
+    const state = states.reduce((best, frames, i) => (frames.length > (states[best]?.length ?? 0) ? i : best), 0);
+    placed.push({ uid: placed.length + 1, def: def.id, x, y, z: 0, dir, state });
     x += w + 1;
     rowDepth = Math.max(rowDepth, l);
   }

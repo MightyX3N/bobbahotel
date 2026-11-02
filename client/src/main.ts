@@ -79,6 +79,7 @@ async function enterHotel(): Promise<void> {
   conn.on('userLeave', (d) => room.removeUser(d.id));
   conn.on('status', (d) => room.status(d));
   conn.on('chat', (d) => room.chat(d.id, d.text));
+  conn.on('furniState', (d) => room.furniState(d.uid, d.state));
   conn.on('navigator', (d) => {
     const nav = getUi().navigator;
     // Only show the answer for the list that is open now.
@@ -103,6 +104,7 @@ async function enterHotel(): Promise<void> {
   conn.connect();
 
   room.onWalk = (x, y) => conn.send({ t: 'walk', d: { x, y } });
+  room.onUseFurni = (uid) => conn.send({ t: 'useFurni', d: { uid } });
   // Development only: lets automated tests walk to a tile. Not in production builds.
   if (import.meta.env.DEV) Object.assign(window, { bobbaRoom: room, bobbaWalk: (x: number, y: number) => conn.send({ t: 'walk', d: { x, y } }) });
 
