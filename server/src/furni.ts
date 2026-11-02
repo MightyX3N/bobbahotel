@@ -13,7 +13,13 @@ import { z } from 'zod';
 import { furniFootprint, type FurniDef, type FurniDir, type FurniFrame, type FurniSheet } from '@bobba/shared';
 
 const dirKey = z.enum(['0', '2', '4', '6']);
-const dirImages = z.union([z.object({ states: z.array(z.array(z.string()).min(1)).min(1) }), z.object({ mirror: z.union([z.literal(0), z.literal(2), z.literal(4), z.literal(6)]) })]);
+const dirImages = z.union([
+  z.object({
+    states: z.array(z.array(z.string()).min(1)).min(1),
+    at: z.tuple([z.number(), z.number()]).optional(),
+    stretch: z.tuple([z.number().positive(), z.number().positive()]).optional(),
+  }),
+  z.object({ mirror: z.union([z.literal(0), z.literal(2), z.literal(4), z.literal(6)]) })]);
 const defSchema = z.object({
   id: z.string().regex(/^[a-z0-9_]+$/),
   name: z.string().min(1),
@@ -30,7 +36,7 @@ const defSchema = z.object({
   lay: z.boolean().optional(),
   walk: z.boolean().optional(),
   stack: z.boolean().optional(),
-  hang: z.number().min(0).max(20).optional(),
+  depth: z.number().min(0).max(8).optional(),
   once: z.boolean().optional(),
 });
 const packSchema = z.object({ pack: z.string(), source: z.string().regex(/^[A-Za-z0-9_-]+$/), items: z.array(defSchema) });
@@ -59,7 +65,7 @@ export function loadFurniDefs(contentDir: string): Map<string, FurniDef> {
 export const furniSheetDir = (buildDir: string) => join(buildDir, 'furni');
 
 /** Bump to rebuild every sheet (when the sheet format changes). */
-const SHEET_FORMAT = 2;
+const SHEET_FORMAT = 3;
 const ALPHA = 16;
 
 /**
@@ -115,7 +121,7 @@ function hashOf(def: FurniDef, files: string[]): number {
 function buildSheet(def: FurniDef, srcDir: string, version: number): { png: PNG; sheet: FurniSheet } {
   // Each direction's frames (of all its states) trimmed to one shared box, so states and
   // animations line up without wobbling.
-  const parts: { dir: FurniDir; states: PNG[][]; box: [number, number, number, number] }[] = [];
+  const parts: { dir: FurniDir; states: PNG[][]; box: [number, number, number, number]; at: [number, number] | undefined }[] = [];
   for (const [d, images] of Object.entries(def.dirs)) {
     if (!('states' in images)) continue;
     const states = images.states.map((frames) => frames.map((f) => PNG.sync.read(readFileSync(join(srcDir, `${f}.png`)))));
@@ -129,10 +135,10 @@ function buildSheet(def: FurniDef, srcDir: string, version: number): { png: PNG;
       box = [Math.min(box[0], b[0] + dx), Math.min(box[1], b[1] + dy), Math.max(box[2], b[2] + dx), Math.max(box[3], b[3] + dy)];
     }
     if (box[0] === Infinity) box = [0, 0, 1, 1];
-    parts.push({ dir: Number(d) as FurniDir, states, box });
+    parts.push({ dir: Number(d) as FurniDir, states, box, at: images.at });
   }
   // Lay the frames out in rows, at most ~1024 px wide.
-  const cells: { dir: FurniDir; state: number; img: PNG; dx: number; dy: number; box: [number, number, number, number]; x: number; y: number }[] = [];
+  const cells: { dir: FurniDir; state: number; img: PNG; dx: number; dy: number; box: [number, number, number, number]; at: [number, number] | undefined; x: number; y: number }[] = [];
   let x = 0;
   let y = 0;
   let rowH = 0;
@@ -148,7 +154,7 @@ function buildSheet(def: FurniDef, srcDir: string, version: number): { png: PNG;
           y += rowH + 1;
           rowH = 0;
         }
-        cells.push({ dir: part.dir, state, img, dx: Math.round((ref.width - img.width) / 2), dy: ref.height - img.height, box: part.box, x, y });
+        cells.push({ dir: part.dir, state, img, dx: Math.round((ref.width - img.width) / 2), dy: ref.height - img.height, box: part.box, at: part.at, x, y });
         x += w + 1;
         rowH = Math.max(rowH, h);
         width = Math.max(width, x);
@@ -165,11 +171,11 @@ function buildSheet(def: FurniDef, srcDir: string, version: number): { png: PNG;
     const ex = Math.min(c.img.width, r - c.dx);
     const ey = Math.min(c.img.height, b - c.dy);
     if (ex > sx && ey > sy) PNG.bitblt(c.img, png, sx, sy, ex - sx, ey - sy, c.x + (sx + c.dx - l), c.y + (sy + c.dy - t));
-    // The anchor: the footprint's front corner. Seen from the camera a footprint of fx tiles
-    // along x and fy along y is (fx + fy) * 32 px wide with its front corner fx * 32 px from the
-    // left, so it sits at that share of the picture's width, at the bottom.
-    const [fx, fy] = furniFootprint(def, c.dir);
-    const frame: FurniFrame = { x: c.x, y: c.y, w: r - l, h: b - t, ax: Math.round(((r - l) * fx) / (fx + fy)), ay: b - t };
+    // The anchor: where the picture is pinned. Floor furni: the middle of their footprint, as
+    // measured from the picture by the import tool (`at`). Wall furni: the middle of the picture.
+    const frame: FurniFrame = c.at
+      ? { x: c.x, y: c.y, w: r - l, h: b - t, ax: c.at[0] - l, ay: c.at[1] - t }
+      : { x: c.x, y: c.y, w: r - l, h: b - t, ax: (r - l) / 2, ay: (b - t) / 2 };
     const states = (sheet.dirs[c.dir] ??= []);
     (states[c.state] ??= []).push(frame);
   }

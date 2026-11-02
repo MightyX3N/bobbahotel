@@ -609,29 +609,21 @@ describe('placing furni', () => {
     expect(last).toMatchObject({ x: 6, y: 5, lay: true, sit: false, dir: 4, moving: false });
   });
 
-  it('hanging furni hang over other furni and block nobody', async () => {
-    const { staff, roomId } = await staffInOwnRoom();
-    const counter = 'salvaje_kitchen_furniture_wood_2';
-    const cabinet = 'salvaje_kitchen_furniture_wood_4';
-    expect(content.furni.get(cabinet)!.hang).toBeGreaterThan(0);
-    staff.send({ t: 'placeFurni', d: { def: counter, x: 6, y: 6, dir: 4 } });
-    await staff.waitFor('furniAdd', (m) => m.d.def === counter);
-    // Over the counter, and the counter's top is still free for a lamp.
-    staff.send({ t: 'placeFurni', d: { def: cabinet, x: 6, y: 6, dir: 4 } });
-    expect((await staff.waitFor('furniAdd', (m) => m.d.def === cabinet)).d.z).toBe(0);
-    staff.send({ t: 'placeFurni', d: { def: 'salvaje_lava_lamp', x: 6, y: 6, dir: 4 } });
-    expect((await staff.waitFor('furniAdd', (m) => m.d.def === 'salvaje_lava_lamp')).d.z).toBeGreaterThan(0);
-    // A cabinet on its own blocks nobody: you can walk under it.
-    staff.send({ t: 'placeFurni', d: { def: cabinet, x: 8, y: 8, dir: 4 } });
-    await staff.waitFor('furniAdd', (m) => m.d.def === cabinet && m.d.x === 8);
-    const me = (await staff.waitFor('welcome')).d.me;
-    staff.send({ t: 'walk', d: { x: 8, y: 8 } });
-    await new Promise((r) => setTimeout(r, 50));
-    const live = app!.rooms.get(roomId)!;
-    for (let i = 1; i <= 14; i++) live.tick(Date.now() + i * TICK_MS);
-    await new Promise((r) => setTimeout(r, 50));
-    const last = staff.inbox.filter((m) => m.t === 'status').flatMap((m) => m.d).filter((s) => s.id === me.id).at(-1)!;
-    expect(last).toMatchObject({ x: 8, y: 8, moving: false });
+  it('wall furni stay on the wall: lifted off the floor, above the doorway, never past its end', async () => {
+    const { staff } = await staffInOwnRoom();
+    const layout = content.layouts.get('model_a')!;
+    const [dx, dy] = layout.door;
+    // Wanted too low: lifted so its whole picture is on the wall.
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_window_7_a', x: 8, y: 1, dir: 2, off: 0.5, z: 0 } });
+    const low = (await staff.waitFor('furniAdd')).d;
+    expect(low.z).toBeGreaterThanOrEqual(0.5);
+    // On the wall over the door: above the doorway.
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_corkboard_1', x: dx + 1, y: dy, dir: 4, off: 0.5, z: 1 } });
+    const door = (await staff.waitFor('furniAdd', (m) => m.d.def === 'salvaje_corkboard_1')).d;
+    expect(door.z).toBeGreaterThan(2.9);
+    // Past the end of the back wall (x = 11 is the last column): it doesn't fit.
+    staff.send({ t: 'placeFurni', d: { def: 'salvaje_corkboard_1', x: 11, y: 1, dir: 2, off: 0.95, z: 2 } });
+    expect((await staff.waitFor('error')).d.code).toBe('furni_cant_place');
   });
 
   it('hangs wall furni on walls only', async () => {

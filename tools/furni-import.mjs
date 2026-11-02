@@ -119,6 +119,7 @@ const HAND = [
   { base: 'Plastic_Box_1', dirs: { 4: [['Plastic_Box_1_Empty'], ['Plastic_Box_1_Full']] } },
   { base: 'Plastic_Box_2', dirs: { 4: [['Plastic_Box_2_Empty'], ['Plastic_Box_2_Full']] } },
   { base: 'Pot', dirs: { 4: [['Pot'], ['Pot_Full']] } },
+  { base: 'Lamp_8', dirs: { 4: [['Lamp_8_A_Tile'], ['Lamp_8_B_Tile']] } },
   { base: 'Light_Switch', dirs: { 4: [['Switch_C'], ['Switch_B']] } },
   { base: 'RotationScreen', dirs: { 4: [['RotationScreen_A_Tile'], ['RotationScreen_B_Tile'], ['RotationScreen_C_Tile']] } },
   // Blinds open, half and closed.
@@ -256,6 +257,7 @@ const NAMES = {
   Plastic_Box_1: ['Plastic Box', 'plastic_box_1_empty'],
   Plastic_Box_2: ['Plastic Box 2', 'plastic_box_2_empty'],
   Light_Switch: ['Light Switch', 'switch_b'],
+  Lamp_8: ['Desk Lamp', 'lamp_8_a'],
   RotationScreen: ['Rotating Screen', 'rotationscreen_a'],
   Window_7: ['Window 7', 'window_7_a'],
   Window_8: ['Window 8', 'window_8'],
@@ -267,13 +269,13 @@ const NAMES = {
 };
 
 // ---- guesses ----
-const WALL = /(poster|picture|painting|wall_clock|window|diploma|corkboard|^switch|^light_switch|tap_wall|canvas|mirror|hanging_towel|^ac$|pipe_|cable_|wall_protection|wall_(l|r|top|window)_|sticky_note|^photos|blueprint|^board_|^camera|^hanger$|^rack$|^long_rack$|^shower_tap$|^tap_shower$|^big_tv)/i;
-// Floor furni that hang in the air (over a counter, on a wall) at this height: they don't stand on
-// the floor, block nobody, and can share a tile with other furni.
-// Shelves hold other furni, and sit at the back of their tile (against a wall), [x, y] pixels.
-const HANG = [
-  [/^kitchen_furniture_[a-z]+_[4-7]$/i, 2.4, false],
-  [/^(shelf|long_shelf|small_shelf|shelving_6)$/i, 1.6, true, [10, -5]],
+const WALL = /(poster|picture|painting|wall_clock|window|diploma|corkboard|^switch|^light_switch|tap_wall|canvas|mirror|hanging_towel|^ac$|pipe_|cable_|wall_protection|wall_(l|r|top|window)_|sticky_note|^photos|blueprint|^board_|^camera|^hanger$|^rack$|^long_rack$|^shower_tap$|^tap_shower$|^big_tv|^kitchen_furniture_[a-z]+_[4-7]$|^(shelf|long_shelf|small_shelf|shelving_6)$|^lamp_7$|^lamp_modern$|^toilet_paper$|^tools$|^rag$|^medical_kit_closed$|^screen_small$)/i;
+// Wall furni that stick out of the wall (tiles), and which wall their picture is drawn for when
+// their outline can't tell (boxes show both slopes): 2 = a back wall, 4 = a left wall.
+const WALL_DEPTH = [
+  [/^kitchen_furniture_[a-z]+_[4-7]$/i, 1, 2],
+  [/^(shelf|long_shelf|small_shelf|shelving_6)$/i, 0.5],
+  [/^medical_kit_closed$/i, 0.4],
 ];
 const SIT = /(chair|sofa|stool|seat|bench|couch)/i;
 const LAY = /^bed_/i;
@@ -309,26 +311,93 @@ function slopesDownRight(file) {
   return down >= up;
 }
 
-/** Tiles covered, from the picture: its width says how many tiles across, the front corner how they split. */
-function guessSize(frames) {
-  const png = load(frames[0]);
-  const box = bbox(png);
-  if (!box) return [1, 1];
-  const [l, , r, b] = box;
-  const width = r - l;
-  // Where the bottom row of the picture is: the furni's front corner.
-  let sum = 0, n = 0;
-  for (let y = b - 1; y >= Math.max(0, b - 3); y--) {
-    for (let x = l; x < r; x++) if (png.data[(y * png.width + x) * 4 + 3] > 16) (sum += x - l), n++;
-    if (n) break;
+/**
+ * Measures where a floor furni's picture stands: the outline of its bottom edge is a V (the front
+ * two sides of its footprint, sloping 1:2 on screen). The V is fitted as low as it can go with the
+ * whole picture above it; where the picture's bottom touches it are the footprint's corners.
+ * Returns, in the picture's pixels: the front corner (fx, fy), the left and right corners' x, and
+ * the top of the picture. Only solid pixels count (soft shadows don't).
+ */
+function measureFloor(file) {
+  const png = load(file);
+  const solid = (x, y) => png.data[(y * png.width + x) * 4 + 3] > 200;
+  const cols = [];
+  let top = png.height;
+  for (let x = 0; x < png.width; x++) {
+    let b = -1;
+    for (let y = 0; y < png.height; y++) if (solid(x, y)) { b = y; top = Math.min(top, y); }
+    if (b >= 0) cols.push([x, b]);
   }
-  const front = n ? sum / n : width / 2;
-  const across = Math.min(8, Math.max(2, Math.round(width / 32)));
-  const alongX = Math.min(across - 1, Math.max(1, Math.round((front / width) * across)));
-  return [alongX, across - alongX];
+  if (cols.length === 0) return null;
+  const xMin = cols[0][0];
+  const xMax = cols.at(-1)[0];
+  let fx = xMin;
+  let fy = Infinity;
+  for (let x = xMin; x <= xMax; x += 0.5) {
+    let y = -Infinity;
+    for (const [cx, b] of cols) y = Math.max(y, b + Math.abs(cx - x) / 2);
+    if (y < fy - 1e-9) [fx, fy] = [x, y];
+  }
+  // Columns whose bottom lies on the V (within 2 px) are standing on the floor.
+  const touching = cols.filter(([cx, b]) => fy - Math.abs(cx - fx) / 2 - b <= 2).map(([cx]) => cx);
+  return { fx, fy: fy + 1, left: Math.min(...touching), right: Math.max(...touching) + 1, top, width: png.width, height: png.height };
+}
+
+/**
+ * A floor furni's tiles, size and where its picture stands, from its measured outline. Like
+ * Habbo, a furni covers whole tiles; pictures drawn a little smaller or bigger than our tiles are
+ * scaled to fit them (small things, like a lamp, keep their size and stand in the middle of their
+ * tile). Returns the tiles [along x, along y], the scale, the footprint's middle in the picture
+ * (where the picture is pinned to the middle of its tiles) and its height in height steps.
+ */
+function fitFloor(file, flat) {
+  const m = measureFloor(file);
+  if (!m) return null;
+  const w = Math.max(0, (m.fx - m.left) / 32);
+  const l = Math.max(0, (m.right - m.fx) / 32);
+  let size = [1, 1];
+  let scale = 1;
+  let stretch;
+  if (flat) {
+    // Rugs and mats cover their tiles exactly: stretched along each floor direction on its own
+    // (they lie flat, so that only changes their shape on the floor).
+    size = [Math.max(1, Math.round(w)), Math.max(1, Math.round(l))];
+    const sx = Math.round((size[0] / Math.max(0.2, w)) * 1000) / 1000;
+    const sy = Math.round((size[1] / Math.max(0.2, l)) * 1000) / 1000;
+    if (Math.abs(sx - 1) >= 0.02 || Math.abs(sy - 1) >= 0.02) stretch = [sx, sy];
+  } else if (w + l >= 1.2) {
+    // The whole tiles that suit it best: it may not stick out of them (it's made smaller if it
+    // would), is only made bigger to fill them when it's close, and should fill them well.
+    let best = null;
+    for (let W = 1; W <= 8; W++) {
+      for (let L = 1; L <= 8; L++) {
+        const fit = Math.min(W / Math.max(w, 0.1), L / Math.max(l, 0.1));
+        const sc = fit < 1 ? fit : fit <= 1.12 ? fit : 1;
+        const empty = (W - Math.min(W, w * sc)) / W + (L - Math.min(L, l * sc)) / L;
+        const err = 0.5 * Math.abs(Math.log(sc)) + empty;
+        if (!best || err < best.err - 1e-9) best = { W, L, sc, err };
+      }
+    }
+    size = [best.W, best.L];
+    scale = best.sc;
+  } else if (w > 1 || l > 1) {
+    scale = Math.min(1 / Math.max(w, 0.1), 1 / Math.max(l, 0.1));
+  }
+  scale = Math.round(scale * 1000) / 1000;
+  if (Math.abs(scale - 1) < 0.02) scale = 1;
+  // The footprint's middle: halfway between its left and right corners (for small things, the
+  // middle of what touches the floor).
+  const yAt = (x) => m.fy - Math.abs(x - m.fx) / 2;
+  const at = [Math.round(((m.left + m.right) / 2) * 2) / 2, Math.round(((yAt(m.left) + yAt(m.right)) / 2) * 2) / 2];
+  // Height: from the top of its footprint diamond (seen from above) to the top of the picture.
+  const [W, L] = size;
+  const height = flat ? 0 : Math.max(0, Math.round(((at[1] - m.top) / 32 * scale - (W + L) / 4) * 10) / 10);
+  return { size, scale, stretch, at, height, measured: [Math.round(w * 100) / 100, Math.round(l * 100) / 100] };
 }
 
 const added = [];
+const measuredLog = [];
+const f2 = (a) => a.join('x');
 const ids = new Set();
 for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
   const [name, slugName] = NAMES[g.base] ?? [title(g.base), slug(g.base)];
@@ -341,7 +410,8 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
     // Wall items: direction 2 hangs on the back walls (running down to the right), 4 on the left
     // walls. The picture is drawn for one of them (seen from how its top edge slopes); the other
     // is the same picture mirrored.
-    const forBack = slopesDownRight(g.dirs[4][0][0]);
+    const known = WALL_DEPTH.find(([re]) => re.test(g.base));
+    const forBack = known?.[2] !== undefined ? known[2] === 2 : slopesDownRight(g.dirs[4][0][0]);
     dirs[forBack ? 2 : 4] = { states: g.dirs[4] };
     dirs[forBack ? 4 : 2] = { mirror: forBack ? 2 : 4 };
   } else {
@@ -352,15 +422,44 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
     if (g.dirs[0] && !g.dirs[6]) dirs[6] = { mirror: 0 };
     if (g.dirs[6] && !g.dirs[0]) dirs[0] = { mirror: 6 };
   }
-  const def = { id, name, source, kind, size: guessSize(g.dirs[4][0]), dirs };
+  const def = { id, name, source, kind, size: [1, 1], dirs };
+  if (kind === 'floor') {
+    // Every direction with its own pictures is measured: its tiles, scale and where it stands.
+    let fits = {};
+    for (const [d, images] of Object.entries(dirs)) if (images.states) fits[d] = fitFloor(images.states[0][0], WALK.test(g.base));
+    // Seats face away from their long side: a sofa whose "direction 4" picture is long along y
+    // really faces 2 (and its back views 0 and 6 swap too).
+    if (SIT.test(g.base) && fits[4] && fits[4].size[1] > fits[4].size[0]) {
+      const swap = { 4: 2, 2: 4, 0: 6, 6: 0 };
+      const turned = {};
+      for (const [d, images] of Object.entries(dirs)) turned[swap[d]] = images.mirror !== undefined ? { mirror: swap[images.mirror] } : images;
+      for (const d of Object.keys(dirs)) delete dirs[d];
+      Object.assign(dirs, turned);
+      const f2s = {};
+      for (const [d, f] of Object.entries(fits)) f2s[swap[d]] = f;
+      fits = f2s;
+    }
+    const main = fits[4] ?? fits[2] ?? Object.values(fits)[0];
+    if (main) {
+      const [a, b] = main.size;
+      // Sizes are kept for direction 4: a picture drawn facing 2 or 6 has them the other way round.
+      const own = fits[4] ? 4 : fits[2] ? 2 : Number(Object.keys(fits)[0]);
+      def.size = own === 2 || own === 6 ? [b, a] : [a, b];
+      if (main.scale !== 1) def.scale = main.scale;
+      def.height = main.height;
+      for (const [d, f] of Object.entries(fits)) {
+        if (!f) continue;
+        dirs[d].at = f.at;
+        if (f.stretch) dirs[d].stretch = f.stretch;
+      }
+      measuredLog.push(`${id} measured ${f2(main.measured)} -> ${def.size} x${def.scale ?? 1} h${def.height}`);
+    }
+  }
   if (g.dirs[4].some((st) => st.length > 1)) def.fps = g.fps ?? 8;
   if (g.once) def.once = true;
-  const hang = HANG.find(([re]) => re.test(g.base));
-  if (def.kind === 'floor' && hang) {
-    def.hang = hang[1];
-    if (hang[2]) def.stack = true;
-    if (hang[3]) def.offset = hang[3];
-  } else if (def.kind === 'floor') {
+  const depth = WALL_DEPTH.find(([re]) => re.test(g.base));
+  if (def.kind === 'wall' && depth) def.depth = depth[1];
+  if (def.kind === 'floor') {
     if (LAY.test(g.base)) def.lay = true;
     else if (SIT.test(g.base) && !/pillow/i.test(g.base)) def.sit = true;
     else if (WALK.test(g.base)) def.walk = true;
@@ -369,6 +468,7 @@ for (const g of groups.sort((a, b) => a.base.localeCompare(b.base))) {
   added.push(def);
 }
 
+writeFileSync(join(root, 'tools', 'furni-measured.txt'), measuredLog.join('\n') + '\n');
 mkdirSync(join(root, 'content', 'furni'), { recursive: true });
 const out = { pack, source, items: added };
 writeFileSync(outFile, JSON.stringify(out, null, 1) + '\n');

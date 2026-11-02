@@ -43,11 +43,29 @@ export async function furniThumb(id: string): Promise<{ url: string; x: number; 
   return { url: `/api/furni/${id}.png?v=${sheet.version}`, x: frame.x, y: frame.y, w: frame.w, h: frame.h, flip: !!images && 'mirror' in images };
 }
 
-/** One frame ready to draw: its texture and anchor (the footprint's front corner) in pixels. */
+/** One frame ready to draw: its texture and anchor (see FurniFrame) in pixels. */
 export interface FurniTexture {
   texture: Texture;
   ax: number;
   ay: number;
+  /** Is the picture solid at (x, y) of this frame (for clicking exactly on what's drawn, like Habbo)? */
+  solid: (x: number, y: number) => boolean;
+}
+
+/** The sheet's pixels' alpha, to test clicks against. */
+function alphaOf(texture: Texture): { data: Uint8ClampedArray; width: number } | null {
+  try {
+    const res = texture.source.resource as CanvasImageSource & { width: number; height: number };
+    const canvas = document.createElement('canvas');
+    canvas.width = res.width;
+    canvas.height = res.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(res, 0, 0);
+    return { data: ctx.getImageData(0, 0, res.width, res.height).data, width: res.width };
+  } catch {
+    return null;
+  }
 }
 
 /** A furni's frames per direction it has pictures for (mirrored directions are drawn flipped), per state. */
@@ -66,12 +84,20 @@ export function furniFrames(id: string): Promise<FurniFrames | null> {
       const base = await loadTexture(`/api/furni/${id}.png?v=${sheet.version}`);
       if (!base) return null;
       const out: FurniFrames = {};
+      const alpha = alphaOf(base);
       for (const [dir, states] of Object.entries(sheet.dirs)) {
         out[Number(dir) as FurniDir] = states.map((list) =>
           list.map((f) => ({
             texture: new Texture({ source: base.source, frame: new Rectangle(f.x, f.y, f.w, f.h) }),
             ax: f.ax,
             ay: f.ay,
+            solid: (x: number, y: number) => {
+              const px = Math.floor(x);
+              const py = Math.floor(y);
+              if (px < 0 || py < 0 || px >= f.w || py >= f.h) return false;
+              // Without the pixels (shouldn't happen), the whole box counts.
+              return alpha ? alpha.data[((f.y + py) * alpha.width + f.x + px) * 4 + 3]! > 40 : true;
+            },
           })),
         );
       }

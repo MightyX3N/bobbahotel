@@ -13,7 +13,15 @@ export const FURNI_DIRS: readonly FurniDir[] = [4, 2, 6, 0];
  * The pictures for one direction: per state (switched off/on, closed/open…) its frames (more than
  * one: animated), or another direction's pictures mirrored.
  */
-export type FurniDirImages = { states: string[][] } | { mirror: FurniDir };
+export type FurniDirImages =
+  | {
+      states: string[][];
+      /** Floor furni: the middle of its footprint in the first picture (pixels), measured by the import tool. */
+      at?: [number, number] | undefined;
+      /** Rugs: stretched along x and y on the floor so they cover their tiles exactly. */
+      stretch?: [number, number] | undefined;
+    }
+  | { mirror: FurniDir };
 
 export interface FurniDef {
   /** Unique id, e.g. "salvaje_chair_2". */
@@ -48,14 +56,9 @@ export interface FurniDef {
   stack?: boolean;
   /** Wall furni: how many tiles it sticks out from the wall (a wall cabinet: 1). */
   depth?: number;
-  /**
-   * Hangs this many height steps above its floor (kitchen wall cabinets, wall shelves): it blocks
-   * nobody, and other furni can stand under it on the same tiles.
-   */
-  hang?: number;
 }
 
-/** One built frame in a furni's sprite sheet. ax/ay: the anchor (the footprint's front corner) inside the frame. */
+/** One built frame in a furni's sprite sheet. ax/ay: the anchor inside the frame (floor furni: the middle of the footprint; wall furni: the middle of the picture). */
 export interface FurniFrame {
   x: number;
   y: number;
@@ -111,13 +114,10 @@ export function furniHeight(def: FurniDef, sheet?: FurniSheet): number {
   return Math.max(0, Math.round(((frame.h - (fx + fy) * 16) / 32) * 10) / 10);
 }
 
-/** How high a placed furni's top is (height steps): where it stands, plus how high it hangs, plus its height. */
+/** How high a placed furni's top is (height steps): where it stands plus its height. */
 export function furniTop(def: FurniDef, f: Pick<RoomFurni, 'z'>, sheet?: FurniSheet): number {
-  return f.z + (def.hang ?? 0) + furniHeight(def, sheet);
+  return f.z + furniHeight(def, sheet);
 }
-
-/** Furni higher than this above their floor stand on hanging furni (a shelf) and block nobody. */
-export const ABOVE_HEADS = 1.5;
 
 /** A floor furni already on a tile, for working out where another one can go. */
 export interface FurniBelow {
@@ -128,22 +128,19 @@ export interface FurniBelow {
 
 /**
  * Where a floor furni would stand on one tile (the same rules on the server and in the game):
- * on the floor, or on top of the highest furni there if things can go on it (tables, rugs, wall
- * shelves). Hanging furni hang over anything, and things stand under them. null: it can't go there.
+ * on the floor, or on top of the highest furni there if things can go on it (tables, rugs).
+ * null: it can't go there.
  */
 export function standHeight(def: FurniDef, floorZ: number, below: FurniBelow[]): number | null {
-  if (def.hang !== undefined) return floorZ;
-  const under = below.filter((b) => b.def.hang === undefined || b.def.stack);
-  if (under.length === 0) return floorZ;
-  const highest = under.reduce((a, b) => (b.top > a.top ? b : a));
+  if (below.length === 0) return floorZ;
+  const highest = below.reduce((a, b) => (b.top > a.top ? b : a));
   if (!(highest.def.stack || highest.def.walk)) return null;
   return Math.max(floorZ, highest.top);
 }
 
-/** Does a furni standing at z on a floor at floorZ keep avatars off its tiles? */
-export function furniBlocks(def: FurniDef, z: number, floorZ: number): boolean {
-  if (def.kind !== 'floor' || def.walk || def.sit || def.lay || def.hang !== undefined) return false;
-  return z - floorZ < ABOVE_HEADS;
+/** Does a furni keep avatars off its tiles? (Not rugs, seats and beds.) */
+export function furniBlocks(def: FurniDef): boolean {
+  return def.kind === 'floor' && !def.walk && !def.sit && !def.lay;
 }
 
 /** How many states a furni has (switched off/on, closed/open…). */

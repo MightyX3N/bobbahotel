@@ -2,7 +2,6 @@
 import { Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
 import { AVATAR_FRAME, lookLayers, SHEET_ROW, type Look, type Pose, type RoomUser } from '@bobba/shared';
 import { loadSprite, sheetFrame } from '../sprites.ts';
-import { depthToZIndex, tileDepth } from './drawRoom.ts';
 import { tileCenter } from './iso.ts';
 
 // The Cozy figure is about 73 px tall at its own size. Measured from Habbo, the avatar is about
@@ -19,10 +18,9 @@ const LAY_LENGTH = 2.1;
 /** Where the head is: tiles from the middle of the head tile, towards the headboard. */
 const LAY_HEAD = 0.38;
 
-/** The seat or bed someone is on: they're drawn just in front of it, or behind it when they face away. */
+/** The bed someone lies on. */
 export interface RestingOn {
-  zIndex: number;
-  /** Beds: how many tiles long. */
+  /** How many tiles long. */
   length: number;
 }
 
@@ -46,7 +44,7 @@ export class AvatarView {
   private moving = false;
   private sitting = false;
   private lying = false;
-  /** Set by the room while sitting or lying: the furni it's on. */
+  /** Set by the room while lying: the bed it's on. */
   restingOn: RestingOn | null = null;
   private readonly shadow: Graphics;
   private readonly seed: number;
@@ -88,6 +86,11 @@ export class AvatarView {
     this.moving = moving;
   }
 
+  /** Which way it faces (0-7). */
+  facing(): number {
+    return this.dir;
+  }
+
   /** Sitting or lying (not walking), on the tile it's going to. */
   resting(): { x: number; y: number; how: 'sit' | 'lay' } | null {
     if (this.moving || !(this.sitting || this.lying)) return null;
@@ -119,20 +122,11 @@ export class AvatarView {
     const p = this.positionAt(now);
     const s = tileCenter(p.x, p.y, p.z);
     this.container.position.set(Math.round(s.x), Math.round(s.y));
-    // Sorted by where the avatar actually is (also mid-step), a little above its own tile, so a
-    // wall or raised floor in front hides it at the right moment (e.g. stepping through the door)
-    // while flat floor it walks onto never covers its feet.
-    this.container.zIndex = depthToZIndex(tileDepth(p.x, p.y) + 0.6);
+    // (The room works out the drawing order: see depthSort.ts.)
 
     const walking = this.moving && now - this.moveStart < this.moveMs + 120;
     const lying = this.lying && !walking;
     const resting = (this.sitting || this.lying) && !walking;
-    // On a seat or bed: drawn just in front of it, or behind it when facing away (its back hides
-    // your legs), so the rest of a long sofa or bed never covers you.
-    if (resting && this.restingOn) {
-      const away = !lying && (this.dir === 0 || this.dir === 6 || this.dir === 7);
-      this.container.zIndex = this.restingOn.zIndex + (away ? -1 : 1);
-    }
     this.setPose(walking ? 'walk' : this.sitting ? 'sit' : 'idle');
     this.layDown(lying, this.restingOn?.length ?? 2);
     // No shadow while sitting or lying: the seat is under you.

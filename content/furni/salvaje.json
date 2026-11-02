@@ -35,9 +35,14 @@
        "3D_Printer_Cup_15",
        "3D_Printer_Cup_16"
       ]
+     ],
+     "at": [
+      32,
+      48
      ]
     }
    },
+   "height": 1,
    "fps": 8
   },
   {
@@ -73,9 +78,14 @@
        "3D_Printer_Empty_15",
        "3D_Printer_Empty_16"
       ]
+     ],
+     "at": [
+      32,
+      48
      ]
     }
    },
+   "height": 1,
    "fps": 8
   },
   {
@@ -118,9 +128,14 @@
       [
        "Ac_Big_1"
       ]
+     ],
+     "at": [
+      34,
+      46
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_ac_big_2",
@@ -140,9 +155,14 @@
       [
        "Ac_Big_2"
       ]
+     ],
+     "at": [
+      64,
+      97.5
      ]
     }
-   }
+   },
+   "height": 2
   },
   {
    "id": "salvaje_aircc",
@@ -162,9 +182,14 @@
       [
        "AirCC_Tile"
       ]
+     ],
+     "at": [
+      17,
+      29.5
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_comet_classic",
@@ -184,9 +209,15 @@
       [
        "Atari"
       ]
+     ],
+     "at": [
+      29,
+      37.5
      ]
     }
-   }
+   },
+   "scale": 0.928,
+   "height": 0.6
   },
   {
    "id": "salvaje_basic_office_chair_a",
@@ -206,9 +237,14 @@
       [
        "Basic_Office_Chair_A"
       ]
+     ],
+     "at": [
+      16,
+      43.5
      ]
     }
    },
+   "height": 0.9,
    "sit": true
   },
   {
@@ -229,9 +265,14 @@
       [
        "Basic_Office_Chair_B"
       ]
+     ],
+     "at": [
+      15.5,
+      40
      ]
     }
    },
+   "height": 0.8,
    "sit": true
   },
   {
@@ -252,9 +293,14 @@
       [
        "Bath_1"
       ]
+     ],
+     "at": [
+      65,
+      93
      ]
     }
-   }
+   },
+   "height": 1
   },
   {
    "id": "salvaje_bath_carpet",
@@ -274,9 +320,18 @@
       [
        "Bath_Carpet"
       ]
+     ],
+     "at": [
+      20,
+      12.5
+     ],
+     "stretch": [
+      1.306,
+      2.065
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -319,9 +374,15 @@
       [
        "Bed_A_4"
       ]
+     ],
+     "at": [
+      50,
+      35
      ]
     }
    },
+   "scale": 0.831,
+   "height": 0.2,
    "lay": true
   },
   {
@@ -330,8 +391,8 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
-    2
+    2,
+    1
    ],
    "dirs": {
     "2": {
@@ -342,9 +403,15 @@
       [
        "Bed_B_4"
       ]
+     ],
+     "at": [
+      45,
+      48.5
      ]
     }
    },
+   "scale": 0.901,
+   "height": 0.6,
    "lay": true
   },
   {
@@ -365,9 +432,15 @@
       [
        "Bed_C_4"
       ]
+     ],
+     "at": [
+      51.5,
+      36
      ]
     }
    },
+   "scale": 0.81,
+   "height": 0.2,
    "lay": true
   },
   {
@@ -388,9 +461,15 @@
       [
        "Bed_D_4"
       ]
+     ],
+     "at": [
+      55,
+      54.5
      ]
     }
    },
+   "scale": 0.831,
+   "height": 0.7,
    "lay": true
   },
   {
@@ -411,9 +490,15 @@
       [
        "Bed_E_4"
       ]
+     ],
+     "at": [
+      55,
+      54.5
      ]
     }
    },
+   "scale": 0.831,
+   "height": 0.7,
    "lay": true
   },
   {
@@ -434,9 +519,15 @@
       [
        "Bed_F_4"
       ]
+     ],
+     "at": [
+      55,
+      61.5
      ]
     }
    },
+   "scale": 0.831,
+   "height": 0.8,
    "lay": true
   },
   {
@@ -457,9 +548,15 @@
       [
        "Bed_G_4"
       ]
+     ],
+     "at": [
+      55,
+      61.5
      ]
     }
    },
+   "scale": 0.831,
+   "height": 0.8,
    "lay": true
   },
   {
@@ -480,9 +577,15 @@
       [
        "Bed_H_4"
       ]
+     ],
+     "at": [
+      59,
+      68.5
      ]
     }
    },
+   "scale": 0.934,
+   "height": 1,
    "lay": true
   },
   {
@@ -503,9 +606,15 @@
       [
        "Bed_I_4"
       ]
+     ],
+     "at": [
+      54,
+      61.5
      ]
     }
    },
+   "scale": 0.831,
+   "height": 0.8,
    "lay": true
   },
   {
@@ -526,9 +635,15 @@
       [
        "Bed_J_4"
       ]
+     ],
+     "at": [
+      63,
+      67.5
      ]
     }
    },
+   "scale": 0.921,
+   "height": 0.9,
    "lay": true
   },
   {
@@ -538,7 +653,7 @@
    "kind": "floor",
    "size": [
     1,
-    3
+    2
    ],
    "dirs": {
     "2": {
@@ -549,9 +664,15 @@
       [
        "Bed_K_4"
       ]
+     ],
+     "at": [
+      60,
+      66.5
      ]
     }
    },
+   "scale": 0.719,
+   "height": 0.7,
    "lay": true
   },
   {
@@ -560,7 +681,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    2,
+    1,
     2
    ],
    "dirs": {
@@ -572,9 +693,15 @@
       [
        "Bed_L_4"
       ]
+     ],
+     "at": [
+      61,
+      72.5
      ]
     }
    },
+   "scale": 0.719,
+   "height": 0.9,
    "lay": true
   },
   {
@@ -595,9 +722,14 @@
       [
        "Bed_M_4"
       ]
+     ],
+     "at": [
+      74,
+      73.5
      ]
     }
    },
+   "height": 1,
    "lay": true
   },
   {
@@ -638,9 +770,14 @@
        "Bended_Screen_17",
        "Bended_Screen_18"
       ]
+     ],
+     "at": [
+      41.5,
+      51
      ]
     }
    },
+   "height": 0.8,
    "fps": 8
   },
   {
@@ -661,9 +798,14 @@
       [
        "BendedScreen_A_Tile"
       ]
+     ],
+     "at": [
+      29.5,
+      41
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_big_tv",
@@ -671,7 +813,7 @@
    "source": "furni",
    "kind": "wall",
    "size": [
-    2,
+    1,
     1
    ],
    "dirs": {
@@ -715,7 +857,7 @@
    "source": "furni",
    "kind": "wall",
    "size": [
-    2,
+    1,
     1
    ],
    "dirs": {
@@ -760,7 +902,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
+    2,
     1
    ],
    "dirs": {
@@ -772,9 +914,14 @@
       [
        "BigTV_3_Off_Tile"
       ]
+     ],
+     "at": [
+      40.5,
+      75
      ]
     }
-   }
+   },
+   "height": 1.6
   },
   {
    "id": "salvaje_blueprint",
@@ -860,9 +1007,14 @@
       [
        "Bonsai"
       ]
+     ],
+     "at": [
+      14.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_book_8",
@@ -882,9 +1034,14 @@
       [
        "Book_8"
       ]
+     ],
+     "at": [
+      12,
+      24.5
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_book_big_lightblue",
@@ -919,9 +1076,14 @@
        "Book_Big_LightBlue_15",
        "Book_Big_LightBlue_16"
       ]
+     ],
+     "at": [
+      33.5,
+      43.5
      ]
     }
    },
+   "height": 0.4,
    "fps": 8
   },
   {
@@ -942,9 +1104,14 @@
       [
        "Book_Green"
       ]
+     ],
+     "at": [
+      13,
+      10.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_blue_lying",
@@ -964,9 +1131,14 @@
       [
        "Book_Small_Blue_Lying"
       ]
+     ],
+     "at": [
+      15.5,
+      12.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_blue_standing",
@@ -986,9 +1158,14 @@
       [
        "Book_Small_Blue_Standing"
       ]
+     ],
+     "at": [
+      8.5,
+      25
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_book_small_brightred_lying",
@@ -1008,9 +1185,14 @@
       [
        "Book_Small_BrightRed_Lying"
       ]
+     ],
+     "at": [
+      16,
+      11.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_brightred_standing",
@@ -1030,9 +1212,14 @@
       [
        "Book_Small_BrightRed_Standing"
       ]
+     ],
+     "at": [
+      8,
+      23.5
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_book_small_green_lying",
@@ -1052,9 +1239,14 @@
       [
        "Book_Small_Green_Lying"
       ]
+     ],
+     "at": [
+      13.5,
+      14.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_green_standing",
@@ -1074,9 +1266,14 @@
       [
        "Book_Small_Green_Standing"
       ]
+     ],
+     "at": [
+      10.5,
+      23.5
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_book_small_grey_lying",
@@ -1096,9 +1293,14 @@
       [
        "Book_Small_Grey_Lying"
       ]
+     ],
+     "at": [
+      15.5,
+      15.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_grey_standing",
@@ -1118,9 +1320,14 @@
       [
        "Book_Small_Grey_Standing"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_book_small_lightgreen_lying",
@@ -1140,9 +1347,14 @@
       [
        "Book_Small_LightGreen_Lying"
       ]
+     ],
+     "at": [
+      15.5,
+      12.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_lightgreen_standing",
@@ -1162,9 +1374,14 @@
       [
        "Book_Small_LightGreen_Standing"
       ]
+     ],
+     "at": [
+      8.5,
+      25
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_book_small_lightred_lying",
@@ -1184,9 +1401,14 @@
       [
        "Book_Small_LightRed_Lying"
       ]
+     ],
+     "at": [
+      15.5,
+      15.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_lightred_standing",
@@ -1206,9 +1428,14 @@
       [
        "Book_Small_LightRed_Standing"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_book_small_orange_lying",
@@ -1228,9 +1455,14 @@
       [
        "Book_Small_Orange_Lying"
       ]
+     ],
+     "at": [
+      16,
+      11.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_orange_standing",
@@ -1250,9 +1482,14 @@
       [
        "Book_Small_Orange_Standing"
       ]
+     ],
+     "at": [
+      8,
+      23
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_book_small_purple_lying",
@@ -1272,9 +1509,14 @@
       [
        "Book_Small_Purple_Lying"
       ]
+     ],
+     "at": [
+      15,
+      13
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_purple_standing",
@@ -1294,9 +1536,14 @@
       [
        "Book_Small_Purple_Standing"
       ]
+     ],
+     "at": [
+      8.5,
+      25.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_book_small_yellow_lying",
@@ -1316,9 +1563,14 @@
       [
        "Book_Small_Yellow_Lying"
       ]
+     ],
+     "at": [
+      15,
+      13
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_book_small_yellow_standing",
@@ -1338,9 +1590,14 @@
       [
        "Book_Small_Yellow_Standing"
       ]
+     ],
+     "at": [
+      8.5,
+      25.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_books_pile",
@@ -1360,9 +1617,14 @@
       [
        "Books_Pile"
       ]
+     ],
+     "at": [
+      15,
+      27
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_bottle_12",
@@ -1382,9 +1644,14 @@
       [
        "Bottle_12"
       ]
+     ],
+     "at": [
+      6.5,
+      23
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_box_2",
@@ -1404,9 +1671,14 @@
       [
        "Box_2"
       ]
+     ],
+     "at": [
+      15.5,
+      24
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_cable_horizontal_1",
@@ -1492,9 +1764,14 @@
       [
        "Cactus_1"
       ]
+     ],
+     "at": [
+      8.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_cactus_2",
@@ -1514,9 +1791,14 @@
       [
        "Cactus_2"
       ]
+     ],
+     "at": [
+      12,
+      26
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_calculator",
@@ -1536,9 +1818,14 @@
       [
        "Calculator"
       ]
+     ],
+     "at": [
+      16,
+      18
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_camera_1",
@@ -1618,9 +1905,14 @@
       [
        "Candle"
       ]
+     ],
+     "at": [
+      19,
+      34
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_carpet_13",
@@ -1640,9 +1932,18 @@
       [
        "Carpet_13"
       ]
+     ],
+     "at": [
+      42,
+      24.5
+     ],
+     "stretch": [
+      1.196,
+      1.049
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1663,9 +1964,18 @@
       [
        "Carpet_14"
       ]
+     ],
+     "at": [
+      22.5,
+      12
+     ],
+     "stretch": [
+      1.103,
+      2
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1686,9 +1996,18 @@
       [
        "Carpet_3_Tile"
       ]
+     ],
+     "at": [
+      52.5,
+      27
+     ],
+     "stretch": [
+      0.744,
+      1.067
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1709,9 +2028,18 @@
       [
        "Carpet_7"
       ]
+     ],
+     "at": [
+      16,
+      10
+     ],
+     "stretch": [
+      3.2,
+      1.455
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1732,9 +2060,18 @@
       [
        "Carpet_Fluffy"
       ]
+     ],
+     "at": [
+      65,
+      40.5
+     ],
+     "stretch": [
+      1.488,
+      0.934
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1755,9 +2092,18 @@
       [
        "Carpet_Modern"
       ]
+     ],
+     "at": [
+      63.5,
+      33
+     ],
+     "stretch": [
+      0.853,
+      1.231
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1778,9 +2124,18 @@
       [
        "Carpet_Red"
       ]
+     ],
+     "at": [
+      61.5,
+      31.5
+     ],
+     "stretch": [
+      1.049,
+      1.067
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1801,9 +2156,18 @@
       [
        "Carpet_Yellow"
       ]
+     ],
+     "at": [
+      61.5,
+      31.5
+     ],
+     "stretch": [
+      1.049,
+      1.067
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -1824,9 +2188,14 @@
       [
        "Carton_Box"
       ]
+     ],
+     "at": [
+      17,
+      27
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_cereals",
@@ -1846,9 +2215,14 @@
       [
        "Cereals"
       ]
+     ],
+     "at": [
+      13.5,
+      32
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_chair_2",
@@ -1865,6 +2239,10 @@
       [
        "Chair_2_C_Tile"
       ]
+     ],
+     "at": [
+      16.5,
+      39.5
      ]
     },
     "2": {
@@ -1872,6 +2250,10 @@
       [
        "Chair_2_B_Tile"
       ]
+     ],
+     "at": [
+      15.5,
+      45.5
      ]
     },
     "4": {
@@ -1879,6 +2261,10 @@
       [
        "Chair_2_A_Tile"
       ]
+     ],
+     "at": [
+      16.5,
+      45.5
      ]
     },
     "6": {
@@ -1886,9 +2272,14 @@
       [
        "Chair_2_D_Tile"
       ]
+     ],
+     "at": [
+      15.5,
+      39.5
      ]
     }
    },
+   "height": 0.9,
    "sit": true
   },
   {
@@ -1906,6 +2297,10 @@
       [
        "Chair_3_C_Tile"
       ]
+     ],
+     "at": [
+      17.5,
+      45.5
      ]
     },
     "2": {
@@ -1913,6 +2308,10 @@
       [
        "Chair_3_B_Tile"
       ]
+     ],
+     "at": [
+      17.5,
+      52.5
      ]
     },
     "4": {
@@ -1920,6 +2319,10 @@
       [
        "Chair_3_A_Tile"
       ]
+     ],
+     "at": [
+      19.5,
+      52.5
      ]
     },
     "6": {
@@ -1927,9 +2330,14 @@
       [
        "Chair_3_D_Tile"
       ]
+     ],
+     "at": [
+      19.5,
+      45.5
      ]
     }
    },
+   "height": 1.1,
    "sit": true
   },
   {
@@ -1947,6 +2355,10 @@
       [
        "Chair_4_C_Tile"
       ]
+     ],
+     "at": [
+      22,
+      45
      ]
     },
     "2": {
@@ -1954,6 +2366,10 @@
       [
        "Chair_4_B_Tile"
       ]
+     ],
+     "at": [
+      21,
+      51
      ]
     },
     "4": {
@@ -1961,6 +2377,10 @@
       [
        "Chair_4_A_Tile"
       ]
+     ],
+     "at": [
+      22,
+      51
      ]
     },
     "6": {
@@ -1968,9 +2388,14 @@
       [
        "Chair_4_D_Tile"
       ]
+     ],
+     "at": [
+      21,
+      45
      ]
     }
    },
+   "height": 1.1,
    "sit": true
   },
   {
@@ -1988,6 +2413,10 @@
       [
        "Chair_5_C_Tile"
       ]
+     ],
+     "at": [
+      19,
+      49.5
      ]
     },
     "2": {
@@ -1995,6 +2424,10 @@
       [
        "Chair_5_B_Tile"
       ]
+     ],
+     "at": [
+      21,
+      57.5
      ]
     },
     "4": {
@@ -2002,6 +2435,10 @@
       [
        "Chair_5_A_Tile"
       ]
+     ],
+     "at": [
+      21,
+      57.5
      ]
     },
     "6": {
@@ -2009,9 +2446,14 @@
       [
        "Chair_5_D_Tile"
       ]
+     ],
+     "at": [
+      22,
+      49.5
      ]
     }
    },
+   "height": 1.3,
    "sit": true
   },
   {
@@ -2029,6 +2471,10 @@
       [
        "Chair_6_C_Tile"
       ]
+     ],
+     "at": [
+      21.5,
+      45
      ]
     },
     "2": {
@@ -2036,6 +2482,10 @@
       [
        "Chair_6_B_Tile"
       ]
+     ],
+     "at": [
+      14,
+      52
      ]
     },
     "4": {
@@ -2043,6 +2493,10 @@
       [
        "Chair_6_A_Tile"
       ]
+     ],
+     "at": [
+      29,
+      52
      ]
     },
     "6": {
@@ -2050,9 +2504,14 @@
       [
        "Chair_6_D_Tile"
       ]
+     ],
+     "at": [
+      21.5,
+      45
      ]
     }
    },
+   "height": 1.1,
    "sit": true
   },
   {
@@ -2073,9 +2532,14 @@
       [
        "Chair_7_D_Tile"
       ]
+     ],
+     "at": [
+      20.5,
+      48
      ]
     }
    },
+   "height": 1,
    "sit": true
   },
   {
@@ -2111,9 +2575,14 @@
        "Cleaning_Robot_15",
        "Cleaning_Robot_16"
       ]
+     ],
+     "at": [
+      32,
+      41.5
      ]
     }
    },
+   "height": 0.2,
    "fps": 8
   },
   {
@@ -2134,9 +2603,14 @@
       [
        "Clothes_Basket"
       ]
+     ],
+     "at": [
+      23,
+      34.5
      ]
     }
-   }
+   },
+   "height": 0.6
   },
   {
    "id": "salvaje_clothes_case",
@@ -2156,9 +2630,14 @@
       [
        "Clothes_Case"
       ]
+     ],
+     "at": [
+      23,
+      34.5
      ]
     }
-   }
+   },
+   "height": 0.6
   },
   {
    "id": "salvaje_coffemachine_red",
@@ -2178,9 +2657,14 @@
       [
        "CoffeMachine_Red"
       ]
+     ],
+     "at": [
+      17.5,
+      30
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_cola",
@@ -2200,9 +2684,14 @@
       [
        "Cola"
       ]
+     ],
+     "at": [
+      8.5,
+      36.5
      ]
     }
-   }
+   },
+   "height": 0.6
   },
   {
    "id": "salvaje_copy_machine_dark",
@@ -2240,9 +2729,14 @@
        "Copy_Machine_Dark_18",
        "Copy_Machine_Dark_19"
       ]
+     ],
+     "at": [
+      67,
+      98.5
      ]
     }
    },
+   "height": 1.7,
    "fps": 8
   },
   {
@@ -2275,9 +2769,14 @@
        "Copy_Machine_White_12",
        "Copy_Machine_White_13"
       ]
+     ],
+     "at": [
+      64,
+      101.5
      ]
     }
    },
+   "height": 1.5,
    "fps": 8
   },
   {
@@ -2342,9 +2841,14 @@
       [
        "Cutting_Board"
       ]
+     ],
+     "at": [
+      19.5,
+      14.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_desk_1",
@@ -2367,9 +2871,15 @@
       [
        "Desk_1_B_Tile"
       ]
+     ],
+     "at": [
+      48,
+      58.5
      ]
     }
    },
+   "scale": 1.085,
+   "height": 1.2,
    "stack": true
   },
   {
@@ -2390,9 +2900,14 @@
       [
        "Desk_2_Tile"
       ]
+     ],
+     "at": [
+      41.5,
+      57
      ]
     }
    },
+   "height": 1,
    "stack": true
   },
   {
@@ -2401,7 +2916,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    3,
+    2,
     1
    ],
    "dirs": {
@@ -2413,9 +2928,15 @@
       [
        "Desk_3"
       ]
+     ],
+     "at": [
+      57,
+      70.5
      ]
     }
    },
+   "scale": 0.859,
+   "height": 1.1,
    "stack": true
   },
   {
@@ -2458,9 +2979,14 @@
       [
        "Dish"
       ]
+     ],
+     "at": [
+      10.5,
+      11.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_dish_soap",
@@ -2480,9 +3006,14 @@
       [
        "Dish_Soap"
       ]
+     ],
+     "at": [
+      7,
+      29
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_dishwasher_1",
@@ -2502,9 +3033,14 @@
       [
        "Dishwasher_1"
       ]
+     ],
+     "at": [
+      67,
+      95
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -2533,9 +3069,14 @@
        "Document_Shredder_8",
        "Document_Shredder_9"
       ]
+     ],
+     "at": [
+      35,
+      46.5
      ]
     }
    },
+   "height": 0.5,
    "fps": 8
   },
   {
@@ -2556,9 +3097,14 @@
       [
        "Drawing_Table"
       ]
+     ],
+     "at": [
+      43,
+      72.5
      ]
     }
    },
+   "height": 1.5,
    "stack": true
   },
   {
@@ -2579,9 +3125,14 @@
       [
        "Dreamcast"
       ]
+     ],
+     "at": [
+      16,
+      44
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_duck",
@@ -2601,9 +3152,14 @@
       [
        "Duck"
       ]
+     ],
+     "at": [
+      6.5,
+      11.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_fidge_red",
@@ -2623,9 +3179,14 @@
       [
        "Fidge_Red"
       ]
+     ],
+     "at": [
+      33,
+      90.5
      ]
     }
-   }
+   },
+   "height": 2.3
   },
   {
    "id": "salvaje_fire_extinguisher",
@@ -2645,9 +3206,14 @@
       [
        "Fire_Extinguisher"
       ]
+     ],
+     "at": [
+      29,
+      48.5
      ]
     }
-   }
+   },
+   "height": 0.6
   },
   {
    "id": "salvaje_fork",
@@ -2667,9 +3233,14 @@
       [
        "Fork"
       ]
+     ],
+     "at": [
+      8,
+      7.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_fridge",
@@ -2686,6 +3257,10 @@
       [
        "Fridge_Back"
       ]
+     ],
+     "at": [
+      64.5,
+      98
      ]
     },
     "2": {
@@ -2696,12 +3271,17 @@
       [
        "Fridge"
       ]
+     ],
+     "at": [
+      64,
+      98
      ]
     },
     "6": {
      "mirror": 0
     }
    },
+   "height": 2.1,
    "stack": true
   },
   {
@@ -2719,6 +3299,10 @@
       [
        "Fridge_2_C_Tile"
       ]
+     ],
+     "at": [
+      64.5,
+      108
      ]
     },
     "2": {
@@ -2729,12 +3313,17 @@
       [
        "Fridge_2_A_Tile"
       ]
+     ],
+     "at": [
+      64,
+      108
      ]
     },
     "6": {
      "mirror": 0
     }
    },
+   "height": 2.1,
    "stack": true
   },
   {
@@ -2755,9 +3344,14 @@
       [
        "Frying_Pan"
       ]
+     ],
+     "at": [
+      13.5,
+      13.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_kitsune_pocket",
@@ -2777,9 +3371,14 @@
       [
        "Gameboy"
       ]
+     ],
+     "at": [
+      15.5,
+      14
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_kitsune_pocket_plus",
@@ -2799,9 +3398,14 @@
       [
        "Gameboy_Advance"
       ]
+     ],
+     "at": [
+      11,
+      20.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_kitsune_box",
@@ -2821,9 +3425,14 @@
       [
        "Gamecube"
       ]
+     ],
+     "at": [
+      11,
+      52
      ]
     }
-   }
+   },
+   "height": 1.1
   },
   {
    "id": "salvaje_gchair_9",
@@ -2840,6 +3449,10 @@
       [
        "GChair_9_C"
       ]
+     ],
+     "at": [
+      18,
+      56
      ]
     },
     "2": {
@@ -2847,6 +3460,10 @@
       [
        "GChair_9_B"
       ]
+     ],
+     "at": [
+      21,
+      61
      ]
     },
     "4": {
@@ -2854,6 +3471,10 @@
       [
        "GChair_9_A"
       ]
+     ],
+     "at": [
+      18,
+      61
      ]
     },
     "6": {
@@ -2861,9 +3482,14 @@
       [
        "GChair_9_D"
       ]
+     ],
+     "at": [
+      23,
+      56
      ]
     }
    },
+   "height": 1.4,
    "sit": true
   },
   {
@@ -2884,9 +3510,14 @@
       [
        "Glass_1"
       ]
+     ],
+     "at": [
+      5.5,
+      14
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_glass_2",
@@ -2906,9 +3537,14 @@
       [
        "Glass_2"
       ]
+     ],
+     "at": [
+      6.5,
+      13
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_glass_wall",
@@ -2917,7 +3553,7 @@
    "kind": "floor",
    "size": [
     1,
-    2
+    3
    ],
    "dirs": {
     "2": {
@@ -2928,9 +3564,14 @@
       [
        "Glass_Wall"
       ]
+     ],
+     "at": [
+      127.5,
+      188.5
      ]
     }
-   }
+   },
+   "height": 3.5
   },
   {
    "id": "salvaje_grandfather_clock",
@@ -2956,9 +3597,14 @@
        "Grandfather_Clock_6",
        "Grandfather_Clock_7"
       ]
+     ],
+     "at": [
+      64,
+      115
      ]
     }
    },
+   "height": 2.9,
    "fps": 8
   },
   {
@@ -3023,9 +3669,14 @@
       [
        "Headset"
       ]
+     ],
+     "at": [
+      15,
+      25.5
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_japanese_basecup",
@@ -3045,9 +3696,14 @@
       [
        "Japanese_BaseCup"
       ]
+     ],
+     "at": [
+      16,
+      16
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_japanese_canvas",
@@ -3099,7 +3755,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
+    2,
     1
    ],
    "dirs": {
@@ -3111,9 +3767,14 @@
       [
        "Japanese_Closet"
       ]
+     ],
+     "at": [
+      33.5,
+      111
      ]
     }
    },
+   "height": 2.7,
    "stack": true
   },
   {
@@ -3134,9 +3795,14 @@
       [
        "Japanese_Cup"
       ]
+     ],
+     "at": [
+      6.5,
+      11
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_japanese_dish",
@@ -3156,9 +3822,14 @@
       [
        "Japanese_Dish"
       ]
+     ],
+     "at": [
+      11.5,
+      13.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_japanese_lamp",
@@ -3178,9 +3849,14 @@
       [
        "Japanese_Lamp"
       ]
+     ],
+     "at": [
+      11.5,
+      39.5
      ]
     }
-   }
+   },
+   "height": 0.7
   },
   {
    "id": "salvaje_japanese_plant",
@@ -3200,9 +3876,14 @@
       [
        "Japanese_Plant"
       ]
+     ],
+     "at": [
+      16.5,
+      53
      ]
     }
-   }
+   },
+   "height": 1.2
   },
   {
    "id": "salvaje_japanese_seat",
@@ -3222,9 +3903,14 @@
       [
        "Japanese_Seat"
       ]
+     ],
+     "at": [
+      22,
+      14
      ]
     }
    },
+   "height": 0,
    "sit": true
   },
   {
@@ -3233,7 +3919,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
+    2,
     1
    ],
    "dirs": {
@@ -3245,9 +3931,15 @@
       [
        "Japanese_Shelf"
       ]
+     ],
+     "at": [
+      38,
+      104.5
      ]
     }
    },
+   "scale": 1.103,
+   "height": 2.9,
    "stack": true
   },
   {
@@ -3268,9 +3960,15 @@
       [
        "Japanese_Table"
       ]
+     ],
+     "at": [
+      49,
+      42.5
      ]
     }
    },
+   "scale": 1.076,
+   "height": 0.7,
    "stack": true
   },
   {
@@ -3291,9 +3989,14 @@
       [
        "Japanese_Tea"
       ]
+     ],
+     "at": [
+      14,
+      19.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_japanese_tori_gate",
@@ -3313,9 +4016,15 @@
       [
        "Japanese_Tori_Gate"
       ]
+     ],
+     "at": [
+      46,
+      111
      ]
     }
-   }
+   },
+   "scale": 1.094,
+   "height": 3
   },
   {
    "id": "salvaje_japanese_vase",
@@ -3335,9 +4044,14 @@
       [
        "Japanese_Vase"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ketel_7",
@@ -3357,9 +4071,14 @@
       [
        "Ketel_7"
       ]
+     ],
+     "at": [
+      10.5,
+      22.5
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_kitchen_a",
@@ -3379,9 +4098,15 @@
       [
        "Kitchen_A"
       ]
+     ],
+     "at": [
+      64.5,
+      108
      ]
     }
    },
+   "scale": 1.085,
+   "height": 1.5,
    "stack": true
   },
   {
@@ -3402,9 +4127,15 @@
       [
        "Kitchen_A_Tile"
       ]
+     ],
+     "at": [
+      27.5,
+      59
      ]
     }
    },
+   "scale": 1.085,
+   "height": 1.5,
    "stack": true
   },
   {
@@ -3425,9 +4156,15 @@
       [
        "Kitchen_Furniture_Black_1"
       ]
+     ],
+     "at": [
+      127,
+      152
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -3448,9 +4185,14 @@
       [
        "Kitchen_Furniture_Black_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -3471,102 +4213,107 @@
       [
        "Kitchen_Furniture_Black_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_black_4",
    "name": "Kitchen Furniture Black 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Black_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_black_5",
    "name": "Kitchen Furniture Black 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Black_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_black_6",
    "name": "Kitchen Furniture Black 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Black_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_black_7",
    "name": "Kitchen Furniture Black 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Black_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_green_1",
@@ -3586,9 +4333,15 @@
       [
        "Kitchen_Furniture_Green_1"
       ]
+     ],
+     "at": [
+      127,
+      152
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -3609,9 +4362,14 @@
       [
        "Kitchen_Furniture_Green_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -3632,102 +4390,107 @@
       [
        "Kitchen_Furniture_Green_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_green_4",
    "name": "Kitchen Furniture Green 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Green_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_green_5",
    "name": "Kitchen Furniture Green 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Green_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_green_6",
    "name": "Kitchen Furniture Green 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Green_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_green_7",
    "name": "Kitchen Furniture Green 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Green_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_orange_1",
@@ -3747,9 +4510,15 @@
       [
        "Kitchen_Furniture_Orange_1"
       ]
+     ],
+     "at": [
+      127,
+      152
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -3770,9 +4539,14 @@
       [
        "Kitchen_Furniture_Orange_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -3793,102 +4567,107 @@
       [
        "Kitchen_Furniture_Orange_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_orange_4",
    "name": "Kitchen Furniture Orange 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Orange_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_orange_5",
    "name": "Kitchen Furniture Orange 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Orange_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_orange_6",
    "name": "Kitchen Furniture Orange 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Orange_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_orange_7",
    "name": "Kitchen Furniture Orange 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Orange_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_pink_1",
@@ -3908,9 +4687,15 @@
       [
        "Kitchen_Furniture_Pink_1"
       ]
+     ],
+     "at": [
+      127,
+      152
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -3931,9 +4716,14 @@
       [
        "Kitchen_Furniture_Pink_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -3954,102 +4744,107 @@
       [
        "Kitchen_Furniture_Pink_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_pink_4",
    "name": "Kitchen Furniture Pink 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Pink_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_pink_5",
    "name": "Kitchen Furniture Pink 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Pink_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_pink_6",
    "name": "Kitchen Furniture Pink 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Pink_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_pink_7",
    "name": "Kitchen Furniture Pink 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Pink_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_red_1",
@@ -4069,9 +4864,15 @@
       [
        "Kitchen_Furniture_Red_1"
       ]
+     ],
+     "at": [
+      127,
+      152
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -4092,9 +4893,14 @@
       [
        "Kitchen_Furniture_Red_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -4115,102 +4921,107 @@
       [
        "Kitchen_Furniture_Red_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_red_4",
    "name": "Kitchen Furniture Red 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Red_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_red_5",
    "name": "Kitchen Furniture Red 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Red_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_red_6",
    "name": "Kitchen Furniture Red 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Red_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_red_7",
    "name": "Kitchen Furniture Red 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Red_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_white_1",
@@ -4230,9 +5041,15 @@
       [
        "Kitchen_Furniture_White_1"
       ]
+     ],
+     "at": [
+      127,
+      152
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -4253,9 +5070,14 @@
       [
        "Kitchen_Furniture_White_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -4276,102 +5098,107 @@
       [
        "Kitchen_Furniture_White_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_white_4",
    "name": "Kitchen Furniture White 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_White_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_white_5",
    "name": "Kitchen Furniture White 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_White_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_white_6",
    "name": "Kitchen Furniture White 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_White_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_white_7",
    "name": "Kitchen Furniture White 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_White_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_wood_1",
@@ -4391,9 +5218,15 @@
       [
        "Kitchen_Furniture_Wood_1"
       ]
+     ],
+     "at": [
+      129,
+      150
      ]
     }
    },
+   "scale": 1.094,
+   "height": 1.6,
    "stack": true
   },
   {
@@ -4414,9 +5247,14 @@
       [
        "Kitchen_Furniture_Wood_2"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -4437,102 +5275,107 @@
       [
        "Kitchen_Furniture_Wood_3"
       ]
+     ],
+     "at": [
+      63.5,
+      88
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
    "id": "salvaje_kitchen_furniture_wood_4",
    "name": "Kitchen Furniture Wood 4",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Wood_4"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_wood_5",
    "name": "Kitchen Furniture Wood 5",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Wood_5"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_wood_6",
    "name": "Kitchen Furniture Wood 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Wood_6"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_furniture_wood_7",
    "name": "Kitchen Furniture Wood 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Kitchen_Furniture_Wood_7"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 2.4
+   "depth": 1
   },
   {
    "id": "salvaje_kitchen_knife",
@@ -4552,9 +5395,14 @@
       [
        "Kitchen_Knife"
       ]
+     ],
+     "at": [
+      11.5,
+      11.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_kitchen_rug",
@@ -4574,9 +5422,18 @@
       [
        "Kitchen_Rug"
       ]
+     ],
+     "at": [
+      36.5,
+      19
+     ],
+     "stretch": [
+      1.185,
+      0.727
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -4597,9 +5454,14 @@
       [
        "Kitchen_Soap"
       ]
+     ],
+     "at": [
+      10,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_kitchen_stool",
@@ -4619,9 +5481,14 @@
       [
        "Kitchen_Stool"
       ]
+     ],
+     "at": [
+      9.5,
+      33.5
      ]
     }
    },
+   "height": 0.5,
    "sit": true
   },
   {
@@ -4630,7 +5497,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    2,
+    3,
     1
    ],
    "dirs": {
@@ -4642,9 +5509,14 @@
       [
        "Kitchen_Table"
       ]
+     ],
+     "at": [
+      55.5,
+      65.5
      ]
     }
    },
+   "height": 1,
    "stack": true
   },
   {
@@ -4687,9 +5559,14 @@
       [
        "Lamp_10_Tile"
       ]
+     ],
+     "at": [
+      9,
+      26
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_lamp_11",
@@ -4709,15 +5586,20 @@
       [
        "Lamp_11_Tile"
       ]
+     ],
+     "at": [
+      9,
+      25.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_lamp_7",
    "name": "Lamp 7",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
@@ -4737,7 +5619,7 @@
   },
   {
    "id": "salvaje_lamp_8_a",
-   "name": "Lamp 8 A",
+   "name": "Desk Lamp",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -4752,32 +5634,18 @@
      "states": [
       [
        "Lamp_8_A_Tile"
-      ]
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_lamp_8_b",
-   "name": "Lamp 8 B",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    1,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "states": [
+      ],
       [
        "Lamp_8_B_Tile"
       ]
+     ],
+     "at": [
+      12.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_lamp_9",
@@ -4797,29 +5665,34 @@
       [
        "Lamp_9_Tile"
       ]
+     ],
+     "at": [
+      9,
+      27
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_lamp_modern",
    "name": "Lamp Modern",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Lamp_Modern"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    }
   },
@@ -4867,9 +5740,14 @@
        "Lava_Lamp_23",
        "Lava_Lamp_24"
       ]
+     ],
+     "at": [
+      32,
+      59.5
      ]
     }
    },
+   "height": 1.4,
    "fps": 8
   },
   {
@@ -4923,7 +5801,7 @@
    "id": "salvaje_long_shelf",
    "name": "Long Shelf",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
@@ -4940,12 +5818,7 @@
      ]
     }
    },
-   "hang": 1.6,
-   "stack": true,
-   "offset": [
-    10,
-    -5
-   ]
+   "depth": 0.5
   },
   {
    "id": "salvaje_petal_laptop",
@@ -4978,32 +5851,38 @@
        "Macbook_10",
        "Macbook_11"
       ]
+     ],
+     "at": [
+      16,
+      23.5
      ]
     }
    },
+   "height": 0,
    "fps": 8
   },
   {
    "id": "salvaje_medical_kit_closed",
    "name": "Medical Kit Closed",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Medical_Kit_Closed"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
-   }
+   },
+   "depth": 0.4
   },
   {
    "id": "salvaje_metallic_closet_base",
@@ -5023,9 +5902,14 @@
       [
        "Metallic_Closet_Base"
       ]
+     ],
+     "at": [
+      67,
+      101
      ]
     }
    },
+   "height": 2.2,
    "stack": true
   },
   {
@@ -5046,9 +5930,14 @@
       [
        "Microscope"
       ]
+     ],
+     "at": [
+      16,
+      25.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_microwave_5",
@@ -5065,6 +5954,10 @@
       [
        "Microwave_5_Tile_C"
       ]
+     ],
+     "at": [
+      33,
+      41.5
      ]
     },
     "2": {
@@ -5072,6 +5965,10 @@
       [
        "Microwave_5_Tile_B"
       ]
+     ],
+     "at": [
+      31,
+      41.5
      ]
     },
     "4": {
@@ -5079,6 +5976,10 @@
       [
        "Microwave_5_Tile"
       ]
+     ],
+     "at": [
+      33,
+      41.5
      ]
     },
     "6": {
@@ -5086,9 +5987,14 @@
       [
        "Microwave_5_Tile_D"
       ]
+     ],
+     "at": [
+      31,
+      41.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_mirror",
@@ -5130,9 +6036,14 @@
       [
        "Mug_15"
       ]
+     ],
+     "at": [
+      7.5,
+      12
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_mug_green",
@@ -5152,9 +6063,14 @@
       [
        "Mug_Green"
       ]
+     ],
+     "at": [
+      7.5,
+      12
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_mug_red",
@@ -5174,9 +6090,14 @@
       [
        "Mug_Red"
       ]
+     ],
+     "at": [
+      7.5,
+      12
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_kitsune_home",
@@ -5196,9 +6117,14 @@
       [
        "NES"
       ]
+     ],
+     "at": [
+      22.5,
+      32
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_kitsune_home_2",
@@ -5218,9 +6144,14 @@
       [
        "NES_4_Tile"
       ]
+     ],
+     "at": [
+      15.5,
+      27.5
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_kitsune_home_3",
@@ -5240,9 +6171,14 @@
       [
        "NES_4_B_Tile"
       ]
+     ],
+     "at": [
+      15.5,
+      29.5
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_petal_desktop",
@@ -5265,9 +6201,14 @@
       [
        "NewImac_B_Tile"
       ]
+     ],
+     "at": [
+      20,
+      41.5
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_newkeyboard",
@@ -5287,9 +6228,14 @@
       [
        "NewKeyboard_Tile"
       ]
+     ],
+     "at": [
+      17.5,
+      18.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_night_table",
@@ -5309,9 +6255,14 @@
       [
        "Night_Table_Tile"
       ]
+     ],
+     "at": [
+      21.5,
+      35
      ]
     }
    },
+   "height": 0.6,
    "stack": true
   },
   {
@@ -5332,9 +6283,14 @@
       [
        "Night_Table_Tile_Drawer_1"
       ]
+     ],
+     "at": [
+      18.5,
+      40.5
      ]
     }
    },
+   "height": 0,
    "stack": true
   },
   {
@@ -5355,9 +6311,14 @@
       [
        "Nintendo_64"
       ]
+     ],
+     "at": [
+      16.5,
+      40
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_kitsune_flip",
@@ -5377,9 +6338,14 @@
       [
        "Nintendo_Switch"
       ]
+     ],
+     "at": [
+      15.5,
+      21
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_notebooks",
@@ -5399,9 +6365,14 @@
       [
        "Notebooks"
       ]
+     ],
+     "at": [
+      15.5,
+      24.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_office_kitchen_table",
@@ -5421,9 +6392,15 @@
       [
        "Office_Kitchen_Table"
       ]
+     ],
+     "at": [
+      33,
+      50.5
      ]
     }
    },
+   "scale": 0.901,
+   "height": 0.9,
    "stack": true
   },
   {
@@ -5444,9 +6421,14 @@
       [
        "Office_Main_Chair"
       ]
+     ],
+     "at": [
+      23.5,
+      60
      ]
     }
    },
+   "height": 1.4,
    "sit": true
   },
   {
@@ -5467,9 +6449,15 @@
       [
        "Office_Main_Table_Base"
       ]
+     ],
+     "at": [
+      66,
+      81.5
      ]
     }
    },
+   "scale": 0.901,
+   "height": 0.7,
    "stack": true
   },
   {
@@ -5490,9 +6478,15 @@
       [
        "Office_Normal_Table_Base"
       ]
+     ],
+     "at": [
+      67,
+      85
      ]
     }
    },
+   "scale": 0.901,
+   "height": 0.9,
    "stack": true
   },
   {
@@ -5502,7 +6496,7 @@
    "kind": "floor",
    "size": [
     1,
-    1
+    2
    ],
    "dirs": {
     "2": {
@@ -5513,9 +6507,15 @@
       [
        "Office_Partition"
       ]
+     ],
+     "at": [
+      64,
+      102
      ]
     }
-   }
+   },
+   "scale": 1.041,
+   "height": 2.3
   },
   {
    "id": "salvaje_office_wood_closet",
@@ -5524,7 +6524,7 @@
    "kind": "floor",
    "size": [
     1,
-    1
+    2
    ],
    "dirs": {
     "2": {
@@ -5535,9 +6535,14 @@
       [
        "Office_Wood_Closet"
       ]
+     ],
+     "at": [
+      60.5,
+      105
      ]
     }
    },
+   "height": 2.3,
    "stack": true
   },
   {
@@ -5561,9 +6566,14 @@
       [
        "OldImac_B_Tile"
       ]
+     ],
+     "at": [
+      15,
+      31
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_oldkeyboard",
@@ -5583,9 +6593,14 @@
       [
        "OldKeyboard_Tile"
       ]
+     ],
+     "at": [
+      15,
+      11
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_oldpc_a",
@@ -5605,9 +6620,14 @@
       [
        "OldPC_A_Tile"
       ]
+     ],
+     "at": [
+      22.5,
+      43
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_oldpc_b",
@@ -5627,9 +6647,14 @@
       [
        "OldPC_B_Tile"
       ]
+     ],
+     "at": [
+      27.5,
+      43
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_oscilator_machine",
@@ -5664,9 +6689,14 @@
        "Oscilator_Machine_15",
        "Oscilator_Machine_16"
       ]
+     ],
+     "at": [
+      31,
+      41.5
      ]
     }
    },
+   "height": 0.3,
    "fps": 8
   },
   {
@@ -5687,9 +6717,14 @@
       [
        "Oven"
       ]
+     ],
+     "at": [
+      27,
+      60
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -5737,9 +6772,14 @@
        "Paper_5",
        "Paper_6"
       ]
+     ],
+     "at": [
+      15.5,
+      16
      ]
     }
    },
+   "height": 0,
    "fps": 8
   },
   {
@@ -5768,9 +6808,14 @@
        "PC_Tower_8",
        "PC_Tower_9"
       ]
+     ],
+     "at": [
+      32,
+      45.5
      ]
     }
    },
+   "height": 0.5,
    "fps": 8
   },
   {
@@ -5791,9 +6836,14 @@
       [
        "PcTower_Tile"
       ]
+     ],
+     "at": [
+      15,
+      33.5
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_pencil_holder",
@@ -5813,9 +6863,14 @@
       [
        "Pencil_Holder"
       ]
+     ],
+     "at": [
+      15.5,
+      22
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_photos_1",
@@ -5967,9 +7022,14 @@
       [
        "Pillow_10"
       ]
+     ],
+     "at": [
+      15,
+      18.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_pillow_10_sofa",
@@ -5989,9 +7049,14 @@
       [
        "Pillow_10_Sofa"
       ]
+     ],
+     "at": [
+      15,
+      22.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_pillow_11",
@@ -6011,9 +7076,14 @@
       [
        "Pillow_11"
       ]
+     ],
+     "at": [
+      15,
+      18.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_pillow_11_sofa",
@@ -6033,9 +7103,14 @@
       [
        "Pillow_11_Sofa"
       ]
+     ],
+     "at": [
+      13.5,
+      24.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_pillow_12",
@@ -6055,9 +7130,15 @@
       [
        "Pillow_12"
       ]
+     ],
+     "at": [
+      31,
+      35
      ]
     }
-   }
+   },
+   "scale": 0.853,
+   "height": 0
   },
   {
    "id": "salvaje_pillow_12_sofa",
@@ -6077,9 +7158,14 @@
       [
        "Pillow_12_Sofa"
       ]
+     ],
+     "at": [
+      15,
+      25
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_pillow_9",
@@ -6099,9 +7185,14 @@
       [
        "Pillow_9"
       ]
+     ],
+     "at": [
+      33,
+      37.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_pipe_corner",
@@ -6209,9 +7300,14 @@
       [
        "Plant_1"
       ]
+     ],
+     "at": [
+      12,
+      29
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_plant_2",
@@ -6231,9 +7327,14 @@
       [
        "Plant_2"
       ]
+     ],
+     "at": [
+      21.5,
+      52.5
      ]
     }
-   }
+   },
+   "height": 1.1
   },
   {
    "id": "salvaje_plant_3",
@@ -6253,9 +7354,14 @@
       [
        "Plant_3"
       ]
+     ],
+     "at": [
+      12.5,
+      40.5
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_plant_5",
@@ -6275,9 +7381,14 @@
       [
        "Plant_5"
       ]
+     ],
+     "at": [
+      8,
+      27.5
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_plant_small",
@@ -6297,9 +7408,14 @@
       [
        "Plant_Small"
       ]
+     ],
+     "at": [
+      7,
+      20
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_plastic_box_1_empty",
@@ -6322,9 +7438,14 @@
       [
        "Plastic_Box_1_Full"
       ]
+     ],
+     "at": [
+      15.5,
+      20
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_plastic_box_2_empty",
@@ -6347,9 +7468,14 @@
       [
        "Plastic_Box_2_Full"
       ]
+     ],
+     "at": [
+      15.5,
+      20
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_orbit_1",
@@ -6369,9 +7495,14 @@
       [
        "Playstation"
       ]
+     ],
+     "at": [
+      24.5,
+      45
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_orbit_2",
@@ -6391,9 +7522,14 @@
       [
        "Playstation_2"
       ]
+     ],
+     "at": [
+      12,
+      44
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_orbit_3",
@@ -6413,9 +7549,14 @@
       [
        "Playstation_3"
       ]
+     ],
+     "at": [
+      12,
+      44
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_orbit_4",
@@ -6435,9 +7576,14 @@
       [
        "Playstation_4"
       ]
+     ],
+     "at": [
+      12,
+      54
      ]
     }
-   }
+   },
+   "height": 1.2
   },
   {
    "id": "salvaje_orbit_5",
@@ -6457,9 +7603,15 @@
       [
        "Playstation_5"
       ]
+     ],
+     "at": [
+      30.5,
+      43
      ]
     }
-   }
+   },
+   "scale": 0.842,
+   "height": 0.6
   },
   {
    "id": "salvaje_poster_1",
@@ -6724,9 +7876,14 @@
       [
        "Pot_Full"
       ]
+     ],
+     "at": [
+      11.5,
+      20
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_present_100",
@@ -6752,9 +7909,14 @@
        "Present_100_D",
        "Present_100_E"
       ]
+     ],
+     "at": [
+      11,
+      19.5
      ]
     }
    },
+   "height": 0.1,
    "fps": 6,
    "once": true
   },
@@ -6776,9 +7938,14 @@
       [
        "Present_3"
       ]
+     ],
+     "at": [
+      13,
+      17.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_present_4",
@@ -6798,9 +7965,14 @@
       [
        "Present_4"
       ]
+     ],
+     "at": [
+      11,
+      19.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_present_5",
@@ -6820,9 +7992,14 @@
       [
        "Present_5"
       ]
+     ],
+     "at": [
+      9,
+      18.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_present_6",
@@ -6842,9 +8019,14 @@
       [
        "Present_6"
       ]
+     ],
+     "at": [
+      7,
+      14.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_present_7",
@@ -6864,9 +8046,14 @@
       [
        "Present_7"
       ]
+     ],
+     "at": [
+      10,
+      18
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_printer",
@@ -6896,9 +8083,14 @@
        "Printer_10",
        "Printer_11"
       ]
+     ],
+     "at": [
+      33.5,
+      45
      ]
     }
    },
+   "height": 0.5,
    "fps": 8
   },
   {
@@ -6919,9 +8111,14 @@
       [
        "Printer_Filament"
       ]
+     ],
+     "at": [
+      23.5,
+      44.5
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_projector_1",
@@ -6941,9 +8138,14 @@
       [
        "Projector_1"
       ]
+     ],
+     "at": [
+      95,
+      108
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_projector_2",
@@ -6951,7 +8153,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    2,
+    1,
     1
    ],
    "dirs": {
@@ -6965,9 +8167,14 @@
        "Projector_3",
        "Projector_4"
       ]
+     ],
+     "at": [
+      95,
+      108
      ]
     }
    },
+   "height": 0.1,
    "fps": 4
   },
   {
@@ -6988,9 +8195,14 @@
       [
        "Projector_Screen_Ani_7"
       ]
+     ],
+     "at": [
+      55.5,
+      107.5
      ]
     }
-   }
+   },
+   "height": 2.7
   },
   {
    "id": "salvaje_projector_stand",
@@ -7010,9 +8222,14 @@
       [
        "Projector_Stand"
       ]
+     ],
+     "at": [
+      27,
+      56.5
      ]
     }
-   }
+   },
+   "height": 1.2
   },
   {
    "id": "salvaje_orbit_portable",
@@ -7032,9 +8249,14 @@
       [
        "PSP"
       ]
+     ],
+     "at": [
+      18,
+      18
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_rack",
@@ -7062,21 +8284,21 @@
    "id": "salvaje_rag",
    "name": "Rag",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Rag"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    }
   },
@@ -7098,9 +8320,14 @@
       [
        "Ring_Binder_Blue"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ring_binder_dark",
@@ -7120,9 +8347,14 @@
       [
        "Ring_Binder_Dark"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ring_binder_green",
@@ -7142,9 +8374,14 @@
       [
        "Ring_Binder_Green"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ring_binder_orange",
@@ -7164,9 +8401,14 @@
       [
        "Ring_Binder_Orange"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ring_binder_red",
@@ -7186,9 +8428,14 @@
       [
        "Ring_Binder_Red"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ring_binder_yellow",
@@ -7208,9 +8455,14 @@
       [
        "Ring_Binder_Yellow"
       ]
+     ],
+     "at": [
+      10.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_rolled_papers",
@@ -7230,9 +8482,14 @@
       [
        "Rolled_Papers"
       ]
+     ],
+     "at": [
+      32,
+      48
      ]
     }
-   }
+   },
+   "height": 0.6
   },
   {
    "id": "salvaje_rotationscreen_a",
@@ -7258,9 +8515,14 @@
       [
        "RotationScreen_C_Tile"
       ]
+     ],
+     "at": [
+      22.5,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_ruler",
@@ -7280,9 +8542,14 @@
       [
        "Ruler"
       ]
+     ],
+     "at": [
+      31.5,
+      34
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_robot_vacuum",
@@ -7302,9 +8569,14 @@
       [
        "Rumba_Robot"
       ]
+     ],
+     "at": [
+      32,
+      39
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_scourer",
@@ -7324,29 +8596,34 @@
       [
        "Scourer"
       ]
+     ],
+     "at": [
+      6.5,
+      11
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_screen_small",
    "name": "Screen Small",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Screen_Small"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    }
   },
@@ -7368,9 +8645,14 @@
       [
        "SegaGenesis"
       ]
+     ],
+     "at": [
+      25.5,
+      44.5
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_server_cabinet",
@@ -7402,9 +8684,14 @@
        "Server_1_3",
        "Server_1_4"
       ]
+     ],
+     "at": [
+      64,
+      100
      ]
     }
    },
+   "height": 2.2,
    "fps": 8
   },
   {
@@ -7425,46 +8712,46 @@
       [
        "Server_3"
       ]
+     ],
+     "at": [
+      32,
+      47.5
      ]
     }
-   }
+   },
+   "height": 0.8
   },
   {
    "id": "salvaje_shelf",
    "name": "Shelf",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Shelf"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
-   "hang": 1.6,
-   "stack": true,
-   "offset": [
-    10,
-    -5
-   ]
+   "depth": 0.5
   },
   {
    "id": "salvaje_shelving_6",
    "name": "shelving 6",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
-    2
+    1
    ],
    "dirs": {
     "2": {
@@ -7478,12 +8765,7 @@
      ]
     }
    },
-   "hang": 1.6,
-   "stack": true,
-   "offset": [
-    10,
-    -5
-   ]
+   "depth": 0.5
   },
   {
    "id": "salvaje_shelving_7",
@@ -7492,7 +8774,7 @@
    "kind": "floor",
    "size": [
     1,
-    1
+    2
    ],
    "dirs": {
     "2": {
@@ -7503,9 +8785,15 @@
       [
        "shelving_7"
       ]
+     ],
+     "at": [
+      65,
+      106.5
      ]
     }
    },
+   "scale": 1.085,
+   "height": 2.8,
    "stack": true
   },
   {
@@ -7526,9 +8814,14 @@
       [
        "Shower_Bin"
       ]
+     ],
+     "at": [
+      9,
+      26.5
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_shower_floor",
@@ -7548,9 +8841,18 @@
       [
        "Shower_Floor"
       ]
+     ],
+     "at": [
+      32,
+      23
+     ],
+     "stretch": [
+      0.985,
+      1.085
      ]
     }
    },
+   "height": 0,
    "walk": true
   },
   {
@@ -7593,9 +8895,14 @@
       [
        "Shower_Tray"
       ]
+     ],
+     "at": [
+      32,
+      23
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_sink",
@@ -7618,15 +8925,20 @@
       [
        "Sink_1"
       ]
+     ],
+     "at": [
+      29,
+      29.5
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_small_shelf",
    "name": "Small Shelf",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
@@ -7643,12 +8955,7 @@
      ]
     }
    },
-   "hang": 1.6,
-   "stack": true,
-   "offset": [
-    10,
-    -5
-   ]
+   "depth": 0.5
   },
   {
    "id": "salvaje_smalltable_5",
@@ -7657,7 +8964,7 @@
    "kind": "floor",
    "size": [
     1,
-    1
+    2
    ],
    "dirs": {
     "2": {
@@ -7668,9 +8975,14 @@
       [
        "SmallTable_5"
       ]
+     ],
+     "at": [
+      66,
+      78
      ]
     }
    },
+   "height": 0.4,
    "stack": true
   },
   {
@@ -7691,9 +9003,14 @@
       [
        "SNES"
       ]
+     ],
+     "at": [
+      30.5,
+      46
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_soap",
@@ -7713,9 +9030,14 @@
       [
        "Soap"
       ]
+     ],
+     "at": [
+      7,
+      17.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_soap_green",
@@ -7735,9 +9057,14 @@
       [
        "Soap_Green"
       ]
+     ],
+     "at": [
+      6,
+      27.5
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_soap_red",
@@ -7757,9 +9084,14 @@
       [
        "Soap_Red"
       ]
+     ],
+     "at": [
+      5,
+      17
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_soap_yellow",
@@ -7779,9 +9111,14 @@
       [
        "Soap_Yellow"
       ]
+     ],
+     "at": [
+      5,
+      20
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_soda_can",
@@ -7801,9 +9138,14 @@
       [
        "Soda_Can"
       ]
+     ],
+     "at": [
+      4.5,
+      12
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_sofa_1",
@@ -7823,9 +9165,15 @@
       [
        "Sofa_1"
       ]
+     ],
+     "at": [
+      35,
+      54.5
      ]
     }
    },
+   "scale": 0.78,
+   "height": 0.8,
    "sit": true
   },
   {
@@ -7846,9 +9194,14 @@
       [
        "Sofa_1_A"
       ]
+     ],
+     "at": [
+      27.5,
+      50.5
      ]
     }
    },
+   "height": 1.1,
    "sit": true
   },
   {
@@ -7857,21 +9210,26 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
+    2,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Sofa_1_B"
       ]
+     ],
+     "at": [
+      37,
+      58.5
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    },
+   "height": 1.1,
    "sit": true
   },
   {
@@ -7892,9 +9250,14 @@
       [
        "Sofa_1_C"
       ]
+     ],
+     "at": [
+      16,
+      34
      ]
     }
    },
+   "height": 0.6,
    "sit": true
   },
   {
@@ -7915,9 +9278,15 @@
       [
        "Sofa_2_A"
       ]
+     ],
+     "at": [
+      47.5,
+      61.5
      ]
     }
    },
+   "scale": 0.977,
+   "height": 1.1,
    "sit": true
   },
   {
@@ -7926,7 +9295,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    3,
+    2,
     1
    ],
    "dirs": {
@@ -7938,9 +9307,15 @@
       [
        "Sofa_2_B"
       ]
+     ],
+     "at": [
+      67.5,
+      72.5
      ]
     }
    },
+   "scale": 0.719,
+   "height": 0.9,
    "sit": true
   },
   {
@@ -7949,39 +9324,56 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
-    2
+    3,
+    1
    ],
    "dirs": {
     "0": {
      "states": [
       [
-       "Sofa_3_C_Tile"
+       "Sofa_3_D_Tile"
       ]
+     ],
+     "at": [
+      55.5,
+      54.5
      ]
     },
     "2": {
      "states": [
       [
-       "Sofa_3_B_Tile"
+       "Sofa_3_A_Tile"
       ]
+     ],
+     "at": [
+      52.5,
+      60.5
      ]
     },
     "4": {
      "states": [
       [
-       "Sofa_3_A_Tile"
+       "Sofa_3_B_Tile"
       ]
+     ],
+     "at": [
+      55.5,
+      60.5
      ]
     },
     "6": {
      "states": [
       [
-       "Sofa_3_D_Tile"
+       "Sofa_3_C_Tile"
       ]
+     ],
+     "at": [
+      54.5,
+      54.5
      ]
     }
    },
+   "height": 0.9,
    "sit": true
   },
   {
@@ -7990,7 +9382,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    3,
+    2,
     1
    ],
    "dirs": {
@@ -8005,6 +9397,10 @@
       [
        "Sofa_4_A_Tile"
       ]
+     ],
+     "at": [
+      63,
+      71.5
      ]
     },
     "6": {
@@ -8012,9 +9408,15 @@
       [
        "Sofa_4_B_Tile"
       ]
+     ],
+     "at": [
+      59.5,
+      63.5
      ]
     }
    },
+   "scale": 0.977,
+   "height": 1.4,
    "sit": true
   },
   {
@@ -8035,9 +9437,14 @@
       [
        "Speaker_6_Tile"
       ]
+     ],
+     "at": [
+      33,
+      51.5
      ]
     }
-   }
+   },
+   "height": 1
   },
   {
    "id": "salvaje_spoon",
@@ -8057,9 +9464,14 @@
       [
        "Spoon"
       ]
+     ],
+     "at": [
+      8,
+      8.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_staircase_back",
@@ -8079,9 +9491,14 @@
       [
        "StairCase_Back"
       ]
+     ],
+     "at": [
+      127.5,
+      181
      ]
     }
-   }
+   },
+   "height": 3.3
   },
   {
    "id": "salvaje_staircase_front_1",
@@ -8101,13 +9518,99 @@
       [
        "StairCase_Front_1"
       ]
+     ],
+     "at": [
+      127.5,
+      209
      ]
     }
-   }
+   },
+   "height": 5
   },
   {
    "id": "salvaje_staircase_front_2",
    "name": "StairCase Front 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    2
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "StairCase_Front_2"
+      ]
+     ],
+     "at": [
+      187.5,
+      239
+     ]
+    }
+   },
+   "height": 6.7
+  },
+  {
+   "id": "salvaje_stairrailing_1",
+   "name": "StairRailing 1",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "StairRailing_1"
+      ]
+     ],
+     "at": [
+      192,
+      254.5
+     ]
+    }
+   },
+   "height": 7.5
+  },
+  {
+   "id": "salvaje_stairrailing_2",
+   "name": "StairRailing 2",
+   "source": "furni",
+   "kind": "floor",
+   "size": [
+    1,
+    1
+   ],
+   "dirs": {
+    "2": {
+     "mirror": 4
+    },
+    "4": {
+     "states": [
+      [
+       "StairRailing_2"
+      ]
+     ],
+     "at": [
+      320,
+      383.5
+     ]
+    }
+   },
+   "height": 7.5
+  },
+  {
+   "id": "salvaje_stairrailing_3",
+   "name": "StairRailing 3",
    "source": "furni",
    "kind": "floor",
    "size": [
@@ -8121,77 +9624,17 @@
     "4": {
      "states": [
       [
-       "StairCase_Front_2"
-      ]
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_stairrailing_1",
-   "name": "StairRailing 1",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    3,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "states": [
-      [
-       "StairRailing_1"
-      ]
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_stairrailing_2",
-   "name": "StairRailing 2",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    3,
-    1
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "states": [
-      [
-       "StairRailing_2"
-      ]
-     ]
-    }
-   }
-  },
-  {
-   "id": "salvaje_stairrailing_3",
-   "name": "StairRailing 3",
-   "source": "furni",
-   "kind": "floor",
-   "size": [
-    5,
-    2
-   ],
-   "dirs": {
-    "2": {
-     "mirror": 4
-    },
-    "4": {
-     "states": [
-      [
        "StairRailing_3"
       ]
+     ],
+     "at": [
+      125.5,
+      148.5
      ]
     }
-   }
+   },
+   "scale": 0.941,
+   "height": 1.3
   },
   {
    "id": "salvaje_stairrailing_4",
@@ -8199,7 +9642,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    5,
+    4,
     2
    ],
    "dirs": {
@@ -8211,9 +9654,15 @@
       [
        "StairRailing_4"
       ]
+     ],
+     "at": [
+      129,
+      134
      ]
     }
-   }
+   },
+   "scale": 0.948,
+   "height": 0.2
   },
   {
    "id": "salvaje_stairrailing_5",
@@ -8221,7 +9670,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    5,
+    4,
     2
    ],
    "dirs": {
@@ -8233,9 +9682,15 @@
       [
        "StairRailing_5"
       ]
+     ],
+     "at": [
+      127.5,
+      130.5
      ]
     }
-   }
+   },
+   "scale": 0.941,
+   "height": 0.2
   },
   {
    "id": "salvaje_stairrailing_back",
@@ -8244,7 +9699,7 @@
    "kind": "floor",
    "size": [
     1,
-    4
+    1
    ],
    "dirs": {
     "2": {
@@ -8255,9 +9710,14 @@
       [
        "StairRailing_Back"
       ]
+     ],
+     "at": [
+      61,
+      193.5
      ]
     }
-   }
+   },
+   "height": 3.6
   },
   {
    "id": "salvaje_sticky_note_1",
@@ -8497,9 +9957,14 @@
       [
        "Stoves"
       ]
+     ],
+     "at": [
+      23,
+      18.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_sugar",
@@ -8519,9 +9984,14 @@
       [
        "Sugar"
       ]
+     ],
+     "at": [
+      7.5,
+      13.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_sun_flower",
@@ -8541,9 +10011,14 @@
       [
        "Sun_Flower"
       ]
+     ],
+     "at": [
+      10,
+      39
      ]
     }
-   }
+   },
+   "height": 0.7
   },
   {
    "id": "salvaje_switch",
@@ -8607,9 +10082,15 @@
       [
        "Table_10"
       ]
+     ],
+     "at": [
+      37,
+      52.5
      ]
     }
    },
+   "scale": 0.901,
+   "height": 1,
    "stack": true
   },
   {
@@ -8630,9 +10111,15 @@
       [
        "Table_11"
       ]
+     ],
+     "at": [
+      47,
+      57.5
      ]
     }
    },
+   "scale": 0.928,
+   "height": 0.9,
    "stack": true
   },
   {
@@ -8653,9 +10140,15 @@
       [
        "Table_12"
       ]
+     ],
+     "at": [
+      50.5,
+      65
      ]
     }
    },
+   "scale": 0.914,
+   "height": 1.1,
    "stack": true
   },
   {
@@ -8665,7 +10158,7 @@
    "kind": "floor",
    "size": [
     1,
-    2
+    1
    ],
    "dirs": {
     "2": {
@@ -8676,9 +10169,15 @@
       [
        "Table_13"
       ]
+     ],
+     "at": [
+      42,
+      60.5
      ]
     }
    },
+   "scale": 0.81,
+   "height": 1,
    "stack": true
   },
   {
@@ -8699,9 +10198,15 @@
       [
        "Table_14"
       ]
+     ],
+     "at": [
+      51,
+      60
      ]
     }
    },
+   "scale": 0.853,
+   "height": 0.8,
    "stack": true
   },
   {
@@ -8710,7 +10215,7 @@
    "source": "furni",
    "kind": "floor",
    "size": [
-    1,
+    2,
     1
    ],
    "dirs": {
@@ -8722,9 +10227,14 @@
       [
        "Table_Corridor"
       ]
+     ],
+     "at": [
+      35,
+      51
      ]
     }
    },
+   "height": 0.8,
    "stack": true
   },
   {
@@ -8789,9 +10299,14 @@
       [
        "TeaPot"
       ]
+     ],
+     "at": [
+      14,
+      19.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_telephone",
@@ -8811,9 +10326,14 @@
       [
        "Telephone"
       ]
+     ],
+     "at": [
+      14.5,
+      18
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_tissues",
@@ -8833,9 +10353,14 @@
       [
        "Tissues"
       ]
+     ],
+     "at": [
+      14,
+      18.5
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_toast",
@@ -8855,9 +10380,14 @@
       [
        "Toast"
       ]
+     ],
+     "at": [
+      32.5,
+      34
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_toaster",
@@ -8877,29 +10407,34 @@
       [
        "Toaster"
       ]
+     ],
+     "at": [
+      13.5,
+      19
      ]
     }
-   }
+   },
+   "height": 0.1
   },
   {
    "id": "salvaje_toilet_paper",
    "name": "Toilet Paper",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Toilet_Paper"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    }
   },
@@ -8927,29 +10462,34 @@
       [
        "Tool_Box_C"
       ]
+     ],
+     "at": [
+      32,
+      43
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_tools",
    "name": "Tools",
    "source": "furni",
-   "kind": "floor",
+   "kind": "wall",
    "size": [
     1,
     1
    ],
    "dirs": {
     "2": {
-     "mirror": 4
-    },
-    "4": {
      "states": [
       [
        "Tools"
       ]
      ]
+    },
+    "4": {
+     "mirror": 2
     }
    }
   },
@@ -8971,9 +10511,14 @@
       [
        "Tools_Electric"
       ]
+     ],
+     "at": [
+      32,
+      31.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_towel_blue",
@@ -8993,9 +10538,14 @@
       [
        "Towel_Blue"
       ]
+     ],
+     "at": [
+      13.5,
+      10
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_towel_green",
@@ -9015,9 +10565,14 @@
       [
        "Towel_Green"
       ]
+     ],
+     "at": [
+      13.5,
+      10
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_towel_red",
@@ -9037,9 +10592,14 @@
       [
        "Towel_Red"
       ]
+     ],
+     "at": [
+      13.5,
+      10
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_trash_empty",
@@ -9062,9 +10622,14 @@
       [
        "Trash_Full"
       ]
+     ],
+     "at": [
+      16,
+      25.5
      ]
     }
-   }
+   },
+   "height": 0.2
   },
   {
    "id": "salvaje_trash_square",
@@ -9084,9 +10649,14 @@
       [
        "Trash_Square"
       ]
+     ],
+     "at": [
+      32,
+      43
      ]
     }
-   }
+   },
+   "height": 0.4
   },
   {
    "id": "salvaje_trashbin_closed",
@@ -9109,9 +10679,14 @@
       [
        "TrashBin_Open"
       ]
+     ],
+     "at": [
+      14,
+      33
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_tv_dvd",
@@ -9120,7 +10695,7 @@
    "kind": "floor",
    "size": [
     1,
-    1
+    2
    ],
    "dirs": {
     "2": {
@@ -9181,9 +10756,14 @@
        "TV_DVD_47",
        "TV_DVD_48"
       ]
+     ],
+     "at": [
+      64,
+      86.5
      ]
     }
    },
+   "height": 1.1,
    "fps": 8
   },
   {
@@ -9193,7 +10773,7 @@
    "kind": "floor",
    "size": [
     1,
-    1
+    2
    ],
    "dirs": {
     "2": {
@@ -9204,9 +10784,14 @@
       [
        "Tv_Off"
       ]
+     ],
+     "at": [
+      33,
+      58.5
      ]
     }
-   }
+   },
+   "height": 1.1
   },
   {
    "id": "salvaje_vertical_screen",
@@ -9226,9 +10811,14 @@
       [
        "Vertical_Screen"
       ]
+     ],
+     "at": [
+      14,
+      44.5
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_voltagemeter",
@@ -9248,9 +10838,14 @@
       [
        "VoltageMeter"
       ]
+     ],
+     "at": [
+      31.5,
+      34.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_drawing_tablet",
@@ -9270,9 +10865,14 @@
       [
        "WacomTablet"
       ]
+     ],
+     "at": [
+      15,
+      16
      ]
     }
    },
+   "height": 0,
    "stack": true
   },
   {
@@ -9481,9 +11081,14 @@
       [
        "WashingMachine_Closed"
       ]
+     ],
+     "at": [
+      27,
+      60
      ]
     }
    },
+   "height": 1.4,
    "stack": true
   },
   {
@@ -9511,9 +11116,14 @@
        "Water_Dispenser_7",
        "Water_Dispenser_8"
       ]
+     ],
+     "at": [
+      64,
+      92.5
      ]
     }
    },
+   "height": 1.5,
    "fps": 8
   },
   {
@@ -9534,9 +11144,14 @@
       [
        "Wc_Back_1"
       ]
+     ],
+     "at": [
+      31.5,
+      54
      ]
     }
-   }
+   },
+   "height": 0.9
   },
   {
    "id": "salvaje_wc_front_1",
@@ -9556,9 +11171,14 @@
       [
        "Wc_Front_1"
       ]
+     ],
+     "at": [
+      37.5,
+      53
      ]
     }
-   }
+   },
+   "height": 1.1
   },
   {
    "id": "salvaje_wc_furniture",
@@ -9578,9 +11198,14 @@
       [
        "Wc_Furniture"
       ]
+     ],
+     "at": [
+      32,
+      54
      ]
     }
-   }
+   },
+   "height": 1.2
   },
   {
    "id": "salvaje_wc_tap_1",
@@ -9600,9 +11225,14 @@
       [
        "Wc_Tap_1"
       ]
+     ],
+     "at": [
+      64,
+      88
      ]
     }
-   }
+   },
+   "height": 1.3
   },
   {
    "id": "salvaje_welcome_parcel",
@@ -9622,9 +11252,15 @@
       [
        "Welcome_Parcel"
       ]
+     ],
+     "at": [
+      28.5,
+      41
      ]
     }
-   }
+   },
+   "scale": 1.103,
+   "height": 0.9
   },
   {
    "id": "salvaje_welder_machine",
@@ -9644,9 +11280,14 @@
       [
        "Welder_Machine"
       ]
+     ],
+     "at": [
+      32,
+      36.5
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_white_box",
@@ -9666,9 +11307,14 @@
       [
        "White_Box"
       ]
+     ],
+     "at": [
+      32,
+      40
      ]
     }
-   }
+   },
+   "height": 0.3
   },
   {
    "id": "salvaje_whiteboard_eraser",
@@ -9688,9 +11334,14 @@
       [
        "Whiteboard_Eraser"
       ]
+     ],
+     "at": [
+      15,
+      22
      ]
     }
-   }
+   },
+   "height": 0
   },
   {
    "id": "salvaje_kitsune_wave",
@@ -9710,9 +11361,14 @@
       [
        "Wii"
       ]
+     ],
+     "at": [
+      13.5,
+      54.5
      ]
     }
-   }
+   },
+   "height": 1.2
   },
   {
    "id": "salvaje_window_11",
@@ -9748,7 +11404,7 @@
    "source": "furni",
    "kind": "wall",
    "size": [
-    2,
+    1,
     1
    ],
    "dirs": {
@@ -9776,7 +11432,7 @@
    "source": "furni",
    "kind": "wall",
    "size": [
-    2,
+    1,
     1
    ],
    "dirs": {
@@ -9860,9 +11516,14 @@
       [
        "Wine"
       ]
+     ],
+     "at": [
+      6.5,
+      31
      ]
     }
-   }
+   },
+   "height": 0.5
   },
   {
    "id": "salvaje_wrapped_gift",
@@ -9882,9 +11543,14 @@
       [
        "Wrapped_Gift"
       ]
+     ],
+     "at": [
+      26.5,
+      38
      ]
     }
-   }
+   },
+   "height": 0.7
   },
   {
    "id": "salvaje_vortex",
@@ -9904,9 +11570,14 @@
       [
        "XBox"
       ]
+     ],
+     "at": [
+      18,
+      46.5
      ]
     }
-   }
+   },
+   "height": 1
   },
   {
    "id": "salvaje_vortex_loop",
@@ -9926,9 +11597,15 @@
       [
        "XBox_360"
       ]
+     ],
+     "at": [
+      19.5,
+      47
      ]
     }
-   }
+   },
+   "scale": 1.049,
+   "height": 1
   },
   {
    "id": "salvaje_vortex_prime",
@@ -9948,9 +11625,15 @@
       [
        "XBox_X"
       ]
+     ],
+     "at": [
+      30,
+      47.5
      ]
     }
-   }
+   },
+   "scale": 0.842,
+   "height": 0.7
   }
  ]
 }

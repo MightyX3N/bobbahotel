@@ -67,10 +67,17 @@ export function corner(gx: number, gy: number, z: number): Point {
   return [(gx - gy) * (TILE_W / 2), (gx + gy) * (TILE_H / 2) - z * STEP_PX];
 }
 
+/**
+ * A piece of the room's drawing. `layer`: 'door' (the doorway, drawn behind the walls), 'room'
+ * (floor and walls, behind all furni and avatars), or 'object' (walls that stand out in front of
+ * floor further back, where the room's outline steps forward: sorted with furni and avatars as
+ * something standing on tile `tile`). Inside a layer, pieces go by `depth`.
+ */
 export interface RoomPiece {
   graphics: Graphics;
   depth: number;
-
+  layer: 'door' | 'room' | 'object';
+  tile?: [number, number];
 }
 
 /** Nitro's camera direction (RoomGeometry(64, (-135, 30, 0), (11, 11, 5)).directionAxis). */
@@ -100,15 +107,16 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
   const cols = Math.max(...grid.map((r) => r.length));
   const [doorX, doorY] = door;
 
-  // Pieces with the same depth share one Graphics.
-  const byDepth = new Map<number, Graphics>();
-  const at = (depth: number, map = byDepth) => {
-    const key = depthToZIndex(depth);
-    let g = map.get(key);
-    if (!g) map.set(key, (g = new Graphics()));
-    return g;
+  // Pieces in the same layer at the same depth (and tile) share one Graphics.
+  const byDepth = new Map<string, RoomPiece>();
+  const at = (depth: number, layer: RoomPiece['layer'] = 'room', tile?: [number, number]) => {
+    const key = `${layer}:${depthToZIndex(depth)}:${tile ?? ''}`;
+    let piece = byDepth.get(key);
+    if (!piece) byDepth.set(key, (piece = { graphics: new Graphics(), depth, layer, ...(tile ? { tile } : {}) }));
+    return piece.graphics;
   };
-  const poly = (depth: number, pts: Point[], color: number) => at(depth).poly(pts.flat()).fill(color);
+  const poly = (depth: number, pts: Point[], color: number, layer: RoomPiece['layer'] = 'room', tile?: [number, number]) =>
+    at(depth, layer, tile).poly(pts.flat()).fill(color);
   const down = (p: Point, px: number): Point => [p[0], p[1] + px];
 
   // ---- walls, from Nitro's parser ----
@@ -188,7 +196,7 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
       const maxZ = Math.max(...corners.map((v) => v.z));
       if (color === COLORS.wallLeft && sameX) {
         nitroFaces.add(`x${Math.round(a.x)},${minY}`);
-        if (!inFrontOfDoor && isFloor(grid, Math.round(a.x), minY)) walls.push({ dir: 4, x: Math.round(a.x), y: minY, base: heightAt(grid, Math.round(a.x), minY), top: maxZ });
+        if (isFloor(grid, Math.round(a.x), minY)) walls.push({ dir: 4, x: Math.round(a.x), y: minY, base: heightAt(grid, Math.round(a.x), minY), top: maxZ });
       }
       if (color === COLORS.wallRight && sameY) {
         nitroFaces.add(`y${Math.round(a.y)},${minX}`);
@@ -257,8 +265,9 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
         const y0 = isBehind(x, y - 1) || isBehind(x + 1, y - 1) ? y - T : y;
         const gx = x + 1 + T;
         const d = tileDepth(x + 1, y) - 0.2;
-        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallLeft);
-        poly(d, [corner(x + 1, y0, topAt(x + 1, y0)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallTop);
+        const t: [number, number] = [x + 1, y];
+        poly(d, [corner(gx, y0, base), corner(gx, y + 1, base), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallLeft, 'object', t);
+        poly(d, [corner(x + 1, y0, topAt(x + 1, y0)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(gx, y + 1, topAt(gx, y + 1)), corner(gx, y0, topAt(gx, y0))], COLORS.wallTop, 'object', t);
       });
       // Nothing below, but floor further right in that empty row: the left wall steps right here.
       // Outside face along grid y+1, facing +y.
@@ -268,8 +277,9 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
         const x0 = isBehind(x - 1, y) || isBehind(x - 1, y + 1) ? x - T : x;
         const gy = y + 1 + T;
         const d = tileDepth(x, y + 1) - 0.2;
-        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallRight);
-        poly(d, [corner(x0, y + 1, topAt(x0, y + 1)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallTop);
+        const t: [number, number] = [x, y + 1];
+        poly(d, [corner(x0, gy, base), corner(x + 1, gy, base), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallRight, 'object', t);
+        poly(d, [corner(x0, y + 1, topAt(x0, y + 1)), corner(x + 1, y + 1, topAt(x + 1, y + 1)), corner(x + 1, gy, topAt(x + 1, gy)), corner(x0, gy, topAt(x0, gy))], COLORS.wallTop, 'object', t);
       });
     }
   }
@@ -303,6 +313,7 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
     pts: Point[];
     color: number;
     lines: [Point, Point][];
+    door: boolean;
   }
   const cells: Cell[] = [];
   for (let i = 0; i < parser.planeCount; i++) {
@@ -355,7 +366,7 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
           if (whole(y1)) lines.push([corner(x1, y1, z), corner(x0, y1, z)]);
           if (whole(x0)) lines.push([corner(x0, y1, z), corner(x0, y0, z)]);
         }
-        cells.push({ depth, order: cx + cy + (flat ? 0 : 0.001), pts, color, lines });
+        cells.push({ depth, order: cx + cy + (flat ? 0 : 0.001), pts, color, lines, door: Math.floor(cx) === doorX && Math.floor(cy) === doorY });
       }
     }
   }
@@ -364,18 +375,18 @@ export function drawRoom(grid: Grid, door: [number, number]): { pieces: RoomPiec
     const z = heightAt(grid, doorX, doorY);
     const dl = corner(doorX + 1, doorY + 1, z);
     const dt = corner(doorX + 1, doorY, z);
-    at(floorDepth(grid, doorX, doorY) - 0.05)
+    at(-1, 'door')
       .poly([down(dl, FLOOR_THICKNESS), down(dt, FLOOR_THICKNESS), down(dt, -DOOR_HEIGHT), down(dl, -DOOR_HEIGHT)].flat())
       .fill(COLORS.doorway);
   }
   cells.sort((a, b) => a.depth - b.depth || a.order - b.order);
   for (const c of cells) {
-    const g = at(c.depth).poly(c.pts.flat()).fill(c.color);
+    const g = at(c.depth, c.door ? 'door' : 'room').poly(c.pts.flat()).fill(c.color);
     for (const [a, b] of c.lines) g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
     if (c.lines.length > 0) g.stroke({ color: COLORS.floorLine, width: 2, alignment: 0.5 });
   }
 
-  return { pieces: [...byDepth.entries()].map(([key, graphics]) => ({ graphics, depth: key / 1000 })), walls };
+  return { pieces: [...byDepth.values()], walls };
 }
 
 /** Outline shown on the tile under the mouse. */

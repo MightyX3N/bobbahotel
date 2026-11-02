@@ -7,15 +7,15 @@ import { Container, Graphics, type Application, type FederatedPointerEvent } fro
 import {
   furniDirs,
   furniFootprint,
+  furniHeight,
   furniTiles,
   furniTop,
   standHeight,
-  wallItemFits,
+  wallItemZ,
+  wallKindAt,
   heightAt,
   isFloor,
   parseMap,
-  WALL_ITEM_MAX_Z,
-  WALL_ITEM_MIN_Z,
   type DataOf,
   type FurniBelow,
   type FurniDef,
@@ -30,7 +30,8 @@ import { toolbarHeight } from '../layout.ts';
 import { ChatBubbles } from './ChatBubbles.ts';
 import { FurniView } from './FurniView.ts';
 import { furniDefs, furniSheets } from './furniAssets.ts';
-import { corner, depthToZIndex, drawRoom, drawTileOutline, floorDepth, type WallFace } from './drawRoom.ts';
+import { depthToZIndex, drawRoom, drawTileOutline, floorDepth, type RoomPiece, type WallFace } from './drawRoom.ts';
+import { BAND, sortObjects, type Sortable } from './depthSort.ts';
 import { pointInTile, tileCenter } from './iso.ts';
 
 const TICK_MS = 500;
@@ -76,8 +77,12 @@ export class RoomView {
   private hoveredFurni: FurniView | null = null;
   private grid: Grid = [];
   private door: [number, number] = [0, 0];
-  /** Floor and wall pieces (depth-sorted together with the avatars). */
+  /** Floor and wall pieces. */
   private roomPieces: Graphics[] = [];
+  /** Wall pieces that sort with furni and avatars (see RoomPiece). */
+  private objectPieces: RoomPiece[] = [];
+  /** What the drawing order was last worked out for (it's only worked out again when that changes). */
+  private sortedFor = '';
   private tilesFrontToBack: [number, number][] = [];
   private hoveredAvatar: AvatarView | null = null;
   private zoom = 1;
@@ -190,8 +195,11 @@ export class RoomView {
 
     const drawn = drawRoom(this.grid, room.door);
     this.walls = drawn.walls;
+    this.objectPieces = [];
+    this.sortedFor = '';
     for (const piece of drawn.pieces) {
-      piece.graphics.zIndex = depthToZIndex(piece.depth);
+      if (piece.layer === 'object') this.objectPieces.push(piece);
+      else piece.graphics.zIndex = (piece.layer === 'door' ? BAND.door : BAND.room) + depthToZIndex(piece.depth);
       this.objects.addChild(piece.graphics);
       this.roomPieces.push(piece.graphics);
     }
@@ -329,7 +337,7 @@ export class RoomView {
     let spot: RoomFurni | null = null;
     if (p.def.kind === 'wall') {
       const hit = this.wallAt(sx, sy);
-      if (hit) spot = { uid: -1, def: p.def.id, x: hit.face.x, y: hit.face.y, z: hit.z, dir: hit.face.dir, state: 0, off: hit.off };
+      if (hit) spot = this.slideOnWall(p.def, { uid: -1, def: p.def.id, x: hit.face.x, y: hit.face.y, z: hit.z, dir: hit.face.dir, state: 0, off: hit.off });
     } else {
       const t = this.tileAt(sx, sy);
       if (t) spot = { uid: -1, def: p.def.id, x: t[0], y: t[1], z: 0, dir: p.dir, state: 0 };
@@ -341,7 +349,7 @@ export class RoomView {
 
   private showGhost(spot: RoomFurni): void {
     const p = this.placing!;
-    const z = p.def.kind === 'wall' ? (this.wallFits(p.def, spot) ? spot.z : null) : this.stackZ(p.def, spot, p.uid);
+    const z = p.def.kind === 'wall' ? this.wallZ(p.def, spot) : this.stackZ(p.def, spot, p.uid);
     const shown = { ...spot, z: z ?? (p.def.kind === 'wall' ? spot.z : heightAt(this.grid, spot.x, spot.y)), dir: p.def.kind === 'wall' ? spot.dir : p.dir };
     p.spot = { ...shown };
     p.ghost.place(shown, heightAt(this.grid, spot.x, spot.y));
@@ -370,13 +378,41 @@ export class RoomView {
     return Math.round(z * 100) / 100;
   }
 
-  /** Does a wall furni fit there: wall all along its picture (the same rule as the server)? */
-  private wallFits(def: FurniDef, spot: RoomFurni): boolean {
-    const [dx, dy] = this.door;
+  /**
+   * Like Habbo: where a wall furni doesn't fit (past the end of the wall), it slides along the
+   * wall to the nearest place it fits.
+   */
+  private slideOnWall(def: FurniDef, spot: RoomFurni): RoomFurni {
+    if (this.wallZ(def, spot) !== null) return spot;
+    const along = (spot.dir === 4 ? spot.y : spot.x) + (spot.off ?? 0.5);
+    for (let k = 1; k <= 60; k++) {
+      for (const a of [along - k * 0.05, along + k * 0.05]) {
+        const tile = Math.floor(a);
+        const moved: RoomFurni = { ...spot, x: spot.dir === 4 ? spot.x : tile, y: spot.dir === 4 ? tile : spot.y, off: Math.round((a - tile) * 100) / 100 };
+        if (this.wallZ(def, moved) !== null) return moved;
+      }
+    }
+    return spot;
+  }
+
+  /**
+   * Where a wall furni hangs if its middle goes at this spot: the height where all of its picture
+   * is on the wall (the same rule as the server), or null if it doesn't fit there.
+   */
+  private wallZ(def: FurniDef, spot: RoomFurni): number | null {
     const dir = spot.dir;
-    const wallAt = (tx: number, ty: number) =>
-      isFloor(this.grid, tx, ty) && !(tx === dx && ty === dy) && !(dir === 4 ? isFloor(this.grid, tx - 1, ty) : isFloor(this.grid, tx, ty - 1));
-    return wallAt(spot.x, spot.y) && wallItemFits(def, this.sheets.get(def.id), { x: spot.x, y: spot.y, dir, off: spot.off ?? 0.5 }, wallAt);
+    return wallItemZ(def, this.sheets.get(def.id), { x: spot.x, y: spot.y, dir, off: spot.off ?? 0.5 }, spot.z, (tx, ty) => wallKindAt(this.grid, this.door, dir, tx, ty));
+  }
+
+  /** The seat (or bed) furni on a tile, the highest. */
+  private seatView(x: number, y: number, how: 'sit' | 'lay'): FurniView | null {
+    let best: FurniView | null = null;
+    for (const f of this.furni.values()) {
+      if (!(how === 'lay' ? f.def.lay : f.def.sit) || f.def.kind !== 'floor') continue;
+      if (!furniTiles(f.def, f.data).some(([tx, ty]) => tx === x && ty === y)) continue;
+      if (!best || f.data.z > best.data.z) best = f;
+    }
+    return best;
   }
 
   /** The seat (or bed) on a tile, the highest. */
@@ -389,7 +425,7 @@ export class RoomView {
     }
     if (!best) return null;
     const [w, l] = furniFootprint(best.def, best.data.dir);
-    return { zIndex: best.container.zIndex, length: best.data.dir === 2 || best.data.dir === 6 ? w : l };
+    return { length: best.data.dir === 2 || best.data.dir === 6 ? w : l };
   }
 
   /** The wall under a screen point, where on it, and how high. */
@@ -407,8 +443,7 @@ export class RoomView {
       if (z < face.base || z > face.top) continue;
       const depth = gx + gy;
       if (!best || depth > best.depth) {
-        const h = Math.min(WALL_ITEM_MAX_Z, Math.max(WALL_ITEM_MIN_Z, z - face.base));
-        best = { face, off: Math.min(0.9, Math.max(0.1, off)), z: Math.round(h * 100) / 100, depth };
+        best = { face, off: Math.round(off * 100) / 100, z: Math.round((z - face.base) * 100) / 100, depth };
       }
     }
     return best && { face: best.face, off: best.off, z: best.z };
@@ -420,7 +455,11 @@ export class RoomView {
     if (!p?.spot || !p.ghost.container.visible) return;
     const { x, y, dir, off, z } = p.spot;
     if (p.def.kind === 'floor' && this.stackZ(p.def, p.spot, p.uid) === null) return;
-    if (p.def.kind === 'wall' && !this.wallFits(p.def, p.spot)) return;
+    if (p.def.kind === 'wall') {
+      const z = this.wallZ(p.def, p.spot);
+      if (z === null) return;
+      p.spot = { ...p.spot, z };
+    }
     const where = p.def.kind === 'wall' ? { x, y, dir, off: off ?? 0.5, z } : { x, y, dir };
     if (p.uid === null) this.onPlaceFurni(p.def.id, where);
     else this.onMoveFurni(p.uid, where);
@@ -451,6 +490,57 @@ export class RoomView {
     this.world.position.set(Math.round(width / 2 - x * z), Math.round(height / 2 - y * z));
   }
 
+  /** Puts everything in drawing order, like Habbo (see depthSort.ts). */
+  private sortDepth(now: number): void {
+    const items: (Sortable & { show: Container })[] = [];
+    const sig: string[] = [];
+    const add = (show: Container, box: Omit<Sortable, 'self'>, self: unknown) => {
+      items.push({ ...box, self, show });
+      sig.push(`${box.x0},${box.x1},${box.y0},${box.y1},${box.z0},${box.z1},${box.on ? `${box.on.behind}` : ''}`);
+    };
+    const furniViews = [...this.furni.values()];
+    if (this.placing?.ghost.container.visible) furniViews.push(this.placing.ghost);
+    for (const f of furniViews) {
+      const d = f.data;
+      if (f.def.kind === 'wall') {
+        // On the wall: in front of the wall, behind everything standing in the room.
+        f.container.zIndex = BAND.onWall + depthToZIndex(d.x + d.y + (d.off ?? 0.5) + d.z * 0.01);
+        continue;
+      }
+      if (f.def.walk) {
+        // Rugs lie flat on the floor, under everything standing on it (and in front of the wall).
+        f.container.zIndex = BAND.onWall + 1e8 + depthToZIndex(d.x + d.y + d.z * 0.01);
+        continue;
+      }
+      const [w, l] = furniFootprint(f.def, d.dir);
+      add(f.container, { x0: d.x, x1: d.x + w - 1, y0: d.y, y1: d.y + l - 1, z0: d.z, z1: d.z + furniHeight(f.def, this.sheets.get(f.def.id)) }, f);
+    }
+    for (const a of this.avatars.values()) {
+      const p = a.tilePosition(now);
+      // Like Habbo, an avatar walking between tiles sorts with the nearest tile.
+      const x = Math.round(p.x);
+      const y = Math.round(p.y);
+      if (x === this.door[0] && y === this.door[1]) {
+        // In the doorway: behind the walls, seen through the door (Habbo puts it 2000 tiles back).
+        a.container.zIndex = BAND.door + 1e8;
+        continue;
+      }
+      const r = a.resting();
+      const seat = r ? this.seatView(r.x, r.y, r.how) : null;
+      const on = seat ? { target: seat, behind: r!.how === 'sit' && (a.facing() === 0 || a.facing() === 6 || a.facing() === 7) } : undefined;
+      add(a.container, { x0: x, x1: x, y0: y, y1: y, z0: p.z, z1: p.z + 2.8, ...(on ? { on } : {}), bias: 0.014 }, a);
+    }
+    for (const piece of this.objectPieces) {
+      const [x, y] = piece.tile!;
+      add(piece.graphics, { x0: x, x1: x, y0: y, y1: y, z0: 0, z1: 100 }, piece);
+    }
+    const key = sig.join('|');
+    if (key === this.sortedFor) return;
+    this.sortedFor = key;
+    sortObjects(items);
+    for (const it of items) it.show.zIndex = BAND.objects + (it.order ?? 0);
+  }
+
   /** Bounds of the room's floor and walls (avatars left out, so the room doesn't shift as they move). */
   private roomBounds(): { x: number; y: number; width: number; height: number } {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -471,6 +561,7 @@ export class RoomView {
       a.update(now);
     }
     for (const f of this.furni.values()) f.update(now);
+    this.sortDepth(now);
     this.placing?.ghost.update(now);
     this.bubbles.update(now);
   }
@@ -535,7 +626,7 @@ export class RoomView {
     if (t) {
       drawTileOutline(this.hover, t[0], t[1], heightAt(this.grid, t[0], t[1]));
       // Just above its tile's floor, under walls, furni and avatars.
-      this.hover.zIndex = depthToZIndex(floorDepth(this.grid, t[0], t[1]) + 0.05);
+      this.hover.zIndex = (t[0] === this.door[0] && t[1] === this.door[1] ? BAND.door : BAND.room) + depthToZIndex(floorDepth(this.grid, t[0], t[1]) + 0.05);
     } else this.hover.clear();
 
 

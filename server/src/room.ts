@@ -297,8 +297,8 @@ export class Room {
         });
       const top = standHeight(def, floorZ, below);
       if (top === null) return null;
-      // Not onto someone (unless it's something you sit, lie or stand on, or it's over their head).
-      if (furniBlocks(def, top, floorZ) && [...this.occupants.values()].some((o) => o.x === tx && o.y === ty)) return null;
+      // Not onto someone (unless it's something you sit, lie or stand on).
+      if (furniBlocks(def) && [...this.occupants.values()].some((o) => o.x === tx && o.y === ty)) return null;
       z = Math.max(z, top);
     }
     return { x, y, z: Math.round(z * 100) / 100, dir };
@@ -344,7 +344,7 @@ export class Room {
     for (const f of this.furni) {
       const def = this.defs.get(f.def);
       if (!def) continue;
-      for (const [x, y] of furniTiles(def, f)) if (furniBlocks(def, f.z, heightAt(this.grid, x, y))) this.furniBlocked.add(tileKey(x, y));
+      for (const [x, y] of furniTiles(def, f)) if (furniBlocks(def)) this.furniBlocked.add(tileKey(x, y));
     }
   }
 

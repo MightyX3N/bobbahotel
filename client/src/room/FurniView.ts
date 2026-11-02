@@ -2,9 +2,9 @@
 // if that state has frames, depth-sorted with avatars and walls. Floor furni stand on their tiles;
 // wall furni hang on the wall at the edge of their tile. Also used for the see-through "ghost"
 // that follows the mouse while placing or moving a furni.
-import { Container, Sprite, Text } from 'pixi.js';
+import { Container, Matrix, Point, Sprite, Text } from 'pixi.js';
 import { furniFootprint, type FurniDef, type FurniDir, type RoomFurni } from '@bobba/shared';
-import { corner, depthToZIndex, FLAT_FLOOR_BELOW, tileDepth } from './drawRoom.ts';
+import { corner } from './drawRoom.ts';
 import { furniFrames, type FurniFrames, type FurniTexture } from './furniAssets.ts';
 
 export class FurniView {
@@ -62,40 +62,21 @@ export class FurniView {
       // On the wall at the tile's x edge (direction 4) or y edge (2), `off` along it.
       const off = furni.off ?? 0.5;
       const [px, py] = furni.dir === 4 ? corner(furni.x, furni.y + off, floorZ + furni.z) : corner(furni.x + off, furni.y, floorZ + furni.z);
-      this.container.position.set(px + ox, py + oy);
+      // Things that stick out of the wall (a wall cabinet) have their back against it: their middle
+      // is half their depth out from the wall, into the room.
+      const d = (def.depth ?? 0) / 2;
+      const [dx, dy] = furni.dir === 4 ? [32 * d, 16 * d] : [-32 * d, 16 * d];
+      this.container.position.set(px + ox + dx, py + oy + dy);
     } else {
       const [w, l] = furniFootprint(def, furni.dir);
-      // Stands with its footprint's front corner on the floor (or hangs above it).
-      const [px, py] = corner(furni.x + w, furni.y + l, furni.z + (def.hang ?? 0));
+      // Its picture is pinned by the middle of its footprint (measured from the picture) to the
+      // middle of its tiles, at the height it stands.
+      const [px, py] = corner(furni.x + w / 2, furni.y + l / 2, furni.z);
       this.container.position.set(px + ox, py + oy);
     }
     if (furni.dir !== this.dir) {
       this.dir = furni.dir;
       this.pickDir();
-    }
-    this.sortDepth();
-  }
-
-  /**
-   * Floor furni sort with their front tile; rugs and mats lie flat on the floor (sorted with the
-   * flat floor, just above it), so they never cover the feet of someone standing behind them.
-   * Wall furni sort just in front of the wall pieces they cover (a wide picture covers the next
-   * tile's piece too), behind anything standing on the floor.
-   */
-  private sortDepth(): void {
-    const furni = this.data;
-    const def = this.def;
-    if (def.kind === 'wall') {
-      const off = furni.off ?? 0.5;
-      const f = this.frames[0];
-      // Half the picture's width, in tiles along the wall (a tile's edge is 32 px wide on screen).
-      const half = f ? (f.texture.width * (def.scale ?? 1)) / 2 / 32 : 0.5;
-      const lastTile = Math.max(0, Math.floor(off + half - 0.001));
-      this.container.zIndex = depthToZIndex(furni.x + furni.y + lastTile + 0.55);
-    } else {
-      const [w, l] = furniFootprint(def, furni.dir);
-      const front = tileDepth(furni.x + w - 1, furni.y + l - 1);
-      this.container.zIndex = depthToZIndex(def.walk ? front + 0.95 - FLAT_FLOOR_BELOW : front + 0.3 + (furni.z + (def.hang ?? 0)) * 0.01);
     }
   }
 
@@ -131,16 +112,12 @@ export class FurniView {
     this.label.visible = show;
   }
 
-  /** Rough hit test in room coordinates: inside the picture's box. */
+  /** Hit test in room coordinates: on a solid pixel of its picture (like Habbo). */
   hits(px: number, py: number): boolean {
-    if (this.frames.length === 0 || !this.container.visible) return false;
-    const b = this.sprite.getLocalBounds();
-    const x = px - this.container.x;
-    const y = py - this.container.y;
-    const sx = this.sprite.scale.x;
-    const left = sx < 0 ? -b.maxX * -sx : b.minX * sx;
-    const right = sx < 0 ? -b.minX * -sx : b.maxX * sx;
-    return x >= left && x <= right && y >= b.minY * this.sprite.scale.y && y <= b.maxY * this.sprite.scale.y;
+    const f = this.frames[this.frameShown] ?? this.frames[0];
+    if (!f || !this.container.visible) return false;
+    const local = this.sprite.localTransform.applyInverse(new Point(px - this.container.x, py - this.container.y));
+    return f.solid(local.x + f.ax, local.y + f.ay);
   }
 
   destroy(): void {
@@ -170,10 +147,19 @@ export class FurniView {
     const scale = this.def.scale ?? 1;
     this.sprite.texture = f.texture;
     // Floor furni stand on their front corner; wall furni hang by their middle.
-    if (this.def.kind === 'wall') this.sprite.anchor.set(0.5, 0.5);
-    else this.sprite.anchor.set(f.ax / f.texture.width, f.ay / f.texture.height);
-    this.sprite.scale.set(this.flip ? -scale : scale, scale);
+    this.sprite.anchor.set(f.ax / f.texture.width, f.ay / f.texture.height);
+    const images = this.def.dirs[this.dir];
+    const source = images && 'mirror' in images ? this.def.dirs[images.mirror] : images;
+    const stretch = source && 'states' in source ? source.stretch : undefined;
+    if (stretch) {
+      // Rugs: stretched along the floor's x and y on their own (tiles are 32 px across and 16
+      // down per step along x, -32 and 16 along y), then mirrored like the picture.
+      const [sx, sy] = stretch;
+      const flip = this.flip ? -1 : 1;
+      this.sprite.setFromMatrix(new Matrix(flip * ((sx + sy) / 2) * scale, ((sx - sy) / 4) * scale, flip * (sx - sy) * scale, ((sx + sy) / 2) * scale, 0, 0));
+    } else {
+      this.sprite.setFromMatrix(new Matrix(this.flip ? -scale : scale, 0, 0, scale, 0, 0));
+    }
     this.label.y = (this.def.kind === 'wall' ? -f.texture.height / 2 : -f.ay) * scale - 4;
-    if (this.def.kind === 'wall') this.sortDepth();
   }
 }
