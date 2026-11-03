@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", "lib": ["ESNext"], "moduleResolution": "Node", "strict": false, "rootDir": "src", "outDir": "out", "types": [],
+    "experimentalDecorators": true,
+    "baseUrl": ".", "paths": { "@pixi/*": ["src/pixi/index.ts"] }
+  },
+  "include": ["src/**/*.ts"],
+  "tstl": { "luaTarget": "JIT", "luaLibImport": "require-minimal", "luaBundle": "avatar.lua", "luaBundleEntry": "src/Avatar.ts", "noHeader": true }
+}

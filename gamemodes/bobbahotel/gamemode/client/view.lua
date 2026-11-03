@@ -103,7 +103,7 @@ local function buildPolys()
 	local holes = BOBBA.rooms.holes(V.room)
 	local ox, oy = origin()
 	local m = z.mult
-	local polys, back = {}, {}
+	local polys, back, doorWall = {}, {}, {}
 	local doorFloor = BOBBA.rooms.doorFloor(V.room)
 	local function screen(index, u, v)
 		local s = camera.screen(BOBBA.rooms.planePoint(V.room, index, u, v))
@@ -115,9 +115,11 @@ local function buildPolys()
 		if holes[p.index] then
 			-- a plane with the door cut out: drawn as the pieces around the hole
 			for _, q in ipairs(BOBBA.rooms.planePieces(V.room, p.index)) do
-				polys[#polys + 1] = { r = r, g = g, b = b, pts = clockwise({
+				local piece = { r = r, g = g, b = b, pts = clockwise({
 					screen(p.index, q[1], q[3]), screen(p.index, q[2], q[3]), screen(p.index, q[2], q[4]), screen(p.index, q[1], q[4]),
 				}) }
+				polys[#polys + 1] = piece
+				doorWall[#doorWall + 1] = piece
 			end
 		else
 			-- the door tile's floor goes behind the walls (seen through the door hole)
@@ -146,6 +148,7 @@ local function buildPolys()
 	end
 	V.polys = polys
 	V.backPolys = back
+	V.doorWallPolys = doorWall
 	V.builds = (V.builds or 0) + 1
 end
 
@@ -204,8 +207,11 @@ function PANEL:Paint(w, h)
 	surface.SetDrawColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b, 255)
 	surface.DrawRect(0, 0, w, h)
 	drawPolys(V.backPolys) -- the door tile's floor
-	if V.drawUnits then V.drawUnits("behind") end -- in the door: behind the walls (Nitro)
 	drawPolys(V.polys)
+	-- whoever is in the doorway: on top of the floor, then the wall with the door hole once more over
+	-- them, so they're only seen through the hole (Nitro draws them behind all the walls; drawing
+	-- them before the floor hid their feet under the room's floor halfway through the door)
+	if V.drawUnits and V.drawUnits("behind") then drawPolys(V.doorWallPolys) end
 	drawCursor()
 	if V.drawUnits then V.drawUnits("front") end
 	if V.label then

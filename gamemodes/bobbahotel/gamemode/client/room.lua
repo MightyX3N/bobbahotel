@@ -1,5 +1,11 @@
 -- The room you're in (client): shows it with the room view, sends your clicks as walking, and
--- draws everyone in it. Until avatars come in, people are a simple stand-in figure.
+-- draws everyone in it. An addon draws the people (R.figureDrawer, e.g. bobba_habbo's avatars);
+-- without one, or while their pictures are still loading, people are a simple stand-in figure.
+--
+--   BOBBA.room.figureDrawer = function(unit, info) ... return true end
+--     info: x, y, z (where it stands), sx, sy (that point on screen), k (screen pixels per avatar
+--     pixel), dir, posture ("mv" while stepping, else "std"), now (SysTime()).
+--     Return true when it drew the unit; false/nil draws the stand-in.
 --   bobba_room <id>   go to a room          (server: bobba_rooms lists them, bobba_room_create makes one)
 
 BOBBA.room = BOBBA.room or { units = {} }
@@ -19,7 +25,7 @@ end
 local function setUnit(s)
 	local u = R.units[s.id] or { id = s.id }
 	R.units[s.id] = u
-	u.name, u.dir = s.name, s.dir
+	u.name, u.dir, u.figure = s.name, s.dir, s.figure
 	u.from = { x = s.x, y = s.y, z = s.z }
 	u.to = s.to
 	u.started = SysTime()
@@ -76,11 +82,22 @@ local function ellipse(cx, cy, rx, ry, n)
 	return V.clockwise(pts)
 end
 
+-- a unit is walking while it is on its way to the next tile
+local function posture(u)
+	if u.to and (SysTime() - u.started) < STEP + 0.1 then return "mv" end
+	return "std"
+end
+
 -- the stand-in figure: shadow, legs, body, head, a nose showing which way it faces, and the name
 local function drawUnit(u)
 	local x, y, z = position(u)
 	local sx, sy, k = V.project(x, y, z)
 	if not sx then return end
+	if R.figureDrawer then
+		local ok, drew = pcall(R.figureDrawer, u, { x = x, y = y, z = z, sx = sx, sy = sy, k = k, dir = u.dir or 2, posture = posture(u), now = SysTime() })
+		if ok and drew then return end
+		if not ok then ErrorNoHalt("[Bobba] figure drawer: " .. tostring(drew) .. "\n") R.figureDrawer = nil end
+	end
 	draw.NoTexture()
 	surface.SetDrawColor(0, 0, 0, 70)
 	surface.DrawPoly(ellipse(sx, sy, 15 * k, 7 * k, 16))
@@ -113,8 +130,9 @@ local function drawName(u)
 	draw.SimpleTextOutlined(u.name or "?", "BobbaName", sx, sy - 92 * k, u.id == R.you and Color(255, 230, 120) or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, Color(0, 0, 0, 200))
 end
 
--- phase "behind": whoever stands exactly in the door (drawn before the walls, so the wall hides
--- them except through the door hole); "front": everyone else
+-- phase "behind": whoever is in the doorway (the view draws the wall with the door hole over them
+-- again, so they're only seen through the hole; returns whether there was anyone); "front":
+-- everyone else
 V.drawUnits = function(phase)
 	if V.mode ~= "room" then return end
 	-- deepest first (Nitro sorts by the screen depth of where each one stands)
@@ -129,6 +147,7 @@ V.drawUnits = function(phase)
 	end
 	table.sort(list, function(a, b) return a.depth > b.depth end)
 	for _, e in ipairs(list) do drawUnit(e.u) end
+	if phase == "behind" then return #list > 0 end
 	if phase == "front" then
 		for _, u in pairs(R.units) do drawName(u) end
 	end

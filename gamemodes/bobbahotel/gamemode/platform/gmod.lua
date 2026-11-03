@@ -108,9 +108,10 @@ function P.dataExists(path)
 	return file.Exists("bobbahotel/" .. path, "DATA")
 end
 
--- A material from a PNG written with writeData (pixel-sharp, no mipmaps)
-function P.dataMaterial(path)
-	return Material("../data/bobbahotel/" .. path, "noclamp smooth")
+-- A material from a PNG written with writeData. flags: GMod's material flags (default "noclamp
+-- smooth"; pixel art that is scaled up wants "noclamp" so the pixels stay sharp)
+function P.dataMaterial(path, flags)
+	return Material("../data/bobbahotel/" .. path, flags or "noclamp smooth")
 end
 
 -- Hotel addons live in lua/bobbahotel/addons/<id>/ (a Workshop addon or a folder in garrysmod/addons).

@@ -11,6 +11,7 @@ H.swf = lib("swf.lua")
 H.png = lib("png.lua")
 H.xml = lib("xml.lua")
 H.zip = lib("zip.lua")
+lib("work.lua")
 
 function H.inflate(bytes)
 	return (H.deflate:DecompressZlib(bytes))
@@ -26,3 +27,6 @@ end
 
 lib("library.lua")
 lib("avatardata.lua")
+
+-- client-only file, sent to players by the server
+if SERVER then AddCSLuaFile("bobbahotel/addons/bobba_habbo/avatars.lua") end

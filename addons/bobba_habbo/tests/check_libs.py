@@ -127,6 +127,14 @@ o, e = call(swf.read, b"CWS\x09\x00\x00\x00\x00garbage", inflate)
 check(o is None, "a broken SWF gives a reason, not a crash")
 
 
+
+# --- one picture, several names (Habbo does this for repeated frames) ------------------------------
+dup = swf_file([lossless2_argb(1, W3, H3, img3, alpha=False), symbols([(1, "a_std_1"), (1, "a_wlk_1"), (1, "a_wlk_2")])])
+od, _ = call(swf.read, dup, inflate)
+byd = od[b"byName"]
+check(all(byd[n] is not None and byd[n][b"image"] is not None for n in (b"a_std_1", b"a_wlk_1", b"a_wlk_2")), "SWF: every name of a shared picture is found")
+check(od[b"symbols"][1] == b"a_std_1", "SWF: symbols[id] is the first name")
+
 # --- ZIP reading (Habbo's desktop client comes as a ZIP) ------------------------------------------
 import zipfile
 zipmod = load("zip.lua")
@@ -186,7 +194,19 @@ check(names == ["throne_icon_a", "throne_throne_64_a_2_0", "throne_throne_64_b_2
 pngs = [k for k in L2.globals().PY_FILES.keys() if k.endswith(b".png")]
 check(len(pngs) == 3, "library: a PNG file for each picture")
 img = Image.open(io.BytesIO(L2.globals().PY_FILES[lib[b"images"][b"throne_throne_64_a_2_0"][b"path"]]))
-check(img.size == (W1, H1), "library: the PNG on disk is a real picture of the right size")
+def pow2(n):
+    p = 1
+    while p < n: p *= 2
+    return p
+check(img.size == (pow2(W1), pow2(H1)), "library: the PNG on disk is padded to a power-of-two size (GMod shows those pixel-sharp)")
+pic = img.convert("RGBA")
+inner = list(pic.crop((0, 0, W1, H1)).get_flattened_data())
+want = [unpremul_expected(*p) for p in img1]
+check([c if c[3] else (0, 0, 0, 0) for c in inner] == want, "library: the picture is the top-left corner of it, pixels exact")
+pad = [c for x in range(pic.width) for y in range(pic.height) if x >= W1 or y >= H1 for c in [pic.getpixel((x, y))]]
+check(all(c[3] == 0 for c in pad), "library: the padding is see-through")
+im0 = lib[b"images"][b"throne_throne_64_a_2_0"]
+check(im0[b"width"] == W1 and im0[b"texWidth"] == pow2(W1) and im0[b"texHeight"] == pow2(H1), "library: the picture's size and its texture's size are both known")
 check(b"throne_throne_visualization" in list(lib[b"xml"].keys()), "library: the XML")
 n = len(requests)
 L2.execute(b"package = nil")  # a new run of the game: nothing in memory, only the cache on disk
@@ -194,6 +214,22 @@ L2.execute(open(os.path.join(LIB, "library.lua"), "rb").read())
 got2 = {}
 L2.eval(b"BOBBA.habbo").library(b"furni/throne", b"https://example/throne.swf", lambda lib, err=None: got2.update(lib=lib))
 check(got2["lib"] is not None and len(requests) == n, "library: the second time it comes from the cache, no download")
+L2.execute(b"package = nil")
+L2.execute(open(os.path.join(LIB, "library.lua"), "rb").read())
+L2.execute(b"BOBBA.habbo.swf = { read = function() error('the SWF was unpacked again') end }")
+got3 = {}
+L2.eval(b"BOBBA.habbo").library(b"furni/throne", b"https://example/throne.swf", lambda lib, err=None: got3.update(lib=lib, err=err))
+l3 = got3.get("lib")
+same = l3 is not None and sorted(l3[b"images"].keys()) == sorted(lib[b"images"].keys()) and all(
+    l3[b"images"][k][b"path"] == lib[b"images"][k][b"path"] and l3[b"images"][k][b"width"] == lib[b"images"][k][b"width"] for k in lib[b"images"].keys()) and l3[b"xml"][b"throne_throne_visualization"] == lib[b"xml"][b"throne_throne_visualization"]
+check(same, "library: a new game start reads its index: same pictures and XML, the SWF not unpacked again (%s)" % got3.get("err"))
+L2.execute(open(os.path.join(LIB, "swf.lua"), "rb").read().replace(b"return SWF", b"BOBBA.habbo.swf = SWF return SWF"))
+served["https://example/dup.swf"] = dup
+gd = {}
+L2.eval(b"BOBBA.habbo").library(b"figure/dup", b"https://example/dup.swf", lambda lib, err=None: gd.update(lib=lib))
+im = gd["lib"][b"images"]
+check(im[b"a_wlk_2"] is not None and im[b"a_wlk_2"][b"path"] == im[b"a_std_1"][b"path"] and len([k for k in L2.globals().PY_FILES.keys() if b"figure/dup" in k and k.endswith(b".png")]) == 1, "library: a shared picture is one PNG, every name points to it")
+
 bad = {}
 L2.eval(b"BOBBA.habbo").library(b"furni/nothing", b"https://example/nothing.swf", lambda lib, err=None: bad.update(lib=lib, err=err))
 check(bad["lib"] is None and b"404" in bad["err"], "library: a missing file gives a reason")
@@ -265,7 +301,15 @@ L4.eval(b"BOBBA.habbo").SETTINGS_URL = b"https://example/settings"
 requests.clear()
 ad2 = {}
 L4.eval(b"BOBBA.habbo").avatarData(lambda d, err=None: ad2.update(d=d, err=err))
-check(ad2["d"] is not None and "https://clients/HabboWin.zip" not in requests and len(requests) == 2, "avatar data: next game start only asks Habbo for its settings and client version (%s)" % requests)
+check(ad2["d"] is not None and len(requests) == 0, "avatar data: the next game start needs nothing from the internet (%s)" % requests)
+L4.execute(b"BOBBA.platform.after = function(s, fn) LATER = fn end")
+L4.execute(open(os.path.join(LIB, "library.lua"), "rb").read())
+L4.eval(b"BOBBA.habbo").SETTINGS_URL = b"https://example/settings"
+served["https://example/settings"] = served["https://example/settings"] + b"new.setting=1\n"
+L4.eval(b"BOBBA.habbo").config(lambda cfg, err=None: None)
+check(len(requests) == 0 and L4.eval(b"LATER") is not None, "settings: last time's copy is used at once, a fresh one is fetched later")
+L4.eval(b"LATER")()
+check(requests == ["https://example/settings"] and b"new.setting=1" in L4.globals().PY_FILES[b"habbo/remembered/settings.txt"], "settings: the fresh copy is kept for the next start")
 
 print("\n%d failed" % failed)
 sys.exit(1 if failed else 0)

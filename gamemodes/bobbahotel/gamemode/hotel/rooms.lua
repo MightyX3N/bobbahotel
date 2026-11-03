@@ -210,12 +210,19 @@ end
 
 -- Nitro pushes whatever stands exactly on the door far back (RoomEngine setDisplacement), so it is
 -- drawn behind the walls and seen through the door hole: half hidden, outside the room.
+-- [bobba] Nitro does that only while standing exactly on the door, so halfway through a step into or
+-- out of the door the avatar was drawn over the wall beside the hole. Here whoever is past the wall's
+-- line (between it and the door) counts as behind the wall too.
 function rooms.atDoor(room, x, y, z)
 	local d = room.door
 	if not d then return false end
-	local dx, dy = d.x, d.y
-	if d.dir == 90 then dx = d.x - 0.5 elseif d.dir == 180 then dy = d.y - 0.5 else return false end
-	return x == dx and y == dy and z == d.z
+	if d.dir == 90 then
+		-- the left wall: its line is x = d.x, the door tile half a tile outside it
+		return x < d.x and math.abs(y - d.y) < 1 and math.abs(z - d.z) < 1
+	elseif d.dir == 180 then
+		return y < d.y and math.abs(x - d.x) < 1 and math.abs(z - d.z) < 1
+	end
+	return false
 end
 
 -- The floor of the door tile (Nitro adds it last, as its own small plane). In Habbo it lies behind

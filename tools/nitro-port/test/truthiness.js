@@ -3,7 +3,7 @@
 // game. This lists every such place in src/ (fix them to an explicit check, e.g. `x !== 0`).
 const ts = require('typescript');
 const path = require('path');
-const config = ts.getParsedCommandLineOfConfigFile(path.join(__dirname, '..', 'tsconfig.json'), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} });
+const config = ts.getParsedCommandLineOfConfigFile(process.argv[2] || path.join(__dirname, '..', 'tsconfig.json'), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} });
 const program = ts.createProgram(config.fileNames, config.options);
 const checker = program.getTypeChecker();
 const bad = [];
@@ -11,7 +11,8 @@ const bad = [];
 function risky(expr) {
 	const type = checker.getTypeAtLocation(expr);
 	const parts = type.isUnion() ? type.types : [type];
-	return parts.some((t) => (t.flags & (ts.TypeFlags.NumberLike | ts.TypeFlags.StringLike | ts.TypeFlags.Any | ts.TypeFlags.Unknown)) !== 0);
+	const flags = process.env.TRUTHY_NO_ANY ? (ts.TypeFlags.NumberLike | ts.TypeFlags.StringLike) : (ts.TypeFlags.NumberLike | ts.TypeFlags.StringLike | ts.TypeFlags.Any | ts.TypeFlags.Unknown);
+	return parts.some((t) => (t.flags & flags) !== 0);
 }
 function check(expr) {
 	if (!expr) return;
@@ -20,6 +21,8 @@ function check(expr) {
 	if (ts.isBinaryExpression(expr) && (expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken || expr.operatorToken.kind === ts.SyntaxKind.BarBarToken)) {
 		check(expr.left); check(expr.right); return;
 	}
+	// a literal default (x || '', x || 0) is the same in both languages
+	if (ts.isStringLiteral(expr) || ts.isNumericLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) return;
 	if (risky(expr)) {
 		const sf = expr.getSourceFile();
 		const { line } = sf.getLineAndCharacterOfPosition(expr.getStart());

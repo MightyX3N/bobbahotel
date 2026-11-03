@@ -9,7 +9,7 @@ def read_swf(data):
     if data[:3] == b"CWS": data = b"FWS" + data[3:8] + zlib.decompress(data[8:])
     nbits = data[8] >> 3
     pos = 8 + (5 + nbits * 4 + 7) // 8 + 4
-    syms, imgs = {}, {}
+    syms, imgs = [], {}  # syms: (id, name) for every name (one picture can have several)
     while pos < len(data):
         head = struct.unpack_from("<H", data, pos)[0]; pos += 2
         code, ln = head >> 6, head & 63
@@ -20,7 +20,7 @@ def read_swf(data):
             n = struct.unpack_from("<H", body, 0)[0]; p = 2
             for _ in range(n):
                 cid = struct.unpack_from("<H", body, p)[0]; p += 2
-                e = body.index(b"\0", p); syms[cid] = body[p:e].decode("latin1"); p = e + 1
+                e = body.index(b"\0", p); syms.append((cid, body[p:e].decode("latin1"))); p = e + 1
         elif code in (20, 36):
             cid, fmt, w, h = struct.unpack_from("<HBHH", body, 0)
             alpha = code == 36
@@ -59,15 +59,16 @@ def main(root):
             key = os.path.relpath(os.path.join(dirpath, f), raw_dir)[:-4].replace(os.sep, "/")
             syms, imgs = read_swf(open(os.path.join(dirpath, f), "rb").read())
             n = 0
-            for cid, name in syms.items():
+            for cid, name in syms:
                 if cid not in imgs: continue
                 w, h, px = imgs[cid]
-                p = os.path.join(root, "png", key, name + ".png")
+                first = next(n for i, n in syms if i == cid)  # the game keeps one PNG per picture, under its first name
+                p = os.path.join(root, "pot", key, first + ".png")
                 if not os.path.exists(p): print("  MISSING", key, name); bad += 1; continue
-                got = list(Image.open(p).convert("RGBA").getdata())
+                got = list(Image.open(p).convert("RGBA").crop((0, 0, w, h)).get_flattened_data())  # padded to powers of two
                 norm = lambda c: c if c[3] > 0 else (0, 0, 0, 0)
                 if px is None: print("  (unsupported format, skipped)", name); continue
-                if [norm(c) for c in got] != [norm(c) for c in px] or Image.open(p).size != (w, h):
+                if [norm(c) for c in got] != [norm(c) for c in px]:
                     print("  DIFFERENT", key, name); bad += 1
                 n += 1; checked += 1
             print("%s: %d pictures checked" % (key, n))

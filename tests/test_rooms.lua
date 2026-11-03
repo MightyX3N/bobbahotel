@@ -93,7 +93,9 @@ T["the door: a hole in the wall where Nitro puts it, and standing in it counts a
 	-- the wall in pieces: left of, right of and above the hole (it starts at the floor)
 	for index in pairs(holes) do eq(#BOBBA.rooms.planePieces(room, index), 3, "pieces") end
 	eq(BOBBA.rooms.atDoor(room, 3, 5, 0), true, "on the door")
-	eq(BOBBA.rooms.atDoor(room, 3.5, 5, 0), false, "stepping in")
+	eq(BOBBA.rooms.atDoor(room, 3.5, 5, 0), false, "on the wall's line: in front")
+	eq(BOBBA.rooms.atDoor(room, 3.25, 5, 0), true, "halfway into the door: behind the wall already")
+	eq(BOBBA.rooms.atDoor(room, 2, 2, 0), false, "far from the door: never behind")
 	eq(BOBBA.rooms.atDoor(room, 4, 5, 0), false, "inside")
 	-- the door tile's floor is found (it is drawn behind the walls)
 	local df = BOBBA.rooms.doorFloor(room)

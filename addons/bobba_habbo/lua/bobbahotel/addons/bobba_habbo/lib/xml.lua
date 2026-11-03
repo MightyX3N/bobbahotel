@@ -2,6 +2,7 @@
 -- SWF files). Gives a tree: { name = "tag", attrs = { ... }, children = { ... }, text = "..." }.
 -- Plain Lua.
 --   local root = BOBBA.habbo.xml.parse(text)
+--   XML.parse(text, step)      calls step() now and then (a long job can pause there)
 --   BOBBA.habbo.xml.find(root, "visualization")      first element with that name (any depth)
 --   BOBBA.habbo.xml.all(root, "layer")               every element with that name (any depth)
 
@@ -22,7 +23,8 @@ local function attrs(s)
 	return out
 end
 
-function XML.parse(text)
+function XML.parse(text, step)
+	local count = 0
 	-- a byte order mark at the start is not part of the XML
 	if text:sub(1, 3) == "\239\187\191" then text = text:sub(4) end
 	local root = { name = "#document", attrs = {}, children = {} }
@@ -59,6 +61,8 @@ function XML.parse(text)
 			local name, rest = inner:match("^([%w_:%-%.]+)(.*)$")
 			if name then
 				local el = { name = name, attrs = attrs(rest or ""), children = {} }
+				count = count + 1
+				if step and count % 200 == 0 then step() end
 				top.children[#top.children + 1] = el
 				if not selfClosing then stack[#stack + 1] = el end
 			end

@@ -125,7 +125,11 @@ local function load(id)
 	if not layout then return nil, "room " .. id .. " uses a layout that isn't installed: " .. info.layout end
 	r = {
 		id = id, info = info, layout = layout,
-		grid = PF.grid(layout.heightmap, layout.door.x, layout.door.y, layout.door.dir),
+		grid = (function()
+			local g = PF.grid(layout.heightmap, layout.door.x, layout.door.y, layout.door.dir)
+			g.doorStraight = true -- out of the door straight, then turn
+			return g
+		end)(),
 		units = {}, order = {},
 	}
 	live.rooms[id] = r

@@ -11,6 +11,7 @@ return {
 	"hotel/perms.lua",
 	"hotel/store.lua",
 	"nitro/port.lua",
+	"nitro/avatar.lua",
 	"hotel/rooms.lua",
 	"hotel/layouts.lua",
 	"hotel/pathfinder.lua",

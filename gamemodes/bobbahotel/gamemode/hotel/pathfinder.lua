@@ -4,6 +4,7 @@
 -- way unless near the door. tests/pathfinder_java checks it against the original Java.
 --
 --   local grid = BOBBA.pathfinder.grid(room, layout)          -- from BOBBA.rooms.geometry + the layout
+--   grid.doorStraight = true    -- [bobba] in and out of the door only straight (see doorStep)
 --   local path = BOBBA.pathfinder.find(grid, fromX, fromY, toX, toY)
 --   -- nil = no way there, {} = already there or not a tile, else { {x=, y=, z=}, ... } (not the start)
 
@@ -178,7 +179,19 @@ local function lowestFInOpen(list)
 	return cheapest
 end
 
+-- [bobba] with g.doorStraight, the door is only left or entered through the tile in front of it
+-- (Arcturus also allows a diagonal step, which made the avatar cut through the wall beside the door)
+local function doorStep(g, node, x, y)
+	if not g.doorStraight or not g.door then return true end
+	local d = g.door
+	local fx, fy = PF.inFront(d.x, d.y, g.doorDir)
+	if node.x == d.x and node.y == d.y then return x == fx and y == fy end
+	if x == d.x and y == d.y then return node.x == fx and node.y == fy end
+	return true
+end
+
 local function addAdjacent(g, adj, list, node, nextTile, unit, x, y, diagonal)
+	if not doorStep(g, node, x, y) then return end
 	local temp = findTile(g, list, x, y)
 	if canWalkOn(temp, unit) then
 		if temp.state ~= PF.SIT or nextTile.stackHeight - node.stackHeight <= 2.0 then

@@ -1,3 +1,5 @@
 sprites/
 *.gma
 out/
+tools/nitro-port/avatar/out/
+__pycache__/

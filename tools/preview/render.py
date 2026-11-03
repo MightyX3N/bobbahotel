@@ -35,8 +35,9 @@ surface = {
 		local t = {} for i, p in ipairs(pts) do t[i] = { p.x, p.y } end op("poly", t, { col[1], col[2], col[3], col[4] })
 	end,
 	DrawLine = function(x1, y1, x2, y2) op("line", x1, y1, x2, y2, { col[1], col[2], col[3] }) end,
-	SetMaterial = function() end,
+	SetMaterial = function(m) G.material = m end,
 	DrawTexturedRect = function() end,
+	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter) end,
 	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }) end,
 }
 draw = { NoTexture = function() end, SimpleText = function(t, f, x, y) op("text", t, x, y) end,
@@ -55,7 +56,9 @@ end
 chat = { AddText = function() end }
 LocalPlayer = function() return nil end
 TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM = 1, 4
-render = { PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end }
+render = { PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end,
+	PushFilterMag = function(f) G.filter = f end, PushFilterMin = function() end, PopFilterMag = function() G.filter = nil end, PopFilterMin = function() end }
+TEXFILTER = { POINT = "point", LINEAR = "linear" }
 cam = { Start2D = function() end, End2D = function() end }
 math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
 math.Round = function(v) return math.floor(v + 0.5) end
@@ -107,7 +110,7 @@ def boot(w, h):
     L.execute(open(os.path.join(GM, "client", "room.lua")).read())
     return L, G
 
-def paint(G, w, h):
+def paint(G, w, h, images=None):
     im = Image.new("RGB", (w, h), (0, 0, 0))
     d = ImageDraw.Draw(im, "RGBA")
     ops = G.ops
@@ -125,6 +128,29 @@ def paint(G, w, h):
             d.line([(o[2], o[3]), (o[4], o[5])], fill=tuple(o[6][j] for j in (1, 2, 3)))
         elif kind == "text":
             d.text((o[3], o[4]), o[2], fill=(255, 255, 255))
+        elif kind == "image" and images is not None and o[2] in images:
+            # a picture: the part of the texture the UVs pick (mirrored when u0 > u1), multiplied by
+            # the draw colour (rounded like Habbo), scaled with GMod's filter (point = pixel-sharp)
+            pic = images[o[2]].convert("RGBA")
+            u0, v0, u1, v1 = (o[7][j] for j in (1, 2, 3, 4))
+            flip = u0 > u1
+            if flip: u0, u1 = u1, u0
+            pic = pic.crop((round(u0 * pic.width), round(v0 * pic.height), round(u1 * pic.width), round(v1 * pic.height)))
+            c = o[8]
+            if (c[1], c[2], c[3]) != (255, 255, 255):
+                r, g, b, al = pic.split()
+                r = r.point(lambda v, m=c[1]: (v * m + 127) // 255)
+                g = g.point(lambda v, m=c[2]: (v * m + 127) // 255)
+                b = b.point(lambda v, m=c[3]: (v * m + 127) // 255)
+                pic = Image.merge("RGBA", (r, g, b, al))
+            if c[4] != 255:
+                al = pic.getchannel("A").point(lambda v, m=c[4]: v * m // 255)
+                pic.putalpha(al)
+            if flip: pic = pic.transpose(Image.FLIP_LEFT_RIGHT)
+            pw, ph = int(o[5]), int(o[6])
+            if pw > 0 and ph > 0:
+                pic = pic.resize((pw, ph), Image.NEAREST if o[9] == "point" else Image.BILINEAR)
+                im.paste(pic, (int(o[3]), int(o[4])), pic)
     return im
 
 def main():

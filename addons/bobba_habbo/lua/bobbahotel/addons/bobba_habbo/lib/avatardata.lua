@@ -30,7 +30,8 @@ end
 
 -- The XML inside Habbo's desktop client, cached per client version. cb(files) or cb(nil, why)
 function H.clientXml(cb)
-	P.httpGet(H.CLIENT_URLS, function(json)
+	H.remembered("clienturls", H.CLIENT_URLS, function(json, why)
+		if not json then cb(nil, "couldn't reach Habbo: " .. tostring(why)) return end
 		local url = json:match('"flash%-windows"%s*:%s*"([^"]+)"')
 		local version = json:match('"flash%-windows%-version"%s*:%s*"([^"]+)"') or "0"
 		if not url then cb(nil, "Habbo didn't say where its desktop client is") return end
@@ -42,7 +43,7 @@ function H.clientXml(cb)
 			if P.dataExists(p) then files[ours] = P.readData(p) else have = false end
 		end
 		if have then cb(files) return end
-		P.httpGet(url, function(zipBytes)
+		H.httpGet(url, function(zipBytes)
 			local zip, why = H.zip.open(zipBytes)
 			if not zip then cb(nil, why) return end
 			local swfBytes, why2 = zip.read("HabboAir.swf", H.inflateRaw)
@@ -62,7 +63,7 @@ function H.clientXml(cb)
 			collectgarbage()
 			cb(files)
 		end, function(why) cb(nil, "couldn't download Habbo's client: " .. why) end)
-	end, function(why) cb(nil, "couldn't reach Habbo: " .. why) end)
+	end)
 end
 
 -- A text file, cached under a key that changes when Habbo changes it
@@ -109,4 +110,95 @@ function H.avatarData(cb)
 		end
 		nxt()
 	end)
+end
+
+-- Which of Habbo's figure libraries (SWF files in the client folder) hold the clothes of a figure
+-- ("hd-180-1.ch-210-66..."): figuredata says which parts a set has, figuremap which library has them.
+-- an avatar XML file read once (in a job it pauses now and then)
+function H.avatarXml(data, field)
+	data.trees = data.trees or {}
+	if not data.trees[field] then
+		local text = data[field]
+		if field == "offset_lay" or field == "offset_swim" then text = data.offsets[field:sub(8)] end
+		data.trees[field] = H.xml.parse(text, H.yield)
+	end
+	return data.trees[field]
+end
+
+local figureIndex
+function H.figureIndex(data)
+	if figureIndex then return figureIndex end
+	local X = H.xml
+	local idx = { sets = {}, libs = {} }
+	for _, st in ipairs(X.all(H.avatarXml(data, "figuredata"), "settype")) do
+		local byId = {}
+		idx.sets[st.attrs.type] = byId
+		for _, set in ipairs(X.children(st, "set")) do
+			local parts = {}
+			for _, p in ipairs(X.children(set, "part")) do parts[#parts + 1] = { type = p.attrs.type, id = tonumber(p.attrs.id) } end
+			byId[tonumber(set.attrs.id)] = parts
+		end
+	end
+	for _, lib in ipairs(X.all(H.avatarXml(data, "figuremap"), "lib")) do
+		for _, p in ipairs(X.children(lib, "part")) do
+			local pid = tonumber(p.attrs.id or "")
+			if p.attrs.type and pid then idx.libs[p.attrs.type .. ":" .. pid] = lib.attrs.id end
+		end
+	end
+	figureIndex = idx
+	return idx
+end
+
+-- the library names a figure needs (always Habbo's body library first)
+function H.figureLibraryNames(data, figure)
+	local idx = H.figureIndex(data)
+	local names, seen = { "hh_human_body" }, { hh_human_body = true }
+	for part in figure:gmatch("[^%.]+") do
+		local t, id = part:match("^(%a+)%-(%d+)")
+		local parts = t and idx.sets[t] and idx.sets[t][tonumber(id)]
+		for _, p in ipairs(parts or {}) do
+			local lib = idx.libs[p.type .. ":" .. p.id]
+			if lib and not seen[lib] then seen[lib] = true names[#names + 1] = lib end
+		end
+	end
+	return names
+end
+
+-- Downloads (or takes from the cache) every library a figure needs. cb(libs) or cb(nil, why)
+function H.figureLibraries(figure, cb)
+	H.avatarData(function(data, err)
+		if not data then cb(nil, err) return end
+		H.config(function(cfg, err2)
+			if not cfg then cb(nil, err2) return end
+			local names = H.figureLibraryNames(data, figure)
+			local libs, i = {}, 0
+			local function nxt()
+				i = i + 1
+				local name = names[i]
+				if not name then cb(libs) return end
+				H.library("figure/" .. name, cfg.clientUrl .. name .. ".swf", function(lib, e)
+					if not lib then cb(nil, e) return end
+					libs[#libs + 1] = lib
+					nxt()
+				end)
+			end
+			nxt()
+		end)
+	end)
+end
+
+-- figuredata in pieces (its colours, then one settype per piece), each a document of its own, so a
+-- renderer can take it in over several frames: renderer:appendFigureData(piece)
+function H.figureDataPieces(tree)
+	local X = H.xml
+	local root = X.find(tree, "figuredata")
+	local pieces = {}
+	local function doc(children) return { name = "#document", attrs = {}, children = { { name = "figuredata", attrs = {}, children = children } } } end
+	local colors = X.find(root, "colors")
+	if colors then pieces[#pieces + 1] = doc({ colors }) end
+	local sets = X.find(root, "sets")
+	for _, st in ipairs(sets and X.children(sets, "settype") or {}) do
+		pieces[#pieces + 1] = doc({ { name = "sets", attrs = {}, children = { st } } })
+	end
+	return pieces
 end

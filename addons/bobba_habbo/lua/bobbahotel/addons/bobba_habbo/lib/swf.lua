@@ -3,10 +3,13 @@
 -- DefineBitsLossless2), the same things Nitro's converter takes out of them. Plain Lua.
 --
 --   local swf = BOBBA.habbo.swf.read(bytes, inflate)   -- inflate(zlibBytes) -> bytes
---   swf.symbols[id] = "throne_throne_64_a_0_0"
+--   swf.symbols[id] = "throne_throne_64_a_0_0"   (the first name; one picture can have several)
+--   swf.names = { { id = 7, name = "..." }, ... }   every name, in file order
 --   swf.binaries[id] = "<visualizationData ...>"
 --   swf.images[id] = { width = 64, height = 80, pixels = { r, g, b, a, r, g, b, a, ... } }  (not premultiplied)
 --   SWF.read(bytes, inflate, { images = false })   -- only names and XML (fast, for big files)
+--   SWF.read(bytes, inflate, { images = "later" })  -- pictures kept packed: swf.packed[id], to unpack
+--     one at a time with SWF.unpackImage(swf.packed[id], inflate) (so a long job can pause between)
 
 local SWF = {}
 
@@ -119,6 +122,7 @@ end
 
 function SWF.read(bytes, inflate, opts)
 	local wantImages = not (opts and opts.images == false)
+	local later = opts and opts.images == "later"
 	local s, err = SWF.uncompress(bytes, inflate)
 	if not s then return nil, err end
 	local r = reader(s, 9)
@@ -127,7 +131,7 @@ function SWF.read(bytes, inflate, opts)
 	r.ubits(nbits) r.ubits(nbits) r.ubits(nbits) r.ubits(nbits)
 	r.align()
 	r.u16() r.u16()
-	local out = { symbols = {}, binaries = {}, images = {}, problems = {} }
+	local out = { symbols = {}, names = {}, binaries = {}, images = {}, packed = {}, problems = {} }
 	while r.pos <= #s do
 		local head = r.u16()
 		local code, len = math.floor(head / 64), head % 64
@@ -141,7 +145,10 @@ function SWF.read(bytes, inflate, opts)
 			local t = reader(data)
 			for _ = 1, t.u16() do
 				local id = t.u16()
-				out.symbols[id] = t.cstring()
+				local name = t.cstring()
+				-- Habbo gives one picture several names (the same image for many frames)
+				if out.symbols[id] == nil then out.symbols[id] = name end
+				out.names[#out.names + 1] = { id = id, name = name }
 			end
 		elseif code == 87 then -- DefineBinaryData
 			local t = reader(data)
@@ -149,16 +156,26 @@ function SWF.read(bytes, inflate, opts)
 			t.u32() -- reserved
 			out.binaries[id] = sub(data, t.pos)
 		elseif wantImages and (code == 20 or code == 36) then -- DefineBitsLossless / DefineBitsLossless2
-			local id, img, problem = lossless(data, inflate, code == 36)
-			if img then out.images[id] = img else out.problems[#out.problems + 1] = problem end
+			if later then
+				out.packed[byte(data, 1) + byte(data, 2) * 256] = { data = data, alpha = code == 36 }
+			else
+				local id, img, problem = lossless(data, inflate, code == 36)
+				if img then out.images[id] = img else out.problems[#out.problems + 1] = problem end
+			end
 		end
 	end
 	-- by name, which is how Habbo's files refer to everything
 	out.byName = {}
-	for id, name in pairs(out.symbols) do
-		out.byName[name] = { id = id, image = out.images[id], binary = out.binaries[id] }
+	for _, n in ipairs(out.names) do
+		out.byName[n.name] = { id = n.id, image = out.images[n.id], packed = out.packed[n.id], binary = out.binaries[n.id] }
 	end
 	return out
+end
+
+-- a picture kept packed by SWF.read(..., { images = "later" }): img or nil, problem
+function SWF.unpackImage(packed, inflate)
+	local _, img, problem = lossless(packed.data, inflate, packed.alpha)
+	return img, problem
 end
 
 return SWF

@@ -80,7 +80,15 @@ T["walking: diagonal, and not through walls or off the room"] = function()
 	eq(BOBBA.live.walk(mia, 5, 7), true)
 	tick()
 	local u = BOBBA.live.byPlayer[mia]
-	eq(u.x .. "," .. u.y .. " dir " .. u.dir, "4,6 dir 3", "a diagonal step")
+	eq(u.x .. "," .. u.y .. " dir " .. u.dir, "4,5 dir 2", "out of the door straight first")
+	tick()
+	eq(u.x .. "," .. u.y .. " dir " .. u.dir, "5,6 dir 3", "then a diagonal step")
+	-- and back in: through the tile in front of the door too
+	BOBBA.live.walk(mia, 3, 5)
+	tick()
+	eq(u.x .. "," .. u.y, "4,5", "into the door only from the tile in front of it")
+	tick()
+	eq(u.x .. "," .. u.y, "3,5", "on the door")
 end
 
 T["two players: both see each other, and walk around each other"] = function()
