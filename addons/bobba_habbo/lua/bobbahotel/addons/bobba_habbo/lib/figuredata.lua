@@ -168,6 +168,6 @@ function H.figureData(cb)
 		H.work(function()
 			local fd, why = H.parseFigureData(text)
 			done(fd, why)
-		end)
+		end, true)
 	end)
 end

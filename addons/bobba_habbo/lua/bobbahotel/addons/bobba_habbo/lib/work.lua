@@ -7,6 +7,8 @@
 -- H.httpGet waits until the game has loaded (GMod can't reach the internet before that).
 --
 --   BOBBA.habbo.work(function() ... H.yield() ... end)
+--   BOBBA.habbo.work(fn, true)   -- a job that can wait (chat bubbles, editor icons): it only gets
+--     time when no other job wants it, so it never holds up the avatars, furni or room
 
 local H = BOBBA.habbo
 local P = BOBBA.platform
@@ -29,15 +31,20 @@ end
 
 local function step()
 	started = now()
-	for co in pairs(jobs) do
-		local ok, err = coroutine.resume(co)
-		if not ok then
-			jobs[co] = nil
-			print("[Bobba] Habbo: " .. tostring(err))
-		elseif coroutine.status(co) == "dead" then
-			jobs[co] = nil
+	-- the jobs that can wait only run when no other job is waiting
+	local urgent = false
+	for _, kind in pairs(jobs) do if kind ~= "low" then urgent = true break end end
+	for co, kind in pairs(jobs) do
+		if not (urgent and kind == "low") then
+			local ok, err = coroutine.resume(co)
+			if not ok then
+				jobs[co] = nil
+				print("[Bobba] Habbo: " .. tostring(err))
+			elseif coroutine.status(co) == "dead" then
+				jobs[co] = nil
+			end
+			if now() - started >= H.WORK_BUDGET then break end
 		end
-		if now() - started >= H.WORK_BUDGET then break end
 	end
 	if next(jobs) == nil and P.stop then P.stop("habbo.work") end
 end
@@ -62,9 +69,11 @@ function H.httpGet(url, ok, fail)
 	P.httpGet(url, ok, fail)
 end
 
-function H.work(fn)
-	if not P.every or H.loadingGame then fn() return end
+function H.work(fn, canWait)
+	if not P.every then fn() return end
+	-- (while the game loads, only what can't wait runs, all at once: it's behind the loading screen)
+	if H.loadingGame and not canWait then fn() return end
 	local co = coroutine.create(fn)
-	jobs[co] = true
+	jobs[co] = canWait and "low" or true
 	P.every("habbo.work", 0, step)
 end

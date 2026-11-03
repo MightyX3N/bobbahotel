@@ -309,7 +309,7 @@ function H.chatStyles(cb)
 				collectgarbage()
 				if not ok then done(nil, why2) return end
 				done(readIndex(version))
-			end)
+			end, true)
 		end)
 	end)
 end
