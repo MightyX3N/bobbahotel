@@ -2436,6 +2436,8 @@ local function DecodeUntilEndOfBlock(state, lcodes_huffman_bitlens,
       buffer[buffer_size + 1] = nil
       -- NOTE: buffer[32769..end] and buffer[-257..0] are not cleared.
       -- This is why "buffer_size" variable is needed.
+         -- (Bobba Hotel: a long unpacking can give the frame back here)
+      if LibDeflate.pause then LibDeflate.pause() end
     end
   until symbol == 256
 
@@ -2635,6 +2637,7 @@ local function Inflate(state)
       return nil, -1 -- invalid block type (type == 3)
     end
     if status ~= 0 then return nil, status end
+    if LibDeflate.pause then LibDeflate.pause() end
   end
 
   state.result_buffer[#state.result_buffer + 1] =

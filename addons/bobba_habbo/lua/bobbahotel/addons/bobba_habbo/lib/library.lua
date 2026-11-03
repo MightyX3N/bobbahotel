@@ -26,7 +26,7 @@ function H.download(key, url, cb, canWait)
 		cb(P.readData(path))
 		return
 	end
-	H.httpGet(url, function(body)
+	return H.httpGet(url, function(body)
 		P.writeData(path, body)
 		cb(body)
 	end, function(why) cb(nil, why .. " (" .. url .. ")") end, canWait)
@@ -93,18 +93,26 @@ local function readIndex(key)
 	local text = P.readData(path)
 	if not text or text:sub(1, #H.INDEX_VERSION + 1) ~= H.INDEX_VERSION .. "\n" then return nil end
 	local lib = { key = key, images = {}, xml = {}, problems = {} }
-	local raw
+	local raw, rawThere
+	local n = 0
 	for line in text:gmatch("[^\n]+") do
+		n = n + 1
+		if n % 100 == 0 then H.yield() end
 		local f = {}
 		for v in (line .. "\t"):gmatch("([^\t]*)\t") do f[#f + 1] = v end
 		if f[1] == "R" then
 			raw = f[2]
+			rawThere = P.dataExists(raw)
+			lib.raw = raw
 		elseif f[1] == "I" then
 			local w, h, id = tonumber(f[4]), tonumber(f[5]), tonumber(f[6])
 			lib.images[f[2]] = { path = f[3], width = w, height = h, texWidth = H.pow2(w), texHeight = H.pow2(h) }
-			if not P.dataExists(f[3]) then
-				if not raw or not P.dataExists(raw) then return nil end
+			-- (with the SWF kept, H.image checks for the PNG when it's first drawn: one check per
+			-- picture drawn instead of one per picture in the library)
+			if rawThere then
 				pending[f[3]] = { raw = raw, id = id }
+			elseif not P.dataExists(f[3]) then
+				return nil
 			end
 		elseif f[1] == "X" then
 			local xml = P.readData(f[3])
@@ -157,16 +165,32 @@ H.paddedPixels = padded
 
 -- a SWF's packed pictures, read once (the last few kept, for the pictures still to make)
 local packedCache, packedOrder = {}, {}
+H.PACKED_KEEP = 48
+local function keepPacked(raw, p)
+	if packedCache[raw] == nil then
+		packedOrder[#packedOrder + 1] = raw
+		if #packedOrder > H.PACKED_KEEP then packedCache[table.remove(packedOrder, 1)] = nil end
+	end
+	packedCache[raw] = p
+end
 local function packedOf(raw)
 	local p = packedCache[raw]
 	if p then return p end
 	local bytes = P.readData(raw)
-	local swf = bytes and H.swf.read(bytes, H.inflate, { images = "later" })
+	local swf = bytes and H.swf.read(bytes, H.inflate, { images = "later", pause = H.yield })
 	p = swf and swf.packed or {}
-	packedCache[raw] = p
-	packedOrder[#packedOrder + 1] = raw
-	if #packedOrder > 8 then packedCache[table.remove(packedOrder, 1)] = nil end
+	keepPacked(raw, p)
 	return p
+end
+
+-- In a job: a library's pictures read into memory ahead of drawing them (so the first draw of a new
+-- direction or movement only unpacks its own pictures, never the whole SWF)
+function H.warm(lib)
+	local raw = lib and lib.raw
+	if not raw or packedCache[raw] then return end
+	for _, img in pairs(lib.images) do
+		if pending[img.path] then packedOf(raw) return end
+	end
 end
 
 -- Makes sure a library's picture is a PNG file (the first time it's drawn): true, or false when it
@@ -197,56 +221,81 @@ end
 -- nothing else is waiting).
 function H.library(key, url, cb, opts)
 	if libraries[key] then cb(libraries[key]) return end
-	local cached = readIndex(key)
-	if cached then
-		libraries[key] = cached
-		cb(cached)
+	local canWait = opts and opts.canWait or false
+	-- the same library asked for again while it is still being read: wait for that (and if that was
+	-- only fetching ahead and this can't wait, it's hurried to the front)
+	local st = unpacking[key]
+	if st then
+		table.insert(st.waiting, cb)
+		if st.low and not canWait then
+			st.low = false
+			H.hurryDownload(st.download)
+			H.hurryWork(st.job)
+		end
 		return
 	end
-	-- the same library asked for again while it is still being read: wait for that
-	if unpacking[key] then table.insert(unpacking[key], cb) return end
-	unpacking[key] = { cb }
+	st = { waiting = { cb }, low = canWait }
+	unpacking[key] = st
 	local function done(lib, err)
-		local waiting = unpacking[key]
 		unpacking[key] = nil
 		if lib then libraries[key] = lib end
-		for _, w in ipairs(waiting) do w(lib, err) end
+		for _, w in ipairs(st.waiting) do w(lib, err) end
 	end
-	local canWait = opts and opts.canWait
-	H.download(key, url, function(bytes, err)
-		if not bytes then done(nil, err) return end
-		local raw = cachePath("raw/" .. key, ".dat")
-		H.work(function()
-			local swf, why = H.swf.read(bytes, H.inflate, { images = "later" })
-			if not swf then done(nil, key .. ": " .. tostring(why)) return end
-			local lib = { key = key, images = {}, xml = {}, problems = swf.problems }
-			local ids = {}
-			-- one PNG per picture, named after its first name (Habbo gives some pictures many names)
-			local made = {}
-			for name, entry in pairs(swf.byName) do
-				if entry.packed then
-					local m = made[entry.id]
-					if not m then
-						local path = cachePath("pot/" .. key .. "/" .. swf.symbols[entry.id], ".png")
-						local w, h = packedSize(entry.packed)
-						m = { path = path, width = w, height = h, texWidth = H.pow2(w), texHeight = H.pow2(h) }
-						if not P.dataExists(path) then pending[path] = { raw = raw, id = entry.id } end
-						made[entry.id] = m
+	local function fetch()
+		st.download = H.download(key, url, function(bytes, err)
+			st.download = nil
+			if not bytes then done(nil, err) return end
+			local raw = cachePath("raw/" .. key, ".dat")
+			st.job = H.work(function()
+				local swf, why = H.swf.read(bytes, H.inflate, { images = "later", pause = H.yield })
+				if not swf then done(nil, key .. ": " .. tostring(why)) return end
+				local lib = { key = key, raw = raw, images = {}, xml = {}, problems = swf.problems }
+				local ids = {}
+				-- one PNG per picture, named after its first name (Habbo gives some pictures many names)
+				local made = {}
+				local n = 0
+				for name, entry in pairs(swf.byName) do
+					n = n + 1
+					if n % 50 == 0 then H.yield() end
+					if entry.packed then
+						local m = made[entry.id]
+						if not m then
+							local path = cachePath("pot/" .. key .. "/" .. swf.symbols[entry.id], ".png")
+							local w, h = packedSize(entry.packed)
+							m = { path = path, width = w, height = h, texWidth = H.pow2(w), texHeight = H.pow2(h) }
+							-- (whether the PNG is there already is checked when it's first drawn)
+							pending[path] = { raw = raw, id = entry.id }
+							made[entry.id] = m
+						end
+						lib.images[name] = m
+						ids[name] = entry.id
+					elseif entry.binary then
+						lib.xml[name] = entry.binary
 					end
-					lib.images[name] = m
-					ids[name] = entry.id
-				elseif entry.binary then
-					lib.xml[name] = entry.binary
 				end
-			end
-			-- (the SWF was just read: its pictures are kept for making them below and when drawn)
-			packedCache[raw] = swf.packed
-			packedOrder[#packedOrder + 1] = raw
-			if opts and opts.eager then
-				for _, img in pairs(made) do H.image(img.path) H.yield() end
-			end
-			if #lib.problems == 0 then writeIndex(key, lib, raw, ids) end
-			done(lib)
-		end, canWait)
-	end, canWait)
+				-- (the SWF was just read: its pictures are kept for drawing them, unless it was only
+				-- fetched ahead, which would push out the ones in use)
+				if not st.low then keepPacked(raw, swf.packed) end
+				if opts and opts.eager then
+					for _, img in pairs(made) do H.image(img.path) H.yield() end
+				end
+				if #lib.problems == 0 then writeIndex(key, lib, raw, ids) end
+				done(lib)
+			end, st.low)
+		end, st.low)
+	end
+	-- saved from last time: its index is read a little at a time
+	if P.dataExists(indexPath(key)) then
+		st.job = H.work(function()
+			local cached = readIndex(key)
+			if cached then done(cached) else fetch() end
+		end, st.low)
+		return
+	end
+	fetch()
+end
+
+-- whether a library has been read before (its index is saved): fetching ahead skips these
+function H.libraryKnown(key)
+	return libraries[key] ~= nil or P.dataExists(indexPath(key))
 end

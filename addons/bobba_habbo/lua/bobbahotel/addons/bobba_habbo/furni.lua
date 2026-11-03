@@ -52,6 +52,7 @@ local function typeFor(kind)
 			end
 			made.images = images
 			made.base = base
+			H.warm(lib) -- (its pictures read into memory now, a little each frame, not when first drawn)
 			FU.types[base] = made
 			FU.loading[base] = nil
 		end)

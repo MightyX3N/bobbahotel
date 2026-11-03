@@ -99,6 +99,8 @@ local function figureReady(figure)
 			if not libs then print("[Bobba] clothes for " .. figure .. ": " .. tostring(err)) return end
 			H.work(function()
 				for _, lib in ipairs(libs) do addLibrary(lib) end
+				-- (their pictures read into memory now, a little each frame, not when first drawn)
+				for _, lib in ipairs(libs) do H.warm(lib) end
 				f.ready = true
 			end)
 		end)

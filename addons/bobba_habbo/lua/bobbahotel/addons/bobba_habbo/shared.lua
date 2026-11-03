@@ -12,6 +12,8 @@ H.png = lib("png.lua")
 H.xml = lib("xml.lua")
 H.zip = lib("zip.lua")
 lib("work.lua")
+-- (unpacking a big file in a job gives the frame back now and then)
+H.deflate.pause = H.yield
 
 -- something the hotel's loading screen (the gamemode's client/loading.lua) waits for; addons load
 -- before it, so the list is started here if it isn't there yet
@@ -30,8 +32,10 @@ function H.inflateRaw(bytes)
 	return (H.deflate:DecompressDeflate(bytes))
 end
 
+-- (for the PNG files the addon writes: stored without squeezing, ten times quicker to write, so
+-- making a picture the first time it's drawn costs a fraction of a millisecond)
 function H.zlib(bytes)
-	return (H.deflate:CompressZlib(bytes, { level = 1 }))
+	return (H.deflate:CompressZlib(bytes, { level = 0 }))
 end
 
 lib("library.lua")

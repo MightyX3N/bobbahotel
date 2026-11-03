@@ -10,6 +10,7 @@
 --   SWF.read(bytes, inflate, { images = false })   -- only names and XML (fast, for big files)
 --   SWF.read(bytes, inflate, { images = "later" })  -- pictures kept packed: swf.packed[id], to unpack
 --     one at a time with SWF.unpackImage(swf.packed[id], inflate) (so a long job can pause between)
+--   opts.pause: called now and then while reading (a long job's chance to give the frame back)
 
 local SWF = {}
 
@@ -132,7 +133,11 @@ function SWF.read(bytes, inflate, opts)
 	r.align()
 	r.u16() r.u16()
 	local out = { symbols = {}, names = {}, binaries = {}, images = {}, packed = {}, problems = {} }
+	local pause = opts and opts.pause
+	local tags = 0
 	while r.pos <= #s do
+		tags = tags + 1
+		if pause and tags % 50 == 0 then pause() end
 		local head = r.u16()
 		local code, len = math.floor(head / 64), head % 64
 		if len == 63 then len = r.u32() end
@@ -166,7 +171,8 @@ function SWF.read(bytes, inflate, opts)
 	end
 	-- by name, which is how Habbo's files refer to everything
 	out.byName = {}
-	for _, n in ipairs(out.names) do
+	for i, n in ipairs(out.names) do
+		if pause and i % 200 == 0 then pause() end
 		out.byName[n.name] = { id = n.id, image = out.images[n.id], packed = out.packed[n.id], binary = out.binaries[n.id] }
 	end
 	return out

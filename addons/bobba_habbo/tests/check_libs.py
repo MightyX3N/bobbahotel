@@ -2,7 +2,7 @@
 """Checks the Habbo addon's plain-Lua libraries on LuaJIT: SWF reading, PNG writing, XML reading,
 zlib (LibDeflate). Builds SWF files with known contents (every picture format Habbo uses) and
 checks the pixels survive SWF -> Lua -> PNG -> Pillow exactly.    python3 check_libs.py"""
-import io, os, random, struct, sys, zlib
+import io, os, time, random, struct, sys, zlib
 from lupa import luajit21 as lj
 from PIL import Image
 
@@ -254,6 +254,82 @@ check(bad["lib"] is None and b"404" in bad["err"], "library: a missing file give
 served["https://example/broken.swf"] = b"CWS\x09\x00\x00\x00\x00broken"
 L2.eval(b"BOBBA.habbo").library(b"furni/broken", b"https://example/broken.swf", lambda lib, err=None: bad.update(lib=lib, err=err))
 check(bad["lib"] is None and bad["err"], "library: a broken file gives a reason")
+
+# --- long unpacking a little each frame, and fetching ahead hurried when needed (work.lua) ------------
+Lw = lj.LuaRuntime(unpack_returned_tuples=True, encoding=None)
+pending_http = []
+def http_later(url, ok, fail):
+    pending_http.append((url.decode() if isinstance(url, bytes) else url, ok, fail))
+Lw.globals().PY_HTTP = http_later
+Lw.globals().PY_FILES = Lw.table()
+Lw.globals().LIB_DIR = LIB.encode()
+Lw.execute(b"""
+STEPS = nil
+BOBBA = { platform = {
+	httpGet = function(url, ok, fail) PY_HTTP(url, ok, fail) end,
+	writeData = function(path, bytes) PY_FILES[path] = bytes end,
+	readData = function(path) return PY_FILES[path] end,
+	dataExists = function(path) return PY_FILES[path] ~= nil end,
+	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+	clock = os.clock,
+	every = function(id, s, fn) STEPS = fn end,
+	stop = function(id) STEPS = nil end,
+} }
+""")
+Lw.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())
+Hw = Lw.eval(b"BOBBA.habbo")
+Hw.WORK_BUDGET = 0.0005
+def frames(limit=100000):
+    n, longest = 0, 0.0
+    while Lw.eval(b"STEPS") is not None and n < limit:
+        t = time.perf_counter()
+        Lw.eval(b"STEPS")()
+        longest = max(longest, time.perf_counter() - t)
+        n += 1
+    return n, longest
+def flush_http():
+    while pending_http:
+        u, ok, fail = pending_http.pop(0)
+        if u in served: ok(served[u])
+        else: fail(b"HTTP 404")
+# a big picture (noise, so it doesn't squeeze): a few hundred KB to unpack
+rnd = random.Random(5)
+BW, BH = 300, 300
+big_img = [(rnd.randrange(256), rnd.randrange(256), rnd.randrange(256), 255) for _ in range(BW * BH)]
+served["https://example/big1.swf"] = swf_file([lossless2_argb(1, BW, BH, big_img, alpha=False), symbols([(1, "big_pic")])])
+served["https://example/big2.swf"] = swf_file([lossless2_argb(1, BW, BH, big_img[::-1], alpha=False), symbols([(1, "big_pic")])])
+wb = {}
+Hw.library(b"furni/big1", b"https://example/big1.swf", lambda lib, err=None: wb.update(a=lib))
+Hw.library(b"furni/big2", b"https://example/big2.swf", lambda lib, err=None: wb.update(b=lib))
+flush_http()
+nf, longest = frames()
+check(wb.get("a") is not None and wb.get("b") is not None, "work: two big files read side by side in jobs")
+check(nf > 4, "work: unpacking a big file is spread over frames (%d frames, longest %.1f ms)" % (nf, longest * 1000))
+pa = wb["a"][b"images"][b"big_pic"][b"path"]; pb = wb["b"][b"images"][b"big_pic"][b"path"]
+Hw.image(pa); Hw.image(pb)
+ia = list(Image.open(io.BytesIO(Lw.globals().PY_FILES[pa])).convert("RGBA").crop((0, 0, BW, BH)).get_flattened_data())
+ib = list(Image.open(io.BytesIO(Lw.globals().PY_FILES[pb])).convert("RGBA").crop((0, 0, BW, BH)).get_flattened_data())
+check(ia == big_img and ib == big_img[::-1], "work: unpacking paused and taken up again (two at once) gives exact pixels")
+# fetching ahead: many low downloads queued; one of them is then wanted on screen
+for i in range(20):
+    served["https://example/ahead%d.swf" % i] = swf_file([lossless2_argb(1, W3, H3, img3, alpha=False), symbols([(1, "p")])])
+    Hw.library(("figure/ahead%d" % i).encode(), ("https://example/ahead%d.swf" % i).encode(), lambda lib, err=None: None, Lw.table_from({b"canWait": True}))
+check(len(pending_http) == 6, "fetch ahead: at most 6 downloads at once (%d)" % len(pending_http))
+want = {}
+Hw.library(b"figure/ahead15", b"https://example/ahead15.swf", lambda lib, err=None: want.update(lib=lib))
+# the six running finish: the next to start is the one wanted now
+for _ in range(6):
+    u, ok, fail = pending_http.pop(0); ok(served[u])
+check(any(u.endswith("ahead15.swf") for u, _, _ in pending_http) and pending_http[0][0].endswith("ahead15.swf"), "fetch ahead: a file wanted on screen jumps the queue")
+u, ok, fail = pending_http.pop(0); ok(served[u])
+# its reading is not left behind the other fetched-ahead ones
+n = 0
+while "lib" not in want and n < 1000:
+    Lw.eval(b"STEPS")(); n += 1
+check("lib" in want, "fetch ahead: its reading is hurried too")
+check(not Hw.libraryKnown(b"figure/ahead19"), "fetch ahead: one not read yet is not known")
+flush_http(); frames()
+check(all(Hw.libraryKnown(("figure/ahead%d" % i).encode()) for i in range(20)), "fetch ahead: all read in the end, and known (skipped next time)")
 
 
 # --- avatar data: Habbo's client ZIP -> HabboAir.swf -> the avatar XML (avatardata.lua) ---------------

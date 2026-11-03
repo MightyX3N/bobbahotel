@@ -256,9 +256,16 @@ function H.prefetchClothes()
 						end
 					end
 				end
-				for _, name in ipairs(names) do
-					H.library("figure/" .. name, cfg.clientUrl .. name .. ".swf", function() end, { canWait = true })
-				end
+				-- (a job that can wait: the ones read before are skipped, a few each frame)
+				H.work(function()
+					for i, name in ipairs(names) do
+						local key = "figure/" .. name
+						if not H.libraryKnown(key) then
+							H.library(key, cfg.clientUrl .. name .. ".swf", function() end, { canWait = true })
+						end
+						if i % 10 == 0 then H.yield() end
+					end
+				end, true)
 			end)
 		end)
 	end)

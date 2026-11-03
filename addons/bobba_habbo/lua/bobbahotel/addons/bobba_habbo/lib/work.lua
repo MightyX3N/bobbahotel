@@ -90,11 +90,11 @@ end
 
 -- canWait: behind every other download (fetching ahead, like the editor's clothes)
 function H.httpGet(url, ok, fail, canWait)
-	if H.loadingGame then
-		afterLoad[#afterLoad + 1] = function() H.httpGet(url, ok, fail, canWait) end
-		return
-	end
 	local d = { url = url, ok = ok, fail = fail, low = canWait }
+	if H.loadingGame then
+		afterLoad[#afterLoad + 1] = function() H.httpGet(url, ok, fail, d.low) end
+		return d
+	end
 	if canWait then
 		queue[#queue + 1] = d
 	else
@@ -104,6 +104,22 @@ function H.httpGet(url, ok, fail, canWait)
 		table.insert(queue, at, d)
 	end
 	nextDownload()
+	return d
+end
+
+-- a download that could wait is wanted now after all (something needs it on screen)
+function H.hurryDownload(d)
+	if not d or not d.low then return end
+	d.low = false
+	for i, q in ipairs(queue) do
+		if q == d then
+			table.remove(queue, i)
+			local at = #queue + 1
+			for j, q2 in ipairs(queue) do if q2.low then at = j break end end
+			table.insert(queue, at, d)
+			return
+		end
+	end
 end
 
 function H.work(fn, canWait)
@@ -113,4 +129,10 @@ function H.work(fn, canWait)
 	local co = coroutine.create(fn)
 	jobs[co] = canWait and "low" or true
 	P.every("habbo.work", 0, step)
+	return co
+end
+
+-- a job that could wait is wanted now after all
+function H.hurryWork(co)
+	if co and jobs[co] == "low" then jobs[co] = true end
 end
