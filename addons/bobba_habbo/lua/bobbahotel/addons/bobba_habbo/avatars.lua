@@ -125,7 +125,7 @@ local function imageFor(u, figure)
 end
 
 local function stateKey(info)
-	return info.dir .. ":" .. info.posture
+	return info.dir .. ":" .. info.posture .. ":" .. (info.talk and "t" or "")
 end
 
 -- one picture: (px, py) its top-left corner in avatar pixels from the avatar's corner (bx, by) on
@@ -158,7 +158,7 @@ local function draw(u, info)
 		NA.setState(e.image, {
 			direction = info.dir, headDirection = info.dir, posture = info.posture, postureParameter = "",
 			gesture = 0, dance = 0, sign = -1, carryObject = 0, useObject = 0,
-			talk = false, sleep = false, blink = false, expression = 0, effect = 0,
+			talk = info.talk and true or false, sleep = false, blink = false, expression = 0, effect = 0,
 		})
 		e.frame = nil
 		e.forced = FRAME_EVERY
@@ -206,6 +206,59 @@ end
 
 BOBBA.room = BOBBA.room or { units = {} }
 BOBBA.room.figureDrawer = draw
+
+-- --- in chat bubbles: the head, and the shirt's colour --------------------------------------------------
+-- (nitro-react's ChatWidgetMessageView: the head alone, facing the front, at half Habbo's size)
+local heads = {}
+local function headFor(u)
+	if AV.failed or not AV.renderer then return nil end
+	local figure = (u.figure and u.figure ~= "") and u.figure or H.DEFAULT_FIGURE
+	if not figureReady(figure) then return nil end
+	local e = heads[u.id]
+	if e and e.figure == figure then return e end
+	e = { figure = figure, image = AV.renderer:createImage(figure, "h") }
+	NA.setState(e.image, {
+		direction = 2, headDirection = 2, posture = "std", postureParameter = "",
+		gesture = 0, dance = 0, sign = -1, carryObject = 0, useObject = 0,
+		talk = false, sleep = false, blink = false, expression = 0, effect = 0,
+	})
+	e.frame = NA.frame(e.image, true)
+	-- where its pictures are (it's drawn by its middle)
+	local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+	for _, sp in ipairs(e.frame.sprites) do
+		local a = AV.assets[sp.name]
+		if a then
+			x0, y0 = math.min(x0, sp.x), math.min(y0, sp.y)
+			x1, y1 = math.max(x1, sp.x + a.width), math.max(y1, sp.y + a.height)
+		end
+	end
+	if x0 == math.huge then return nil end
+	e.cx, e.cy = (x0 + x1) / 2, (y0 + y1) / 2
+	e.color = NA.partColor(e.image, "ch")
+	heads[u.id] = e
+	return e
+end
+
+H.CHAT_HEAD_SCALE = 0.5
+
+BOBBA.room.figureHeadDrawer = function(u, cx, cy)
+	local e = headFor(u)
+	if not e then return end
+	local k = H.CHAT_HEAD_SCALE * (BOBBA.room.chatScale or 1)
+	local bx, by = math.floor(cx - e.cx * k + 0.5), math.floor(cy - e.cy * k + 0.5)
+	render.PushFilterMag(TEXFILTER.POINT)
+	render.PushFilterMin(TEXFILTER.POINT)
+	for _, sp in ipairs(e.frame.sprites) do
+		sprite(sp.name, bx, by, sp.x, sp.y, k, sp.flipH, sp.color)
+	end
+	render.PopFilterMin()
+	render.PopFilterMag()
+end
+
+BOBBA.room.figureColor = function(u)
+	local e = headFor(u)
+	return e and e.color or nil
+end
 
 -- get everything ready as the game starts, so people show up with the room
 function H.preloadAvatars(figures)

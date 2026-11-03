@@ -139,6 +139,7 @@ local function padded(img)
 	end
 	return out, tw, th
 end
+H.paddedPixels = padded
 
 -- Downloads (or takes from the cache) a SWF and unpacks it: every picture as a PNG, every XML.
 function H.library(key, url, cb)

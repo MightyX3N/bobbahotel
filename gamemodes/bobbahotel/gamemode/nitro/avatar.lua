@@ -9593,8 +9593,19 @@ end
 function ____exports.isAnimating(avatar)
     return avatar:isAnimating()
 end
-function ____exports.frame(avatar)
-    local texture = avatar:getImage(AvatarSetType.FULL, false)
+function ____exports.frame(avatar, head)
+    if head == nil then
+        head = false
+    end
+    local ____avatar_1 = avatar
+    local ____avatar_getImage_2 = avatar.getImage
+    local ____head_0
+    if head then
+        ____head_0 = AvatarSetType.HEAD
+    else
+        ____head_0 = AvatarSetType.FULL
+    end
+    local texture = ____avatar_getImage_2(____avatar_1, ____head_0, false)
     local sprites = {}
     local out = {
         width = 0,
@@ -9615,16 +9626,16 @@ function ____exports.frame(avatar)
                 return
             end
             local flipH = a < 0
-            local ____s_texture_name_1 = s.texture.name
-            local ____flipH_0
+            local ____s_texture_name_4 = s.texture.name
+            local ____flipH_3
             if flipH then
-                ____flipH_0 = tx - s.texture.width
+                ____flipH_3 = tx - s.texture.width
             else
-                ____flipH_0 = tx
+                ____flipH_3 = tx
             end
             sprites[#sprites + 1] = {
-                name = ____s_texture_name_1,
-                x = ____flipH_0,
+                name = ____s_texture_name_4,
+                x = ____flipH_3,
                 y = ty,
                 width = s.texture.width,
                 height = s.texture.height,
@@ -9642,6 +9653,13 @@ function ____exports.frame(avatar)
         walk(texture.container, 1, 0, 0)
     end
     return out
+end
+function ____exports.partColor(avatar, partType)
+    local color = avatar:getPartColor(partType)
+    if color == nil or color == nil then
+        return 16777215
+    end
+    return color.rgb
 end
 return ____exports
  end,

@@ -34,15 +34,13 @@ end
 
 local function fetchRoomContent(cb)
 	if P.dataExists(rawPath()) then cb(true) return end
-	H.remembered("clienturls", H.CLIENT_URLS, function(json, why)
-		if not json then cb(nil, "couldn't reach Habbo: " .. tostring(why)) return end
-		local url = json:match('"flash%-windows"%s*:%s*"([^"]+)"')
-		if not url then cb(nil, "Habbo didn't say where its desktop client is") return end
-		H.httpGet(url:gsub("\\/", "/"), function(zipBytes)
-			local zip, why2 = H.zip.open(zipBytes)
+	H.clientVersion(function(version, url, why)
+		if not version then cb(nil, why) return end
+		H.desktopClient(url, function(zip, why2)
 			if not zip then cb(nil, why2) return end
-			cb(H.saveRoomContentFromZip(zip))
-		end, function(e) cb(nil, e) end)
+			-- (desktopClient saved it)
+			cb(P.dataExists(rawPath()) or nil, "Habbo's client has no " .. H.ROOM_CONTENT_FILE)
+		end)
 	end)
 end
 

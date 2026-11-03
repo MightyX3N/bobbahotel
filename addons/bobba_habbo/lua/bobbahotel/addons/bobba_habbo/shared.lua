@@ -29,12 +29,14 @@ lib("library.lua")
 lib("avatardata.lua")
 lib("furnidata.lua")
 lib("roomcontent.lua")
+lib("chatstyles.lua")
 
 -- client-only file, sent to players by the server
 if SERVER then
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/avatars.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/furni.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/planes.lua")
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/chat.lua")
 end
 
 -- The hotel asks what a kind of furni is (its size, height, sitting...): Habbo's furnidata and the

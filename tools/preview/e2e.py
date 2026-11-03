@@ -56,6 +56,7 @@ def main():
     ap.add_argument("--out", default="e2e.png")
     ap.add_argument("--floor", help="the room's floor id")
     ap.add_argument("--wallpaper", help="the room's wallpaper id")
+    ap.add_argument("--say", help="what the player says, then what happens: text[|kind[|seconds later]];... (kind talk/shout/whisper)")
     ap.add_argument("--click", help="after drawing, click at screen x,y[;x,y...] and print what the client sends")
     a = ap.parse_args()
     S = server()
@@ -123,6 +124,26 @@ def main():
             L.execute("SetFakeTime(%f)" % (100 + t))
             V0.panel.Paint(V0.panel, w, h)
         G.ops = L.table()
+    if a.say:
+        # through the server: the message the client sends, the one everyone gets back
+        t = 0
+        for spec in a.say.split(";"):
+            p = spec.split("|")
+            t += float(p[2]) if len(p) > 2 else 0.5
+            L.execute("SetFakeTime(%f)" % (100 + t))
+            S.execute("BOBBA.platform.now = BOBBA.platform.now + 2")
+            count = S.eval("function(p, n) return #BOBBA.platform.inbox(p, n) end")
+            before, errs = count(me, "room.chat"), count(me, "room.error")
+            S.eval("BOBBA.platform.fromPlayer")(me, "room.chat", S.table_from({"text": p[0], "kind": p[1] if len(p) > 1 else "talk", "to": p[3] if len(p) > 3 else None}))
+            if count(me, "room.chat") == before:
+                why = S.eval("function(p) local b = BOBBA.platform.inbox(p, 'room.error') return b[#b] and b[#b].message end")(me) if count(me, "room.error") > errs else "nothing"
+                print("said", repr(p[0]), "-> not sent:", why)
+                continue
+            got = S.eval("function(p) local b = BOBBA.platform.inbox(p, 'room.chat') return b[#b] end")(me)
+            print("said", repr(p[0]), "->", tojson(S, got))
+            L.eval("BOBBA.platform.receivers['room.chat']")(None, tbl(json.loads(tojson(S, got))))
+            for _ in range(30): L.eval("BOBBA.room.chatState.draw")()
+        G.ops = L.table()
     V = L.eval("BOBBA.view")
     V.zoomNow = a.zoom
     V.zoomTarget = a.zoom
@@ -182,6 +203,7 @@ def habbo(L, folder):
         dofile(ADDON_DIR .. "avatars.lua")
         dofile(ADDON_DIR .. "furni.lua")
         dofile(ADDON_DIR .. "planes.lua")
+        dofile(ADDON_DIR .. "chat.lua")
         BOBBA.habbo.preloadAvatars() -- what its timer does as the game starts
         -- the bytes of a stored file as hex (this Lua runtime hands strings to Python as UTF-8 text)
         function STORE_HEX(path)

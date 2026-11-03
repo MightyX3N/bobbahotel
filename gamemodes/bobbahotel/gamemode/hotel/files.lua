@@ -18,5 +18,6 @@ return {
 	"hotel/pathfinder.lua",
 	"hotel/roomlive.lua",
 	"hotel/items.lua",
+	"hotel/chat.lua",
 	"hotel/addons.lua",
 }

@@ -28,14 +28,41 @@ local function textPath(folder, name)
 	return H.cachePath("avatar/" .. folder .. "/" .. name, ".txt")
 end
 
--- The XML inside Habbo's desktop client, cached per client version. cb(files) or cb(nil, why)
-function H.clientXml(cb)
+-- Which desktop client Habbo has now: cb(version, url) or cb(nil, nil, why)
+function H.clientVersion(cb)
 	H.remembered("clienturls", H.CLIENT_URLS, function(json, why)
-		if not json then cb(nil, "couldn't reach Habbo: " .. tostring(why)) return end
+		if not json then cb(nil, nil, "couldn't reach Habbo: " .. tostring(why)) return end
 		local url = json:match('"flash%-windows"%s*:%s*"([^"]+)"')
 		local version = json:match('"flash%-windows%-version"%s*:%s*"([^"]+)"') or "0"
-		if not url then cb(nil, "Habbo didn't say where its desktop client is") return end
-		url = url:gsub("\\/", "/")
+		if not url then cb(nil, nil, "Habbo didn't say where its desktop client is") return end
+		cb(version, (url:gsub("\\/", "/")))
+	end)
+end
+
+-- Habbo's desktop client (a ZIP, about 19 MB), downloaded (not kept: what's needed from it is saved
+-- as it arrives). Asked for again while it is downloading: one download for both. cb(zip) or cb(nil, why)
+local downloading = {}
+function H.desktopClient(url, cb)
+	if downloading[url] then table.insert(downloading[url], cb) return end
+	downloading[url] = { cb }
+	local function done(zip, why)
+		local list = downloading[url]
+		downloading[url] = nil
+		for _, w in ipairs(list) do w(zip, why) end
+	end
+	H.httpGet(url, function(zipBytes)
+		local zip, why = H.zip.open(zipBytes)
+		if not zip then done(nil, why) return end
+		-- (the floors and wallpapers are in the same download: kept for the rooms)
+		if H.saveRoomContentFromZip then H.saveRoomContentFromZip(zip) end
+		done(zip)
+	end, function(why) done(nil, "couldn't download Habbo's client: " .. why) end)
+end
+
+-- The XML inside Habbo's desktop client, cached per client version. cb(files) or cb(nil, why)
+function H.clientXml(cb)
+	H.clientVersion(function(version, url, why)
+		if not version then cb(nil, why) return end
 		local folder = "client_" .. version
 		local files, have = {}, true
 		for _, ours in pairs(H.CLIENT_XML) do
@@ -43,14 +70,15 @@ function H.clientXml(cb)
 			if P.dataExists(p) then files[ours] = P.readData(p) else have = false end
 		end
 		if have then cb(files) return end
-		H.httpGet(url, function(zipBytes)
-			local zip, why = H.zip.open(zipBytes)
-			if not zip then cb(nil, why) return end
-			-- (the floors and wallpapers are in the same download: kept for the rooms)
-			if H.saveRoomContentFromZip then H.saveRoomContentFromZip(zip) end
+		H.desktopClient(url, function(zip, why1)
+			if not zip then cb(nil, why1) return end
 			local swfBytes, why2 = zip.read("HabboAir.swf", H.inflateRaw)
-			zipBytes = nil
 			if not swfBytes then cb(nil, why2) return end
+			-- (the chat bubbles are in the same file: kept for the chat)
+			if H.saveChatStyles then
+				local ok, e = pcall(H.saveChatStyles, swfBytes, version)
+				if not ok then print("[Bobba] Habbo's chat bubbles: " .. tostring(e)) end
+			end
 			local swf, why3 = H.swf.read(swfBytes, H.inflate, { images = false })
 			swfBytes = nil
 			if not swf then cb(nil, "HabboAir.swf: " .. tostring(why3)) return end
@@ -64,7 +92,7 @@ function H.clientXml(cb)
 			for ours, text in pairs(files) do P.writeData(textPath(folder, ours), text) end
 			collectgarbage()
 			cb(files)
-		end, function(why) cb(nil, "couldn't download Habbo's client: " .. why) end)
+		end)
 	end)
 end
 

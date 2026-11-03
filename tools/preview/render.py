@@ -41,7 +41,7 @@ surface = {
 	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter, G.blend) end,
 	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }) end,
 }
-draw = { NoTexture = function() G.material = nil end, SimpleText = function(t, f, x, y) op("text", t, x, y) end,
+draw = { NoTexture = function() G.material = nil end, SimpleText = function(t, f, x, y, c, ax, ay) op("text", t, x, y, c and { c.r, c.g, c.b } or nil, f, ay) end,
 	SimpleTextOutlined = function(t, f, x, y, c, ax, ay) op("text", t, x - 3 * #t, y - 12) end }
 local fakeTime = 100
 SysTime = function() return fakeTime end
@@ -66,6 +66,14 @@ BLENDFUNC_ADD = 0
 KEY_R, MOUSE_RIGHT = 28, 108
 bit = bit or require("bit")
 draw.RoundedBox = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
+draw.RoundedBoxEx = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
+-- text: about as wide as Ubuntu 24 px (the picture uses DejaVu Sans 20)
+local font = "BobbaChat"
+surface.SetFont = function(f) font = f end
+surface.GetTextSize = function(t) local n = 0 for _ in t:gmatch("[^\128-\191]") do n = n + 1 end return n * ((font == "BobbaChatBold") and 14 or 12), 24 end
+utf8 = utf8 or { len = function(t) local n = 0 for _ in t:gmatch("[^\128-\191]") do n = n + 1 end return n end }
+TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP = 0, 3
+KEY_ENTER, KEY_PAD_ENTER = 64, 65
 TEXFILTER = { POINT = "point", LINEAR = "linear" }
 cam = { Start2D = function() end, End2D = function() end }
 math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
@@ -74,8 +82,8 @@ string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local cursor = { 0, 0 }
 KEY_LCONTROL, KEY_RCONTROL = 1, 2
 CreateClientConVar = function(name, default) return { GetBool = function() return default == "1" end } end
-input = { GetCursorPos = function() return cursor[1], cursor[2] end, IsKeyDown = function() return false end }
-gui = { EnableScreenClicker = function() end }
+input = { GetCursorPos = function() return cursor[1], cursor[2] end, IsKeyDown = function() return false end, IsShiftDown = function() return false end }
+gui = { EnableScreenClicker = function() end, IsGameUIVisible = function() return false end, IsConsoleVisible = function() return false end }
 local hooks, cmds = {}, {}
 hook = { Add = function(name, id, fn) hooks[name] = fn end }
 concommand = { Add = function(name, fn) cmds[name] = fn end }
@@ -118,6 +126,7 @@ def boot(w, h):
     G = L.execute(STUBS)
     L.execute(open(os.path.join(GM, "client", "view.lua")).read())
     L.execute(open(os.path.join(GM, "client", "room.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "chat.lua")).read())
     return L, G
 
 def paint(G, w, h, images=None):
@@ -172,7 +181,15 @@ def paint(G, w, h, images=None):
         elif kind == "line":
             d.line([(o[2], o[3]), (o[4], o[5])], fill=tuple(o[6][j] for j in (1, 2, 3)))
         elif kind == "text":
-            d.text((o[3], o[4]), o[2], fill=(255, 255, 255))
+            col = tuple(o[5][j] for j in (1, 2, 3)) if o[5] is not None else (255, 255, 255)
+            bold = o[6] in ("BobbaChatBold",)
+            try:
+                from PIL import ImageFont
+                fnt = ImageFont.truetype("DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf", 20)
+            except OSError:
+                fnt = None
+            y = o[4] - 7 if o[7] == 1 else o[4]
+            d.text((o[3], y), o[2], fill=col, font=fnt)
         elif kind == "image" and images is not None and o[2] in images:
             # a picture: the part of the texture the UVs pick (mirrored when u0 > u1), multiplied by
             # the draw colour (rounded like Habbo), scaled with GMod's filter (point = pixel-sharp)

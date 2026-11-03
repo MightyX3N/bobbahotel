@@ -342,6 +342,7 @@ end
 function live.start()
 	live.migrate()
 	BOBBA.items.start()
+	BOBBA.chat.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

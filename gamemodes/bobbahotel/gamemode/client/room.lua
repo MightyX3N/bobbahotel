@@ -67,6 +67,7 @@ P.receive("room.load", function(_, data)
 	for _, s in ipairs(data.items or {}) do setItem(s) end
 	R.show()
 	R.updateInfo()
+	BOBBA.events.emit("roomShown", data)
 end)
 
 P.receive("room.units", function(_, list)
@@ -118,6 +119,8 @@ local function ellipse(cx, cy, rx, ry, n)
 	return V.clockwise(pts)
 end
 
+R.unitPosition = position
+
 -- a unit is walking while it is on its way to the next tile
 local function posture(u)
 	if u.to and (SysTime() - u.started) < STEP + 0.1 then return "mv" end
@@ -130,7 +133,7 @@ local function drawUnit(u)
 	local sx, sy, k = V.project(x, y, z)
 	if not sx then return end
 	if R.figureDrawer then
-		local ok, drew = pcall(R.figureDrawer, u, { x = x, y = y, z = z, sx = sx, sy = sy, k = k, dir = u.dir or 2, posture = posture(u), now = SysTime() })
+		local ok, drew = pcall(R.figureDrawer, u, { x = x, y = y, z = z, sx = sx, sy = sy, k = k, dir = u.dir or 2, posture = posture(u), now = SysTime(), talk = (u.talkUntil or 0) > SysTime() })
 		if ok and drew then return end
 		if not ok then ErrorNoHalt("[Bobba] figure drawer: " .. tostring(drew) .. "\n") R.figureDrawer = nil end
 	end
@@ -234,6 +237,7 @@ V.drawUnits = function(phase)
 	if phase == "behind" then return #list > 0 end
 	R.hits = hits
 	for _, u in pairs(R.units) do drawName(u) end
+	if R.chatState then R.chatState.draw() end
 end
 
 -- the furni under the mouse: the front-most picture that is solid there (the drawer's hit(); without
@@ -302,20 +306,27 @@ BOBBA.events.on("roomRightClick", "bobba.room.place", function()
 	if R.placing then R.placing = nil end
 end)
 
--- R turns the furni being placed (or the selected one)
+-- R turns the furni being placed (or the selected one). The chat input has the keyboard in a room,
+-- so it calls this when R is pressed with nothing typed; returns whether R turned something.
+function R.pressR()
+	if V.mode ~= "room" then return false end
+	if R.placing then
+		local dirs = R.placing.dirs or { 0, 2, 4, 6 }
+		local i = 1
+		for j, d in ipairs(dirs) do if d == R.placing.dir then i = j end end
+		R.placing.dir = dirs[i % #dirs + 1]
+		return true
+	elseif R.selected and R.current and R.current.canEdit then
+		P.send("room.item.rotate", { id = R.selected })
+		return true
+	end
+	return false
+end
+
 local rWasDown = false
 hook.Add("Think", "bobba.room.keys", function()
 	local down = input.IsKeyDown(KEY_R) and not (vgui.GetKeyboardFocus and vgui.GetKeyboardFocus())
-	if down and not rWasDown and V.mode == "room" then
-		if R.placing then
-			local dirs = R.placing.dirs or { 0, 2, 4, 6 }
-			local i = 1
-			for j, d in ipairs(dirs) do if d == R.placing.dir then i = j end end
-			R.placing.dir = dirs[i % #dirs + 1]
-		elseif R.selected and R.current and R.current.canEdit then
-			P.send("room.item.rotate", { id = R.selected })
-		end
-	end
+	if down and not rWasDown then R.pressR() end
 	rWasDown = down
 end)
 

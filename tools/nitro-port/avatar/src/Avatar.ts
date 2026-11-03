@@ -231,10 +231,11 @@ export interface DrawSprite
     color: number;
 }
 
-// The pictures Nitro's getImage(FULL) puts on its canvas, back to front
-export function frame(avatar: AvatarImage): any
+// The pictures Nitro's getImage(FULL) puts on its canvas, back to front. head = true: only the
+// head (getImage(HEAD), as the chat bubbles show it)
+export function frame(avatar: AvatarImage, head: boolean = false): any
 {
-    const texture: any = avatar.getImage(AvatarSetType.FULL, false);
+    const texture: any = avatar.getImage(head ? AvatarSetType.HEAD : AvatarSetType.FULL, false);
     const sprites: DrawSprite[] = [];
     const out: any = { width: 0, height: 0, sprites: sprites, canvasOffsets: avatar.getCanvasOffsets() };
     if(texture === null || texture === undefined) return out;
@@ -260,4 +261,12 @@ export function frame(avatar: AvatarImage): any
     };
     if(texture.container) walk(texture.container, 1, 0, 0);
     return out;
+}
+
+// The colour of a part of the figure, e.g. 'ch' (the shirt: Habbo's chat bubbles have it), 0xRRGGBB
+export function partColor(avatar: AvatarImage, partType: string): number
+{
+    const color: any = avatar.getPartColor(partType);
+    if(color === null || color === undefined) return 0xFFFFFF;
+    return color.rgb;
 }

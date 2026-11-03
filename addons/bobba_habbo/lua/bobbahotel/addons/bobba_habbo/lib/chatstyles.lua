@@ -1,0 +1,287 @@
+-- Habbo's chat bubbles: the pictures and measurements of every bubble style, from HabboAir.swf in
+-- Habbo's desktop client (the same download as the avatar data). In the SWF the pictures and text
+-- files are embedded classes with made-up names (chat_bubble_base_png$d550...); which asset name
+-- each one has (style_normal_chat_bubble_base) is only written in the ActionScript, as
+-- "Class.style_normal_chat_bubble_base = chat_bubble_base_png$d550...", so that code is read (its
+-- ABC bytecode) to find the pairs. The pictures are PNG files inside DefineBitsJPEG2 tags; they are
+-- saved padded to a power-of-two size, like every other Habbo picture here.
+--
+--   H.chatStyles(function(styles, err) ... end)
+--     styles[id] = { id, asset = "normal", system = true/false, base = img, color = img (or nil),
+--                    pointer = img, reg = { ["9sliceXY"] = "29,17", ... } }
+--     img = { path, width, height, texWidth, texHeight }
+--   (id: Habbo's chat style number; 0 is the normal bubble everyone has)
+
+local H = BOBBA.habbo
+local P = BOBBA.platform
+
+H.CHAT_INDEX_VERSION = "1"
+
+local byte, sub, find = string.byte, string.sub, string.find
+
+local function indexPath(version) return H.cachePath("chat/client_" .. version .. "/styles", ".txt") end
+local function imagePath(version, name) return H.cachePath("chat/client_" .. version .. "/" .. name, ".png") end
+
+-- --- ActionScript bytecode: which embedded class each asset name is ----------------------------------
+-- Reads an ABC block (avm2overview.pdf, "abcFile") up to its method bodies, and looks in their code
+-- for: getlex <Class>, findproperty <field>, swap, setproperty <field>. Returns { field = className }.
+local function abcAssets(b, out)
+	local p = 5 -- after minor and major version
+	local function u30()
+		local r, s = 0, 0
+		for _ = 1, 5 do
+			local c = byte(b, p)
+			p = p + 1
+			r = r + (c % 128) * 2 ^ s
+			s = s + 7
+			if c < 128 then break end
+		end
+		return r
+	end
+	local function u8() p = p + 1 return byte(b, p - 1) end
+	local function skip(n) for _ = 1, n do u30() end end
+	local n = u30() skip(math.max(0, n - 1))           -- ints
+	n = u30() skip(math.max(0, n - 1))                 -- uints
+	n = u30() p = p + 8 * math.max(0, n - 1)           -- doubles
+	n = u30()
+	local strings = { [0] = "" }
+	for i = 1, n - 1 do
+		local l = u30()
+		strings[i] = sub(b, p, p + l - 1)
+		p = p + l
+		if i % 2000 == 0 then H.yield() end
+	end
+	n = u30()                                          -- namespaces
+	for _ = 1, n - 1 do u8() u30() end
+	n = u30()                                          -- namespace sets
+	for _ = 1, n - 1 do skip(u30()) end
+	n = u30()                                          -- multinames
+	local names = {}
+	for i = 1, n - 1 do
+		local k = u8()
+		if k == 0x07 or k == 0x0D then u30() names[i] = strings[u30()]
+		elseif k == 0x0F or k == 0x10 then names[i] = strings[u30()]
+		elseif k == 0x11 or k == 0x12 then names[i] = false
+		elseif k == 0x09 or k == 0x0E then names[i] = strings[u30()] u30()
+		elseif k == 0x1B or k == 0x1C then u30() names[i] = false
+		elseif k == 0x1D then u30() skip(u30()) names[i] = false
+		else return nil, "unknown multiname kind " .. k end
+	end
+	H.yield()
+	n = u30()                                          -- methods
+	for _ = 1, n do
+		local params = u30()
+		u30() skip(params) u30()
+		local flags = u8()
+		if bit.band(flags, 0x08) ~= 0 then for _ = 1, u30() do u30() u8() end end
+		if bit.band(flags, 0x80) ~= 0 then skip(params) end
+	end
+	n = u30()                                          -- metadata
+	for _ = 1, n do u30() skip(u30() * 2) end
+	local function traits()
+		for _ = 1, u30() do
+			u30()
+			local k = u8()
+			local kind = k % 16
+			if kind == 0 or kind == 6 then
+				u30() u30()
+				if u30() ~= 0 then u8() end
+			else
+				u30() u30()
+			end
+			if bit.band(k, 0x40) ~= 0 then skip(u30()) end
+		end
+	end
+	local classes = u30()
+	for _ = 1, classes do                              -- instances
+		u30() u30()
+		local flags = u8()
+		if bit.band(flags, 0x08) ~= 0 then u30() end
+		skip(u30())
+		u30()
+		traits()
+	end
+	for _ = 1, classes do u30() traits() end           -- classes
+	for _ = 1, u30() do u30() traits() end             -- scripts
+	H.yield()
+	for body = 1, u30() do                             -- method bodies
+		skip(5)
+		local len = u30()
+		local code = sub(b, p, p + len - 1)
+		p = p + len
+		for _ = 1, u30() do skip(5) end
+		traits()
+		local function rd(j)
+			local v, s = 0, 0
+			while true do
+				local c = byte(code, j)
+				if not c then return nil, j end
+				j = j + 1
+				v = v + (c % 128) * 2 ^ s
+				s = s + 7
+				if c < 128 then return v, j end
+			end
+		end
+		local i = 1
+		while true do
+			i = find(code, "\96", i, true)
+			if not i then break end
+			local y, j = rd(i + 1)
+			if y and byte(code, j) == 0x5E then
+				local x, k = rd(j + 1)
+				if x and byte(code, k) == 0x2B and byte(code, k + 1) == 0x61 then
+					local x2 = rd(k + 2)
+					if x2 == x and names[x] and names[y] then out[names[x]] = names[y] end
+				end
+			end
+			i = i + 1
+		end
+		if body % 200 == 0 then H.yield() end
+	end
+	return out
+end
+
+-- --- HabboAir.swf -> the styles' files in the cache ----------------------------------------------------
+local function readTags(s)
+	-- after the header: the stage size (a RECT: 5 bits saying how many bits each of its 4 numbers has)
+	local nbits = math.floor(byte(s, 9) / 8)
+	local p = 9 + math.ceil((5 + nbits * 4) / 8) + 4
+	local symbols, tags, abcs = {}, {}, {}
+	while p + 1 <= #s do
+		local head = byte(s, p) + byte(s, p + 1) * 256
+		p = p + 2
+		local code, len = math.floor(head / 64), head % 64
+		if len == 63 then
+			local a, b2, c, d = byte(s, p, p + 3)
+			len = a + b2 * 256 + c * 65536 + d * 16777216
+			p = p + 4
+		end
+		if code == 0 then break end
+		if code == 76 then -- SymbolClass: id -> class name
+			local q = p
+			local count = byte(s, q) + byte(s, q + 1) * 256
+			q = q + 2
+			for _ = 1, count do
+				local id = byte(s, q) + byte(s, q + 1) * 256
+				local e = find(s, "\0", q + 2, true)
+				local name = sub(s, q + 2, e - 1)
+				symbols[name] = id
+				-- (classes in a package: also by the name after the last dot)
+				symbols[name:match("([^%.]+)$")] = symbols[name:match("([^%.]+)$")] or id
+				q = e + 1
+			end
+		elseif code == 87 or code == 21 then -- DefineBinaryData, DefineBitsJPEG2 (here: PNG files)
+			local id = byte(s, p) + byte(s, p + 1) * 256
+			tags[id] = { start = p + (code == 87 and 6 or 2), stop = p + len - 1 }
+		elseif code == 82 then -- DoABC: flags, a name, the bytecode
+			local e = find(s, "\0", p + 4, true)
+			abcs[#abcs + 1] = sub(s, e + 1, p + len - 1)
+		end
+		p = p + len
+	end
+	return symbols, tags, abcs
+end
+
+-- the bubble styles out of HabboAir.swf (its bytes as in the ZIP), into the cache. true or nil, why
+function H.saveChatStyles(swfBytes, version)
+	local s, why = H.swf.uncompress(swfBytes, H.inflate)
+	if not s then return nil, why end
+	H.yield()
+	local symbols, tags, abcs = readTags(s)
+	local assets = {}
+	for _, abc in ipairs(abcs) do
+		local ok, err = abcAssets(abc, assets)
+		if not ok then return nil, "HabboAir.swf's code: " .. tostring(err) end
+	end
+	local function bytesOf(asset)
+		local cls = assets[asset]
+		local id = cls and symbols[cls]
+		local t = id and tags[id]
+		return t and sub(s, t.start, t.stop)
+	end
+	local xml = bytesOf("chatstyles_xml")
+	if not xml then return nil, "HabboAir.swf has no chat styles" end
+	local lines = { H.CHAT_INDEX_VERSION }
+	local saved = 0
+	for attrs in xml:gmatch("<style%s+([^>]-)/?>") do
+		local id = tonumber(attrs:match('id="(%d+)"'))
+		local asset = attrs:match('assetId="([^"]+)"')
+		if id and asset then
+			local reg = bytesOf("style_" .. asset .. "_regpoints")
+			if reg then
+				lines[#lines + 1] = table.concat({ "S", id, asset, attrs:match('systemStyle="true"') and 1 or 0 }, "\t")
+				for k, v in reg:gmatch("([%w]+)%s*=%s*([^\r\n]*)") do
+					lines[#lines + 1] = table.concat({ "R", id, k, (v:gsub("%s+$", "")) }, "\t")
+				end
+				for _, part in ipairs({ "base", "color", "pointer" }) do
+					local png = bytesOf("style_" .. asset .. "_chat_bubble_" .. part)
+					if png then
+						local img, why2 = H.png.decode(png, H.inflate)
+						if not img then return nil, "style_" .. asset .. "_chat_bubble_" .. part .. ": " .. tostring(why2) end
+						local path = imagePath(version, asset .. "_" .. part)
+						local px, tw, th = H.paddedPixels(img)
+						P.writeData(path, H.png.encode(tw, th, px, H.zlib))
+						lines[#lines + 1] = table.concat({ "I", id, part, path, img.width, img.height, tw, th }, "\t")
+						saved = saved + 1
+						H.yield()
+					end
+				end
+			end
+		end
+	end
+	if saved == 0 then return nil, "HabboAir.swf's chat styles have no pictures" end
+	P.writeData(indexPath(version), table.concat(lines, "\n") .. "\n")
+	return true
+end
+
+local function readIndex(version)
+	local path = indexPath(version)
+	if not P.dataExists(path) then return nil end
+	local text = P.readData(path)
+	if not text or text:match("^([^\n]*)") ~= H.CHAT_INDEX_VERSION then return nil end
+	local styles = {}
+	for line in text:gmatch("[^\n]+") do
+		local f = {}
+		for v in (line .. "\t"):gmatch("([^\t]*)\t") do f[#f + 1] = v end
+		local id = tonumber(f[2])
+		if f[1] == "S" then
+			styles[id] = { id = id, asset = f[3], system = f[4] == "1", reg = {} }
+		elseif f[1] == "R" and styles[id] then
+			styles[id].reg[f[3]] = f[4]
+		elseif f[1] == "I" and styles[id] then
+			if not P.dataExists(f[4]) then return nil end
+			styles[id][f[3]] = { path = f[4], width = tonumber(f[5]), height = tonumber(f[6]), texWidth = tonumber(f[7]), texHeight = tonumber(f[8]) }
+		end
+	end
+	return styles
+end
+
+local cache, waiting
+function H.chatStyles(cb)
+	if cache then cb(cache) return end
+	if waiting then waiting[#waiting + 1] = cb return end
+	waiting = { cb }
+	local function done(styles, err)
+		local list = waiting
+		waiting = nil
+		cache = styles
+		for _, w in ipairs(list) do w(styles, err) end
+	end
+	H.clientVersion(function(version, url, err)
+		if not version then done(nil, err) return end
+		local styles = readIndex(version)
+		if styles then done(styles) return end
+		H.desktopClient(url, function(zip, err2)
+			if not zip then done(nil, err2) return end
+			H.work(function()
+				local swfBytes, why = zip.read("HabboAir.swf", H.inflateRaw)
+				if not swfBytes then done(nil, why) return end
+				local ok, why2 = H.saveChatStyles(swfBytes, version)
+				swfBytes = nil
+				collectgarbage()
+				if not ok then done(nil, why2) return end
+				done(readIndex(version))
+			end)
+		end)
+	end)
+end

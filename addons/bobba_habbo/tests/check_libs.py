@@ -431,5 +431,121 @@ if rc is not None:
     check(len(fq) == 2 and (first[b"x"], first[b"w"], first[b"h"], first[b"u0"], first[b"u1"], first[b"v0"], first[b"v1"]) == (0, 32, 48, 48, 16, 48, 0),
           "painting: a floor's offset pattern, mirrored the way PixiJS draws it (%s)" % [(q[b"x"], q[b"y"], q[b"w"], q[b"h"], q[b"u0"], q[b"u1"], q[b"v0"], q[b"v1"]) for q in fq])
 
+# --- reading PNG files (Habbo's chat bubbles are PNGs inside the SWF) -------------------------------------
+def png_bytes(im, **kw):
+    out = io.BytesIO(); im.save(out, "PNG", **kw); return out.getvalue()
+rgba = Image.new("RGBA", (11, 7))
+rgba.putdata([(rnd.randrange(256), rnd.randrange(256), rnd.randrange(256), rnd.randrange(256)) for _ in range(77)])
+cases = [("RGBA", rgba, {}), ("RGB", rgba.convert("RGB"), {}), ("RGBA, every row filter", rgba, {"optimize": True})]
+pal_im = Image.new("P", (9, 5)); pal_im.putpalette([0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255] + [0] * 756)
+pal_im.putdata([rnd.randrange(4) for _ in range(45)])
+cases.append(("a palette, see-through colour 0", pal_im, {"transparency": 0}))
+cases.append(("a 4-bit palette", pal_im, {"transparency": 0, "bits": 4}))
+cases.append(("greyscale", rgba.convert("L"), {}))
+for name, im, kw in cases:
+    data = png_bytes(im, **kw)
+    img, why = call(png.decode, data, inflate)
+    want = list(im.convert("RGBA").get_flattened_data() if hasattr(im, "get_flattened_data") else im.convert("RGBA").getdata()) if not (name.startswith("a ") and "palette" in name) else [(0, 0, 0, 0) if v == 0 else tuple(pal_im.getpalette()[v * 3:v * 3 + 3]) + (255,) for v in pal_im.getdata()]
+    got_px = None
+    if img is not None:
+        pxs = img[b"pixels"]
+        got_px = [tuple(pxs[i * 4 + j] for j in range(1, 5)) for i in range(img[b"width"] * img[b"height"])]
+    check(got_px == want, "PNG decode: %s (%s)" % (name, why))
+# filters 1-4 (Pillow's optimize may not use all of them): one row per filter, made by hand
+def filtered(w, rows, ftypes):
+    bpp = 4; out = b""; prev = bytes(w * bpp)
+    for row, f in zip(rows, ftypes):
+        cur = bytes(row); enc = bytearray()
+        for i in range(len(cur)):
+            a = cur[i - bpp] if i >= bpp else 0; b = prev[i]; c = prev[i - bpp] if i >= bpp else 0
+            if f == 0: pr = 0
+            elif f == 1: pr = a
+            elif f == 2: pr = b
+            elif f == 3: pr = (a + b) // 2
+            else:
+                p = a + b - c; pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                pr = a if pa <= pb and pa <= pc else (b if pb <= pc else c)
+            enc.append((cur[i] - pr) % 256)
+        out += bytes([f]) + bytes(enc); prev = cur
+    def chunk(k, d): return struct.pack(">I", len(d)) + k + d + struct.pack(">I", zlib.crc32(k + d))
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, len(rows), 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(out)) + chunk(b"IEND", b"")
+rows = [[rnd.randrange(256) for _ in range(6 * 4)] for _ in range(5)]
+img, why = call(png.decode, filtered(6, rows, [0, 1, 2, 3, 4]), inflate)
+check(img is not None and [img[b"pixels"][i] for i in range(1, 6 * 4 * 5 + 1)] == [v for r in rows for v in r], "PNG decode: filters none, sub, up, average, Paeth (%s)" % why)
+
+# --- chat bubbles: HabboAir.swf's asset names from its ActionScript (chatstyles.lua) ----------------------
+def u30(v):
+    out = b""
+    while True:
+        c = v & 0x7f; v >>= 7
+        if v: out += bytes([c | 0x80])
+        else: return out + bytes([c])
+def abc_block(assign):  # assign: [(field, className)]: code doing Class.field = className
+    strs = []
+    def si(t):
+        if t not in strs: strs.append(t)
+        return strs.index(t) + 1
+    mns = []
+    def mi(t):
+        mns.append(si(t)); return len(mns)
+    code = b""
+    for field, cls in assign:
+        y, x = mi(cls), mi(field)
+        code += b"\x60" + u30(y) + b"\x5e" + u30(x) + b"\x2b\x61" + u30(x)
+    code += b"\x47"  # returnvoid
+    b = struct.pack("<HH", 16, 46) + u30(0) + u30(0) + u30(0)
+    b += u30(len(strs) + 1) + b"".join(u30(len(t.encode())) + t.encode() for t in strs)
+    b += u30(2) + b"\x16" + u30(0)          # one namespace (package "")
+    b += u30(0)                               # namespace sets
+    b += u30(len(mns) + 1) + b"".join(b"\x07" + u30(1) + u30(n) for n in mns)
+    b += u30(1) + u30(0) + u30(0) + u30(0) + b"\x00"   # one method, no params
+    b += u30(0)                               # metadata
+    b += u30(0)                               # classes
+    b += u30(1) + u30(0) + u30(0)             # a script, no traits
+    b += u30(1) + u30(0) + u30(4) + u30(1) + u30(0) + u30(1) + u30(len(code)) + code + u30(0) + u30(0)
+    return b
+def doabc(data): return tag(82, struct.pack("<I", 1) + b"frame1\0" + data)
+def jpeg2(cid, data): return tag(21, struct.pack("<H", cid) + data)
+bubble = Image.new("RGBA", (51, 24), (255, 255, 255, 255)); bubble.putpixel((0, 0), (0, 0, 0, 0))
+pointer = Image.new("P", (9, 6)); pointer.putpalette([0, 0, 0, 255, 255, 255] + [0] * 762); pointer.putdata([1] * 54)
+styles_xml = b'<chatstyles>\n<style id="0" assetId="normal" systemStyle="false"/>\n<style id="2" assetId="bot" systemStyle="true"/>\n<style id="9" assetId="gone" systemStyle="false"/>\n</chatstyles>'
+air = swf_file([
+    doabc(abc_block([("chatstyles_xml", "chatstyles_xml$1"), ("style_normal_regpoints", "_regPoints_txt$a"), ("style_normal_chat_bubble_base", "chat_bubble_base_png$b"),
+                     ("style_normal_chat_bubble_pointer", "chat_bubble_pointer_png$c"), ("style_bot_regpoints", "_regPoints_txt$d"), ("style_bot_chat_bubble_base", "chat_bubble_base_png$e")])),
+    binary(1, styles_xml), binary(2, b"9sliceXY = 29,17\r\n9sliceWH = 1,1\r\nfaceXY = 13,12\r\ntextColorRGB = 0x000000\r\n"), jpeg2(3, png_bytes(bubble)), jpeg2(4, png_bytes(pointer, transparency=0)),
+    binary(5, b"9sliceXY = 29,17\ntextColorRGB = 0xffffff\n"), jpeg2(6, png_bytes(bubble)),
+    symbols([(1, "chatstyles_xml$1"), (2, "_regPoints_txt$a"), (3, "chat_bubble_base_png$b"), (4, "chat_bubble_pointer_png$c"), (5, "com.sulake._regPoints_txt$d"), (6, "chat_bubble_base_png$e")]),
+])
+L8 = runtime()
+H8 = L8.eval(b"BOBBA.habbo")
+ok8, why8 = call(H8.saveChatStyles, air, b"77")
+check(ok8 == True, "chat styles: read out of HabboAir.swf (%s)" % why8)
+files8 = L8.globals().PY_FILES
+L8.execute(b'BOBBA.habbo.remembered = function(n, u, cb) cb([[{"flash-windows":"https:\\/\\/x\\/w.zip","flash-windows-version":"77"}]]) end')
+cs = {}
+H8.chatStyles(lambda st, err=None: cs.update(st=st, err=err))
+st = cs.get("st")
+check(st is not None, "chat styles: read back from the cache, nothing downloaded (%s)" % cs.get("err"))
+if st is not None:
+    n0, b2 = st[0], st[2]
+    check(n0[b"asset"] == b"normal" and n0[b"system"] == False and n0[b"reg"][b"9sliceXY"] == b"29,17" and n0[b"reg"][b"faceXY"] == b"13,12", "chat styles: the normal style's measurements")
+    check(n0[b"base"][b"width"] == 51 and n0[b"base"][b"height"] == 24 and n0[b"base"][b"texWidth"] == 64 and n0[b"base"][b"texHeight"] == 32 and n0[b"color"] is None and n0[b"pointer"][b"width"] == 9,
+          "chat styles: its pictures, their sizes and power-of-two textures")
+    check(b2[b"asset"] == b"bot" and b2[b"system"] == True and b2[b"reg"][b"textColorRGB"] == b"0xffffff", "chat styles: a class in a package found by its short name")
+    check(st[9] is None, "chat styles: a style without its files left out")
+    saved = Image.open(io.BytesIO(files8[n0[b"base"][b"path"]]))
+    check(saved.size == (64, 32) and saved.getpixel((0, 0))[3] == 0 and saved.getpixel((1, 0)) == (255, 255, 255, 255) and saved.getpixel((51, 0))[3] == 0, "chat styles: the bubble saved as it was, padded")
+    sp = Image.open(io.BytesIO(files8[n0[b"pointer"][b"path"]])).convert("RGBA")
+    check(sp.getpixel((0, 0)) == (255, 255, 255, 255), "chat styles: a palette picture saved in colour")
+if os.environ.get("HABBO_AIR"):
+    L9 = runtime()
+    ok9, why9 = call(L9.eval(b"BOBBA.habbo").saveChatStyles, open(os.environ["HABBO_AIR"], "rb").read(), b"real")
+    idx = [v for k, v in L9.globals().PY_FILES.items() if k.endswith(b"styles.txt")]
+    check(ok9 == True and idx and b"R\t0\tfaceXY\t13,12" in idx[0], "chat styles: Habbo's real HabboAir.swf (%s)" % why9)
+    if idx:
+        for line in idx[0].split(b"\n")[:14]: print("        " + line.decode())
+        for k, v in L9.globals().PY_FILES.items():
+            if b"normal_" in k and k.endswith(b".png"): open(os.path.join(os.environ.get("HABBO_AIR_OUT", "/tmp"), k.decode().split("/")[-1]), "wb").write(v)
+
 print("\n%d failed" % failed)
 sys.exit(1 if failed else 0)
