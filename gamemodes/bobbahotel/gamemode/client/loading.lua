@@ -85,6 +85,8 @@ hook.Add("Think", "bobba.loading", function()
 		p.Paint = function(self, w, h) paint(w, h) end
 		LD.panel = p
 	end
+	-- (the game's window changed size)
+	if LD.panel:GetWide() ~= ScrW() or LD.panel:GetTall() ~= ScrH() then LD.panel:SetSize(ScrW(), ScrH()) end
 	local _, allDone = LD.progress()
 	if allDone or SysTime() - LD.started > LD.MAX_WAIT then
 		LD.active = false

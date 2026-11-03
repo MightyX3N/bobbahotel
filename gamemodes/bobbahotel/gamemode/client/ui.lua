@@ -631,6 +631,21 @@ function U.window(id, width, height, draw)
 		if w.drag then w.drag = nil self:MouseCapture(false) end
 	end
 	p.Think = function(self)
+		-- the game's window changed size (full screen on or off, a new resolution): the window keeps
+		-- its place on the screen (where its middle was, as a share of the screen), at the new UI size,
+		-- and stays on the screen
+		local sw, sh, scale = ScrW(), ScrH(), U.scale()
+		if w.screen and (w.screen[1] ~= sw or w.screen[2] ~= sh or w.screen[3] ~= scale) then
+			local ox, oy = self:GetPos()
+			local fx = (ox + self:GetWide() / 2) / math.max(1, w.screen[1])
+			local fy = (oy + self:GetTall() / 2) / math.max(1, w.screen[2])
+			local pw, ph = math.floor(w.width * scale + 0.5), math.floor((w.height + 2) * scale + 0.5)
+			self:SetSize(pw, ph)
+			self:SetPos(math.Clamp(math.floor(fx * sw - pw / 2), 0, math.max(0, sw - pw)), math.Clamp(math.floor(fy * sh - ph / 2), 0, math.max(0, sh - ph)))
+			w.drag = nil
+			self:MouseCapture(false)
+		end
+		w.screen = { sw, sh, scale }
 		if w.drag then
 			local x, y = input.GetCursorPos()
 			self:SetPos(math.Clamp(x - w.drag.mx, 0, ScrW() - self:GetWide()), math.Clamp(y - w.drag.my, 0, ScrH() - self:GetTall()))
