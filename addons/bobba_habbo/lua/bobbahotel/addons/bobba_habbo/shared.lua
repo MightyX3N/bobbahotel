@@ -140,7 +140,14 @@ function H.catalogPages(fd, price)
 	-- the furni, by line; trophies (specialtype 11, engraved when bought) on a page of their own
 	local lines = {}
 	local trophies = {}
+	-- rares and limited editions: on a staff-only tab, free (staff give them)
+	local rareLines = {}
 	for class, f in pairs(fd.byClass) do
+		if not f.wall and f.special == 1 and H.catalogRare(class, f) and f.name ~= "" and not f.name:find(" name$") then
+			local list = rareLines[f.line]
+			if not list then list = {} rareLines[f.line] = list end
+			list[#list + 1] = { kind = class, name = f.name, price = {}, order = f.id or 0 }
+		end
 		if not f.wall and f.special == 11 and (f.offer or -1) ~= -1 then
 			trophies[#trophies + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, trophy = true }
 		end
@@ -167,43 +174,48 @@ function H.catalogPages(fd, price)
 		end
 		return { name = name, children = parts, iconKind = offers[1].kind }
 	end
-	-- families: lines with the same name and a year
-	local families, single = {}, {}
-	for line, offers in pairs(lines) do
-		local base, year = family(line)
-		if base then
-			families[base] = families[base] or {}
-			families[base][#families[base] + 1] = { line = line, year = year, offers = offers }
-		else
-			single[#single + 1] = { line = line, offers = offers }
-		end
-	end
-	-- (a line with the family's own name, "xmas" or "habboween", joins it too)
-	for base, list in pairs(families) do
-		if lines[base] then
-			for i = #single, 1, -1 do if single[i].line == base then table.remove(single, i) end end
-			list[#list + 1] = { line = base, year = nil, offers = lines[base] }
-		end
-	end
-	local top = {}
-	for base, list in pairs(families) do
-		if #list == 1 then
-			local l = list[1]
-			top[#top + 1] = page(H.catalogLineName(l.line), l.offers)
-		else
-			table.sort(list, function(a, b) return (a.year or "0") < (b.year or "0") end)
-			local name = H.CATALOG_FAMILY_NAMES[base] or H.catalogLineName(base)
-			local children = {}
-			for _, l in ipairs(list) do
-				local label = l.year and (l.year:find("^%d+$") and l.year or H.catalogLineName(l.year)) or name
-				children[#children + 1] = page(label, l.offers)
+	-- the pages for some lines: families over the years together, the rest one each
+	local function group(lines)
+		-- families: lines with the same name and a year
+		local families, single = {}, {}
+		for line, offers in pairs(lines) do
+			local base, year = family(line)
+			if base then
+				families[base] = families[base] or {}
+				families[base][#families[base] + 1] = { line = line, year = year, offers = offers }
+			else
+				single[#single + 1] = { line = line, offers = offers }
 			end
-			top[#top + 1] = { name = name, children = children, iconKind = children[#children].iconKind }
 		end
+		-- (a line with the family's own name, "xmas" or "habboween", joins it too)
+		for base, list in pairs(families) do
+			if lines[base] then
+				for i = #single, 1, -1 do if single[i].line == base then table.remove(single, i) end end
+				list[#list + 1] = { line = base, year = nil, offers = lines[base] }
+			end
+		end
+		local top = {}
+		for base, list in pairs(families) do
+			if #list == 1 then
+				local l = list[1]
+				top[#top + 1] = page(H.catalogLineName(l.line), l.offers)
+			else
+				table.sort(list, function(a, b) return (a.year or "0") < (b.year or "0") end)
+				local name = H.CATALOG_FAMILY_NAMES[base] or H.catalogLineName(base)
+				local children = {}
+				for _, l in ipairs(list) do
+					local label = l.year and (l.year:find("^%d+$") and l.year or H.catalogLineName(l.year)) or name
+					children[#children + 1] = page(label, l.offers)
+				end
+				top[#top + 1] = { name = name, children = children, iconKind = children[#children].iconKind }
+			end
+		end
+		for _, l in ipairs(single) do
+			top[#top + 1] = page(H.CATALOG_FAMILY_NAMES[l.line] or H.catalogLineName(l.line), l.offers)
+		end
+		return top
 	end
-	for _, l in ipairs(single) do
-		top[#top + 1] = page(H.CATALOG_FAMILY_NAMES[l.line] or H.catalogLineName(l.line), l.offers)
-	end
+	local top = group(lines)
 	if #trophies > 0 then
 		-- (with the "trophies" line's own furni when there is one: one Trophies page)
 		local p
@@ -221,7 +233,9 @@ function H.catalogPages(fd, price)
 		if (a.name == "Other") ~= (b.name == "Other") then return b.name == "Other" end
 		return a.name:lower() < b.name:lower()
 	end)
-	return { { name = "Furni", children = top } }
+	local rareTop = group(rareLines)
+	table.sort(rareTop, function(a, b) return a.name:lower() < b.name:lower() end)
+	return { { name = "Furni", children = top }, { name = "Rares", staff = true, children = rareTop } }
 end
 
 if SERVER and BOBBA.catalog then

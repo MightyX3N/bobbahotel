@@ -432,7 +432,8 @@ function D:input(id, x, y, w, h, opts)
 	e.bobbaSeen = true
 	local focus = e:HasFocus()
 	-- the box (focus: Bootstrap's light blue border)
-	self:box(x, y, w, h, 1, 3.2, focus and U.C.inputFocus or U.C.inputBorder, U.C.white)
+	-- (opts.bare: no box, the text straight on what's under it, like the gift tag's greeting)
+	if not opts.bare then self:box(x, y, w, h, 1, 3.2, focus and U.C.inputFocus or U.C.inputBorder, U.C.white) end
 	local s = self.s
 	local X, Y = math.floor((x + 7) * s + 0.5), math.floor((y + (opts.multiline and 4 or 1)) * s + 0.5)
 	e:SetPos(X, Y)

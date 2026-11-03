@@ -15,6 +15,8 @@ local function start()
 			{ name = "Lights", offers = { { kind = "lamp", name = "Lava Lamp", price = { credits = 20, duckets = 10 } } } },
 			{ name = "Teleports", offers = { { kind = "tele", name = "Door", price = { credits = 6 }, pair = true } } },
 			{ name = "Trophies", layout = "trophies", offers = { { kind = "prizetrophy*1", name = "Classic trophy", price = { credits = 10 }, trophy = true } } },
+		} }, { name = "Rares", staff = true, children = {
+			{ name = "Thrones", offers = { { kind = "throne", name = "Throne", price = {} } } },
 		} } })
 	end
 	BOBBA.live.start()
@@ -230,6 +232,80 @@ T["a trophy is engraved with who bought it, when, and what they wrote"] = functi
 	eq(#list, 1, "one trophy, whatever the amount")
 	local row = BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { list[1].id })
 	eq(row.data, "Mia\t" .. os.date("%d-%m-%Y", P.time()) .. "\tBest room\nof 2026")
+end
+
+T["the staff's rares tab: only staff see it, search it and take from it (free)"] = function()
+	local mia = start()
+	P.fromPlayer(mia, "catalog.index")
+	local tabs = last(mia, "catalog.index").pages
+	for _, t in ipairs(tabs) do assert(t.name ~= "Rares", "Mia isn't staff") end
+	local rares = BOBBA.catalog.build(function() end)
+	P.fromPlayer(mia, "catalog.search", { query = "throne" })
+	eq(#last(mia, "catalog.search").offers, 0)
+	-- the Rares tab's page is number 9 here (tabs and pages are numbered in order); asking for it anyway
+	P.fromPlayer(mia, "catalog.buy", { page = 9, offer = 7, amount = 1 })
+	assert(last(mia, "catalog.error"), "not hers to take")
+	P.granted[mia] = { ["bobba.staff.rares"] = true }
+	P.fromPlayer(mia, "catalog.index")
+	tabs = last(mia, "catalog.index").pages
+	local rareTab
+	for _, t in ipairs(tabs) do if t.name == "Rares" then rareTab = t end end
+	assert(rareTab, "staff see it")
+	local page = rareTab.children[1]
+	P.fromPlayer(mia, "catalog.page", { id = page.id })
+	local offer = last(mia, "catalog.page").offers[1]
+	P.fromPlayer(mia, "catalog.buy", { page = page.id, offer = offer.id, amount = 2 })
+	eq(#BOBBA.inventory.list(mia.key), 2)
+	eq(BOBBA.wallet.get(mia.key).credits, 5000, "free")
+	local _ = rares
+end
+
+T["gifts: bought for someone (by name, online or not), wrapped with a greeting; opened in a room it's what was in it"] = function()
+	local mia = start()
+	local bo = { key = "765611980002", name = "Bo" }
+	P.fromPlayer(bo, "room.ready")
+	P.disconnect(bo)
+	BOBBA.items.define("present_gen3", { width = 1, length = 1, height = 0.5, category = "present" })
+	local pura = pages(mia)
+	local chair = offerOf(mia, pura)
+	P.fromPlayer(mia, "catalog.gift", { page = pura.id, offer = chair.id, receiver = "nobody", message = "hi" })
+	assert(last(mia, "catalog.error").message:find("nobody"), "no such player")
+	P.fromPlayer(mia, "catalog.gift", { page = pura.id, offer = chair.id, receiver = " bo ", message = "For your room\1!", box = 3, showFace = true })
+	local bought = last(mia, "catalog.bought")
+	assert(bought.gift)
+	eq(bought.receiver, "Bo")
+	eq(BOBBA.wallet.get(mia.key).credits, 4995, "Mia paid")
+	eq(#BOBBA.inventory.list(mia.key), 0)
+	local got = BOBBA.inventory.list(bo.key)
+	eq(#got, 1)
+	eq(got[1].kind, "present_gen3", "the box she picked")
+	local row = BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { got[1].id })
+	eq(row.data:match("^([^\t]*)\t([^\t]*)"), "Mia", "from Mia")
+	eq(select(2, row.data:match("^([^\t]*)\t([^\t]*)")), "For your room!")
+	-- Bo opens it in his room: the chair is where the box was
+	P.fromPlayer(bo, "room.ready")
+	P.fromPlayer(bo, "navigator.create", { name = "Bo's room", model = "a" })
+	P.fromPlayer(bo, "inventory.place", { id = got[1].id, x = 6, y = 3, dir = 2 })
+	local r = BOBBA.live.byPlayer[bo].room
+	assert(r.items[got[1].id], "the box is in the room")
+	P.fromPlayer(mia, "room.enter", { id = r.id })
+	P.fromPlayer(mia, "room.item.open", { id = got[1].id })
+	assert(last(mia, "room.error"), "not Mia's room")
+	P.fromPlayer(bo, "room.item.open", { id = got[1].id })
+	local opened = last(bo, "gift.opened")
+	eq(opened.kind, "chair")
+	eq(opened.inRoom, true)
+	eq(opened.from, "Mia")
+	eq(r.items[got[1].id], nil, "the box is gone")
+	local c = r.items[opened.id]
+	eq(c.kind .. " " .. c.x .. "," .. c.y, "chair 6,3")
+	eq(#BOBBA.inventory.list(bo.key), 0)
+	-- club and teleports aren't gifts
+	local _, _, clubPage = pages(mia)
+	P.fromPlayer(mia, "catalog.page", { id = clubPage.id })
+	local month = last(mia, "catalog.page").offers[1]
+	P.fromPlayer(mia, "catalog.gift", { page = clubPage.id, offer = month.id, receiver = "Bo" })
+	assert(last(mia, "catalog.error").message:find("gift"))
 end
 
 T["staff: giving and taking"] = function()

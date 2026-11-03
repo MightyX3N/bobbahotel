@@ -25,6 +25,10 @@ CAT.CLUB_OFFERS = {
 }
 CAT.CLUB_NAMES = { hc = "Habbo Club", vip = "VIP" }
 CAT.MAX_AMOUNT = 100
+
+-- pages only staff see (a page with staff = true, and everything under it): rares and limited
+-- editions, given for free
+BOBBA.perms.define("bobba.staff.rares", { default = "admin", description = "See the catalogue's staff pages (rares) and take from them" })
 CAT.TROPHY_MAX = 300
 
 local tree, pagesById, building
@@ -36,8 +40,9 @@ local function build(cb)
 	local function done(pages)
 		pagesById = {}
 		local nextPage, nextOffer = 1, 1
-		local function number(list)
+		local function number(list, staff)
 			for _, p in ipairs(list) do
+				p.staff = p.staff or staff
 				p.id = nextPage
 				nextPage = nextPage + 1
 				pagesById[p.id] = p
@@ -45,7 +50,7 @@ local function build(cb)
 					o.id = nextOffer
 					nextOffer = nextOffer + 1
 				end
-				number(p.children or {})
+				number(p.children or {}, p.staff)
 			end
 		end
 		-- the club (a tab with a buy page for each club on sale, Habbo's "vip_buy"), after the addon's
@@ -77,14 +82,18 @@ CAT.build = build
 -- forgets the catalogue (an addon's furni changed)
 function CAT.reset() tree, pagesById = nil, nil end
 
-local function index(list)
+local function index(list, staff)
 	local out = {}
 	for _, p in ipairs(list) do
-		out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName,
-			children = p.children and index(p.children) or nil }
+		if staff or not p.staff then
+			out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName,
+				children = p.children and index(p.children, staff) or nil }
+		end
 	end
 	return out
 end
+
+local function isStaff(player) return BOBBA.perms.has(player, "bobba.staff.rares") end
 
 local function pageMessage(p)
 	local offers = {}
@@ -97,15 +106,15 @@ end
 -- the furni whose name has the words in it (Nitro's catalogue search: names and class names),
 -- and the pages they're on
 CAT.SEARCH_MAX = 250
-function CAT.search(query)
+function CAT.search(query, staff)
 	query = tostring(query or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
 	local offers, pages, seen = {}, {}, {}
 	if query == "" then return offers, pages end
 	for id = 1, #pagesById do
 		local p = pagesById[id]
-		for _, o in ipairs(p.offers or {}) do
+		for _, o in ipairs((staff or not p.staff) and p.offers or {}) do
 			if o.kind and #offers < CAT.SEARCH_MAX and ((o.name or ""):lower():find(query, 1, true) or o.kind:lower():find(query, 1, true)) then
-				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price }
+				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price, pair = o.pair, trophy = o.trophy }
 				if not seen[p.id] then seen[p.id] = true pages[#pages + 1] = p.id end
 			end
 		end
@@ -113,12 +122,27 @@ function CAT.search(query)
 	return offers, pages
 end
 
+-- a page and one of its offers, if the player may have it: page, offer or nil, why
+function CAT.find(player, pageId, offerId)
+	local page = pagesById and pagesById[tonumber(pageId) or -1]
+	if not page or (page.staff and not isStaff(player)) then return nil, "that page isn't in the catalogue" end
+	for _, o in ipairs(page.offers or {}) do if o.id == tonumber(offerId) then return page, o end end
+	return nil, "that isn't on this page"
+end
+
+-- the engraving on a trophy someone buys
+function CAT.engraving(player, text)
+	local P = BOBBA.platform
+	text = tostring(text or ""):gsub("[%z\1-\9\11-\31]", ""):sub(1, CAT.TROPHY_MAX)
+	return P.playerName(player) .. "\t" .. os.date("%d-%m-%Y", P.time()) .. "\t" .. text
+end
+
 -- buys: n of an offer for a player. true or false, why
 function CAT.buy(player, pageId, offerId, amount, extra)
 	local P = BOBBA.platform
 	local key = P.playerKey(player)
 	local page = pagesById and pagesById[tonumber(pageId) or -1]
-	if not page then return false, "that page isn't in the catalogue" end
+	if not page or (page.staff and not isStaff(player)) then return false, "that page isn't in the catalogue" end
 	local offer
 	for _, o in ipairs(page.offers or {}) do if o.id == tonumber(offerId) then offer = o end end
 	if not offer then return false, "that isn't on this page" end
@@ -139,8 +163,7 @@ function CAT.buy(player, pageId, offerId, amount, extra)
 			end
 		elseif offer.trophy then
 			-- a trophy is engraved with who bought it, when, and their words (Arcturus: name TAB date TAB text)
-			local text = tostring(extra or ""):gsub("[%z\1-\9\11-\31]", ""):sub(1, CAT.TROPHY_MAX)
-			BOBBA.inventory.give(key, offer.kind, 1, P.playerName(player) .. "\t" .. os.date("%d-%m-%Y", P.time()) .. "\t" .. text)
+			BOBBA.inventory.give(key, offer.kind, 1, CAT.engraving(player, extra))
 		else
 			BOBBA.inventory.give(key, offer.kind, amount)
 		end
@@ -156,17 +179,17 @@ function CAT.start()
 		if k == "club.mode" or k:find("%.price") then CAT.reset() end
 	end)
 	P.receive("catalog.index", function(player)
-		build(function(pages) P.send("catalog.index", { pages = index(pages) }, player) end)
+		build(function(pages) P.send("catalog.index", { pages = index(pages, isStaff(player)) }, player) end)
 	end)
 	P.receive("catalog.page", function(player, data)
 		build(function()
 			local p = pagesById[tonumber(data.id) or -1]
-			if p and p.offers then P.send("catalog.page", pageMessage(p), player) end
+			if p and p.offers and (not p.staff or isStaff(player)) then P.send("catalog.page", pageMessage(p), player) end
 		end)
 	end)
 	P.receive("catalog.search", function(player, data)
 		build(function()
-			local offers, pages = CAT.search(data.query)
+			local offers, pages = CAT.search(data.query, isStaff(player))
 			P.send("catalog.search", { query = tostring(data.query or ""), offers = offers, pages = pages }, player)
 		end)
 	end)

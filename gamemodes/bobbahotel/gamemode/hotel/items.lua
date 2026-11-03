@@ -67,6 +67,8 @@ function items.define(kind, def)
 	-- the stacking helper (Nitro's furniture_custom_stack_height; Arcturus InteractionStackHelper):
 	-- its height is set by hand, and furni on its tiles go at that height, whatever is under them
 	if def.stackHelper == nil then def.stackHelper = def.logic == "furniture_custom_stack_height" end
+	-- gift boxes (category present): opened, not used (gifts.lua)
+	if def.present == nil then def.present = def.category == "present" end
 	def.directions = def.directions or { 0, 2, 4, 6 }
 	def.states = math.max(1, def.states or 1)
 	if def.stack == nil then def.stack = not def.sit and not def.lay end
@@ -391,6 +393,12 @@ function items.pickup(r, player, id)
 	else
 		BOBBA.store.query("DELETE FROM bobbahotel_items WHERE id = ?", { it.id })
 	end
+	items.removed(r, it)
+	return true
+end
+
+-- a furni that's gone from a room (already out of r.items): everyone's told, its tiles freed
+function items.removed(r, it)
 	broadcast(r, "room.item.remove", { id = it.id })
 	if it.def then
 		local tiles = items.footprint(it.def, it.x, it.y, it.dir)
@@ -398,7 +406,6 @@ function items.pickup(r, player, id)
 		items.settleUnits(r, tiles)
 	end
 	BOBBA.events.emit("itemRemoved", r, it)
-	return true
 end
 
 -- Using a furni (double-click in Habbo): its next state, for the room's owner

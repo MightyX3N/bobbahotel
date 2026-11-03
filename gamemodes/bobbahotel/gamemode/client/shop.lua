@@ -227,6 +227,7 @@ end
 
 -- --- the catalogue ----------------------------------------------------------------------------------
 SHOP.cat = SHOP.cat or { pages = nil, open = {}, quantity = 1, state = "none" }
+SHOP.gift = SHOP.gift or { box = 1, showFace = true }
 local CAT = SHOP.cat
 
 local function findPage(list, id, parent)
@@ -286,8 +287,13 @@ P.receive("catalog.search", function(_, data)
 	CAT.search = data
 	CAT.offer, CAT.quantity, CAT.state = nil, 1, "none"
 end)
-P.receive("catalog.bought", function() CAT.state = "none" end)
 P.receive("catalog.error", function(_, data)
+	if data.gift then
+		-- (in the gift window: under the receiver; "User not found")
+		SHOP.gift.sending = false
+		SHOP.gift.error = tostring(data.message):find("^no one") and U.text("catalog.gift_wrapping.receiver_not_found.title", "User not found") or tostring(data.message)
+		return
+	end
 	CAT.state = "failed"
 	CAT.stateUntil = SysTime() + 3
 	chat.AddText(Color(255, 120, 120), "[Bobba] ", color_white, tostring(data.message))
@@ -414,6 +420,97 @@ local function buyButton(d, x, y, w, h, offer, quantity, buyColor, page, buyKey)
 	d:text(d:fit(label, 12.6, w - 16), 12.6, x + w / 2, y + h / 2, Color(textColor.r, textColor.g, textColor.b, disabled and 166 or 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
+-- --- gifts (CatalogGiftView) -------------------------------------------------------------------------
+-- the boxes (the server's gifts.lua has the same list): Habbo's six gift boxes, then ten wrappings
+SHOP.GIFT_BOXES = { "present_gen1", "present_gen2", "present_gen3", "present_gen4", "present_gen5", "present_gen6" }
+for i = 1, 10 do SHOP.GIFT_BOXES[#SHOP.GIFT_BOXES + 1] = "present_wrap*" .. i end
+local GIFT = SHOP.gift
+
+-- the Gift button: one of it (Nitro: not with an amount over 1), not club or teleports
+function SHOP.giftButton(d, x, y, w, offer, page, quantity)
+	local can = offer.kind and not offer.club and not offer.pair and quantity <= 1
+	d:btn(x, y, w, 28.9, U.C.primary, function()
+		GIFT.offer, GIFT.page, GIFT.error, GIFT.sending = offer, offer.page or page.id, nil, false
+		U.window("catalog-gift", 325, 404, SHOP.drawGift)
+	end, not can)
+	d:text(U.text("catalog.purchase_confirmation.gift", "Give as a gift"), 12.6, x + w / 2, y + 28.9 / 2, Color(255, 255, 255, can and 255 or 166), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+end
+
+P.receive("catalog.bought", function(_, data)
+	CAT.state = "none"
+	if data.gift then
+		GIFT.sending = false
+		if U.windows["catalog-gift"] then U.windows["catalog-gift"]:close() end
+		chat.AddText(Color(120, 200, 120), "[Bobba] ", color_white, "Your gift is on its way to " .. tostring(data.receiver or "them") .. ".")
+	end
+end)
+
+function SHOP.drawGift(w, d)
+	local offer = GIFT.offer
+	if not offer then w:close() return end
+	d:slimCard(U.text("catalog.gift_wrapping.title", "Customize your gift"))
+	local x, cw = 9, d.width - 18
+	-- the receiver (by name; "User not found" under it when they aren't)
+	d:text(U.text("catalog.gift_wrapping.receiver", "Receiver (always add a Habbo name)"), 14.4, x, 37 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	local receiver = d:input("receiver", x, 57, cw, 28.9, { max = 50, onChange = function() GIFT.error = nil end })
+	if GIFT.error then d:box(x, 57, cw, 28.9, 1, 3.2, U.C.danger, Color(0, 0, 0, 0)) end
+	-- the gift tag: Habbo's card, your face on the left, the greeting, your name under it
+	local gy = 94
+	local gx = (d.width - 306) / 2
+	d:icon("gift-card", gx, gy)
+	local me = R.units and R.units[R.you]
+	local AE = BOBBA.avatarEditor
+	if GIFT.showFace and me and AE and AE.drawPreview then
+		d:clip(gx + 12.5, gy + 50, 40, 50, function()
+			AE.drawPreview(me.figure or "", me.gender or "M", 2, (gx + 12.5 + 20) * d.s, (gy + 50 - 18) * d.s, d.s)
+		end)
+	end
+	local mx, my, mw = gx + 65 + 12, gy + 24, 306 - 65 - 12 - 24
+	local msg = d:input("message", mx, my, mw, 149 - 24 - 24 - 20, { multiline = true, max = 140, bare = true,
+		placeholder = U.text("catalog.gift_wrapping_new.message_hint", U.text("catalog.gift_wrapping.greetings", "Type your greetings here")) })
+	d:text(U.text("catalog.gift_wrapping_new.message_from", "- %name%", { name = (me and me.name) or "" }), 14.4, gx + 306 - 24 - 4, gy + 149 - 24 - 8, U.C.black, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	-- show my face
+	local cy = gy + 149 + 8
+	d:click(x, cy, cw, 16, function() GIFT.showFace = not GIFT.showFace end)
+	if GIFT.showFace then
+		d:round(3.6, x, cy + 0.8, 14.4, 14.4, U.C.primary)
+		d:line(x + 3.5, cy + 0.8 + 7.5, x + 6, cy + 0.8 + 10.2, 2, U.C.white)
+		d:line(x + 6, cy + 0.8 + 10.2, x + 11, cy + 0.8 + 4.3, 2, U.C.white)
+	else
+		d:box(x, cy + 0.8, 14.4, 14.4, 1, 3.6, Color(0, 0, 0, 64), U.C.white)
+	end
+	d:text(d:fit(U.text("catalog.gift_wrapping.show_face.title", "Show my name and face on the gift tag"), 14.4, cw - 22), 14.4, x + 18.4, cy + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	-- the box: its picture, back and forward, its name and the price of wrapping
+	local by = cy + 28
+	local kind = SHOP.GIFT_BOXES[GIFT.box] or SHOP.GIFT_BOXES[1]
+	d:clip(x, by, 80, 80, function() furniIcon(d, kind, x, by, 80, 80) end)
+	local bx = x + 80 + 8
+	d:btn(bx, by, 30, 28.9, U.C.primary, function() GIFT.box = (GIFT.box - 2) % #SHOP.GIFT_BOXES + 1 end)
+	d:fa("chevron-left", bx + (30 - 12.6) / 2, by + (28.9 - 12.6) / 2, 12.6, U.C.white)
+	d:btn(bx + 30, by, 30, 28.9, U.C.primary, function() GIFT.box = GIFT.box % #SHOP.GIFT_BOXES + 1 end)
+	d:fa("chevron-right", bx + 30 + (30 - 12.6) / 2, by + (28.9 - 12.6) / 2, 12.6, U.C.white)
+	local tx = bx + 60 + 8
+	d:text(d:fit(U.text("catalog.gift_wrapping.pick_box", "Pick a box") .. " " .. GIFT.box .. "/" .. #SHOP.GIFT_BOXES, 14.4, d.width - 9 - tx, true), 14.4, tx, by + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
+	d:text(U.text("catalog.gift_wrapping_new.freeprice", "Price: Free"), 14.4, tx, by + 8 + 20, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	-- what's wrong, cancel, give
+	local fy = d.height - 8 - 28.9
+	if GIFT.error then
+		d:text(d:fit(GIFT.error, 12.6, cw), 12.6, x, fy - 10, U.C.danger, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	end
+	local hover = d:click(x, fy, 80, 28.9, function() w:close() end)
+	d:text(U.text("cancel", "Cancel"), 12.6, x + 8, fy + 14.45, hover and U.C.primary or U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	local gw = d:textWidth(U.text("catalog.gift_wrapping.give_gift", "Give this gift"), 12.6) + 16
+	d:btn(d.width - 9 - gw, fy, gw, 28.9, U.C.success, function()
+		if GIFT.sending then return end
+		local name = receiver:GetValue() or ""
+		if name:match("^%s*$") then GIFT.error = U.text("catalog.gift_wrapping.receiver_not_found.title", "User not found") return end
+		GIFT.sending = true
+		P.send("catalog.gift", { page = GIFT.page, offer = offer.id, receiver = name, message = msg:GetValue() or "",
+			box = GIFT.box, showFace = GIFT.showFace, extra = offer.trophy and CAT.trophyText or nil })
+	end, GIFT.sending)
+	d:text(U.text("catalog.gift_wrapping.give_gift", "Give this gift"), 12.6, d.width - 9 - gw / 2, fy + 14.45, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+end
+
 -- CatalogLayoutDefaultView: the offers (5 to a row), the chosen one on the right
 local function drawDefault(d, page, offers)
 	local trophies = page.layout == "trophies"
@@ -457,8 +554,7 @@ local function drawDefault(d, page, offers)
 		local prices = priceRows(offer, 1)
 		for i, r in ipairs(prices) do priceRow(d, r[1], r[2], rx + rw, 309.2 - (#prices - i) * 20, true) end
 		buyButton(d, rx, 329.2, rw, 28.9, offer, 1, U.C.primary, page)
-		d:btn(rx, 362.1, rw, 28.9, U.C.primary, function() end, true)
-		d:text(U.text("catalog.purchase_confirmation.gift", "Give as a gift"), 12.6, rx + rw / 2, 362.1 + 28.9 / 2, Color(255, 255, 255, 166), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		SHOP.giftButton(d, rx, 362.1, rw, offer, page, 1)
 		return
 	end
 	-- the amount (CatalogSpinnerWidgetView: 1 to 100)
@@ -474,9 +570,7 @@ local function drawDefault(d, page, offers)
 	local prices = priceRows(offer, CAT.quantity)
 	for i, r in ipairs(prices) do priceRow(d, r[1], r[2], rx + rw, 309.2 - (#prices - i) * 20, true) end
 	buyButton(d, rx, 329.2, rw, 28.9, offer, CAT.quantity, U.C.primary, page)
-	-- (gifts aren't in the hotel yet)
-	d:btn(rx, 362.1, rw, 28.9, U.C.primary, function() end, true)
-	d:text(U.text("catalog.purchase_confirmation.gift", "Give as a gift"), 12.6, rx + rw / 2, 362.1 + 28.9 / 2, Color(255, 255, 255, 166), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	SHOP.giftButton(d, rx, 362.1, rw, offer, page, CAT.quantity)
 end
 
 -- ClubOfferData: 31 days a month

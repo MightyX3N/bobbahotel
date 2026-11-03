@@ -21,6 +21,7 @@ return {
 	"hotel/wallet.lua",
 	"hotel/inventory.lua",
 	"hotel/catalog.lua",
+	"hotel/gifts.lua",
 	"hotel/navigator.lua",
 	"hotel/chat.lua",
 	"hotel/looks.lua",

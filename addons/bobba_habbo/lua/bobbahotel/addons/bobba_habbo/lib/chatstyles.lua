@@ -16,7 +16,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "6"
+H.CHAT_INDEX_VERSION = "7"
 
 -- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
 -- icons ("_off" is how Habbo shows one that isn't chosen)
@@ -49,7 +49,7 @@ for _, n in ipairs({ "bottom_bar_logo", "bottom_bar_home", "bottom_bar_navigator
 	"newnavigator_room_settings_icon", "newnavigator_event_icon", "icons_tickmark", "icons_back", "icons_next",
 	"messenger_caution", "messenger_notification_icon", "ask_for_friend_png", "follow_friend_png",
 	"relationship_status_heart", "relationship_status_smile", "relationship_status_bobba", "small_pen",
-	"inventory_inventory_empty", "talent_vip_reward", "vip_color", "trophy_bg_gold", "trophy_bg_silver", "trophy_bg_bronze" }) do
+	"inventory_inventory_empty", "talent_vip_reward", "vip_color", "trophy_bg_gold", "trophy_bg_silver", "trophy_bg_bronze", "catalogue_giftcard_blank" }) do
 	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
 end
 -- pictures cut out of a bigger one: the "me" menu's settings cog is the cog of settings_color, without

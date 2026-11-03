@@ -131,6 +131,8 @@ local function textEntry(parent)
 		SetDrawLanguageID = true, SetEditable = true, SetTextColor = true, SetCursorColor = true, SetHighlightColor = true, SelectAllOnFocus = true }
 	setmetatable(e, { __index = function(_, k)
 		if GMOD[k] then return function() end end
+		-- (fields of the hotel's own, bobba*, are just not set yet: nil, as in the game)
+		if type(k) == "string" and k:sub(1, 5) == "bobba" then return nil end
 		error("DTextEntry has no " .. tostring(k), 2)
 	end })
 	return e
