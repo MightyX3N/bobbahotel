@@ -10,7 +10,7 @@
 --                                                 category, specialtype (1: an ordinary furni))
 --   H.furniLibrary("throne", function(lib, err) ... end)
 --   H.furniInfo("throne", function(info, err) ... end)
---     info = { width, length, height, walk, sit, lay, directions = { 0, 2, 4, 6 }, states }
+--     info = { width, length, height, walk, sit, lay, directions = { 0, 2, 4, 6 }, states, logic }
 
 local H = BOBBA.habbo
 local P = BOBBA.platform
@@ -182,7 +182,8 @@ local function countStates(visualization)
 	for attrs in visualization:gmatch("<animation(%s[^>]*)>") do
 		local id = tonumber(attrs:match('%sid="(%d+)"'))
 		-- (the animations between two states don't count)
-		if id and not attrs:find("transition", 1, true) and id < 1000 and id > top then top = id end
+		-- (and Habbo's special ones from 100 up aren't states you switch to)
+		if id and not attrs:find("transition", 1, true) and id < 100 and id > top then top = id end
 	end
 	return math.max(1, top + 1)
 end
@@ -196,10 +197,11 @@ local function readInfo(text)
 	return {
 		width = tonumber(f.width) or 1, length = tonumber(f.length) or 1, height = tonumber(f.height) or 0,
 		walk = f.walk == "1", sit = f.sit == "1", lay = f.lay == "1", directions = dirs, states = tonumber(f.states) or 1,
+		logic = f.logic ~= "" and f.logic or nil,
 	}
 end
 
-H.FURNI_INFO_VERSION = "1"
+H.FURNI_INFO_VERSION = "2"
 
 function H.furniInfo(classname, cb)
 	if infos[classname] then cb(infos[classname]) return end
@@ -227,13 +229,16 @@ function H.furniInfo(classname, cb)
 			H.work(function()
 				local swf, why = H.swf.read(bytes, H.inflate, { images = false })
 				if not swf then done(nil, classname .. ": " .. tostring(why)) return end
-				local logic, vis
+				local logic, vis, index
 				for name, e in pairs(swf.byName) do
 					if e.binary then
 						if name:match("_logic$") then logic = e.binary end
 						if name:match("_visualization$") then vis = e.binary end
+						if name:match("_index$") then index = e.binary end
 					end
 				end
+				-- what kind of furni it is to use (Nitro's logic type: furniture_dice, furniture_multistate, ...)
+				local logicType = index and index:match('logic="([^"]*)"') or ""
 				if not logic or not vis then done(nil, classname .. ": no logic or visualization in its file") return end
 				local d = logic:match("<dimensions([^>]*)>") or ""
 				local height = tonumber(d:match('z="([%d%.%-]+)"')) or 0
@@ -245,7 +250,7 @@ function H.furniInfo(classname, cb)
 					"v=" .. H.FURNI_INFO_VERSION,
 					"width=" .. entry.x, "length=" .. entry.y, "height=" .. height,
 					"walk=" .. (entry.walk and 1 or 0), "sit=" .. (entry.sit and 1 or 0), "lay=" .. (entry.lay and 1 or 0),
-					"directions=" .. table.concat(dirs, ","), "states=" .. countStates(vis),
+					"directions=" .. table.concat(dirs, ","), "states=" .. countStates(vis), "logic=" .. logicType,
 				}, "\n") .. "\n"
 				P.writeData(path, text)
 				done(readInfo(text))

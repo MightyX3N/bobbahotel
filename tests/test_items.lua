@@ -11,6 +11,7 @@ local function start()
 	I.define("rug", { width = 2, length = 2, height = 0.01, walk = true })
 	I.define("bed", { width = 2, length = 3, height = 1.2, lay = true, directions = { 0, 2 } })
 	I.define("lamp", { width = 1, length = 1, height = 2, states = 2 })
+	I.define("dice", { width = 1, length = 1, height = 1, states = 7, logic = "furniture_dice" })
 	local mia, bo = { key = "765611980001", name = "Mia" }, { key = "765611980002", name = "Bo" }
 	local id = BOBBA.live.create(mia.key, mia.name, "model_a", "Mia's room")
 	BOBBA.live.enter(mia, id)
@@ -203,6 +204,44 @@ T["a server start: furni still being looked up come as soon as they're known, no
 	eq(box[#box][1].kind, "table")
 	eq(last(mia, "room.item.remove") ~= nil, true, "the unknown one is taken off the list coming")
 	I.resolver = old
+end
+
+T["a dice: anyone rolls it, walked next to it first; it lands on 1 to 6, again and again"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	local dice = place(r, mia, "dice", 8, 8, 0)
+	assert(dice, "placed")
+	-- Bo (not the owner) is at the door, far away: he walks there and it rolls when he's next to it
+	local rolls = 0
+	local old = P.after
+	local later = {}
+	P.after = function(_, fn) later[#later + 1] = fn end
+	assert(BOBBA.items.use(r, bo, dice.id))
+	eq(dice.state, 0, "not yet: walking")
+	tick(30)
+	local u = BOBBA.live.byPlayer[bo]
+	assert(math.abs(u.x - 8) <= 1 and math.abs(u.y - 8) <= 1, "next to it")
+	eq(dice.state, -1, "rolling")
+	eq(last(mia, "room.items")[1].state, -1, "everyone sees it roll")
+	for _ = 1, 20 do
+		for _, fn in ipairs(later) do fn() end
+		later = {}
+		assert(dice.state >= 1 and dice.state <= 6, "landed on " .. dice.state)
+		rolls = rolls + 1
+		assert(BOBBA.items.use(r, bo, dice.id))
+		eq(dice.state, -1, "rolls again")
+	end
+	P.after = old
+	eq(rolls, 20)
+end
+
+T["switching: round and round through its states"] = function()
+	local mia, _, r = start()
+	local lamp = place(r, mia, "lamp", 6, 3, 0)
+	for i = 1, 5 do assert(BOBBA.items.use(r, mia, lamp.id)) eq(lamp.state, i % 2) end
+	lamp.state = 9
+	assert(BOBBA.items.use(r, mia, lamp.id))
+	eq(lamp.state, 0, "a state it can't have starts again")
 end
 
 return T

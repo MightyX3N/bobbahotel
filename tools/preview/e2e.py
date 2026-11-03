@@ -90,7 +90,7 @@ def main():
             p = spec.split(",")
             res = S.eval("""function(id, kind, x, y, dir, state)
                 local out
-                BOBBA.items.place(BOBBA.live.rooms[id], nil, kind, x, y, dir, function(it, why) out = it and "ok" or why if it and state > 0 then it.state = state BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end end)
+                BOBBA.items.place(BOBBA.live.rooms[id], nil, kind, x, y, dir, function(it, why) out = it and "ok" or why if it and state ~= 0 then it.state = state BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end end)
                 for _ = 1, 200 do if out then break end BOBBA.platform.runTimers() end
                 return out end""")(room_id, p[0], int(p[1]), int(p[2]), int(p[3]), int(p[4]) if len(p) > 4 else 0)
             print("furni", spec, "->", res)

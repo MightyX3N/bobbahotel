@@ -344,15 +344,102 @@ function items.pickup(r, player, id)
 end
 
 -- Using a furni (double-click in Habbo): its next state, for the room's owner
+-- What using a furni does, by its logic type (Nitro's; Arcturus has an interaction for each):
+--   anyone: not only those who may change the room; adjacent: you have to stand next to it (you're
+--   walked there first, like Habbo); roll: it spins (state "rolling") for some seconds, then lands
+--   on a random state from..to
+items.USES = {
+	furniture_dice = { anyone = true, adjacent = true, roll = { rolling = -1, seconds = 1.5, from = 1, to = 6 } },
+	furniture_bottle = { anyone = true, roll = { rolling = -1, seconds = 2, from = 0, to = 7 } },
+	furniture_habbowheel = { anyone = true, roll = { rolling = -1, seconds = 3, from = 1, to = 10 } },
+	furniture_random_state = { roll = { rolling = nil, seconds = 0 } },
+}
+
+local function setState(r, it, state, passing)
+	it.state = state
+	-- (a state it's only passing through, like a dice rolling, isn't saved)
+	if not passing then BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end
+	broadcast(r, "room.items", { snapshot(it) })
+end
+
+-- is a unit next to a furni (on a tile touching it, corners too)?
+local function nextTo(it, ux, uy)
+	for _, t in ipairs(items.footprint(it.def, it.x, it.y, it.dir)) do
+		if math.abs(t.x - ux) <= 1 and math.abs(t.y - uy) <= 1 then return true end
+	end
+	return false
+end
+
+-- the closest tile next to a furni someone can stand on
+local function tileNextTo(r, it, u)
+	local best, bestD
+	local fp = items.footprint(it.def, it.x, it.y, it.dir)
+	local on = {}
+	for _, t in ipairs(fp) do on[t.x .. "," .. t.y] = true end
+	for _, t in ipairs(fp) do
+		for dx = -1, 1 do
+			for dy = -1, 1 do
+				local x, y = t.x + dx, t.y + dy
+				local tile = PF.tile(r.grid, x, y)
+				if not on[x .. "," .. y] and tile and tile.state ~= PF.BLOCKED and tile.state ~= PF.INVALID then
+					local d = (x - u.x) ^ 2 + (y - u.y) ^ 2
+					if not bestD or d < bestD then best, bestD = { x = x, y = y }, d end
+				end
+			end
+		end
+	end
+	return best
+end
+
+-- Using a furni (double-click in Habbo)
 function items.use(r, player, id)
 	local it = r.items[tonumber(id) or -1]
 	if not it or not it.def then return false, "no such furni" end
-	if not items.canEdit(player, r) then return false, "only the room's owner can use this" end
+	local use = items.USES[it.def.logic or ""] or {}
+	if not use.anyone and not items.canEdit(player, r) then return false, "only the room's owner can use this" end
+	if use.adjacent then
+		local u = BOBBA.live.byPlayer[player]
+		if not u or u.room ~= r then return false end
+		if not nextTo(it, u.x, u.y) or (u.path and #u.path > 0) then
+			-- walked there, and used when there (items.arrived)
+			local t = tileNextTo(r, it, u)
+			if not t or not BOBBA.live.walk(player, t.x, t.y) then return false, "you can't get to it" end
+			u.useOnArrive = it.id
+			return true
+		end
+	end
+	if use.roll then
+		if it.rolling then return true end
+		local roll = use.roll
+		local states = it.def.states
+		local from, to = roll.from or 0, roll.to or (states - 1)
+		if roll.seconds > 0 then
+			it.rolling = true
+			setState(r, it, roll.rolling, true)
+			BOBBA.platform.after(roll.seconds, function()
+				it.rolling = nil
+				if r.items[it.id] ~= it then return end
+				setState(r, it, math.random(from, to))
+			end)
+		else
+			setState(r, it, math.random(from, to))
+		end
+		return true
+	end
 	if it.def.states < 2 then return false, "nothing to switch" end
-	it.state = (it.state + 1) % it.def.states
-	BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { it.state, it.id })
-	broadcast(r, "room.items", { snapshot(it) })
+	-- (a state it can't have, e.g. left by another kind of use, starts again from 0)
+	local state = tonumber(it.state) or 0
+	if state < 0 or state >= it.def.states then state = -1 end
+	setState(r, it, (state + 1) % it.def.states)
 	return true
+end
+
+-- someone who was walked to a furni to use it got there (roomlive.lua, when they stop)
+function items.arrived(r, u)
+	local id = u.useOnArrive
+	u.useOnArrive = nil
+	local it = id and r.items[id]
+	if it and u.player and nextTo(it, u.x, u.y) then items.use(r, u.player, id) end
 end
 
 -- --- people on furni (Room.cycleRoomUnit) ----------------------------------------------------------

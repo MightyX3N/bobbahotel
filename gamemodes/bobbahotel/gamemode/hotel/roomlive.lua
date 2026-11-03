@@ -288,6 +288,7 @@ function live.walk(player, x, y)
 	if not path or #path == 0 then return false end
 	u.goal = { x = x, y = y }
 	u.path = path
+	u.useOnArrive = nil
 	return true
 end
 
@@ -301,6 +302,8 @@ local function step(r, u, moved)
 			u.to = nil
 			moved[#moved + 1] = snapshot(u)
 		end
+		-- (walked there to use a furni: use it now)
+		if u.useOnArrive then BOBBA.items.arrived(r, u) end
 		return
 	end
 	local g = r.grid

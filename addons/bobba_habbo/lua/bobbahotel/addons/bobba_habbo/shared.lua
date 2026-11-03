@@ -84,7 +84,7 @@ if SERVER and BOBBA.items then
 			H.furniInfo(kind, function(info, err2)
 				if not info then cb(nil, err2) return end
 				cb({ width = info.width, length = info.length, height = info.height, walk = info.walk, sit = info.sit, lay = info.lay,
-					directions = info.directions, states = info.states })
+					directions = info.directions, states = info.states, logic = info.logic })
 			end)
 		end)
 	end
