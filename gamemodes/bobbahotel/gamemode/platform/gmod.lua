@@ -15,6 +15,25 @@ function P.time()
 	return os.time()
 end
 
+-- seconds, precise (for timing between things, not dates)
+function P.clock()
+	return SysTime()
+end
+
+-- players: a key that stays the same (SteamID64; bots get one from their name) and the name shown
+function P.playerKey(ply)
+	if ply:IsBot() then return "bot_" .. ply:Nick() end
+	return ply:SteamID64()
+end
+
+function P.playerName(ply)
+	return ply:Nick()
+end
+
+function P.onLeave(fn)
+	if SERVER then hook.Add("PlayerDisconnected", "bobba.leave." .. tostring(fn), fn) end
+end
+
 function P.after(seconds, fn)
 	timer.Simple(seconds, fn)
 end

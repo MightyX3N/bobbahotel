@@ -166,6 +166,7 @@ function PANEL:Paint(w, h)
 	surface.DrawRect(0, 0, w, h)
 	drawPlanes()
 	drawCursor()
+	if V.drawUnits then V.drawUnits() end
 	if V.label then
 		draw.SimpleText(V.label, "BobbaViewLabel", 12, 12, color_white)
 	end
@@ -219,6 +220,16 @@ end
 
 vgui.Register("BobbaRoomView", PANEL, "EditablePanel")
 
+-- A point in the room (tile x, y, height z) on screen: pixel x, y, and how big things are drawn
+-- (1 = Habbo's zoomed-in size, 64 px per tile).
+function V.project(x, y, z)
+	local zi = zoomInfo()
+	local s = V.cameras[zi.scale].screen(x, y, z)
+	if not s then return nil end
+	local ox, oy = origin()
+	return ox + s[1] * zi.mult, oy + s[2] * zi.mult, zi.scale / 64 * zi.mult, s[3]
+end
+
 function V.updateHover(sx, sy)
 	if not V.room then return end
 	local z = zoomInfo()
@@ -231,9 +242,9 @@ end
 
 -- Show a room (from BOBBA.rooms.geometry). label: text in the top left corner (optional).
 function V.show(room, label)
+	if V.room ~= room then V.panX, V.panY = 0, 0 end
 	V.room = room
 	V.label = label
-	V.panX, V.panY = 0, 0
 	V.hover = nil
 	V.bounds, V.cameras = {}, {}
 	for _, z in ipairs(V.ZOOMS) do
@@ -293,6 +304,7 @@ local function preview(id)
 	local n = 0
 	for i, x in ipairs(ids) do if x == id then n = i end end
 	V.previewId = id
+	V.mode = "preview"
 	V.show(room, string.format("%s  (%d/%d)   scroll = zoom   drag = move   bobba_preview next / prev / off", id, n, #ids))
 end
 
@@ -303,7 +315,11 @@ concommand.Add("bobba_preview", function(_, _, args)
 		print(table.concat(ids, ", "))
 		return
 	end
-	if a == "off" then V.hide() return end
+	if a == "off" then
+		V.previewId = nil
+		if BOBBA.room and BOBBA.room.current then BOBBA.room.show() else V.hide() end
+		return
+	end
 	if a == "next" or a == "prev" then
 		local cur = 0
 		for i, x in ipairs(ids) do if x == V.previewId then cur = i end end
@@ -323,7 +339,7 @@ end, function(cmd, argStr)
 end)
 
 BOBBA.events.on("roomClick", "bobba.view.print", function(hit)
-	if V.previewId then
+	if V.mode == "preview" then
 		print(string.format("tile %d, %d  height %d", hit.tileX, hit.tileY, hit.tileZ))
 	end
 end)

@@ -13,5 +13,7 @@ return {
 	"nitro/port.lua",
 	"hotel/rooms.lua",
 	"hotel/layouts.lua",
+	"hotel/pathfinder.lua",
+	"hotel/roomlive.lua",
 	"hotel/addons.lua",
 }

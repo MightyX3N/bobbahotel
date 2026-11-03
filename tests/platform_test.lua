@@ -6,13 +6,49 @@ P.name = "test"
 P.isServer = true
 P.isClient = false
 P.logs = {}
-P.clock = 1000000
+P.now = 1000000 -- tests move time forward by changing this
 
 function P.log(level, msg)
 	P.logs[#P.logs + 1] = { level = level, msg = msg }
 end
 
-function P.time() return P.clock end
+function P.time() return math.floor(P.now) end
+function P.clock() return P.now end
+
+-- players are tables { key = "...", name = "..." }
+function P.playerKey(p) return p.key end
+function P.playerName(p) return p.name end
+P.leaveHandlers = {}
+function P.onLeave(fn) P.leaveHandlers[#P.leaveHandlers + 1] = fn end
+function P.disconnect(p) for _, fn in ipairs(P.leaveHandlers) do fn(p) end end
+
+-- messages: what was sent (P.sent), and handlers to call as if a player sent something (P.fromPlayer)
+P.sent = {}
+P.receivers = {}
+function P.send(name, data, target)
+	local list = target
+	if type(target) == "table" and target.key then list = { target } end
+	P.sent[#P.sent + 1] = { name = name, data = data, to = list }
+end
+function P.receive(name, fn) P.receivers[name] = fn end
+function P.fromPlayer(p, name, data) return P.receivers[name](p, data or {}) end
+-- messages a player got, by name
+function P.inbox(p, name)
+	local out = {}
+	for _, m in ipairs(P.sent) do
+		if m.name == name then
+			for _, to in ipairs(m.to or {}) do if to == p then out[#out + 1] = m.data end end
+		end
+	end
+	return out
+end
+
+-- timers: P.runTimers() runs every repeating timer once
+P.timers = {}
+function P.every(id, seconds, fn) P.timers[id] = fn end
+function P.after(seconds, fn) fn() end
+function P.stop(id) P.timers[id] = nil end
+function P.runTimers() for _, fn in pairs(P.timers) do fn() end end
 
 P.db = {
 	quote = function(s)

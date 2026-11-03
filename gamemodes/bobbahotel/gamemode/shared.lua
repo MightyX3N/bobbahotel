@@ -25,7 +25,12 @@ if SERVER then AddCSLuaFile("status.lua") end
 include("status.lua")
 
 -- client-only files (drawing, windows, input)
-local CLIENT_FILES = { "client/view.lua" }
+local CLIENT_FILES = { "client/view.lua", "client/room.lua" }
 for _, f in ipairs(CLIENT_FILES) do
 	if SERVER then AddCSLuaFile(f) else include(f) end
+end
+
+if SERVER then
+	BOBBA.live.start()
+	include("server/players.lua")
 end

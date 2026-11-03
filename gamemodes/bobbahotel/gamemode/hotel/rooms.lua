@@ -52,15 +52,21 @@ local cache = {}
 -- layout and wall height. opts: wallHeight (-1 = automatic, Habbo's default), floorThickness,
 -- wallThickness (multipliers, 1 = normal).
 function rooms.geometry(layoutId, opts)
-	opts = opts or {}
 	local layout = BOBBA.registry.get("layout", layoutId)
 	if not layout then return nil, "unknown layout " .. tostring(layoutId) end
+	local room = rooms.geometryFor(layout.heightmap, opts)
+	room.layout = layoutId
+	return room
+end
+
+-- The same for a heightmap as it is (what the server sends with a room).
+function rooms.geometryFor(heightmap, opts)
+	opts = opts or {}
 	local wh, ft, wt = opts.wallHeight or -1, opts.floorThickness or 1, opts.wallThickness or 1
-	local key = layoutId .. "|" .. wh .. "|" .. ft .. "|" .. wt .. "|" .. layout.heightmap
+	local key = wh .. "|" .. ft .. "|" .. wt .. "|" .. heightmap
 	if not cache[key] then
 		-- Arcturus sends no separate door tile, so Nitro finds the door from the heightmap (-1, -1)
-		local room = BOBBA.nitro.build(layout.heightmap, wh, true, -1, -1, ft, wt)
-		room.layout = layoutId
+		local room = BOBBA.nitro.build(heightmap, wh, true, -1, -1, ft, wt)
 		room.views = {}
 		cache[key] = room
 	end
