@@ -16,7 +16,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "8"
+H.CHAT_INDEX_VERSION = "9"
 
 -- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
 -- icons ("_off" is how Habbo shows one that isn't chosen)
@@ -53,6 +53,10 @@ for _, n in ipairs({ "bottom_bar_logo", "bottom_bar_home", "bottom_bar_navigator
 	"stickie_blanco", "stickie_close", "stickie_remove", "dimmer_info" }) do
 	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
 end
+-- ... and Habbo's sounds (MP3s in the client; nitro-react's SoundNames, sounds.url): money in, a
+-- message, respect, the camera, help
+H.CLIENT_SOUNDS = { "sound_catalogue_cash", "sound_catalogue_duckets", "sound_console_message_sent", "sound_console_new_message",
+	"sound_respect_received", "sound_camera_shutter", "sound_call_for_help", "sound_guide_received_invitation", "sound_guide_help_requested" }
 -- pictures cut out of a bigger one: the "me" menu's settings cog is the cog of settings_color, without
 -- the horn in front of it (mask: per row, the runs of pixels kept, the shape nitro-react's cog has)
 H.CLIENT_IMAGE_CROPS = { settings_color_cog = { from = "settings_color", x = 18, y = 6, w = 28, h = 34,
@@ -253,6 +257,9 @@ local function readTags(s)
 		elseif code == 87 or code == 21 then -- DefineBinaryData, DefineBitsJPEG2 (here: PNG files)
 			local id = byte(s, p) + byte(s, p + 1) * 256
 			tags[id] = { start = p + (code == 87 and 6 or 2), stop = p + len - 1 }
+		elseif code == 14 and math.floor(byte(s, p + 2) / 16) == 2 then -- DefineSound, MP3: after id, format, count, seek
+			local id = byte(s, p) + byte(s, p + 1) * 256
+			tags[id] = { start = p + 9, stop = p + len - 1 }
 		elseif code == 82 then -- DoABC: flags, a name, the bytecode
 			local e = find(s, "\0", p + 4, true)
 			abcs[#abcs + 1] = sub(s, e + 1, p + len - 1)
@@ -340,6 +347,14 @@ function H.saveChatStyles(swfBytes, version)
 		local img = decode(c.from)
 		if img then save(name, H.cropImage(img, c.x, c.y, c.w, c.h, c.mask)) end
 	end
+	for _, name in ipairs(H.CLIENT_SOUNDS) do
+		local mp3 = bytesOf(name)
+		if mp3 then
+			local path = H.cachePath("chat/client_" .. version .. "/" .. name, ".mp3")
+			P.writeData(path, mp3)
+			lines[#lines + 1] = table.concat({ "A", name, path }, "\t")
+		end
+	end
 	P.writeData(indexPath(version), table.concat(lines, "\n") .. "\n")
 	return true
 end
@@ -349,7 +364,7 @@ local function readIndex(version)
 	if not P.dataExists(path) then return nil end
 	local text = P.readData(path)
 	if not text or text:match("^([^\n]*)") ~= H.CHAT_INDEX_VERSION then return nil end
-	local styles = { images = {} }
+	local styles = { images = {}, sounds = {} }
 	for line in text:gmatch("[^\n]+") do
 		local f = {}
 		for v in (line .. "\t"):gmatch("([^\t]*)\t") do f[#f + 1] = v end
@@ -357,6 +372,9 @@ local function readIndex(version)
 		if f[1] == "U" then
 			if not P.dataExists(f[3]) then return nil end
 			styles.images[f[2]] = { path = f[3], width = tonumber(f[4]), height = tonumber(f[5]), texWidth = tonumber(f[6]), texHeight = tonumber(f[7]) }
+		elseif f[1] == "A" then
+			-- (a sound that couldn't be saved is just left out)
+			if P.dataExists(f[3]) then styles.sounds[f[2]] = f[3] end
 		elseif f[1] == "S" then
 			styles[id] = { id = id, asset = f[3], system = f[4] == "1", reg = {} }
 		elseif f[1] == "R" and styles[id] then

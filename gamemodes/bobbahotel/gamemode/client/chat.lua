@@ -96,6 +96,21 @@ end
 C.setScale(C.scaleFor(ScrH()))
 hook.Add("OnScreenSizeChanged", "bobba.chat", function() C.setScale(C.scaleFor(ScrH())) end)
 
+-- bubbles made and drawn at another size while fn runs (the chat history window: the UI's size,
+-- not the room's)
+function C.atScale(scale, fn)
+	local saved = { S, FONT_PX, TEXT_TOP, LINE_H, F, C.SCALE, R.chatScale }
+	S = scale
+	C.SCALE, R.chatScale = S, S
+	FONT_PX = math.floor(C.FONT_SIZE * C.UBUNTU_CELL * S + 0.5)
+	TEXT_TOP = -(C.UBUNTU_CELL - 1) / 2 * C.FONT_SIZE * S
+	LINE_H = C.LINE_H * S
+	F = { chat = "BobbaChatU" .. FONT_PX, bold = "BobbaChatUBold" .. FONT_PX, italic = "BobbaChatUItalic" .. FONT_PX, input = saved[5].input }
+	local ok, err = pcall(fn)
+	S, FONT_PX, TEXT_TOP, LINE_H, F, C.SCALE, R.chatScale = saved[1], saved[2], saved[3], saved[4], saved[5], saved[6], saved[7]
+	if not ok then ErrorNoHalt("[Bobba] chat: " .. tostring(err) .. "\n") end
+end
+
 -- --- sending --------------------------------------------------------------------------------------
 -- nitro-react's ChatInputView.sendChatValue
 function C.send(value, shift)

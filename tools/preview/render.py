@@ -214,21 +214,17 @@ def boot(w, h):
                 definePermission = function() end, hasPermission = function() return true end, permissionBackend = function() return "-" end,
                 addonFolders = function() return {} end, disabledAddons = function() return "" end,
                 receivers = {}, receive = function(n, fn) BOBBA.platform.receivers[n] = fn end,
-                sent = {}, send = function(n, d) table.insert(BOBBA.platform.sent, { name = n, data = d }) end }""")
+                sent = {}, send = function(n, d) table.insert(BOBBA.platform.sent, { name = n, data = d }) end,
+                -- (sounds: what would play, printed)
+                playSound = function(path, volume, rate) print("SOUND", path, volume, rate) end }""")
         else:
             L.execute(open(os.path.join(GM, f)).read())
     G = L.execute(STUBS)
-    L.execute(open(os.path.join(GM, "client", "view.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "room.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "chat.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "ui.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "avatareditor.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "loading.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "hud.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "navigator.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "windows.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "shop.lua")).read())
-    L.execute(open(os.path.join(GM, "client", "furniwidgets.lua")).read())
+    # the client's files in the game's own order (shared.lua's CLIENT_FILES)
+    import re
+    shared = open(os.path.join(GM, "shared.lua")).read()
+    for f in re.findall(r'"(client/[^"]+)"', re.search(r"CLIENT_FILES = \{([^}]*)\}", shared).group(1)):
+        L.execute(open(os.path.join(GM, f)).read())
     return L, G
 
 def hud_click(L, G, spec):

@@ -112,10 +112,10 @@ end
 -- Posters (one furni in Habbo, a number each) get a page; so do stickies. Wallpapers, floors and
 -- landscapes (Habbo's room content) are on a tab of their own, "Spaces".
 -- Every furni costs the hotel's catalog.price credits (bobba_wallet_setting catalog.price <n>).
-H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true,
+H.CATALOG_SKIP_CATEGORIES = { pets = true, leaderboards = true, music = true, credit = true,
 	vending_machine = true, games = true }
 H.CATALOG_SKIP_LINES = { horse = true, nests = true, pet_food = true, pet_accessories = true, clothing = true, guilds = true,
-	sfx = true, wired = true, fxbox = true, trax = true, credit_furni = true, testing = true }
+	wired = true, fxbox = true, trax = true, credit_furni = true, testing = true }
 H.CATALOG_RARE_LINES = { rare = true, bonusrare = true, nft = true, nftmint = true, collectibles = true, pixel_collectible = true,
 	gacha = true }
 H.CATALOG_PAGE_SIZE = 150

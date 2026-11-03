@@ -119,7 +119,12 @@ local function drawHistory(w, d)
 	local timeW = d:textWidth("00:00", 14.4) + 8
 	for i, e in ipairs(rows) do
 		if e.type == "chat" then
-			e.bubble = e.bubble or (C.makeBubble and C.makeBubble({ id = e.unit, name = e.name }, e.text, e.kind, e.style, math.floor(282 - 8 - timeW)))
+			-- (at the window's size: made again when that changes)
+			if e.bubble and e.bubbleScale ~= s then e.bubble = nil end
+			if not e.bubble and C.makeBubble and C.atScale then
+				C.atScale(s, function() e.bubble = C.makeBubble({ id = e.unit, name = e.name }, e.text, e.kind, e.style, math.floor(282 - 8 - timeW)) end)
+				e.bubbleScale = s
+			end
 			if e.bubble then e.bubble.color = e.color end
 			heights[i] = math.max(24, (e.bubble and e.bubble.height / s or 26) + 8)
 		else
@@ -141,7 +146,7 @@ local function drawHistory(w, d)
 				if e.type == "chat" then
 					d:text(e.time or "", 14.4, 13, y + h / 2, Color(108, 117, 125), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 					if e.bubble and C.drawBubble then
-						C.drawBubble(e.bubble, math.floor((13 + timeW) * s), math.floor((y + (h - e.bubble.height / s) / 2) * s))
+						C.atScale(s, function() C.drawBubble(e.bubble, math.floor((13 + timeW) * s), math.floor((y + (h - e.bubble.height / s) / 2) * s)) end)
 					end
 				else
 					d:icon("small-room", 13, y + (h - 16) / 2)

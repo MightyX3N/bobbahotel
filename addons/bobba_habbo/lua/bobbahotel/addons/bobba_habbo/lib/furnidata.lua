@@ -176,6 +176,33 @@ function H.furniUrl(classname, cb)
 	end)
 end
 
+-- A sound sample (sound blocks, Habbo's flash.dynamic.download.samples.template): its MP3 in the cache.
+-- cb(path) or cb(nil, why)
+local sampleWaiting = {}
+function H.furniSample(id, cb)
+	id = tonumber(id)
+	if not id then cb(nil, "no sample") return end
+	local path = H.cachePath("samples/" .. id, ".mp3")
+	if P.dataExists(path) then cb(path) return end
+	if sampleWaiting[id] then table.insert(sampleWaiting[id], cb) return end
+	sampleWaiting[id] = { cb }
+	local function done(p, why)
+		local list = sampleWaiting[id]
+		sampleWaiting[id] = nil
+		for _, w in ipairs(list) do w(p, why) end
+	end
+	H.config(function(cfg, err)
+		if not cfg then done(nil, err) return end
+		local template = H.setting(cfg, "flash.dynamic.download.samples.template") or "mp3/sound_machine_sample_%typeid%.mp3"
+		local url = cfg.furniUrl .. template:gsub("%%typeid%%", tostring(id))
+		H.httpGet(url, function(body)
+			if not body or #body == 0 then done(nil, "empty sample") return end
+			P.writeData(path, body)
+			done(path)
+		end, function(why) done(nil, why) end)
+	end)
+end
+
 -- the furni's SWF, unpacked (pictures and XML; for drawing it)
 function H.furniLibrary(classname, cb)
 	H.furniUrl(classname, function(url, base)

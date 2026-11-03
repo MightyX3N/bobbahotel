@@ -69,6 +69,12 @@ local function typeFor(kind)
 			made.base = base
 			-- (a window's hole in the wall: its logic's mask, Nitro's FurnitureWindowLogic)
 			made.maskType = (findXml(lib, "_logic") or ""):match('<mask%s+type="([^"]+)"')
+			-- (a sound block's sound: its logic's sample, FurnitureSoundBlockLogic)
+			local sample = (findXml(lib, "_logic") or ""):match("<sample([^>]*)>")
+			if sample then
+				made.soundSample = tonumber(sample:match('id="(%d+)"'))
+				made.noPitch = sample:match('nopitch="true"') ~= nil or sample:match('noPitch="true"') ~= nil
+			end
 			H.warm(lib) -- (its pictures read into memory now, a little each frame, not when first drawn)
 			FU.types[base] = made
 			FU.loading[base] = nil
@@ -303,6 +309,35 @@ function FU.preview(kind, x, y, w, h, s, dir)
 	for _, sp in ipairs(sprites) do sp.draw() end
 	return true
 end
+
+-- Sound blocks (FurnitureSoundBlockLogic): when one changes state it plays its sample, higher the
+-- higher it stands (two semitones a tile: Math.pow(2, height * 2 / 12), back down past 12)
+local function pitchFor(height, noPitch)
+	if noPitch then return 1 end
+	local h = height * 2
+	if h > 12 then h = math.min(0, -12 + ((h - 12) - 1)) end
+	return 2 ^ (h / 12)
+end
+
+local seenState = setmetatable({}, { __mode = "k" })
+hook.Add("Think", "bobba.habbo.soundblocks", function()
+	local R = BOBBA.room
+	if not R or not R.items then return end
+	for _, it in pairs(R.items) do
+		local t = FU.types[(H.furniBase(it.kind))]
+		if t and t.soundSample then
+			local was = seenState[it]
+			seenState[it] = it.state
+			-- (not when it's first seen: only a change plays)
+			if was ~= nil and was ~= it.state then
+				local rate = pitchFor(tonumber(it.z) or 0, t.noPitch)
+				H.furniSample(t.soundSample, function(path)
+					if path and BOBBA.sounds and BOBBA.sounds.playFile then BOBBA.sounds.playFile(path, "furni", rate) end
+				end)
+			end
+		end
+	end
+end)
 
 BOBBA.room = BOBBA.room or { units = {} }
 BOBBA.room.furniIcon = FU.icon

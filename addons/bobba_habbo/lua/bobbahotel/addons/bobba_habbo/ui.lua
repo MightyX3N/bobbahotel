@@ -53,6 +53,17 @@ local function clientImages()
 end
 H.clientImages = clientImages
 
+-- Habbo's sounds for the hotel's (BOBBA.sounds, the gamemode's client/sounds.lua): nitro-react's names
+local SOUNDS = { credits = "sound_catalogue_cash", duckets = "sound_catalogue_duckets", messenger_message_received = "sound_console_new_message",
+	messenger_new_thread = "sound_console_message_sent", respect = "sound_respect_received", camera_shutter = "sound_camera_shutter",
+	modtools_new_ticket = "sound_call_for_help" }
+local sounds
+BOBBA.sounds = BOBBA.sounds or {}
+BOBBA.sounds.find = function(name)
+	if not sounds then H.chatStyles(function(st) if st then sounds = st.sounds or {} end end) end
+	return sounds and sounds[SOUNDS[name] or name] or nil
+end
+
 -- the hotel's loading screen waits for these pictures, so the toolbar and purse aren't drawn without
 -- them for a moment after coming in (unless they can't be had)
 H.loadingCheck("habbo.ui", function()

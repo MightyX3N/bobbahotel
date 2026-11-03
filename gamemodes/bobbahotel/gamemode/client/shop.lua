@@ -473,6 +473,7 @@ function SHOP.giftButton(d, x, y, w, offer, page, quantity)
 end
 
 P.receive("catalog.bought", function(_, data)
+	BOBBA.events.emit("catalogBought", data)
 	CAT.state = "none"
 	if data.gift then
 		GIFT.sending = false

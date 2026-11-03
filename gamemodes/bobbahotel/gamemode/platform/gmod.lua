@@ -110,6 +110,19 @@ end
 
 -- A material from a PNG written with writeData. flags: GMod's material flags (default "noclamp
 -- smooth"; pixel art that is scaled up wants "noclamp" so the pixels stay sharp)
+-- plays a sound file in garrysmod/data/bobbahotel/ (an MP3): volume 0..1, rate 1 = as it is
+-- (higher: faster and higher). onPlay(channel) when it plays (optional)
+function P.playSound(path, volume, rate, onPlay)
+	if not sound or not sound.PlayFile then return end
+	sound.PlayFile("data/bobbahotel/" .. path, "noplay", function(ch)
+		if not IsValid(ch) then return end
+		ch:SetVolume(math.Clamp(volume or 1, 0, 1))
+		if rate and rate ~= 1 then ch:SetPlaybackRate(rate) end
+		ch:Play()
+		if onPlay then onPlay(ch) end
+	end)
+end
+
 function P.dataMaterial(path, flags)
 	return Material("../data/bobbahotel/" .. path, flags or "noclamp smooth")
 end
