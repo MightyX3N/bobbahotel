@@ -3,18 +3,37 @@
 -- paid for being online (Arcturus's CreditsScheduler / PixelScheduler / PointsScheduler), and staff
 -- can give it. Habbo Club is bought with diamonds in the catalogue (catalog.lua) and lasts days.
 --
+-- Club, the way Habbo had it when there were two: HC (level 1) and VIP (level 2, everything HC has
+-- and more: Habbo's figuredata marks club clothes 2, room models are 1 or 2). The hotel's setting
+-- club.mode says which there are: "hc" (the default) or "vip" (one club: everything is in it), or
+-- "both" (HC gets level 1 things, VIP all of them). HC days and VIP days are kept apart.
+--
 -- What the numbers are is the hotel's settings (BOBBA.store.setting), changed with bobba_wallet_setting:
 --   wallet.start.credits / .duckets / .diamonds      what a new player has
 --   wallet.pay.every                                 seconds online between pays
 --   wallet.pay.credits / .duckets / .diamonds        each pay
 --
--- Messages to players: user.purse { credits, duckets, diamonds, clubDays, clubMinutes, clubLevel }
+-- Messages to players: user.purse { credits, duckets, diamonds, clubDays, clubMinutes, clubLevel,
+--                       clubKind ("hc"/"vip": the one shown), clubMode }
 -- Messages from players: user.purse.get {}
 
 BOBBA.wallet = BOBBA.wallet or { online = {} }
 local W = BOBBA.wallet
 
 W.CURRENCIES = { credits = true, duckets = true, diamonds = true }
+W.CLUB_MODES = { hc = true, vip = true, both = true }
+
+function W.clubMode()
+	local m = BOBBA.store.setting("club.mode", "hc")
+	return W.CLUB_MODES[m] and m or "hc"
+end
+
+-- the clubs on sale: { "hc" }, { "vip" } or { "hc", "vip" }
+function W.clubKinds()
+	local m = W.clubMode()
+	if m == "both" then return { "hc", "vip" } end
+	return { m }
+end
 W.DEFAULTS = {
 	["wallet.start.credits"] = 5000, ["wallet.start.duckets"] = 0, ["wallet.start.diamonds"] = 0,
 	["wallet.pay.every"] = 900, ["wallet.pay.credits"] = 25, ["wallet.pay.duckets"] = 50, ["wallet.pay.diamonds"] = 2,
@@ -36,6 +55,7 @@ function W.migrate()
 			club_until INTEGER NOT NULL DEFAULT 0
 		)]],
 	})
+	BOBBA.store.migrate("core.008_vip", { "ALTER TABLE bobbahotel_wallets ADD COLUMN vip_until INTEGER NOT NULL DEFAULT 0" })
 end
 
 -- a player's wallet (made with the start amounts the first time)
@@ -49,13 +69,28 @@ function W.get(key)
 	end
 	return {
 		key = key, credits = tonumber(row.credits) or 0, duckets = tonumber(row.duckets) or 0,
-		diamonds = tonumber(row.diamonds) or 0, clubUntil = tonumber(row.club_until) or 0,
+		diamonds = tonumber(row.diamonds) or 0, clubUntil = tonumber(row.club_until) or 0, vipUntil = tonumber(row.vip_until) or 0,
 	}
 end
 
--- Habbo Club: 1 while it lasts (HabboClubLevelEnum.CLUB), else 0
+-- what a player's club gets them (HabboClubLevelEnum: 0 none, 1 CLUB, 2 VIP), and which club it is.
+-- With one club (hc or vip) a member gets everything; with both, HC level 1 and VIP level 2.
+function W.club(key)
+	local w = W.get(key)
+	local now = BOBBA.platform.time()
+	local hc, vip = w.clubUntil > now, w.vipUntil > now
+	local mode = W.clubMode()
+	if mode == "both" then
+		if vip then return 2, "vip", w.vipUntil end
+		if hc then return 1, "hc", w.clubUntil end
+		return 0, nil, 0
+	end
+	if hc or vip then return 2, mode, math.max(w.clubUntil, w.vipUntil) end
+	return 0, nil, 0
+end
+
 function W.clubLevel(key)
-	return (W.get(key).clubUntil > BOBBA.platform.time()) and 1 or 0
+	return (W.club(key))
 end
 
 local function playerFor(key)
@@ -65,9 +100,12 @@ end
 -- the purse as Nitro shows it (PurseView: credits, activity points, days of club left)
 function W.purse(key)
 	local w = W.get(key)
-	local left = math.max(0, w.clubUntil - BOBBA.platform.time())
+	local level, kind, untilT = W.club(key)
+	local left = math.max(0, untilT - BOBBA.platform.time())
+	local mode = W.clubMode()
 	return { credits = w.credits, duckets = w.duckets, diamonds = w.diamonds,
-		clubDays = math.floor(left / 86400), clubMinutes = math.floor(left / 60), clubLevel = left > 0 and 1 or 0 }
+		clubDays = math.floor(left / 86400), clubMinutes = math.floor(left / 60), clubLevel = level,
+		clubKind = kind or (mode == "vip" and "vip" or "hc"), clubMode = mode }
 end
 
 function W.send(key)
@@ -100,12 +138,15 @@ function W.pay(key, price)
 	return true
 end
 
--- more days of Habbo Club (from now, or from when it ends if it still runs)
-function W.addClub(key, days)
+-- more days of a club, "hc" (the default) or "vip" (from now, or from when it ends if it still runs;
+-- a minus takes days off)
+function W.addClub(key, days, kind)
 	local w = W.get(key)
 	local now = BOBBA.platform.time()
-	local untilT = math.max(w.clubUntil, now) + math.floor(days * 86400)
-	BOBBA.store.query("UPDATE bobbahotel_wallets SET club_until = ? WHERE key = ?", { untilT, tostring(key) })
+	local column = kind == "vip" and "vip_until" or "club_until"
+	local current = kind == "vip" and w.vipUntil or w.clubUntil
+	local untilT = math.max(current, now) + math.floor(days * 86400)
+	BOBBA.store.query("UPDATE bobbahotel_wallets SET " .. column .. " = ? WHERE key = ?", { untilT, tostring(key) })
 	W.send(key)
 	BOBBA.events.emit("clubChanged", key)
 end
@@ -135,6 +176,10 @@ function W.start()
 			W.online[u.player] = u.key
 			P.send("user.purse", W.purse(u.key), u.player)
 		end
+	end)
+	-- a new club mode: everyone's purse says what they have now
+	BOBBA.events.on("settingChanged", "bobba.wallet", function(k)
+		if k == "club.mode" then for _, key in pairs(W.online) do W.send(key) end end
 	end)
 	local last = P.clock and P.clock() or 0
 	P.every("wallet.pay", 30, function()

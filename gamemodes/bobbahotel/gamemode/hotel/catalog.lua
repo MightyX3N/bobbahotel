@@ -17,8 +17,13 @@
 BOBBA.catalog = BOBBA.catalog or {}
 local CAT = BOBBA.catalog
 
--- Habbo Club offers: days for diamonds (the hotel's settings club.price.31 / club.price.93)
-CAT.CLUB_OFFERS = { { days = 31, price = 250 }, { days = 93, price = 700 } }
+-- club offers: days for diamonds (the hotel's settings club.price.31 / .93 for HC, vip.price.31 / .93
+-- for VIP); which clubs are on sale is the wallet's club.mode
+CAT.CLUB_OFFERS = {
+	hc = { { days = 31, price = 250 }, { days = 93, price = 700 } },
+	vip = { { days = 31, price = 400 }, { days = 93, price = 1100 } },
+}
+CAT.CLUB_NAMES = { hc = "Habbo Club", vip = "VIP" }
 CAT.MAX_AMOUNT = 100
 
 local tree, pagesById, building
@@ -42,13 +47,18 @@ local function build(cb)
 				number(p.children or {})
 			end
 		end
-		-- Habbo Club (a tab with its buy page, Habbo's "vip_buy"), after the addon's
-		local club = { name = "Habbo Club", layout = "vip_buy", offers = {} }
-		for _, c in ipairs(CAT.CLUB_OFFERS) do
-			local price = tonumber(BOBBA.store.setting("club.price." .. c.days, tostring(c.price))) or c.price
-			club.offers[#club.offers + 1] = { club = c.days, name = c.days .. " days", price = { diamonds = price } }
+		-- the club (a tab with a buy page for each club on sale, Habbo's "vip_buy"), after the addon's
+		local kinds = BOBBA.wallet.clubKinds()
+		local clubPages = {}
+		for _, kind in ipairs(kinds) do
+			local page = { name = CAT.CLUB_NAMES[kind], layout = "vip_buy", clubKind = kind, offers = {} }
+			for _, c in ipairs(CAT.CLUB_OFFERS[kind]) do
+				local price = tonumber(BOBBA.store.setting(kind .. ".price." .. c.days, tostring(c.price))) or c.price
+				page.offers[#page.offers + 1] = { club = c.days, tier = kind, name = c.days .. " days", price = { diamonds = price } }
+			end
+			clubPages[#clubPages + 1] = page
 		end
-		pages[#pages + 1] = { name = "Habbo Club", children = { club } }
+		pages[#pages + 1] = { name = CAT.CLUB_NAMES[kinds[1]], children = clubPages }
 		number(pages)
 		tree = pages
 		local list = building
@@ -77,9 +87,9 @@ end
 local function pageMessage(p)
 	local offers = {}
 	for _, o in ipairs(p.offers or {}) do
-		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club }
+		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club, tier = o.tier }
 	end
-	return { id = p.id, name = p.name, layout = p.layout or "default_3x3", offers = offers }
+	return { id = p.id, name = p.name, layout = p.layout or "default_3x3", clubKind = p.clubKind, offers = offers }
 end
 
 -- the furni whose name has the words in it (Nitro's catalogue search: names and class names),
@@ -117,7 +127,7 @@ function CAT.buy(player, pageId, offerId, amount)
 	for c, n in pairs(offer.price or {}) do price[c] = n * amount end
 	if not BOBBA.wallet.pay(key, price) then return false, "you don't have enough to buy that" end
 	if offer.club then
-		BOBBA.wallet.addClub(key, offer.club)
+		BOBBA.wallet.addClub(key, offer.club, offer.tier)
 	else
 		BOBBA.inventory.give(key, offer.kind, amount)
 	end
@@ -127,6 +137,10 @@ end
 
 function CAT.start()
 	local P = BOBBA.platform
+	-- the club's pages change with its settings
+	BOBBA.events.on("settingChanged", "bobba.catalog", function(k)
+		if k == "club.mode" or k:find("%.price") then CAT.reset() end
+	end)
 	P.receive("catalog.index", function(player)
 		build(function(pages) P.send("catalog.index", { pages = index(pages) }, player) end)
 	end)

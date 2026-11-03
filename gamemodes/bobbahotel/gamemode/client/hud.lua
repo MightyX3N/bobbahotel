@@ -230,6 +230,7 @@ BOBBA.platform.receive("user.purse", function(_, data)
 		credits = data.credits or 0, points = { [0] = data.duckets or 0, [5] = data.diamonds or 0 },
 		club = (data.clubLevel or 0) > 0, clubLevel = data.clubLevel or 0,
 		clubDays = data.clubDays or 0, clubMinutes = data.clubMinutes or 0,
+		clubKind = data.clubKind or "hc", clubMode = data.clubMode or "hc",
 	}
 	-- getClubText: under a day left it counts the minutes, else the days
 	local p = HUD.purse
@@ -239,6 +240,19 @@ BOBBA.platform.receive("user.purse", function(_, data)
 	BOBBA.events.emit("purseChanged", p)
 end)
 BOBBA.events.on("roomShown", "bobba.hud.purse", function() BOBBA.platform.send("user.purse.get", {}) end)
+
+-- a club's coin (HC's, or VIP's badge made small) in a box
+function U.clubIcon(d, kind, x, y, w, h)
+	if kind == "vip" then return d:icon("currency-vip", x, y, w, h, { scale = 0.43 }) end
+	return d:icon("currency-hc", x, y, w, h)
+end
+
+-- which club a club level is (HC 1, VIP 2 when there are both; else the one there is)
+function U.clubKindFor(level)
+	local mode = HUD.purse.clubMode or "hc"
+	if mode == "both" then return level >= 2 and "vip" or "hc" end
+	return mode
+end
 
 local function drawPurse(w, d)
 	local W, H = d.width, d.height
@@ -259,7 +273,7 @@ local function drawPurse(w, d)
 	local hover = d:click(x4, 4, w4, 63, function() act("club") end)
 	d:round(4, x4, 4, w4, 63, Color(223, 223, 223, hover and 40 or 26))
 	local clubText = HUD.purse.club and HUD.purse.clubText or U.text("purse.clubdays.zero.amount.text", "Join")
-	d:icon("currency-hc", x4 + (w4 - 15) / 2, 18.5, 15, 15)
+	U.clubIcon(d, HUD.purse.clubKind, x4 + (w4 - 15) / 2, 18.5, 15, 15)
 	d:text(clubText, 12.6, x4 + w4 / 2, 37.5 + 7.5, WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	-- help and settings, each half the height
 	for i, b in ipairs({ { "help", "help" }, { "purse-cog", "settings" } }) do

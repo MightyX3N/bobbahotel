@@ -243,18 +243,23 @@ function D:icon(name, x, y, w, h, opts)
 	local ic = U.icon(name)
 	if not ic or not ic.material then return false end
 	opts = opts or {}
-	if w then x = x + math.floor((w - ic.width) / 2) end
-	if h then y = y + math.floor((h - ic.height) / 2) end
+	-- (opts.scale: drawn that many times its size, e.g. a big picture in a small place)
+	local k = opts.scale or 1
+	local iw, ih = ic.width * k, ic.height * k
+	if w then x = x + math.floor((w - iw) / 2) end
+	if h then y = y + math.floor((h - ih) / 2) end
 	local function put(dx, dy, r, g, b, a)
 		local X, Y = px(self, x + dx), px(self, y + dy)
-		local W, H = px(self, x + dx + ic.width) - X, px(self, y + dy + ic.height) - Y
+		local W, H = px(self, x + dx + iw) - X, px(self, y + dy + ih) - Y
 		surface.SetMaterial(ic.material)
 		surface.SetDrawColor(r, g, b, a)
 		if opts.flip then surface.DrawTexturedRectUV(X, Y, W, H, ic.u, 0, 0, ic.v)
 		else surface.DrawTexturedRectUV(X, Y, W, H, 0, 0, ic.u, ic.v) end
 	end
-	render.PushFilterMag(TEXFILTER.POINT)
-	render.PushFilterMin(TEXFILTER.POINT)
+	-- (pixel art stays sharp; shrunk, it's smoothed so no pixels drop out)
+	local filter = k < 1 and TEXFILTER.LINEAR or TEXFILTER.POINT
+	render.PushFilterMag(filter)
+	render.PushFilterMin(filter)
 	local a = opts.alpha or 255
 	if opts.black then
 		put(0, 0, 0, 0, 0, a)

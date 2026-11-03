@@ -9,7 +9,7 @@
 --                                    parts = { { id, type, colorable, index, colorIndex }, ... } }, ... },
 --                         byId }
 --   fd.order = { "hr", "hd", ... }   the set types in figuredata's order
---   H.validateLook(fd, figure, gender, isClub, owned) -> the cleaned figure
+--   H.validateLook(fd, figure, gender, clubLevel, owned) -> the cleaned figure
 --   H.figureData(cb)   -- downloaded (or cached) and read: cb(fd) or cb(nil, why)
 
 local H = BOBBA.habbo
@@ -95,10 +95,11 @@ end
 -- exist, aren't for this gender, can't be chosen, are club (without club) or sellable (and not
 -- owned) are swapped for the first that can be worn when that kind of clothing is mandatory, else
 -- left out; mandatory kinds missing are added; colours that don't exist (or are club) become the
--- palette's first.
-function H.validateLook(fd, figure, gender, isClub, owned)
+-- palette's first. clubLevel: 0 none, 1 HC, 2 VIP (figuredata's club="2" is VIP's; true = all).
+function H.validateLook(fd, figure, gender, clubLevel, owned)
 	gender = (gender == "F" or gender == "f") and "F" or "M"
-	local club = isClub and 1 or 0
+	local level = type(clubLevel) == "number" and clubLevel or (clubLevel and 2 or 0)
+	local club = level > 0 and 1 or 0
 	owned = owned or {}
 	local parts, order = {}, {}
 	for part in (tostring(figure or "") .. "."):gmatch("([^%.]*)%.") do
@@ -126,7 +127,7 @@ function H.validateLook(fd, figure, gender, isClub, owned)
 			if not palette then break end
 			local setId = tonumber(data[2] or "-1") or -1
 			local set = t.byId[setId]
-			if not set or (set.club > 0 and not isClub) or not set.selectable or (set.sellable and not owned[set.id])
+			if not set or set.club > level or not set.selectable or (set.sellable and not owned[set.id])
 				or (set.gender ~= "U" and set.gender ~= gender) then
 				if not t.mand[gender][club] then break end
 				set = firstSet(t, gender, true)
@@ -137,12 +138,12 @@ function H.validateLook(fd, figure, gender, isClub, owned)
 			if set.colorable then
 				local c1 = tonumber(data[3] or "-1") or -1
 				local c = palette.byId[c1]
-				if not c or (c.club > 0 and not isClub) then c1 = firstNonClubColor(palette).id end
+				if not c or c.club > level then c1 = firstNonClubColor(palette).id end
 				s = s .. "-" .. c1
 				if data[4] then
 					local c2 = tonumber(data[4]) or -1
 					c = palette.byId[c2]
-					if not c or (c.club > 0 and not isClub) then c2 = firstNonClubColor(palette).id end
+					if not c or c.club > level then c2 = firstNonClubColor(palette).id end
 					s = s .. "-" .. c2
 				end
 			end

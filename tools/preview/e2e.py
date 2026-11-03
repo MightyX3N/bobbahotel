@@ -55,6 +55,8 @@ def main():
     ap.add_argument("--furni", help="furni to place first (needs --habbo): kind,x,y,dir[,state];...")
     ap.add_argument("--out", default="e2e.png")
     ap.add_argument("--texts", help="Habbo's external_flash_texts file (the game's data/bobbahotel/habbo/remembered/texts.txt)")
+    ap.add_argument("--setting", action="append", help="a hotel setting first: name=value (e.g. club.mode=both)")
+    ap.add_argument("--give", action="append", help="give the player something first: what=amount (credits, diamonds, hc, vip)")
     ap.add_argument("--mine", action="store_true", help="the room is the player's own")
     ap.add_argument("--floor", help="the room's floor id")
     ap.add_argument("--wallpaper", help="the room's wallpaper id")
@@ -68,6 +70,13 @@ def main():
     a = ap.parse_args()
     S = server()
     me = S.table_from({"key": "76561198000000001", "name": "Saint MightyX3N"})
+    for st in a.setting or []:
+        k, v = st.split("=", 1)
+        S.eval("BOBBA.store.setSetting")(k, v)
+    for g in a.give or []:
+        k, v = g.split("=", 1)
+        if k in ("hc", "vip"): S.eval("BOBBA.wallet.addClub")(me.key, int(v), k)
+        else: S.eval("BOBBA.wallet.add")(me.key, k, int(v))
     if a.mine: room_id = S.eval("BOBBA.live.create")(me.key, me.name, a.layout, "My room")
     else: room_id = S.eval("BOBBA.live.homeRoom")() if a.layout == "model_a" else S.eval("BOBBA.live.create")("1", "Mia", a.layout, "Test room")
     if a.furni or a.editor or a.habbo:

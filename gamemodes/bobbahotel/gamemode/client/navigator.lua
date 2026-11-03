@@ -168,7 +168,7 @@ local function drawCreator(w, d)
 				d:gridItem(mx, iy, mw, itemH, active)
 				drawModel(d, name, mx + mw / 2, iy + 6 + 30, mw - 30, 56)
 				d:text(tiles .. " " .. U.text("navigator.createroom.tilesize", "tiles"), 14.4, mx + mw / 2, iy + itemH - 6 - 8, U.C.black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, true)
-				if club > 0 then d:icon("currency-hc", mx + mw - 4 - 15, iy + 4, 15, 15) end
+				if club > 0 then U.clubIcon(d, U.clubKindFor(club), mx + mw - 4 - 15, iy + 4, 15, 15) end
 				if disabled then d:round(4, mx + 2, iy + 2, mw - 4, itemH - 4, Color(205, 211, 217, 204)) end
 			end
 		end

@@ -120,7 +120,8 @@ T["Habbo Club: bought with diamonds, lasts its days, opens club rooms and clothe
 	P.fromPlayer(mia, "catalog.buy", { page = club.id, offer = month.id })
 	local purse = last(mia, "user.purse")
 	eq(purse.diamonds, 50)
-	eq(purse.clubLevel, 1)
+	eq(purse.clubLevel, 2, "the only club: everything in it")
+	eq(purse.clubKind, "hc")
 	eq(purse.clubDays, 31)
 	P.fromPlayer(mia, "navigator.create", { name = "Club room", model = "g" })
 	assert(last(mia, "navigator.created"), "a club model now")
@@ -135,6 +136,44 @@ T["Habbo Club: bought with diamonds, lasts its days, opens club rooms and clothe
 	eq(BOBBA.wallet.purse(mia.key).clubDays, 62)
 	P.now = P.now + 63 * 86400
 	eq(BOBBA.wallet.clubLevel(mia.key), 0)
+end
+
+T["club modes: VIP instead of HC, or both (HC level 1, VIP level 2)"] = function()
+	local mia = start()
+	-- VIP only: the club tab is VIP, and it gives everything
+	BOBBA.store.setSetting("club.mode", "vip")
+	local _, _, club = pages(mia)
+	eq(club.name, "VIP")
+	P.fromPlayer(mia, "catalog.page", { id = club.id })
+	local vip = last(mia, "catalog.page").offers[1]
+	eq(vip.tier, "vip")
+	eq(vip.price.diamonds, 400)
+	BOBBA.wallet.add(mia.key, "diamonds", 2000)
+	P.fromPlayer(mia, "catalog.buy", { page = club.id, offer = vip.id })
+	local purse = last(mia, "user.purse")
+	eq(purse.clubLevel, 2)
+	eq(purse.clubKind, "vip")
+	eq(purse.clubMode, "vip")
+	-- both: VIP is 2, HC is 1; the tab has a page for each
+	BOBBA.store.setSetting("club.mode", "both")
+	eq(last(mia, "user.purse").clubMode, "both", "everyone online is told")
+	P.fromPlayer(mia, "catalog.index")
+	local tab = last(mia, "catalog.index").pages[2]
+	eq(tab.name, "Habbo Club")
+	eq(#tab.children, 2)
+	eq(tab.children[2].name, "VIP")
+	eq(BOBBA.wallet.clubLevel(mia.key), 2, "her VIP still runs")
+	BOBBA.wallet.addClub(mia.key, -40, "vip")
+	eq(BOBBA.wallet.clubLevel(mia.key), 0, "VIP over")
+	BOBBA.wallet.addClub(mia.key, 31, "hc")
+	eq(BOBBA.wallet.clubLevel(mia.key), 1, "HC only")
+	P.fromPlayer(mia, "navigator.create", { name = "VIP room", model = "t" })
+	assert(last(mia, "room.error").message:find("Club"), "model t is VIP's")
+	P.fromPlayer(mia, "navigator.create", { name = "HC room", model = "g" })
+	assert(last(mia, "navigator.created"), "model g is HC's")
+	-- back to HC only: HC gets VIP's things too
+	BOBBA.store.setSetting("club.mode", "hc")
+	eq(BOBBA.wallet.clubLevel(mia.key), 2)
 end
 
 T["the inventory: placing takes it out, picking up brings it back"] = function()

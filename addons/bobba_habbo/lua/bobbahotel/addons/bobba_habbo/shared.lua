@@ -67,8 +67,8 @@ if SERVER and BOBBA.looks then
 	if BOBBA.platform.after then BOBBA.platform.after(1, load) else load() end
 	BOBBA.looks.validator = function(figure, gender, key)
 		if not fd then return nil, "the hotel's clothes are still loading, try again in a moment" end
-		local club = key ~= nil and BOBBA.wallet ~= nil and BOBBA.wallet.clubLevel(key) > 0
-		return H.validateLook(fd, figure, gender, club, {})
+		local level = (key ~= nil and BOBBA.wallet ~= nil) and BOBBA.wallet.clubLevel(key) or 0
+		return H.validateLook(fd, figure, gender, level, {})
 	end
 end
 

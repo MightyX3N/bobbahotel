@@ -40,6 +40,7 @@ H.UI_ICONS = {
 	["friends-add"] = "ask_for_friend_png", ["friends-follow"] = "follow_friend_png", ["friends-heart"] = "relationship_status_heart",
 	["friends-smile"] = "relationship_status_smile", ["friends-bobba"] = "relationship_status_bobba", pencil = "small_pen",
 	["inventory-empty"] = "inventory_inventory_empty", ["hc-banner"] = "talent_vip_reward",
+	["vip-banner"] = "vip_color", ["currency-vip"] = "vip_color",
 }
 
 local images

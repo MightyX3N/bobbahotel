@@ -236,6 +236,7 @@ P.receive("catalog.index", function(_, data)
 	findPage(CAT.pages, -1)
 	local want = CAT.wantTab
 	CAT.wantTab = nil
+	if want == "club" and CAT.pages[1] then SHOP.openPage(CAT.pages[#CAT.pages].id) return end
 	if want then
 		for _, t in ipairs(CAT.pages) do if t.name == want then SHOP.openPage(t.id) return end end
 	end
@@ -433,7 +434,14 @@ end
 
 
 -- CatalogLayoutVipBuyView: the club offers on the left, what you'd get on the right
+-- a club's texts: Habbo's are about HC; for VIP they say VIP
+local function clubWords(t, kind)
+	if kind ~= "vip" then return t end
+	return (t:gsub("Habbo Club", "VIP"):gsub("%f[%w]HC%f[%W]", "VIP"))
+end
+
 local function drawVip(d, page)
+	local kind = page.clubKind or "hc"
 	local lx, lw = 164, 263.3
 	local chosen
 	for i, o in ipairs(page.offers or {}) do
@@ -442,20 +450,21 @@ local function drawVip(d, page)
 		if active then chosen = o end
 		d:click(lx, y, lw, 50, function() if not active then CAT.state = "none" end CAT.offer, CAT.offerPage = o.id, page.id end)
 		d:gridItem(lx, y, lw, 50, active)
-		d:icon("hc-banner", lx + 6, y + 5, 68, 40)
+		d:icon(kind == "vip" and "vip-banner" or "hc-banner", lx + 6, y + 5, 68, 40)
 		d:text(clubText(o.club), 14.4, lx + lw - 6, y + 9 + 8, U.C.black, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		for _, r in ipairs(priceRows(o, 1)) do priceRow(d, r[1], r[2], lx + lw - 6, y + 25, false) end
 	end
-	local hc = lines(d, U.plain(U.text("catalog.vip.buy.hccenter", "Habbo Club gives you more clothes, room models and more.")), 14.4, lw)
+	local hc = lines(d, clubWords(U.plain(U.text("catalog.vip.buy.hccenter", "Habbo Club gives you more clothes, room models and more.")), kind), 14.4, lw)
 	for i, l in ipairs(hc) do d:text(l, 14.4, lx + lw / 2, 391 - (#hc - i) * 16 - 8, U.C.black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
 	-- the right: how much club is left; the chosen offer's end date, price and Buy
 	local rx, rw = 435.3, 185.8
 	local purse = HUD.purse
-	local extending = (purse.clubDays or 0) > 0
+	-- (extending: this club is the one you have)
+	local extending = (purse.clubLevel or 0) > 0 and (purse.clubKind or "hc") == kind
 	-- (a member sees how long is left; anyone else what club gives, as Habbo's page says)
 	local info = extending and U.text("catalog.vip.extend.info", "You have %days% days of Habbo Club left.", { days = purse.clubDays or 0 })
 		or U.text("catalog.vip.buy.info", "Get exclusive clothes and hair styles and so much more!")
-	local details = lines(d, U.plain(info), 14.4, rw)
+	local details = lines(d, clubWords(U.plain(info), kind), 14.4, rw)
 	-- the chosen offer at the bottom (Flex align end): what it is and until when on the left, wrapping,
 	-- the price on the right; then Buy
 	local head, untilLines, prices = {}, {}, {}
@@ -472,7 +481,7 @@ local function drawVip(d, page)
 		local pw = 0
 		for _, r in ipairs(prices) do pw = math.max(pw, d:textWidth(tostring(r[2]), 14.4) + 4 + 15) end
 		local tw = rw - pw - 8
-		head = lines(d, U.plain(headText), 14.4, tw, true)
+		head = lines(d, clubWords(U.plain(headText), kind), 14.4, tw, true)
 		untilLines = lines(d, U.plain(untilText), 14.4, tw)
 	end
 	local textRows = #head + #untilLines
@@ -527,12 +536,29 @@ local function drawCatalog(w, d)
 	end
 end
 
--- opens the catalogue (at a tab, by its name: "Habbo Club")
+-- the club's tab (the last one)
+local function clubTab()
+	return CAT.pages and CAT.pages[#CAT.pages]
+end
+
+-- a new club mode: the catalogue's club pages are different now
+BOBBA.events.on("purseChanged", "bobba.shop.club", function(p)
+	if CAT.mode and CAT.mode ~= p.clubMode then
+		CAT.pages, CAT.page, CAT.active, CAT.tab, CAT.asked = nil, nil, nil, nil, nil
+		if U.windows.catalog then P.send("catalog.index", {}) end
+	end
+	CAT.mode = p.clubMode
+end)
+
+-- opens the catalogue (at a tab, by its name, or "club": the club's tab)
 function SHOP.openCatalog(tabName)
 	if not U.windows.catalog then U.window("catalog", 630, 400, drawCatalog) end
 	if not CAT.pages then
 		CAT.wantTab = tabName
 		P.send("catalog.index", {})
+	elseif tabName == "club" then
+		local t = clubTab()
+		if t then SHOP.openPage(t.id) end
 	elseif tabName then
 		for _, t in ipairs(CAT.pages) do if t.name == tabName then SHOP.openPage(t.id) end end
 	end
@@ -542,5 +568,5 @@ HUD.actions.catalog = function()
 	if U.windows.catalog then U.windows.catalog:close() return end
 	SHOP.openCatalog()
 end
-HUD.actions.club = function() SHOP.openCatalog("Habbo Club") end
+HUD.actions.club = function() SHOP.openCatalog("club") end
 concommand.Add("bobba_catalog", function() SHOP.openCatalog() end)
