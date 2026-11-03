@@ -105,6 +105,15 @@ local function chevron(d, cx, cy, left, alpha)
 	end
 end
 
+-- LayoutItemCountView: a number in red with a black border, its top-right corner at right, top
+function U.countBadge(d, n, right, top)
+	local t = tostring(n)
+	local w = d:textWidth(t, 9.5, true) + 8 + 2
+	d:round(4, right - w, top, w, 15.5, U.C.black)
+	d:round(3, right - w + 1, top + 1, w - 2, 13.5, U.C.danger)
+	d:text(t, 9.5, right - w / 2, top + 15.5 / 2, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, true)
+end
+
 local function drawToolbar(w, d)
 	local W, H = d.width, d.height
 	d:darkBox(0, 0, W, H)
@@ -126,6 +135,11 @@ local function drawToolbar(w, d)
 			end
 		else
 			d:icon(it.icon, x, y, it.w, it.h, { shadow = hover })
+		end
+		-- (new furni in the inventory: their count on its icon, LayoutItemCountView)
+		if it.id == "inventory" and BOBBA.shop and BOBBA.shop.unseenCount then
+			local n = BOBBA.shop.unseenCount()
+			if n > 0 then U.countBadge(d, n, x + it.w - 2, y + 2) end
 		end
 		x = x + it.w + 8
 	end

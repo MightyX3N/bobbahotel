@@ -64,6 +64,9 @@ function items.define(kind, def)
 	if def.roller == nil then def.roller = def.category == "roller" end
 	-- teleports (category teleport; Arcturus InteractionTeleport): walked into, out of their partner
 	if def.teleport == nil then def.teleport = def.category == "teleport" and (def.logic or ""):find("random") == nil end
+	-- the stacking helper (Nitro's furniture_custom_stack_height; Arcturus InteractionStackHelper):
+	-- its height is set by hand, and furni on its tiles go at that height, whatever is under them
+	if def.stackHelper == nil then def.stackHelper = def.logic == "furniture_custom_stack_height" end
 	def.directions = def.directions or { 0, 2, 4, 6 }
 	def.states = math.max(1, def.states or 1)
 	if def.stack == nil then def.stack = not def.sit and not def.lay end
@@ -129,6 +132,12 @@ local function top(it)
 	return it.z + it.def.height
 end
 
+-- a stacking helper on a tile (not the excluded one)
+local function helperAt(r, x, y, exclude)
+	for _, it in ipairs(items.at(r, x, y, exclude)) do if it.def.stackHelper then return it end end
+end
+items.helperAt = helperAt
+
 -- Room.getTopItemAt: the furni whose top is highest
 function items.topAt(r, x, y, exclude)
 	local best
@@ -177,6 +186,9 @@ function items.updateTile(r, x, y)
 	end
 	t.state, t.stackHeight = state, stack
 	t.allowStack = not topItem or (topItem.def.stack and not topItem.def.gate and not topItem.def.oneWay and not topItem.def.teleport)
+	-- (a stacking helper sets the height things go at there)
+	local helper = helperAt(r, x, y)
+	if helper then t.stackHeight, t.allowStack = helper.z, true end
 end
 
 local function updateTiles(r, list)
@@ -271,9 +283,12 @@ function items.fits(r, def, x, y, dir, exclude)
 		if not t or base(t).state == PF.INVALID then return nil, "not on the floor" end
 		if g.door and p.x == g.door.x and p.y == g.door.y then return nil, "not in the door" end
 		local under = items.topAt(r, p.x, p.y, exclude)
-		if under and (not under.def.stack or under.def.gate or under.def.oneWay or under.def.teleport) then return nil, "it can't go on top of that" end
-		if t.units.n > 0 and not (def.walk or def.sit or def.lay) then return nil, "someone is standing there" end
+		local helper = (not def.stackHelper) and helperAt(r, p.x, p.y, exclude)
+		if under and not helper and not def.stackHelper and (not under.def.stack or under.def.gate or under.def.oneWay or under.def.teleport) then return nil, "it can't go on top of that" end
+		if t.units.n > 0 and not (def.walk or def.sit or def.lay or def.stackHelper) then return nil, "someone is standing there" end
 		local h = under and (under.z + (under.def.sit and 0 or under.def.height)) or base(t).stack
+		-- (on a stacking helper's tiles: at its height; the helper itself goes on the floor)
+		if helper then h = helper.z elseif def.stackHelper then h = base(t).stack end
 		if h > z then z = h end
 	end
 	if z + def.height > items.MAX_HEIGHT then return nil, "too high" end
@@ -664,6 +679,34 @@ function items.useTeleport(r, it, player)
 	return true
 end
 
+items.MAX_STACK_HEIGHT = 40
+function items.setStackHeight(r, player, id, height)
+	local it = r.items[tonumber(id) or -1]
+	if not it or not it.def or not it.def.stackHelper then return false, "no such furni" end
+	if not items.canEdit(player, r) then return false, "only the room's owner can do that" end
+	height = tonumber(height) or 0
+	local tiles = items.footprint(it.def, it.x, it.y, it.dir)
+	local z
+	if height == -100 then
+		-- above what's there (the tallest top on its tiles, the helper left out)
+		z = 0
+		for _, p in ipairs(tiles) do
+			local topIt = items.topAt(r, p.x, p.y, it)
+			local t = PF.tile(r.grid, p.x, p.y)
+			local h = topIt and top(topIt) or (t and base(t).stack or 0)
+			if h > z then z = h end
+		end
+	else
+		z = math.min(items.MAX_STACK_HEIGHT, math.max(0, math.abs(height) / 100))
+	end
+	z = math.floor(z * 100 + 0.5) / 100
+	it.z = z
+	BOBBA.store.query("UPDATE bobbahotel_items SET z = ? WHERE id = ?", { z, it.id })
+	updateTiles(r, tiles)
+	broadcast(r, "room.items", { snapshot(it) })
+	return true
+end
+
 -- Rollers (Arcturus Room.cycleRollers): everyone standing on one (not walking) and the furni on top
 -- of it go one tile the way it points, when there's room there. Each thing moves once a turn.
 function items.rollers(r, moved)
@@ -821,6 +864,14 @@ function items.start()
 		local r = room(player)
 		if not r then return end
 		local ok, why = items.pickup(r, player, data.id)
+		if not ok then fail(player, why) end
+	end)
+	-- a stacking helper's height (Nitro's FurnitureStackHeightComposer: height x 100; -100 = on top of
+	-- what's on its tiles)
+	P.receive("room.item.stackheight", function(player, data)
+		local r = room(player)
+		if not r then return end
+		local ok, why = items.setStackHeight(r, player, data.id, data.height)
 		if not ok then fail(player, why) end
 	end)
 	-- a room background toner's colour (Nitro's SetRoomBackgroundColorDataComposer: hue, saturation,

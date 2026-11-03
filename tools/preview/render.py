@@ -82,6 +82,7 @@ math.Round = function(v) return math.floor(v + 0.5) end
 string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local cursor = { 0, 0 }
 KEY_LCONTROL, KEY_RCONTROL = 1, 2
+GetConVar = function(name) return CONVARS and CONVARS[name] end
 CreateClientConVar = function(name, default) return { GetBool = function() return default == "1" end, GetInt = function() return tonumber(default) or 0 end, GetFloat = function() return tonumber(default) or 0 end, GetString = function() return default end, GetName = function() return name end } end
 input = { GetCursorPos = function() return cursor[1], cursor[2] end, IsKeyDown = function() return false end, IsShiftDown = function() return false end, IsMouseDown = function() return false end }
 gui = { EnableScreenClicker = function() end, IsGameUIVisible = function() return false end, IsConsoleVisible = function() return false end }

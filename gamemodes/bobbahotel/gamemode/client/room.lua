@@ -305,9 +305,16 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 				P.send("room.item.move", { id = pl.id, x = hit.tileX, y = hit.tileY, dir = pl.dir })
 				R.placing = nil
 			elseif pl.inventoryId then
-				-- from the inventory (Nitro's attemptItemPlacement: one of the group, then done)
+				-- from the inventory (Nitro's attemptItemPlacement: one of the group); with the setting
+				-- "Place multiple objects" the next of the same kind follows the mouse straight away
 				P.send("inventory.place", { id = pl.inventoryId, x = hit.tileX, y = hit.tileY, dir = pl.dir })
-				R.placing = nil
+				local nextId = GetConVar("bobba_setting_placemultiple") and GetConVar("bobba_setting_placemultiple"):GetBool()
+					and BOBBA.shop and BOBBA.shop.nextOfKind and BOBBA.shop.nextOfKind(pl.kind, pl.inventoryId)
+				if nextId then
+					pl.inventoryId = nextId
+				else
+					R.placing = nil
+				end
 			else
 				P.send("room.item.place", { kind = pl.kind, x = hit.tileX, y = hit.tileY, dir = pl.dir })
 				R.placing = nil

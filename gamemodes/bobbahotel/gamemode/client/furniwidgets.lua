@@ -1,6 +1,8 @@
 -- Windows some furni open when used (client), like nitro-react's furniture widgets:
 --   a trophy (LayoutTrophyView): Habbo's gold, silver or bronze card with the engraving: who, when,
 --     their words (the furni's data: name TAB date TAB text)
+--   the stacking helper (FurnitureStackHeightView): its height, 0 to 40 (a slider, live), "Place
+--     on top" and "Place at floor level"
 --   the room background toner (FurnitureBackgroundColorView): its colour (hue, saturation,
 --     lightness), On/Off and Apply. Nitro shows the browser's colour picker; here they're Habbo's
 --     three sliders. While it's on, the room's background is that colour (useRoom's roomBackground).
@@ -168,10 +170,69 @@ hook.Add("Think", "bobba.furniwidgets.background", function()
 	end
 end)
 
+-- --- the stacking helper ----------------------------------------------------------------------------
+local function drawStackHeight(w, d)
+	local it = R.items[w.itemId]
+	if not it then w:close() return end
+	d:slimCard(U.text("widget.custom.stack.height.title", "Stacking Helper"))
+	local lines = U.wrapText(d, U.text("widget.custom.stack.height.text", "Adjust the height of stacking helper as you want, then move the other furni on top of it."), 14.4, d.width - 18)
+	local y = 37
+	for i, l in ipairs(lines) do d:text(l, 14.4, 9, y + (i - 1) * 16 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
+	-- the slider (its value on the thumb, as Nitro's ReactSlider) and the number next to it
+	local sy = 220 - 8 - 28.9 * 2 - 4 - 8 - 24
+	local sw = d.width - 18 - 50 - 8
+	local height = w.height
+	local tx = 9 + 12 + (sw - 24) * height / 40
+	d:round(3, 9, sy + 8, sw, 6, Color(182, 190, 197))
+	d:round(3, 9, sy + 8, tx - 9, 6, U.C.primary)
+	d:round(4, tx - 12, sy, 24, 22, U.C.primary)
+	d:text(string.format("%g", height), 10.8, tx, sy + 11, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	local function set()
+		local v = math.Clamp(((w.mx or 9) - 9 - 12) / (sw - 24), 0, 1) * 40
+		v = math.floor(v * 100 + 0.5) / 100
+		if v ~= w.height then
+			w.height = v
+			-- (sent a moment later, as Nitro's 10 ms timeout: once the slider rests)
+			w.sendAt = SysTime() + 0.05
+		end
+	end
+	d:click(9, sy, sw, 22, function() w.dragging = true set() end)
+	if w.dragging then
+		if input.IsMouseDown(MOUSE_LEFT) then set() else w.dragging = nil end
+	end
+	if w.sendAt and SysTime() >= w.sendAt then
+		w.sendAt = nil
+		P.send("room.item.stackheight", { id = it.id, height = math.floor(w.height * 100 + 0.5) })
+	end
+	d:box(d.width - 9 - 50, sy, 50, 22, 1, 3.2, U.C.inputBorder, U.C.white)
+	d:text(string.format("%g", height), 12.6, d.width - 9 - 6, sy + 11, U.C.black, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	local by = 220 - 8 - 28.9 * 2 - 4
+	local bw = d.width - 18
+	d:btn(9, by, bw, 28.9, U.C.primary, function() P.send("room.item.stackheight", { id = it.id, height = -100 }) end)
+	d:text(U.text("furniture.above.stack", "Place on top"), 12.6, 9 + bw / 2, by + 14.45, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	by = by + 28.9 + 4
+	d:btn(9, by, bw, 28.9, U.C.primary, function() P.send("room.item.stackheight", { id = it.id, height = 0 }) end)
+	d:text(U.text("furniture.floor.level", "Place at floor level"), 12.6, 9 + bw / 2, by + 14.45, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	-- (the server's height when it changes it: on top, floor)
+	if not w.dragging and not w.sendAt and w.lastZ ~= it.z then w.lastZ = it.z w.height = it.z end
+end
+
+function W.stackHeight(it)
+	local w = U.window("stackheight", 275, 220, drawStackHeight)
+	w.itemId = it.id
+	w.height = it.z or 0
+	w.lastZ = it.z
+	return w
+end
+
 -- what double-clicking a furni opens instead of using it; true when something opened
 function W.open(it)
 	local logic = logicOf(it)
 	if logic == "furniture_trophy" then W.trophy(it) return true end
+	if logic == "furniture_custom_stack_height" then
+		if R.current and R.current.canEdit then W.stackHeight(it) end
+		return true
+	end
 	if logic == "furniture_background_color" then
 		if R.current and R.current.canEdit then W.toner(it) end
 		return true
@@ -180,7 +241,7 @@ function W.open(it)
 end
 
 BOBBA.events.on("roomShown", "bobba.furniwidgets", function()
-	for _, id in ipairs({ "trophy", "toner" }) do
+	for _, id in ipairs({ "trophy", "toner", "stackheight" }) do
 		if U.windows[id] then U.windows[id]:close() end
 	end
 	W.preview = nil

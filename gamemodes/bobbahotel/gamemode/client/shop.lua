@@ -71,6 +71,7 @@ end
 
 -- LayoutItemCountView: the number in red at the top right (badge bg-danger, black border)
 local function countBadge(d, n, right, top)
+	if U.countBadge then return U.countBadge(d, n, right, top) end
 	local t = tostring(n)
 	local w = d:textWidth(t, 9.5, true) + 8 + 2
 	d:round(4, right - w, top, w, 15.5, U.C.black)
@@ -96,8 +97,25 @@ local function lines(d, text, size, maxW, bold)
 end
 
 -- --- the inventory's furni --------------------------------------------------------------------------
-SHOP.inv = SHOP.inv or { items = {}, loaded = false }
+SHOP.inv = SHOP.inv or { items = {}, loaded = false, unseen = {}, sent = {} }
 local INV = SHOP.inv
+INV.unseen, INV.sent = INV.unseen or {}, INV.sent or {}
+
+-- how many furni came in that haven't been looked at (useInventoryUnseenTracker: the toolbar's count)
+function SHOP.unseenCount()
+	local n = 0
+	for _ in pairs(INV.unseen) do n = n + 1 end
+	return n
+end
+
+-- the next furni of a kind to place, after one that's just been put down ("Place multiple objects")
+function SHOP.nextOfKind(kind, after)
+	INV.sent[after] = true
+	for i = #INV.items, 1, -1 do
+		local it = INV.items[i]
+		if it.kind == kind and not INV.sent[it.id] then return it.id end
+	end
+end
 
 -- the furni grouped the way Nitro's GroupItem does: one per kind, newest first
 local function groups()
@@ -118,18 +136,23 @@ end
 P.receive("inventory.items", function(_, list)
 	INV.items = list or {}
 	INV.loaded = true
+	INV.sent = {}
 end)
 P.receive("inventory.added", function(_, list)
 	for _, it in ipairs(list or {}) do
 		local seen = false
 		for _, o in ipairs(INV.items) do if o.id == it.id then seen = true end end
 		if not seen then INV.items[#INV.items + 1] = it end
+		-- (new to the inventory: marked until it's looked at)
+		if it.new then INV.unseen[it.id] = true end
+		INV.sent[it.id] = nil
 	end
 end)
 P.receive("inventory.removed", function(_, ids)
 	local gone = {}
 	for _, id in ipairs(ids or {}) do gone[id] = true end
 	for i = #INV.items, 1, -1 do if gone[INV.items[i].id] then table.remove(INV.items, i) end end
+	for id in pairs(gone) do INV.unseen[id], INV.sent[id] = nil, nil end
 end)
 
 -- attemptItemPlacement: the furni follows the mouse in the room (the inventory goes away meanwhile)
@@ -157,6 +180,8 @@ function SHOP.drawInventoryFurni(w, d)
 	local chosen
 	for _, g in ipairs(all) do if g.kind == INV.selected then chosen = g end end
 	if not chosen then chosen = all[1] INV.selected = chosen.kind end
+	-- (looking at a group: its new ones are seen now, resetItems)
+	for _, id in ipairs(chosen.ids) do INV.unseen[id] = nil end
 	-- the grid
 	local gx, gy, gw, gh = 9, 111.9, 294.2, 311 - 111.9
 	local n, cw = columns(gw)
@@ -174,7 +199,10 @@ function SHOP.drawInventoryFurni(w, d)
 					INV.lastClick = { kind = g.kind, t = now }
 					INV.selected = g.kind
 				end)
-				d:gridItem(x, y, cw, 40, active)
+				-- (new ones: layout-grid-item.unseen, green at 40%)
+				local unseen = false
+				for _, id in ipairs(g.ids) do if INV.unseen[id] then unseen = true end end
+				d:gridItem(x, y, cw, 40, active, (unseen and not active) and Color(134, 185, 138) or nil)
 				d:clip(x + 2, y + 2, cw - 4, 36, function() furniIcon(d, g.kind, x, y, cw, 40) end)
 				if #g.ids > 1 then countBadge(d, #g.ids, x + cw - 4, y + 4) end
 			end
@@ -193,6 +221,7 @@ end
 
 -- the first time the inventory opens, ask for what's in it
 function SHOP.inventoryOpened()
+	INV.sent = {}
 	if not INV.loaded then P.send("inventory.get", {}) end
 end
 

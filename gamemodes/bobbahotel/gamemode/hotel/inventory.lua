@@ -3,7 +3,7 @@
 -- brings it back to its owner's; placing takes it out into the room.
 --
 -- Messages to players:  inventory.items { { id, kind }, ... }  (all of it)
---                       inventory.added { { id, kind }, ... }  inventory.removed { id, ... }
+--                       inventory.added { { id, kind, new }, ... }  inventory.removed { id, ... }
 -- Messages from players: inventory.get {}, inventory.place { id, x, y, dir }
 
 BOBBA.inventory = BOBBA.inventory or {}
@@ -28,7 +28,8 @@ function INV.give(key, kind, n, data)
 	BOBBA.store.transaction(function()
 		for _ = 1, math.max(1, math.floor(n or 1)) do
 			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state, data) VALUES (0, ?, ?, 0, 0, 0, 0, 0, ?)", { tostring(key), kind, data or "" })
-			added[#added + 1] = { id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id), kind = kind }
+			-- (new: the player's inventory marks it until they look, Habbo's unseen items)
+			added[#added + 1] = { id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id), kind = kind, new = true }
 		end
 	end)
 	local player = playerFor(key)

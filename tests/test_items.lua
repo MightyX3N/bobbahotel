@@ -16,6 +16,7 @@ local function start()
 	I.define("roller", { width = 1, length = 1, height = 0.2, walk = true, category = "roller" })
 	I.define("tele", { width = 1, length = 1, height = 2, states = 3, category = "teleport", directions = { 0, 2, 4, 6 } })
 	I.define("toner", { width = 1, length = 1, height = 1, states = 2, logic = "furniture_background_color" })
+	I.define("helper", { width = 2, length = 2, height = 0, walk = true, logic = "furniture_custom_stack_height" })
 	I.define("oneway", { width = 1, length = 1, height = 2, states = 2, logic = "furniture_one_way_door", directions = { 0, 2, 4, 6 } })
 	local mia, bo = { key = "765611980001", name = "Mia" }, { key = "765611980002", name = "Bo" }
 	local id = BOBBA.live.create(mia.key, mia.name, "model_a", "Mia's room")
@@ -385,6 +386,25 @@ T["a background toner: its colour set by the owner, kept; switched on and off"] 
 	local got
 	BOBBA.items.placeExisting(r, mia, t.id, "toner", 7, 3, 0, function(it) got = it end)
 	eq(got.data, "120,255,0")
+end
+
+T["the stacking helper: furni on its tiles go at the height it's set to"] = function()
+	local mia, _, r = start()
+	local chair = place(r, mia, "chair", 6, 3, 0)
+	local h = place(r, mia, "helper", 6, 3, 0)
+	assert(h, "goes over furni")
+	eq(h.z, 0, "on the floor")
+	assert(BOBBA.items.setStackHeight(r, mia, h.id, 250))
+	eq(h.z, 2.5)
+	local lamp = place(r, mia, "lamp", 7, 4, 0)
+	eq(lamp.z, 2.5, "at the helper's height, though the floor is empty there")
+	local lamp2 = place(r, mia, "lamp", 6, 3, 0)
+	eq(lamp2.z, 2.5, "on the chair's tile too, chairs don't take furni")
+	assert(BOBBA.items.setStackHeight(r, mia, h.id, -100))
+	eq(h.z, 4.5, "above what's on it (the lamps: 2.5 + 2)")
+	assert(BOBBA.items.setStackHeight(r, mia, h.id, 99999))
+	eq(h.z, 40, "40 at most")
+	local _ = chair
 end
 
 T["switching: round and round through its states"] = function()
