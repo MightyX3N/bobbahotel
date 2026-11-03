@@ -150,8 +150,8 @@ return function(G)
 			if data then return lg.newFont(data, em) end
 			return lg.newFont(em)
 		end)
-		if ok then return f end
-		return lg.newFont(em)
+		if not ok then f = lg.newFont(em) end
+		return require("bobba.fallback").apply(f, em)
 	end
 
 	local surfaceFonts = {}
@@ -165,8 +165,8 @@ return function(G)
 		f:setFilter("linear", "linear")
 		fonts[name] = {
 			font = f,
-			-- (no bold file: drawn twice, a pixel apart, like Windows makes bold; heavier: two pixels)
-			bold = (wantBold and not isBold) and (weight >= 800 and 2 or 1) or 0,
+			-- (no bold file: drawn twice, a pixel apart, like Windows makes bold)
+			bold = (wantBold and not isBold) and 1 or 0,
 			italic = data.italic and true or false,
 			outline = data.outline and true or false,
 			size = size,

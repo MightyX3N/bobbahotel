@@ -9,7 +9,7 @@ local lg = love.graphics
 return function(G, define, Panel, getFocus)
 	local function chars(s)
 		local t = {}
-		for _, c in utf8.codes(s) do t[#t + 1] = utf8.char(c) end
+		for c in s:gmatch("[%z\1-\127\194-\244][\128-\191]*") do t[#t + 1] = c end
 		return t
 	end
 	local function len(s) return utf8.len(s) or #s end

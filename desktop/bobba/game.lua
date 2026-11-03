@@ -21,6 +21,7 @@ function Game.start(opts)
 	startedAt = love.timer.getTime()
 	FS.mkdirs(opts.save)
 	Console.init(opts.log)
+	Console.add("Playing as " .. tostring(opts.playerName) .. " (" .. tostring(opts.playerKey) .. ")\n")
 	HTTP.startWorkers(os.getenv("BOBBA_DESKTOP_FAKE_HTTP"))
 
 	serverThread = love.thread.newThread("bobba/server.lua")

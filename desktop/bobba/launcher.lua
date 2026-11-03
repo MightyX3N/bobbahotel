@@ -40,7 +40,7 @@ local function font(px, kind)
 	local key = kind .. size
 	if not fonts[key] then
 		local ok, f = pcall(lg.newFont, fontFiles[kind], size)
-		fonts[key] = ok and f or lg.newFont(size)
+		fonts[key] = require("bobba.fallback").apply(ok and f or lg.newFont(size), size)
 	end
 	return fonts[key]
 end
