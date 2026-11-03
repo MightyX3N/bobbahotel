@@ -1,0 +1,5 @@
+{
+  "compilerOptions": { "target": "ESNext", "lib": ["ESNext"], "moduleResolution": "Node", "strict": false, "rootDir": "src", "outDir": "out", "types": [] },
+  "include": ["src/*.ts"],
+  "tstl": { "luaTarget": "JIT", "luaLibImport": "inline", "luaBundle": "nitro.lua", "luaBundleEntry": "src/Port.ts", "noHeader": true }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "bobba-nitro-port",
+  "private": true,
+  "description": "Translates the parts of Nitro (GPL-3) Bobba Hotel uses to Lua, and checks the Lua gives the same results",
+  "scripts": {
+    "build": "sh build.sh",
+    "test": "sh test.sh"
+  },
+  "devDependencies": {
+    "typescript-to-lua": "1.26.2",
+    "typescript": "5.5.2",
+    "esbuild": "0.21.5"
+  }
+}

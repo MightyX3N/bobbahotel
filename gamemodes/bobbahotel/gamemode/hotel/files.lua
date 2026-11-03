@@ -10,5 +10,8 @@ return {
 	"lang/en.lua",
 	"hotel/perms.lua",
 	"hotel/store.lua",
+	"nitro/port.lua",
+	"hotel/rooms.lua",
+	"hotel/layouts.lua",
 	"hotel/addons.lua",
 }

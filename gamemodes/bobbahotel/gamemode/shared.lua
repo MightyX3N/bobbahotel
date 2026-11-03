@@ -23,3 +23,9 @@ BOBBA.addons.loadAll()
 
 if SERVER then AddCSLuaFile("status.lua") end
 include("status.lua")
+
+-- client-only files (drawing, windows, input)
+local CLIENT_FILES = { "client/view.lua" }
+for _, f in ipairs(CLIENT_FILES) do
+	if SERVER then AddCSLuaFile(f) else include(f) end
+end
