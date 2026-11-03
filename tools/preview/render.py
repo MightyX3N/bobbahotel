@@ -124,6 +124,14 @@ local function textEntry(parent)
 	function e:DrawTextEntryText(c) if self.value ~= "" then draw.SimpleText(self.value, self.font, 0, self.h / 2, c, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end end
 	if parent then rawset(parent, "children", rawget(parent, "children") or {}) table.insert(rawget(parent, "children"), e) end
 	e.isEntry = true
+	-- (only methods GMod's DTextEntry has: calling anything else fails here as it does in the game)
+	local GMOD = { SetMultiline = true, IsMultiline = true, SetUpdateOnType = true, SetPaintBackground = true, SetCaretPos = true,
+		HasFocus = true, RequestFocus = true, KillFocus = true, Dock = true, SetMouseInputEnabled = true, SetKeyboardInputEnabled = true,
+		SetDrawLanguageID = true, SetEditable = true, SetTextColor = true, SetCursorColor = true, SetHighlightColor = true, SelectAllOnFocus = true }
+	setmetatable(e, { __index = function(_, k)
+		if GMOD[k] then return function() end end
+		error("DTextEntry has no " .. tostring(k), 2)
+	end })
 	return e
 end
 vgui = {

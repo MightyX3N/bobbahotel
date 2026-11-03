@@ -391,6 +391,7 @@ function D:input(id, x, y, w, h, opts)
 		e = vgui.Create("DTextEntry", win.panel)
 		e:SetPaintBackground(false)
 		e:SetMultiline(opts.multiline or false)
+		e.bobbaMultiline = opts.multiline or false
 		e:SetUpdateOnType(true)
 		e:SetText(opts.value or "")
 		e.bobbaMax = opts.max
@@ -406,7 +407,8 @@ function D:input(id, x, y, w, h, opts)
 			self2:SetFont(font)
 			self2:DrawTextEntryText(Color(0, 0, 0), Color(143, 185, 202), Color(0, 0, 0))
 			if (self2:GetValue() or "") == "" and self2.bobbaPlaceholder then
-				draw.SimpleText(self2.bobbaPlaceholder, font, 2, self2:GetMultiline() and 1 or ph / 2, U.C.placeholder, TEXT_ALIGN_LEFT, self2:GetMultiline() and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
+				local multi = self2.bobbaMultiline
+				draw.SimpleText(self2.bobbaPlaceholder, font, 2, multi and 1 or ph / 2, U.C.placeholder, TEXT_ALIGN_LEFT, multi and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
 			end
 		end
 		win.inputs[id] = e
