@@ -30,6 +30,7 @@ lib("avatardata.lua")
 lib("furnidata.lua")
 lib("roomcontent.lua")
 lib("chatstyles.lua")
+lib("figuredata.lua")
 
 -- client-only file, sent to players by the server
 if SERVER then
@@ -37,6 +38,23 @@ if SERVER then
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/furni.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/planes.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/chat.lua")
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/editor.lua")
+end
+
+-- Looks are checked against Habbo's figuredata, the way Arcturus does (server; lib/figuredata.lua).
+-- Until it's loaded (a moment after the server starts) a new look waits.
+if SERVER and BOBBA.looks then
+	local fd
+	local function load()
+		H.figureData(function(data, err)
+			if data then fd = data else print("[Bobba] Habbo's figuredata: " .. tostring(err)) end
+		end)
+	end
+	if BOBBA.platform.after then BOBBA.platform.after(1, load) else load() end
+	BOBBA.looks.validator = function(figure, gender)
+		if not fd then return nil, "the hotel's clothes are still loading, try again in a moment" end
+		return H.validateLook(fd, figure, gender, false, {})
+	end
 end
 
 -- The hotel asks what a kind of furni is (its size, height, sitting...): Habbo's furnidata and the

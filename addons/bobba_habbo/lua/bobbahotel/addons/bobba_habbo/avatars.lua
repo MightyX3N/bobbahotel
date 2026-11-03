@@ -207,6 +207,9 @@ end
 BOBBA.room = BOBBA.room or { units = {} }
 BOBBA.room.figureDrawer = draw
 
+-- for the avatar editor (editor.lua)
+AV.figureReady, AV.material, AV.sprite = figureReady, material, sprite
+
 -- --- in chat bubbles: the head, and the shirt's colour --------------------------------------------------
 -- (nitro-react's ChatWidgetMessageView: the head alone, facing the front, at half Habbo's size)
 local heads = {}

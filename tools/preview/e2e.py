@@ -57,13 +57,19 @@ def main():
     ap.add_argument("--floor", help="the room's floor id")
     ap.add_argument("--wallpaper", help="the room's wallpaper id")
     ap.add_argument("--say", help="what the player says, then what happens: text[|kind[|seconds later]];... (kind talk/shout/whisper)")
+    ap.add_argument("--editor", action="store_true", help="open the avatar editor over the room (needs --habbo)")
+    ap.add_argument("--editor-clicks", help="then click in it: x,y in CSS pixels from its corner; wheel:x,y,n scrolls;...")
+    ap.add_argument("--editor-frames", type=int, default=40, help="paints before the picture (clothes load in between)")
     ap.add_argument("--click", help="after drawing, click at screen x,y[;x,y...] and print what the client sends")
     a = ap.parse_args()
     S = server()
     me = S.table_from({"key": "76561198000000001", "name": "Saint MightyX3N"})
     room_id = S.eval("BOBBA.live.homeRoom")() if a.layout == "model_a" else S.eval("BOBBA.live.create")("1", "Mia", a.layout, "Test room")
-    if a.furni:
+    if a.furni or a.editor:
         habbo_server(S, a.habbo)
+        # (the addon loads Habbo's figuredata a moment after the server starts: its timer)
+        S.execute("BOBBA.platform.now = BOBBA.platform.now + 2; BOBBA.platform.runTimers()")
+    if a.furni:
         r = S.eval("function(id) return BOBBA.live.rooms[id] end")
         S.eval("BOBBA.live.enter")(me, room_id)
         for spec in a.furni.split(";"):
@@ -151,7 +157,55 @@ def main():
     V.panel.Paint(V.panel, w, h)
     out = os.path.join(ROOT, "out", "preview", a.out)
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    render.paint(G, w, h, images).save(out)
+    picture = render.paint(G, w, h, images)
+    if a.editor:
+        L.execute("BOBBA.avatarEditor.open()")
+        win = L.eval("BOBBA.ui.windows['avatar-editor']")
+        if win is None: raise SystemExit("the editor didn't open")
+        panel = win.panel
+        scale = L.eval("BOBBA.ui.scale()")
+        def paint_window():
+            G.ops = L.table()
+            panel.Paint(panel, panel.w, panel.h)
+        for _ in range(a.editor_frames):
+            paint_window()
+        for c in (a.editor_clicks or "").split(";"):
+            if not c: continue
+            if c.startswith("wheel:"):
+                x, y, n = map(float, c[6:].split(","))
+                panel.mouse[1], panel.mouse[2] = x * scale, y * scale
+                paint_window()
+                panel.OnMouseWheeled(panel, n)
+            else:
+                x, y = map(float, c.split(","))
+                panel.mouse[1], panel.mouse[2] = x * scale, y * scale
+                paint_window()
+                panel.OnMousePressed(panel, 107)
+            for _ in range(a.editor_frames):
+                paint_window()
+        paint_window()
+        layer = render.paint(G, int(panel.w), int(panel.h), images, transparent=True)
+        sent = [x for x in L.eval("BOBBA.platform.sent").values() if x.name == "user.figure"]
+        if sent:
+            # saved: through the server (its check), and what it sends back to the room
+            before = S.eval("function(p) return #BOBBA.platform.inbox(p, 'room.units') end")(me)
+            S.eval("BOBBA.platform.fromPlayer")(me, "user.figure", S.table_from({"figure": sent[-1].data.figure, "gender": sent[-1].data.gender}))
+            box = S.eval("function(p) return BOBBA.platform.inbox(p, 'room.units') end")(me)
+            err = S.eval("function(p) local b = BOBBA.platform.inbox(p, 'room.error') return b[#b] and b[#b].message end")(me)
+            print("server:", "saved" if len(box) > before else "refused (%s)" % err, "| stored", S.eval("BOBBA.looks.get")(me.key))
+            if len(box) > before:
+                L.eval("BOBBA.platform.receivers['room.units']")(None, tbl(json.loads(tojson(S, box[len(box)]))))
+                for _ in range(a.editor_frames + 3):
+                    G.ops = L.table()
+                    V.dirty = True
+                    V.panel.Paint(V.panel, w, h)
+                picture = render.paint(G, w, h, images)
+        picture = picture.convert("RGBA")
+        if L.eval("BOBBA.ui.windows['avatar-editor']") is not None:
+            picture.alpha_composite(layer, (int(panel.x), int(panel.y)))
+        print("editor: figure", L.eval("BOBBA.avatarEditor.editor.figure:getFigureString()"), "| gender", L.eval("BOBBA.avatarEditor.editor.figure.gender"),
+              "| sent", [dict(x.data) for x in L.eval("BOBBA.platform.sent").values() if x.name == "user.figure"])
+    picture.convert("RGB").save(out)
     if a.click:
         for c in a.click.split(";"):
             cx, cy = map(int, c.split(","))
@@ -204,6 +258,7 @@ def habbo(L, folder):
         dofile(ADDON_DIR .. "furni.lua")
         dofile(ADDON_DIR .. "planes.lua")
         dofile(ADDON_DIR .. "chat.lua")
+        dofile(ADDON_DIR .. "editor.lua")
         BOBBA.habbo.preloadAvatars() -- what its timer does as the game starts
         -- the bytes of a stored file as hex (this Lua runtime hands strings to Python as UTF-8 text)
         function STORE_HEX(path)
@@ -238,7 +293,8 @@ def habbo_server(S, folder):
     S.globals().PY_STORE = store
     settings = (b"x=1\nflash.client.url=https://images.habbo.com/gordon/" + SETTINGS_REV + b"/\n"
                 b"flash.dynamic.download.url=//images.habbo.com/dcr/hof_furni/\n"
-                b"furnidata.load.url=https://www.habbo.com/gamedata/furnidata_xml/" + FURNIDATA_REV + b"\n")
+                b"furnidata.load.url=https://www.habbo.com/gamedata/furnidata_xml/" + FURNIDATA_REV + b"\n"
+                b"external.figurepartlist.txt=https://www.habbo.com/gamedata/figuredata/" + FIGUREDATA_REV + b"\n")
     def http(url, ok, fail):
         u = url.decode() if isinstance(url, bytes) else url
         if u == "https://www.habbo.com/gamedata/external_variables/1": ok(settings)

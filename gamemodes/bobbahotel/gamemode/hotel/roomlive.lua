@@ -172,7 +172,8 @@ local function unload(r)
 end
 
 local function snapshot(u)
-	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to, posture = u.posture, height = u.height }
+	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to, posture = u.posture, height = u.height,
+		figure = u.figure, gender = u.gender }
 end
 live.snapshot = snapshot
 
@@ -247,6 +248,7 @@ function live.enter(player, id)
 		x = r.layout.door.x, y = r.layout.door.y, z = g.doorZ, dir = r.layout.door.dir,
 		path = nil,
 	}
+	u.figure, u.gender = BOBBA.looks.get(u.key)
 	live.nextUnit = live.nextUnit + 1
 	r.units[u.id] = u
 	r.order[#r.order + 1] = u.id
@@ -260,6 +262,12 @@ function live.enter(player, id)
 	end
 	BOBBA.events.emit("roomEntered", r, u)
 	return true
+end
+
+-- A unit's new look: everyone in the room sees it
+function live.setFigure(u, figure, gender)
+	u.figure, u.gender = figure, gender
+	if u.room then broadcast(u.room, "room.units", { snapshot(u) }) end
 end
 
 -- Arcturus RoomUserRotation.walkDirection: 0 = up (y - 1), 2 = right (x + 1), 4 = down, 6 = left
@@ -343,6 +351,7 @@ function live.start()
 	live.migrate()
 	BOBBA.items.start()
 	BOBBA.chat.start()
+	BOBBA.looks.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

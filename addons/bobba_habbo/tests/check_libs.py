@@ -547,5 +547,32 @@ if os.environ.get("HABBO_AIR"):
         for k, v in L9.globals().PY_FILES.items():
             if b"normal_" in k and k.endswith(b".png"): open(os.path.join(os.environ.get("HABBO_AIR_OUT", "/tmp"), k.decode().split("/")[-1]), "wb").write(v)
 
+# --- figuredata, and checking a look the way Arcturus does (figuredata.lua) ---------------------------------
+fd_xml_small = (b'<figuredata><colors><palette id="1"><color id="1" index="1" club="0" selectable="1">FFCC99</color><color id="7" index="2" club="2" selectable="1">AA8866</color></palette>'
+    b'<palette id="3"><color id="61" index="1" club="0" selectable="1">666666</color><color id="62" index="2" club="0" selectable="1">333333</color><color id="70" index="3" club="2" selectable="1">111111</color></palette></colors>'
+    b'<sets><settype type="hd" paletteid="1" mand_m_0="1" mand_f_0="1" mand_m_1="1" mand_f_1="1"><set id="180" gender="M" club="0" colorable="1" selectable="1" preselectable="0" sellable="0"><part id="1" type="hd" colorable="1" index="0" colorindex="1"/></set>'
+    b'<set id="600" gender="F" club="0" colorable="1" selectable="1" preselectable="0" sellable="0"><part id="1" type="hd" colorable="1" index="0" colorindex="1"/></set></settype>'
+    b'<settype type="ch" paletteid="3" mand_m_0="1" mand_f_0="1" mand_m_1="0" mand_f_1="0"><set id="210" gender="M" club="0" colorable="1" selectable="1" preselectable="0" sellable="0"><part id="1" type="ch" colorable="1" index="0" colorindex="1"/></set>'
+    b'<set id="3000" gender="U" club="2" colorable="1" selectable="1" preselectable="0" sellable="0"><part id="5" type="ch" colorable="1" index="0" colorindex="1"/></set>'
+    b'<set id="635" gender="F" club="0" colorable="1" selectable="1" preselectable="0" sellable="0"><part id="2" type="ch" colorable="1" index="0" colorindex="1"/></set></settype>'
+    b'<settype type="ha" paletteid="3" mand_m_0="0" mand_f_0="0" mand_m_1="0" mand_f_1="0"><set id="1002" gender="U" club="0" colorable="1" selectable="1" preselectable="0" sellable="0"><part id="2" type="ha" colorable="1" index="0" colorindex="1"/></set>'
+    b'<set id="1009" gender="U" club="0" colorable="0" selectable="1" preselectable="0" sellable="1"><part id="9" type="ha" colorable="0" index="0" colorindex="0"/></set></settype></sets></figuredata>')
+L10 = runtime()
+H10 = L10.eval(b"BOBBA.habbo")
+fdt = H10.parseFigureData(fd_xml_small)
+check(fdt[b"palettes"][1][b"colors"][1][b"rgb"] == 0xFFCC99 and fdt[b"palettes"][1][b"byId"][7][b"club"] == 2, "figuredata: palettes, colours and their club level")
+st = fdt[b"setTypes"][b"ch"]
+check(st[b"paletteId"] == 3 and st[b"mand"][b"M"][0] == True and st[b"mand"][b"M"][1] == False and st[b"sets"][2][b"id"] == 3000 and st[b"sets"][2][b"parts"][1][b"colorIndex"] == 1,
+      "figuredata: set types, mandatory flags, sets and their parts (in figuredata's order)")
+v = lambda f, g=b"M", club=False: H10.validateLook(fdt, f, g, club)
+check(v(b"hd-180-1.ch-210-62") == b"hd-180-1.ch-210-62", "look: a fine look stays")
+check(v(b"hd-180-7.ch-210-70") == b"hd-180-1.ch-210-61", "look: club colours become the palette's first ordinary one")
+check(v(b"hd-180-7.ch-210-70", club=True) == b"hd-180-7.ch-210-70", "look: with club they stay")
+check(v(b"hd-180-1.ch-3000-61") == b"hd-180-1.ch-210-61", "look: a club shirt becomes the first one that isn't (it's mandatory)")
+check(v(b"hd-180-1.ch-210-61.ha-1009") == b"hd-180-1.ch-210-61", "look: a sellable hat you don't own is taken off (not mandatory)")
+check(v(b"hd-180-1") == b"hd-180-1.ch-210-61", "look: a missing mandatory shirt is added")
+check(v(b"hd-600-1.ch-635-61", b"M") == b"hd-180-1.ch-210-61", "look: girls' clothes on a boy are swapped")
+check(v(b"hd-180-1.ch-210-61.zz-1-2") == b"hd-180-1.ch-210-61", "look: unknown kinds of clothing left out")
+
 print("\n%d failed" % failed)
 sys.exit(1 if failed else 0)

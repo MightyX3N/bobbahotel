@@ -101,16 +101,31 @@ local function cachedText(key, url, cb)
 	H.download(key, url, function(text, err) cb(text, err) end)
 end
 
+-- Where Habbo's figuredata (every piece of clothing and colour) is, and its cache key
+function H.figureDataSource(cfg)
+	-- the setting is there twice; the last one (with Habbo's revision in it) counts
+	local url = "https://www.habbo.com/gamedata/figuredata/1"
+	for u in cfg.settings:gmatch("\nexternal%.figurepartlist%.txt=([^\r\n]*)") do url = u end
+	url = url:gsub("^http:", "https:")
+	return url, "avatar/figuredata_" .. (url:match("([%w]+)$") or "1")
+end
+
+-- Just the figuredata (the server checks looks with it). cb(xmlText) or cb(nil, why)
+function H.figureDataXml(cb)
+	H.config(function(cfg, err)
+		if not cfg then cb(nil, err) return end
+		local url, key = H.figureDataSource(cfg)
+		cachedText(key, url, cb)
+	end)
+end
+
 local avatarCache
 function H.avatarData(cb)
 	if avatarCache then cb(avatarCache) return end
 	H.config(function(cfg, err)
 		if not cfg then cb(nil, err) return end
 		local rev = cfg.clientUrl:match("([^/]+)/?$") or "client"
-		-- the setting is there twice; the last one (with Habbo's revision in it) counts
-		local figuredataUrl = "https://www.habbo.com/gamedata/figuredata/1"
-		for u in cfg.settings:gmatch("\nexternal%.figurepartlist%.txt=([^\r\n]*)") do figuredataUrl = u end
-		figuredataUrl = figuredataUrl:gsub("^http:", "https:")
+		local figuredataUrl, figuredataKey = H.figureDataSource(cfg)
 		local data = { offsets = {} }
 		local steps = {
 			function(nxt) H.clientXml(function(files, e)
@@ -129,7 +144,7 @@ function H.avatarData(cb)
 		text("actions", "avatar/" .. rev .. "/HabboAvatarActions", cfg.clientUrl .. "HabboAvatarActions.xml")
 		text("figuremap", "avatar/" .. rev .. "/figuremap", cfg.clientUrl .. "figuremap.xml")
 		text("effectmap", "avatar/" .. rev .. "/effectmap", cfg.clientUrl .. "effectmap.xml")
-		text("figuredata", "avatar/figuredata_" .. (figuredataUrl:match("([%w]+)$") or "1"), figuredataUrl)
+		text("figuredata", figuredataKey, figuredataUrl)
 		local i = 0
 		local function nxt()
 			i = i + 1

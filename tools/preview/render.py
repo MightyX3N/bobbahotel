@@ -41,7 +41,7 @@ surface = {
 	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter, G.blend) end,
 	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }) end,
 }
-draw = { NoTexture = function() G.material = nil end, SimpleText = function(t, f, x, y, c, ax, ay) op("text", t, x, y, c and { c.r, c.g, c.b } or nil, f, ay) end,
+draw = { NoTexture = function() G.material = nil end, SimpleText = function(t, f, x, y, c, ax, ay) op("text", t, x, y, c and { c.r, c.g, c.b, c.a or 255 } or nil, f, ay, ax) end,
 	SimpleTextOutlined = function(t, f, x, y, c, ax, ay) op("text", t, x - 3 * #t, y - 12) end }
 local fakeTime = 100
 SysTime = function() return fakeTime end
@@ -57,7 +57,7 @@ end
 chat = { AddText = function() end }
 LocalPlayer = function() return nil end
 TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM = 1, 4
-render = { PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end,
+render = { SetScissorRect = function(x0, y0, x1, y1, on) op("clip", x0, y0, x1, y1, on) end, PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end,
 	PushFilterMag = function(f) G.filter = f end, PushFilterMin = function() end, PopFilterMag = function() G.filter = nil end, PopFilterMin = function() end,
 	-- blending: only "add" (light) is painted differently
 	OverrideBlend = function(on, src, dst) G.blend = (on and dst == BLEND_ONE) and "add" or nil end }
@@ -65,14 +65,14 @@ BLEND_ZERO, BLEND_ONE, BLEND_DST_COLOR, BLEND_ONE_MINUS_DST_COLOR, BLEND_SRC_ALP
 BLENDFUNC_ADD = 0
 KEY_R, MOUSE_RIGHT = 28, 108
 bit = bit or require("bit")
-draw.RoundedBox = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
-draw.RoundedBoxEx = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
+draw.RoundedBox = function(r, x, y, w, h, c) op("rrect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }, r, true, true, true, true) end
+draw.RoundedBoxEx = function(r, x, y, w, h, c, tl, tr, bl, br) op("rrect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }, r, tl or false, tr or false, bl or false, br or false) end
 -- text: measured with the real font (see pil_font)
 local font = "BobbaChat"
 surface.SetFont = function(f) font = f end
 surface.GetTextSize = function(t) return PY_TEXT_SIZE(font, t) end
 utf8 = utf8 or { len = function(t) local n = 0 for _ in t:gmatch("[^\128-\191]") do n = n + 1 end return n end }
-TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP = 0, 3
+TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, TEXT_ALIGN_RIGHT = 0, 3, 2
 KEY_ENTER, KEY_PAD_ENTER = 64, 65
 TEXFILTER = { POINT = "point", LINEAR = "linear" }
 cam = { Start2D = function() end, End2D = function() end }
@@ -89,9 +89,24 @@ hook = { Add = function(name, id, fn) hooks[name] = fn end }
 concommand = { Add = function(name, fn) cmds[name] = fn end }
 IsValid = function(p) return p ~= nil and p.valid end
 local registered = {}
+-- a plain panel (EditablePanel and the like): where it is, how big, the mouse on it
+local function plainPanel()
+	local p = { valid = true, x = 0, y = 0, w = 0, h = 0, mouse = { 0, 0 } }
+	function p:SetSize(w, h) self.w, self.h = w, h end
+	function p:GetWide() return self.w end
+	function p:GetTall() return self.h end
+	function p:SetPos(x, y) self.x, self.y = x, y end
+	function p:GetPos() return self.x, self.y end
+	function p:Center() self.x, self.y = math.floor((SCREEN_W - self.w) / 2), math.floor((SCREEN_H - self.h) / 2) end
+	function p:CursorPos() return self.mouse[1], self.mouse[2] end
+	function p:LocalToScreen(x, y) return x, y end
+	function p:Remove() self.valid = false end
+	return setmetatable(p, { __index = function() return function() end end })
+end
 vgui = {
 	Register = function(name, tbl) registered[name] = tbl end,
 	Create = function(name)
+		if name == "EditablePanel" or name == "DPanel" then return plainPanel() end
 		-- Derma's own panels (windows, buttons): they take any call and draw nothing here
 		if not registered[name] then return setmetatable({ valid = true }, { __index = function() return function() return 0 end end }) end
 		local p = setmetatable({ valid = true, w = 0, h = 0 }, { __index = registered[name] })
@@ -163,15 +178,48 @@ def boot(w, h):
     L.execute(open(os.path.join(GM, "client", "view.lua")).read())
     L.execute(open(os.path.join(GM, "client", "room.lua")).read())
     L.execute(open(os.path.join(GM, "client", "chat.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "ui.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "avatareditor.lua")).read())
     return L, G
 
-def paint(G, w, h, images=None):
-    im = Image.new("RGB", (w, h), (0, 0, 0))
+def paint(G, w, h, images=None, transparent=False):
+    base = Image.new("RGBA" if transparent else "RGB", (w, h), (0, 0, 0, 0) if transparent else (0, 0, 0))
+    im = base
     d = ImageDraw.Draw(im, "RGBA")
+    clip = None
     ops = G.ops
     for i in range(1, len(ops) + 1):
         o = ops[i]
         kind = o[1]
+        if kind == "clip":
+            # render.SetScissorRect: what's drawn until it's switched off is kept inside the rectangle
+            if o[6]:
+                clip = (int(o[2]), int(o[3]), int(o[4]), int(o[5]))
+                im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+                d = ImageDraw.Draw(im, "RGBA")
+            elif clip:
+                layer = im
+                im = base
+                d = ImageDraw.Draw(im, "RGBA")
+                part = layer.crop(clip)
+                if im.mode == "RGBA": im.alpha_composite(part, (clip[0], clip[1]))
+                else: im.paste(part, (clip[0], clip[1]), part)
+                clip = None
+            continue
+        if kind == "rrect":
+            x, y, rw, rh = o[2], o[3], o[4], o[5]
+            if rw > 0 and rh > 0:
+                r = max(0, min(int(o[7]), int(rw // 2), int(rh // 2)))
+                col = tuple(o[6][j] for j in (1, 2, 3, 4))
+                corners = (bool(o[8]), bool(o[9]), bool(o[11]), bool(o[10]))
+                if im.mode == "RGBA" or col[3] < 255:
+                    layer = Image.new("RGBA", (int(rw) + 1, int(rh) + 1), (0, 0, 0, 0))
+                    ImageDraw.Draw(layer).rounded_rectangle([0, 0, int(rw) - 1, int(rh) - 1], radius=r, fill=col, corners=corners)
+                    if im.mode == "RGBA": im.alpha_composite(layer, (int(x), int(y)))
+                    else: im.paste(layer, (int(x), int(y)), layer)
+                else:
+                    d.rounded_rectangle([x, y, x + rw - 1, y + rh - 1], radius=r, fill=col, corners=corners)
+            continue
         if kind == "clear":
             d.rectangle([0, 0, w, h], fill=(0, 0, 0))
         elif kind == "poly" and o[4] is not None and images is not None and o[4] in images:
@@ -217,11 +265,16 @@ def paint(G, w, h, images=None):
         elif kind == "line":
             d.line([(o[2], o[3]), (o[4], o[5])], fill=tuple(o[6][j] for j in (1, 2, 3)))
         elif kind == "text":
-            col = tuple(o[5][j] for j in (1, 2, 3)) if o[5] is not None else (255, 255, 255)
+            col = tuple(o[5][j] for j in (1, 2, 3, 4)) if o[5] is not None else (255, 255, 255, 255)
             fnt, size = pil_font(o[6]) if o[6] in FONTS else (None, 12)
-            # GMod puts the top of the letters' cell at y (TEXT_ALIGN_TOP) or its middle (CENTER)
+            # GMod puts the top of the letters' cell at y (TEXT_ALIGN_TOP) or its middle (CENTER), x at
+            # their left (LEFT), middle (CENTER) or right (RIGHT)
             y = o[4] - size / 2 if o[7] == 1 else o[4]
-            d.text((o[3], y), o[2], fill=col, font=fnt, anchor="la")
+            x = o[3]
+            if o[8] in (1, 2):
+                tw = text_size(o[6], o[2])[0] if o[6] in FONTS else len(o[2]) * 7
+                x = x - tw / 2 if o[8] == 1 else x - tw
+            d.text((x, y), o[2], fill=col, font=fnt, anchor="la")
         elif kind == "image" and images is not None and o[2] in images:
             # a picture: the part of the texture the UVs pick (mirrored when u0 > u1), multiplied by
             # the draw colour (rounded like Habbo), scaled with GMod's filter (point = pixel-sharp)

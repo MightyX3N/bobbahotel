@@ -28,6 +28,16 @@ else
 	echo "avatar renderer: skipped (set HABBO_DATA to check it against Nitro on Habbo's data)"
 fi
 
+# The avatar editor's logic: nitro-react's TypeScript (src/api/avatar) against hotel/figureeditor.lua,
+# on Habbo's figuredata (HABBO_DATA/data/figuredata.xml): the same random clicks through every category.
+if [ -n "$HABBO_DATA" ]; then
+	(cd editor && ../node_modules/.bin/esbuild src/Editor.ts --bundle --platform=node --format=cjs --outfile=out/editor.js --log-level=warning --alias:@nitrots/nitro-renderer=./src/renderer-stub.ts \
+		&& python3 test/make_script.py out/script.json 60 && node test/run_js.js "$HABBO_DATA/data/figuredata.xml" out/script.json out/js.json \
+		&& python3 test/run_lua.py "$HABBO_DATA/data/figuredata.xml" out/script.json out/lua.json && python3 test/compare.py out/js.json out/lua.json)
+else
+	echo "avatar editor: skipped (set HABBO_DATA to check it against nitro-react on Habbo's figuredata)"
+fi
+
 # The furniture: Nitro's TypeScript against furni.lua, on Habbo furni. HABBO_FURNI is a folder of furni
 # files as a game downloads them (garrysmod/data/bobbahotel/habbo/raw/furni/, e.g. after
 # bobba_habbo_furni_sample). Without it this part is skipped.

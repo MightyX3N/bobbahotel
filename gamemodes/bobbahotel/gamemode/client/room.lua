@@ -38,7 +38,7 @@ end
 local function setUnit(s)
 	local u = R.units[s.id] or { id = s.id }
 	R.units[s.id] = u
-	u.name, u.dir, u.figure = s.name, s.dir, s.figure
+	u.name, u.dir, u.figure, u.gender = s.name, s.dir, s.figure, s.gender
 	u.from = { x = s.x, y = s.y, z = s.z }
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
@@ -61,7 +61,7 @@ P.receive("room.load", function(_, data)
 	R.current = data
 	R.units = {}
 	R.items = {}
-	R.selected, R.placing = nil, nil
+	R.selected, R.placing, R.selectedUnit = nil, nil, nil
 	R.you = data.you
 	for _, s in ipairs(data.units or {}) do setUnit(s) end
 	for _, s in ipairs(data.items or {}) do setItem(s) end
@@ -226,9 +226,14 @@ V.drawUnits = function(phase)
 	end
 	table.sort(list, function(a, b) return a.z > b.z end)
 	local hits = {}
+	local unitHits = {}
 	for _, e in ipairs(list) do
 		if e.unit then
 			drawUnit(e.unit)
+			-- where it can be clicked: about a standing avatar's size (64 x 110 Habbo pixels)
+			local x, y, z = position(e.unit)
+			local sx, sy, k = V.project(x, y, z)
+			if sx then unitHits[#unitHits + 1] = { unit = e.unit, x = sx - 20 * k, y = sy - 100 * k, w = 40 * k, h = 104 * k } end
 		else
 			e.draw()
 			if e.item and e.sprite.mouse then hits[#hits + 1] = { item = e.item, x = e.sprite.x, y = e.sprite.y, w = e.sprite.w, h = e.sprite.h, hit = e.sprite.hit } end
@@ -236,12 +241,23 @@ V.drawUnits = function(phase)
 	end
 	if phase == "behind" then return #list > 0 end
 	R.hits = hits
+	R.unitHits = unitHits
 	for _, u in pairs(R.units) do drawName(u) end
 	if R.chatState then R.chatState.draw() end
 end
 
 -- the furni under the mouse: the front-most picture that is solid there (the drawer's hit(); without
 -- one, the picture's box)
+-- the unit under the mouse, the front-most
+function R.unitAt(mx, my)
+	local hits = R.unitHits or {}
+	for i = #hits, 1, -1 do
+		local h = hits[i]
+		if mx >= h.x and mx < h.x + h.w and my >= h.y and my < h.y + h.h then return h.unit end
+	end
+	return nil
+end
+
 function R.itemAt(mx, my)
 	local hits = R.hits or {}
 	for i = #hits, 1, -1 do
@@ -274,6 +290,15 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 		return
 	end
 	local mx, my = input.GetCursorPos()
+	-- an avatar: its infostand (yours has "Change looks"), no walking
+	local unit = R.unitAt(mx, my)
+	if unit then
+		R.selected = nil
+		R.selectedUnit = unit.id
+		R.updateInfo()
+		return
+	end
+	if R.selectedUnit then R.selectedUnit = nil R.updateInfo() end
 	local it = R.itemAt(mx, my)
 	if it then
 		local now = SysTime()
@@ -348,6 +373,31 @@ end
 
 function R.updateInfo()
 	if IsValid(R.infoPanel) then R.infoPanel:Remove() end
+	local unit = R.selectedUnit and R.units[R.selectedUnit]
+	if unit and V.mode == "room" then
+		local p = vgui.Create("DPanel")
+		R.infoPanel = p
+		p:SetSize(180, 0)
+		p:DockPadding(8, 8, 8, 8)
+		p.Paint = function(self, w, h) draw.RoundedBox(6, 0, 0, w, h, Color(20, 24, 32, 230)) end
+		local name = vgui.Create("DLabel", p)
+		name:SetFont("BobbaInfo")
+		name:SetText(unit.name or "?")
+		name:SetTextColor(color_white)
+		name:Dock(TOP)
+		local n = 0
+		if unit.id == R.you and BOBBA.avatarEditor and BOBBA.avatarEditor.open then
+			button(p, BOBBA.lang.has("infostand.button.changelooks") and BOBBA.lang.get("infostand.button.changelooks") or "Change looks", function()
+				BOBBA.avatarEditor.open()
+			end)
+			n = 1
+		end
+		p:SetTall(16 + 18 + n * 28)
+		p:SetPos(ScrW() - p:GetWide() - 16, ScrH() - p:GetTall() - 16)
+		p:MakePopup()
+		p:SetKeyboardInputEnabled(false)
+		return
+	end
 	local it = R.selected and R.items[R.selected]
 	if not it or V.mode ~= "room" then return end
 	local fi = info(it.kind)

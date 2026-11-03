@@ -19,5 +19,7 @@ return {
 	"hotel/roomlive.lua",
 	"hotel/items.lua",
 	"hotel/chat.lua",
+	"hotel/looks.lua",
+	"hotel/figureeditor.lua",
 	"hotel/addons.lua",
 }

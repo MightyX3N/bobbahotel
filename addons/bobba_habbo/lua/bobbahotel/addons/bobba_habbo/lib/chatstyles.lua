@@ -11,11 +11,25 @@
 --                    pointer = img, reg = { ["9sliceXY"] = "29,17", ... } }
 --     img = { path, width, height, texWidth, texHeight }
 --   (id: Habbo's chat style number; 0 is the normal bubble everyone has)
+--   styles.images[name] = img   the other pictures (H.CLIENT_IMAGES), by their name in Habbo's client
 
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "1"
+H.CHAT_INDEX_VERSION = "2"
+
+-- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
+-- icons ("_off" is how Habbo shows one that isn't chosen)
+H.CLIENT_IMAGES = {}
+for _, n in ipairs({ "gender_male", "gender_female", "head_hair", "head_hats", "head_accessories", "head_eyewear",
+	"head_face_accessories", "top_shirt", "top_prints", "top_jacket", "top_accessories", "bottom_trousers",
+	"bottom_shoes", "bottom_accessories" }) do
+	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = "avatar_editor_tabs_" .. n
+	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = "avatar_editor_tabs_" .. n .. "_off"
+end
+for _, n in ipairs({ "avatar_editor_generic_remove_selection", "avatar_editor_rotate_avatar_button", "avatar_editor_generic_platform" }) do
+	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
+end
 
 local byte, sub, find = string.byte, string.sub, string.find
 
@@ -230,6 +244,17 @@ function H.saveChatStyles(swfBytes, version)
 		end
 	end
 	if saved == 0 then return nil, "HabboAir.swf's chat styles have no pictures" end
+	for _, name in ipairs(H.CLIENT_IMAGES) do
+		local png = bytesOf(name)
+		local img = png and H.png.decode(png, H.inflate)
+		if img then
+			local path = imagePath(version, "ui_" .. name)
+			local px, tw, th = H.paddedPixels(img)
+			P.writeData(path, H.png.encode(tw, th, px, H.zlib))
+			lines[#lines + 1] = table.concat({ "U", name, path, img.width, img.height, tw, th }, "\t")
+			H.yield()
+		end
+	end
 	P.writeData(indexPath(version), table.concat(lines, "\n") .. "\n")
 	return true
 end
@@ -239,12 +264,15 @@ local function readIndex(version)
 	if not P.dataExists(path) then return nil end
 	local text = P.readData(path)
 	if not text or text:match("^([^\n]*)") ~= H.CHAT_INDEX_VERSION then return nil end
-	local styles = {}
+	local styles = { images = {} }
 	for line in text:gmatch("[^\n]+") do
 		local f = {}
 		for v in (line .. "\t"):gmatch("([^\t]*)\t") do f[#f + 1] = v end
 		local id = tonumber(f[2])
-		if f[1] == "S" then
+		if f[1] == "U" then
+			if not P.dataExists(f[3]) then return nil end
+			styles.images[f[2]] = { path = f[3], width = tonumber(f[4]), height = tonumber(f[5]), texWidth = tonumber(f[6]), texHeight = tonumber(f[7]) }
+		elseif f[1] == "S" then
 			styles[id] = { id = id, asset = f[3], system = f[4] == "1", reg = {} }
 		elseif f[1] == "R" and styles[id] then
 			styles[id].reg[f[3]] = f[4]
