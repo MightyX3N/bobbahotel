@@ -669,4 +669,8 @@ check(v(b"hd-600-1.ch-635-61", b"M") == b"hd-180-1.ch-210-61", "look: girls' clo
 check(v(b"hd-180-1.ch-210-61.zz-1-2") == b"hd-180-1.ch-210-61", "look: unknown kinds of clothing left out")
 
 print("\n%d failed" % failed)
-sys.exit(1 if failed else 0)
+# (straight out: Python tidying up the many Lua runtimes above crashes lupa on its way out, after
+# every check has passed, which made the run look failed)
+sys.stdout.flush()
+sys.stderr.flush()
+os._exit(1 if failed else 0)
