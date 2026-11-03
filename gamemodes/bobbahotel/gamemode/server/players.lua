@@ -38,3 +38,21 @@ concommand.Add("bobba_room_create", function(ply, _, args)
 	reply(ply, "room " .. id .. " made")
 	if IsValid(ply) then BOBBA.live.enter(ply, id) end
 end)
+
+-- bobba_room_wallheight <value>: the wall height of the room you're in (-1 = Habbo's default,
+-- 0 to 16; walls are 3.6 + 2 x that high). For the room's owner and admins.
+concommand.Add("bobba_room_wallheight", function(ply, _, args)
+	if not IsValid(ply) then print("use it in game, in the room") return end
+	local u = BOBBA.live.byPlayer[ply]
+	if not u then return end
+	local owner = u.room.info.owner == BOBBA.platform.playerKey(ply)
+	if not owner and not BOBBA.perms.has(ply, "bobba.admin.settings") then reply(ply, "only the room's owner or an admin") return end
+	if not BOBBA.live.setWallHeight(u.room.id, args[1]) then reply(ply, "bobba_room_wallheight <-1, or 0 to 16>") end
+end)
+
+-- bobba_default_wallheight <value>: the wall height new rooms get (admins)
+concommand.Add("bobba_default_wallheight", function(ply, _, args)
+	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.admin.settings") then return end
+	if BOBBA.live.setDefaultWallHeight(args[1]) then reply(ply, "new rooms get wall height " .. BOBBA.live.defaultWallHeight())
+	else reply(ply, "bobba_default_wallheight <-1, or 0 to 16>") end
+end)

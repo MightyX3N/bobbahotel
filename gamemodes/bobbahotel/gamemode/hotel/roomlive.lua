@@ -44,8 +44,8 @@ function live.create(ownerKey, ownerName, layoutId, name)
 	if not BOBBA.registry.get("layout", layoutId) then return nil, "unknown layout " .. tostring(layoutId) end
 	name = clean(name)
 	if name == "" then return nil, "a room needs a name" end
-	BOBBA.store.query("INSERT INTO bobbahotel_rooms (owner, owner_name, name, layout, created) VALUES (?, ?, ?, ?, ?)",
-		{ tostring(ownerKey), clean(ownerName), name, layoutId, math.floor(BOBBA.platform.time()) })
+	BOBBA.store.query("INSERT INTO bobbahotel_rooms (owner, owner_name, name, layout, wall_height, created) VALUES (?, ?, ?, ?, ?, ?)",
+		{ tostring(ownerKey), clean(ownerName), name, layoutId, live.defaultWallHeight(), math.floor(BOBBA.platform.time()) })
 	local id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
 	BOBBA.events.emit("roomCreated", id)
 	return id
@@ -63,6 +63,35 @@ function live.list()
 	local rows = BOBBA.store.query("SELECT id, name, owner_name, layout FROM bobbahotel_rooms ORDER BY id")
 	for _, r in ipairs(rows) do r.id = tonumber(r.id) end
 	return rows
+end
+
+-- Wall height (Habbo's floor plan editor setting, as Nitro reads it): -1 = automatic (Habbo's
+-- default walls, 3.6 high), otherwise 0 to 16 in steps of 0.25; walls are then 3.6 + 2 x that high.
+function live.validWallHeight(v)
+	v = tonumber(v)
+	if not v then return nil end
+	if v == -1 then return -1 end
+	if v < 0 or v > 16 then return nil end
+	return math.floor(v * 4 + 0.5) / 4
+end
+
+function live.defaultWallHeight()
+	return live.validWallHeight(BOBBA.store.setting("default_wall_height", "-1")) or -1
+end
+
+function live.setDefaultWallHeight(v)
+	v = live.validWallHeight(v)
+	if not v then return false end
+	BOBBA.store.setSetting("default_wall_height", v)
+	return true
+end
+
+function live.setWallHeight(id, v)
+	v = live.validWallHeight(v)
+	if not v or not live.info(id) then return false end
+	BOBBA.store.query("UPDATE bobbahotel_rooms SET wall_height = ? WHERE id = ?", { v, tonumber(id) })
+	live.refresh(id)
+	return true
 end
 
 -- The room everyone comes to first. Made the first time the hotel starts.
@@ -98,6 +127,22 @@ end
 
 local function snapshot(u)
 	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to }
+end
+
+-- Sends the room again to everyone in it (after its look changed)
+function live.refresh(id)
+	local r = live.rooms[tonumber(id)]
+	if not r then return end
+	r.info = live.info(r.id)
+	local units = {}
+	for _, uid in ipairs(r.order) do units[#units + 1] = snapshot(r.units[uid]) end
+	for _, uid in ipairs(r.order) do
+		local u = r.units[uid]
+		BOBBA.platform.send("room.load", {
+			id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
+			heightmap = r.layout.heightmap, wallHeight = r.info.wall_height, you = u.id, units = units,
+		}, u.player)
+	end
 end
 
 local function players(r)

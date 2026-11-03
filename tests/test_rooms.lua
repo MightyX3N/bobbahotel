@@ -95,13 +95,19 @@ T["the door: a hole in the wall where Nitro puts it, and standing in it counts a
 	eq(BOBBA.rooms.atDoor(room, 3, 5, 0), true, "on the door")
 	eq(BOBBA.rooms.atDoor(room, 3.5, 5, 0), false, "stepping in")
 	eq(BOBBA.rooms.atDoor(room, 4, 5, 0), false, "inside")
-	-- every guest room has its hole
+	-- the door tile's floor is found (it is drawn behind the walls)
+	local df = BOBBA.rooms.doorFloor(room)
+	assert(df, "model_a's door floor")
+	local p = room.planes[df + 1]
+	eq(p.loc[1] .. "," .. p.loc[2], "3.5,5.5", "the plane of tile 3,5")
+	-- every guest room has its hole and door floor
 	for _, l in ipairs(BOBBA.registry.list("layout")) do
 		if l.id:match("^model_[a-z0-9]$") then
 			local r = BOBBA.rooms.geometry(l.id)
 			local any = false
 			for _ in pairs(BOBBA.rooms.holes(r)) do any = true end
 			assert(any, l.id .. " has a door hole")
+			assert(BOBBA.rooms.doorFloor(r), l.id .. " has a door floor")
 		end
 	end
 end

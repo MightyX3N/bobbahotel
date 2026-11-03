@@ -147,4 +147,27 @@ T["walk clicks: at most 10 a second"] = function()
 	eq(BOBBA.live.byPlayer[mia].goal.x, 7, "later click counts")
 end
 
+T["wall height: per room, a default for new rooms, everyone in the room gets the new look"] = function()
+	local mia, bo = start()
+	P.fromPlayer(mia, "room.ready")
+	P.fromPlayer(bo, "room.ready")
+	local home = BOBBA.live.homeRoom()
+	eq(BOBBA.live.info(home).wall_height, -1, "Habbo's default")
+	eq(BOBBA.live.setWallHeight(home, "0.6"), true)
+	eq(BOBBA.live.info(home).wall_height, 0.5, "steps of 0.25")
+	eq(last(mia, "room.load").wallHeight, 0.5, "Mia got the new look")
+	eq(last(bo, "room.load").wallHeight, 0.5, "Bo too")
+	eq(#last(bo, "room.load").units, 2, "with everyone still there")
+	eq(BOBBA.live.setWallHeight(home, 17), false, "too high")
+	eq(BOBBA.live.setWallHeight(home, "abc"), false)
+	eq(BOBBA.live.setWallHeight(home, -0.5), false)
+	eq(BOBBA.live.setWallHeight(home, -1), true, "back to automatic")
+	eq(BOBBA.live.setDefaultWallHeight(1), true)
+	local id = BOBBA.live.create("1", "Mia", "model_b", "Tall")
+	eq(BOBBA.live.info(id).wall_height, 1, "new rooms get the default")
+	-- and the client builds taller walls from it
+	local room = BOBBA.rooms.geometryFor(BOBBA.registry.get("layout", "model_b").heightmap, { wallHeight = BOBBA.live.info(id).wall_height })
+	eq(room.wallHeight, 4.6)
+end
+
 return T

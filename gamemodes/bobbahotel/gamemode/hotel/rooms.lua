@@ -215,3 +215,23 @@ function rooms.atDoor(room, x, y, z)
 	if d.dir == 90 then dx = d.x - 0.5 elseif d.dir == 180 then dy = d.y - 0.5 else return false end
 	return x == dx and y == dy and z == d.z
 end
+
+-- The floor of the door tile (Nitro adds it last, as its own small plane). In Habbo it lies behind
+-- the wall and is only seen through the door hole, so it is drawn before the walls. Returns its
+-- plane index (from 0) or nil.
+function rooms.doorFloor(room)
+	if room.doorFloorIndex ~= nil then return room.doorFloorIndex or nil end
+	room.doorFloorIndex = false
+	local d = room.door
+	if d and (d.dir == 90 or d.dir == 180) then
+		local tx, ty = d.x, d.y
+		if d.dir == 90 then tx = d.x - 0.5 else ty = d.y - 0.5 end
+		for i, p in ipairs(room.planes) do
+			if p.type == rooms.PLANE_FLOOR and p.loc[1] == tx + 0.5 and p.loc[2] == ty + 0.5 and p.loc[3] == d.z
+				and p.left[1] == -1 and p.right[2] == -1 then
+				room.doorFloorIndex = i - 1
+			end
+		end
+	end
+	return room.doorFloorIndex or nil
+end
