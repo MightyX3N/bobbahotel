@@ -30,7 +30,7 @@ U.FONT, U.FONT_CELL = "Ubuntu Condensed", 1.121
 local fonts = {}
 function U.font(px, bold)
 	local size = math.floor(px * U.FONT_CELL * U.scale() + 0.5)
-	local name = "BobbaUIC" .. size .. (bold and "b" or "")
+	local name = "BobbaUIU" .. size .. (bold and "b" or "")
 	if not fonts[name] then
 		surface.CreateFont(name, { font = U.FONT, size = size, weight = bold and 700 or 500, antialias = true, extended = true })
 		fonts[name] = true

@@ -59,6 +59,17 @@ C.FONT = "Ubuntu Condensed"
 C.UBUNTU_CELL = 1.121
 
 local S, FONT_PX, TEXT_TOP, LINE_H, INPUT_W, INPUT_H, F
+local made = {}
+local function fonts()
+	if not made[F.chat] then
+		made[F.chat] = true
+		surface.CreateFont(F.chat, { font = C.FONT, size = FONT_PX, weight = 500, antialias = true, extended = true })
+		surface.CreateFont(F.bold, { font = C.FONT, size = FONT_PX, weight = 800, antialias = true, extended = true })
+		surface.CreateFont(F.italic, { font = C.FONT, size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
+		surface.CreateFont(F.input, { font = C.FONT, size = math.floor(13 * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
+	end
+	return F
+end
 -- (sets the sizes for the screen; again when the game's resolution changes)
 function C.setScale(scale)
 	S = scale
@@ -69,12 +80,9 @@ function C.setScale(scale)
 	INPUT_W, INPUT_H = 420 * S, 32 * S
 	-- (the size in the names: GMod keeps a font's first size until the game restarts, so a new size
 	-- needs a new name)
-	-- ("C" for Condensed: GMod keeps a font name's first definition for the whole session)
-	F = { chat = "BobbaChatC" .. FONT_PX, bold = "BobbaChatCBold" .. FONT_PX, italic = "BobbaChatCItalic" .. FONT_PX, input = "BobbaChatCInput" .. S }
-	surface.CreateFont(F.chat, { font = C.FONT, size = FONT_PX, weight = 500, antialias = true, extended = true })
-	surface.CreateFont(F.bold, { font = C.FONT, size = FONT_PX, weight = 800, antialias = true, extended = true })
-	surface.CreateFont(F.italic, { font = C.FONT, size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
-	surface.CreateFont(F.input, { font = C.FONT, size = math.floor(13 * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
+	-- (made when first used, not now: right after a game start the hotel's font file isn't ready yet
+	-- while this file loads, and GMod would fall back to Tahoma for the whole session)
+	F = { chat = "BobbaChatU" .. FONT_PX, bold = "BobbaChatUBold" .. FONT_PX, italic = "BobbaChatUItalic" .. FONT_PX, input = "BobbaChatUInput" .. S }
 	-- bubbles already up keep their size; the input is made again at the new size
 	if IsValid(C.input) then C.input:Remove() C.input = nil end
 end
@@ -122,6 +130,7 @@ end
 -- (nitro-react: .chat-bubble { word-break: break-word }: a word too long for a whole line is
 -- broken between its letters, starting in the room left on the line it's on)
 local function wrap(name, text, kind, maxW)
+	fonts()
 	local msgFont = (kind == "shout") and F.bold or ((kind == "whisper") and F.italic or F.chat)
 	local words = {}
 	if name then words[#words + 1] = { name .. ": ", F.bold, name = true, gap = C.NAME_GAP * S } end
@@ -389,6 +398,7 @@ local function createInput()
 		draw.RoundedBox(8, 0, 0, w, h, Color(40, 40, 40, 255))
 		draw.RoundedBox(7, 1, 1, w - 2, h - 2, Color(255, 255, 255, 255))
 	end
+	fonts()
 	local entry = vgui.Create("DTextEntry", frame)
 	entry:Dock(FILL)
 	entry:DockMargin(10, 4, 10, 4)
