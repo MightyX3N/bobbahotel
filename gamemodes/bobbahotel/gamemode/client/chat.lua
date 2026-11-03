@@ -25,7 +25,11 @@ R.chatState = C
 
 -- Sizes are Habbo's pixels; everything is drawn C.SCALE times as big: the screen's size (V.uiScale,
 -- the size rooms open at). Like Nitro, it stays that size when the room is zoomed.
-function C.scaleFor(h) return V.uiScale(h) end
+-- (its own copy of the rule too: GMod's live reload can load this file before the new view.lua)
+function C.scaleFor(h)
+	if V.uiScale then return V.uiScale(h) end
+	return math.max(1, math.floor(h / 720))
+end
 C.MAX_LENGTH = 100
 C.SCROLL_EVERY = 6        -- seconds (nitro-react: normal scroll speed)
 C.SCROLL_BY = 15          -- pixels
