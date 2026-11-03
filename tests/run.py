@@ -12,7 +12,12 @@ GM = os.path.join(ROOT, "gamemodes", "bobbahotel", "gamemode")
 
 def fresh_runtime():
     lua = lj.LuaRuntime(unpack_returned_tuples=True)
+    # BOBBA_TEST_DB=path runs every test on a copy of a real sv.db (each test gets its own copy)
     db = sqlite3.connect(":memory:", isolation_level=None)
+    if os.environ.get("BOBBA_TEST_DB"):
+        src = sqlite3.connect("file:" + os.environ["BOBBA_TEST_DB"] + "?mode=ro", uri=True)
+        src.backup(db)
+        src.close()
 
     def query(s):
         try:

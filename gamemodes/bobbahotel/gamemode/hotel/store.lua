@@ -2,10 +2,12 @@
 -- Tables are created and changed through migrations: each runs once, in order, and is remembered.
 --
 --   BOBBA.store.migrate("core.001_settings", { "CREATE TABLE ...", "CREATE INDEX ..." })
---   BOBBA.store.query("SELECT * FROM bobba_settings WHERE k = ?", { "lobby" })  --> list of rows
+--   BOBBA.store.query("SELECT * FROM bobbahotel_settings WHERE k = ?", { "lobby" })  --> list of rows
 --   BOBBA.store.setting("lobby", "0")          BOBBA.store.setSetting("lobby", "12")
 --
--- Addons use their own prefix for table and migration names (e.g. "mywired.001_boxes").
+-- sv.db is shared by every gamemode and addon on the server, so every table needs a name nobody
+-- else uses. The core's tables start with "bobbahotel_"; an addon starts its tables and migration
+-- names with its own id (e.g. table "mywired_boxes", migration "mywired.001_boxes").
 
 BOBBA.store = BOBBA.store or {}
 local store = BOBBA.store
@@ -44,7 +46,7 @@ end
 
 local function ensureMigrations()
 	if store.ready then return end
-	store.query("CREATE TABLE IF NOT EXISTS bobba_migrations (id TEXT PRIMARY KEY, applied INTEGER NOT NULL)")
+	store.query("CREATE TABLE IF NOT EXISTS bobbahotel_migrations (id TEXT PRIMARY KEY, applied INTEGER NOT NULL)")
 	store.ready = true
 end
 
@@ -52,10 +54,10 @@ end
 function store.migrate(id, statements)
 	assert(type(id) == "string" and type(statements) == "table", "store.migrate(id, { sql, ... })")
 	ensureMigrations()
-	if store.row("SELECT id FROM bobba_migrations WHERE id = ?", { id }) then return false end
+	if store.row("SELECT id FROM bobbahotel_migrations WHERE id = ?", { id }) then return false end
 	store.transaction(function()
 		for _, s in ipairs(statements) do store.query(s) end
-		store.query("INSERT INTO bobba_migrations (id, applied) VALUES (?, ?)", { id, math.floor(BOBBA.platform.time()) })
+		store.query("INSERT INTO bobbahotel_migrations (id, applied) VALUES (?, ?)", { id, math.floor(BOBBA.platform.time()) })
 	end)
 	BOBBA.info("database: applied %s", id)
 	return true
@@ -63,18 +65,18 @@ end
 
 -- Hotel settings (strings): name, lobby room, ... Changed through the admin menu later.
 function store.setting(key, default)
-	local r = store.row("SELECT v FROM bobba_settings WHERE k = ?", { key })
+	local r = store.row("SELECT v FROM bobbahotel_settings WHERE k = ?", { key })
 	if r then return r.v end
 	return default
 end
 
 function store.setSetting(key, value)
-	store.query("INSERT OR REPLACE INTO bobba_settings (k, v) VALUES (?, ?)", { key, tostring(value) })
+	store.query("INSERT OR REPLACE INTO bobbahotel_settings (k, v) VALUES (?, ?)", { key, tostring(value) })
 	BOBBA.events.emit("settingChanged", key, tostring(value))
 end
 
 function store.init()
 	store.migrate("core.001_settings", {
-		"CREATE TABLE bobba_settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)",
+		"CREATE TABLE bobbahotel_settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)",
 	})
 end

@@ -27,7 +27,7 @@ local function report(print)
 			BOBBA.store.setSetting("status_check", "ok")
 			assert(BOBBA.store.setting("status_check") == "ok")
 		end)
-		local n = BOBBA.store.row("SELECT COUNT(*) AS n FROM bobba_migrations").n
+		local n = BOBBA.store.row("SELECT COUNT(*) AS n FROM bobbahotel_migrations").n
 		print(L("status.database", { migrations = n, result = ok and L("common.ok") or L("common.failed") }))
 	end
 	print(L("status.language", { code = BOBBA.lang.current }))

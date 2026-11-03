@@ -27,7 +27,7 @@ Server owners switch addons off with `bobba_disabled_addons "id1,id2"`.
 | `BOBBA.registry.get(type, id)`, `.list(type)` | Read entries. |
 | `BOBBA.lang.add(code, { key = "text {placeholder}" }, name)` | Add texts or a whole language. `BOBBA.L(key, vars)` reads them. |
 | `BOBBA.perms.define(name, { default = "user" \| "admin" \| "superadmin", description })` | A permission, shown in ULX/SAM through CAMI. `BOBBA.perms.has(ply, name)` checks it. |
-| `BOBBA.store.migrate(id, { sql, ... })` | Server: create or change your tables, once. Prefix ids and tables with your addon id. |
+| `BOBBA.store.migrate(id, { sql, ... })` | Server: create or change your tables, once. sv.db is shared by every gamemode and addon, so start table names and migration ids with your addon id. |
 | `BOBBA.store.query(sql, { values })` | Server: SQL with `?` placeholders (values are escaped for you; `BOBBA.util.NULL` for an empty value). |
 | `BOBBA.events.on(event, yourId, fn)` / `.emit(event, ...)` | Listen for and announce events. |
 | `BOBBA.platform.send(name, table, player?)` / `.receive(name, fn)` | Messages between server and players. Always check what a player sends you. |

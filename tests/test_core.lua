@@ -164,9 +164,25 @@ T["store: settings, with quotes in the value"] = function()
 	eq(BOBBA.store.setting("lobby", "0"), "0", "default")
 	BOBBA.store.setSetting("lobby", "12")
 	eq(BOBBA.store.setting("lobby"), "12")
-	BOBBA.store.setSetting("name", "Mia's '); DROP TABLE bobba_settings; --")
-	eq(BOBBA.store.setting("name"), "Mia's '); DROP TABLE bobba_settings; --")
+	BOBBA.store.setSetting("name", "Mia's '); DROP TABLE bobbahotel_settings; --")
+	eq(BOBBA.store.setting("name"), "Mia's '); DROP TABLE bobbahotel_settings; --")
 	eq(BOBBA.store.setting("lobby"), "12", "table still there")
+end
+
+T["store: old tables from earlier Bobba versions in sv.db are left alone"] = function()
+	-- what the earlier Bobba GMod gamemode left in sv.db (same names, other columns)
+	BOBBA.store.query("CREATE TABLE IF NOT EXISTS bobba_migrations (name TEXT PRIMARY KEY)")
+	BOBBA.store.query("INSERT OR IGNORE INTO bobba_migrations (name) VALUES ('habbo_colours')")
+	BOBBA.store.query("CREATE TABLE IF NOT EXISTS bobba_settings (key TEXT PRIMARY KEY, value TEXT)")
+	BOBBA.store.query("INSERT OR REPLACE INTO bobba_settings (key, value) VALUES ('old', 'kept')")
+	BOBBA.store.query("DROP TABLE bobbahotel_settings")
+	BOBBA.store.query("DROP TABLE bobbahotel_migrations")
+	BOBBA.store.ready = false
+	BOBBA.store.init()
+	BOBBA.store.setSetting("lobby", "3")
+	eq(BOBBA.store.setting("lobby"), "3")
+	eq(BOBBA.store.row("SELECT value FROM bobba_settings WHERE key = 'old'").value, "kept")
+	eq(BOBBA.store.row("SELECT COUNT(*) AS n FROM bobba_migrations WHERE name = 'habbo_colours'").n, 1, "old migrations kept")
 end
 
 -- addons ---------------------------------------------------------------------------------------
