@@ -343,7 +343,7 @@ local function priceRow(d, currency, n, right, y, bold)
 end
 
 -- CatalogPurchaseWidgetView's button: Buy, then Confirm (3 seconds), not enough, failed
-local function buyButton(d, x, y, w, h, offer, quantity, buyColor, page)
+local function buyButton(d, x, y, w, h, offer, quantity, buyColor, page, buyKey)
 	local label, color, fn, textColor, disabled = nil, buyColor or U.C.primary, nil, U.C.white, false
 	local clubLevel = HUD.purse.clubLevel or 0
 	for _, r in ipairs(priceRows(offer, quantity)) do
@@ -369,7 +369,7 @@ local function buyButton(d, x, y, w, h, offer, quantity, buyColor, page)
 		elseif CAT.state == "failed" then
 			label, color = U.text("generic.failed", "Failed"), U.C.danger
 		else
-			label = U.text("catalog.purchase_confirmation.buy", "Buy")
+			label = U.text(buyKey or "catalog.purchase_confirmation.buy", "Buy")
 			fn = function() CAT.state = "confirm" CAT.stateUntil = SysTime() + 3 end
 		end
 	end
@@ -431,7 +431,6 @@ local function clubText(days)
 	return t
 end
 
-local function stripTags(t) return (tostring(t):gsub("<[^>]*>", "")) end
 
 -- CatalogLayoutVipBuyView: the club offers on the left, what you'd get on the right
 local function drawVip(d, page)
@@ -447,30 +446,45 @@ local function drawVip(d, page)
 		d:text(clubText(o.club), 14.4, lx + lw - 6, y + 9 + 8, U.C.black, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		for _, r in ipairs(priceRows(o, 1)) do priceRow(d, r[1], r[2], lx + lw - 6, y + 25, false) end
 	end
-	local hc = lines(d, stripTags(U.text("catalog.vip.buy.hccenter", "Habbo Club gives you more clothes, room models and more.")), 14.4, lw)
+	local hc = lines(d, U.plain(U.text("catalog.vip.buy.hccenter", "Habbo Club gives you more clothes, room models and more.")), 14.4, lw)
 	for i, l in ipairs(hc) do d:text(l, 14.4, lx + lw / 2, 391 - (#hc - i) * 16 - 8, U.C.black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
 	-- the right: how much club is left; the chosen offer's end date, price and Buy
 	local rx, rw = 435.3, 185.8
 	local purse = HUD.purse
-	local details = lines(d, stripTags(U.text("catalog.vip.extend.info", "You have %days% days of Habbo Club left.", { days = purse.clubDays or 0 })), 14.4, rw)
-	local areaBottom = chosen and 314.1 or 391
-	local ty = 75 + (areaBottom - 75 - #details * 16) / 2
+	local extending = (purse.clubDays or 0) > 0
+	-- (a member sees how long is left; anyone else what club gives, as Habbo's page says)
+	local info = extending and U.text("catalog.vip.extend.info", "You have %days% days of Habbo Club left.", { days = purse.clubDays or 0 })
+		or U.text("catalog.vip.buy.info", "Get exclusive clothes and hair styles and so much more!")
+	local details = lines(d, U.plain(info), 14.4, rw)
+	-- the chosen offer at the bottom (Flex align end): what it is and until when on the left, wrapping,
+	-- the price on the right; then Buy
+	local head, untilLines, prices = {}, {}, {}
+	if chosen then
+		local months = math.floor(chosen.club / 31)
+		local unit = months > 0 and "months" or "days"
+		local headText = U.text("catalog.vip.buy.confirm." .. (extending and "extension." or "subscription.") .. unit,
+			(extending and "%NUM_" .. unit:upper() .. "%-" .. unit:sub(1, -2) .. " HC extension" or "%NUM_" .. unit:upper() .. "%-" .. unit:sub(1, -2) .. " HC subscription"))
+		headText = headText:gsub("%%NUM_" .. unit:upper() .. "%%", tostring(months > 0 and months or chosen.club))
+		local ends = os.date("*t", os.time() + ((purse.clubMinutes or 0) * 60) + chosen.club * 86400)
+		local untilText = U.text("catalog.vip.buy.confirm.end_date", "Valid until: %month%/%day%/%year%")
+		untilText = untilText:gsub("%%month%%", tostring(ends.month)):gsub("%%day%%", tostring(ends.day)):gsub("%%year%%", tostring(ends.year))
+		prices = priceRows(chosen, 1)
+		local pw = 0
+		for _, r in ipairs(prices) do pw = math.max(pw, d:textWidth(tostring(r[2]), 14.4) + 4 + 15) end
+		local tw = rw - pw - 8
+		head = lines(d, U.plain(headText), 14.4, tw, true)
+		untilLines = lines(d, U.plain(untilText), 14.4, tw)
+	end
+	local textRows = #head + #untilLines
+	local blockTop = chosen and (362.1 - 8 - math.max(textRows * 16, #prices * 20 - 4)) or 391
+	local ty = 75 + (blockTop - 8 - 75 - #details * 16) / 2
 	for i, l in ipairs(details) do d:text(l, 14.4, rx + rw / 2, ty + (i - 1) * 16 + 8, U.C.black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
 	if not chosen then return end
-	local extending = (purse.clubDays or 0) > 0
-	local months = math.floor(chosen.club / 31)
-	local unit = months > 0 and "months" or "days"
-	local head = U.text("catalog.vip.buy.confirm." .. (extending and "extension." or "subscription.") .. unit,
-		(extending and "Extend Habbo Club by %NUM_" or "Buy %NUM_") .. unit:upper() .. "% " .. unit)
-	head = head:gsub("%%NUM_" .. unit:upper() .. "%%", tostring(months > 0 and months or chosen.club))
-	d:text(d:fit(head, 14.4, rw - 50, true), 14.4, rx, 322.1 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
-	local ends = os.date("*t", os.time() + ((purse.clubMinutes or 0) * 60) + chosen.club * 86400)
-	local untilText = U.text("catalog.vip.buy.confirm.end_date", "Ends %day%.%month%.%year%")
-	untilText = untilText:gsub("%%month%%", tostring(ends.month)):gsub("%%day%%", tostring(ends.day)):gsub("%%year%%", tostring(ends.year))
-	d:text(d:fit(untilText, 14.4, rw - 50), 14.4, rx, 338.1 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-	local prices = priceRows(chosen, 1)
-	for i, r in ipairs(prices) do priceRow(d, r[1], r[2], rx + rw, 338.1 - (#prices - i) * 20, false) end
-	buyButton(d, rx, 362.1, rw, 28.9, chosen, 1, U.C.success, page)
+	local y = 362.1 - 8 - textRows * 16
+	for _, l in ipairs(head) do d:text(l, 14.4, rx, y + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true) y = y + 16 end
+	for _, l in ipairs(untilLines) do d:text(l, 14.4, rx, y + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) y = y + 16 end
+	for i, r in ipairs(prices) do priceRow(d, r[1], r[2], rx + rw, 362.1 - 8 - 16 - (#prices - i) * 20, false) end
+	buyButton(d, rx, 362.1, rw, 28.9, chosen, 1, U.C.success, page, "buy")
 end
 
 local function drawCatalog(w, d)

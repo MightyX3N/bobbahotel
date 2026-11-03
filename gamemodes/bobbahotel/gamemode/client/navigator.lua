@@ -197,8 +197,10 @@ local function drawNavigator(w, d)
 	-- the search: Habbo's filters, the box, the button
 	local opts = {}
 	for i, f in ipairs(FILTERS) do opts[#opts + 1] = { i, U.text("navigator.filter." .. f[1], FILTER_TEXT[f[1]]) } end
-	-- (the width a browser gives it in that row)
-	local selW = 81.2
+	-- (as wide as its longest choice, like the browser makes a select: 9 before the text, 36 after)
+	local selW = 0
+	for _, o in ipairs(opts) do selW = math.max(selW, d:textWidth(o[2], 12.6)) end
+	selW = math.ceil(selW + 9 + 36 + 2)
 	local y = 75
 	local function go()
 		local box = w.inputs and w.inputs.search

@@ -11,11 +11,31 @@ local U = BOBBA.ui
 local R = BOBBA.room
 local V = BOBBA.view
 
--- a text from Habbo's texts when an addon gave them, else the English one here (%name% filled in)
+-- a text from Habbo's texts when an addon gave them, else the English one here, with its values
+-- filled in the way Nitro's getValueWithParameters does: %name% (any case: Habbo writes both), and
+-- Habbo's plurals %{NAME|none|one|more} where %% in "more" is the number
+local function pattern(s) return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")) end
+local function anyCase(s) return (s:gsub("%a", function(c) return "[" .. c:lower() .. c:upper() .. "]" end)) end
 function U.text(key, fallback, vars)
 	local t = (BOBBA.lang.has(key) and BOBBA.lang.get(key)) or fallback or key
-	for k, v in pairs(vars or {}) do t = t:gsub("%%" .. k .. "%%", tostring(v)) end
+	for k, v in pairs(vars or {}) do
+		local name = anyCase(pattern(tostring(k)))
+		local value = tostring(v)
+		t = t:gsub("%%{" .. name .. "|([^|}]*)|([^|}]*)|([^|}]*)}", function(none, one, more)
+			local n = tonumber(v)
+			if n == 0 then return none end
+			if n == 1 then return one end
+			return (more:gsub("%%%%", (value:gsub("%%", "%%%%"))))
+		end)
+		t = t:gsub("%%" .. name .. "%%", (value:gsub("%%", "%%%%")))
+	end
 	return t
+end
+
+-- Habbo's texts can have a little HTML (Nitro shows it as HTML): the plain text of it
+function U.plain(t)
+	t = tostring(t or ""):gsub("<[bB][rR]%s*/?>", "\n"):gsub("<[^>]*>", "")
+	return (t:gsub("&lt;", "<"):gsub("&gt;", ">"):gsub("&quot;", '"'):gsub("&#39;", "'"):gsub("&nbsp;", " "):gsub("&amp;", "&"))
 end
 
 -- a text cut to a width with "…" (text-overflow: ellipsis)
@@ -192,16 +212,16 @@ local function money(n)
 	return (out:gsub("^,", ""))
 end
 
--- FriendlyTime.shortFormat (threshold 3): the biggest unit that's over 3 of it
+-- FriendlyTime.shortFormat (threshold 3): the biggest unit there's over 3 of
 local function shortTime(seconds)
-	local units = { { "years", 365 * 86400 }, { "months", 30 * 86400 }, { "days", 86400 }, { "hours", 3600 }, { "minutes", 60 } }
-	local short = { years = "y", months = "m", days = "d", hours = "h", minutes = "min" }
+	local units = { { "years", 365 * 86400, "%amount% y" }, { "months", 30 * 86400, "%amount% mon." }, { "days", 86400, "%amount% d" },
+		{ "hours", 3600, "%amount% h" }, { "minutes", 60, "%amount% min" } }
 	for _, u in ipairs(units) do
 		if seconds > 3 * u[2] then
-			return U.text("friendlytime.short." .. u[1], "%amount%" .. short[u[1]], { amount = math.floor(seconds / u[2] + 0.5) })
+			return U.text("friendlytime." .. u[1] .. ".short", u[3], { amount = math.floor(seconds / u[2] + 0.5) })
 		end
 	end
-	return U.text("friendlytime.short.seconds", "%amount%s", { amount = math.max(0, math.floor(seconds)) })
+	return U.text("friendlytime.seconds.short", "%amount% s", { amount = math.max(0, math.floor(seconds + 0.5)) })
 end
 
 -- the server's user.purse (PurseView: credits, activity points 0 duckets and 5 diamonds, club)

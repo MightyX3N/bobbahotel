@@ -45,11 +45,14 @@ local function drawInventory(w, d)
 	-- InventoryCategoryEmptyView: Habbo's picture on the left (5 of 12), the title and text (7 of 12)
 	d:icon("inventory-empty", 48.4 + 64.5 - 65.5, 102.5 + 90.5 - 91.5)
 	local tx, tw = 224.8, 294.2
-	local lines = wrapText(d, U.text(tab.empty[3], tab.empty[4]), 14.4, tw)
-	local blockH = 21 + 8 + #lines * 16
+	local lines = wrapText(d, U.plain(U.text(tab.empty[3], tab.empty[4])), 14.4, tw)
+	-- (the title wraps when Habbo's is longer than the room it has)
+	local title = wrapText(d, U.plain(U.text(tab.empty[1], tab.empty[2])), 18, tw, true)
+	local titleH = #title * 21
+	local blockH = titleH + 8 + #lines * 16
 	local ty = 67 + 8 + (252 - 16 - blockH) / 2
-	d:text(d:fit(U.text(tab.empty[1], tab.empty[2]), 18, tw, true), 18, tx, ty + 10.5, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
-	for i, l in ipairs(lines) do d:text(l, 14.4, tx, ty + 21 + 8 + (i - 1) * 16 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
+	for i, l in ipairs(title) do d:text(l, 18, tx, ty + (i - 1) * 21 + 10.5, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true) end
+	for i, l in ipairs(lines) do d:text(l, 14.4, tx, ty + titleH + 8 + (i - 1) * 16 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
 end
 
 HUD.actions.inventory = function()

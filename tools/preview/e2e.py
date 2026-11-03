@@ -54,6 +54,7 @@ def main():
     ap.add_argument("--time", type=float, default=0, help="seconds after the room loaded (animation)")
     ap.add_argument("--furni", help="furni to place first (needs --habbo): kind,x,y,dir[,state];...")
     ap.add_argument("--out", default="e2e.png")
+    ap.add_argument("--texts", help="Habbo's external_flash_texts file (the game's data/bobbahotel/habbo/remembered/texts.txt)")
     ap.add_argument("--mine", action="store_true", help="the room is the player's own")
     ap.add_argument("--floor", help="the room's floor id")
     ap.add_argument("--wallpaper", help="the room's wallpaper id")
@@ -121,6 +122,12 @@ def main():
     images = None
     if a.habbo:
         images = habbo(L, a.habbo)
+    if a.texts:
+        t = L.table()
+        for line in open(a.texts, encoding="utf-8", errors="replace"):
+            k, sep, v = line.rstrip("\r\n").partition("=")
+            if sep: t[k] = v
+        L.eval("function(t) BOBBA.lang.add('en', t) end")(t)
     L.eval("BOBBA.platform.receivers['room.load']")(None, tbl(msg))
     if a.habbo:
         # the first paint asks for the clothes (they load from the cache at once here), then time runs
@@ -250,7 +257,9 @@ def main():
         return v
     for c in (a.hud_click or "").split(";"):
         if not c: continue
-        if ":type:" in c:
+        if c.startswith("action:"):
+            L.eval("function(n) BOBBA.hud.actions[n]() end")(c[7:])
+        elif ":type:" in c:
             win, _, box, text = c.split(":", 3)
             render.hud_type(L, G, win, box, text)
         else:
