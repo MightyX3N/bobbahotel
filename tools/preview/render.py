@@ -60,7 +60,8 @@ math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
 math.Round = function(v) return math.floor(v + 0.5) end
 string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local cursor = { 0, 0 }
-input = { GetCursorPos = function() return cursor[1], cursor[2] end }
+KEY_LCONTROL, KEY_RCONTROL = 1, 2
+input = { GetCursorPos = function() return cursor[1], cursor[2] end, IsKeyDown = function() return false end }
 gui = { EnableScreenClicker = function() end }
 local hooks, cmds = {}, {}
 hook = { Add = function(name, id, fn) hooks[name] = fn end }

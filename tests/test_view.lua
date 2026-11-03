@@ -30,7 +30,9 @@ local function fakeGmod()
 	_G.math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
 	_G.math.Round = function(v) return math.floor(v + 0.5) end
 	_G.string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
-	_G.input = { GetCursorPos = function() return G.cursor[1], G.cursor[2] end }
+	_G.KEY_LCONTROL, _G.KEY_RCONTROL = 1, 2
+	G.keys = {}
+	_G.input = { GetCursorPos = function() return G.cursor[1], G.cursor[2] end, IsKeyDown = function(k) return G.keys[k] == true end }
 	_G.gui = { EnableScreenClicker = function(b) G.clicker = b end }
 	_G.hook = { Add = function(name, id, fn) G.hooks[name] = fn end }
 	_G.concommand = { Add = function(name, fn) G.cmds[name] = fn end }
@@ -133,6 +135,10 @@ T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function
 	local builds = V.builds
 	V.panel:Paint(1920, 1080)
 	eq(V.builds, builds + 1, "worked out again after moving")
+	-- plain scrolling doesn't zoom (Habbo: Ctrl + scroll)
+	V.panel:OnMouseWheeled(-1)
+	eq(V.zoom, 3, "no zoom without Ctrl")
+	G.keys[KEY_LCONTROL] = true
 	-- zoom out twice, then no further
 	V.panel:OnMouseWheeled(-1)
 	V.panel:OnMouseWheeled(-1)

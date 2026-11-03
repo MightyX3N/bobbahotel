@@ -1,6 +1,7 @@
 -- The room on screen (client). The planes come from BOBBA.rooms (Nitro's own geometry, camera and
 -- sorting); this file only draws them and handles the mouse:
---   scroll = zoom (Habbo's 32 and 64, and 64 shown at double size), drag = move the room,
+--   Ctrl + scroll = zoom, like Habbo (Habbo's 32 and 64, and 64 shown at double size),
+--   drag = move the room,
 --   click = a tile (walking comes with the server rooms).
 -- The planes' screen positions and colours are worked out once and only again when something
 -- changes (moving, zooming, another room); each frame just draws them (a room has 60-350 planes).
@@ -226,6 +227,8 @@ function PANEL:OnCursorMoved()
 end
 
 function PANEL:OnMouseWheeled(delta)
+	-- Habbo zooms with Ctrl + scroll; plain scrolling is left for windows
+	if not (input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)) then return end
 	local old = zoomInfo()
 	local new = math.Clamp(V.zoom + (delta > 0 and 1 or -1), 1, #V.ZOOMS)
 	if new == V.zoom then return end
@@ -328,7 +331,7 @@ local function preview(id)
 	for i, x in ipairs(ids) do if x == id then n = i end end
 	V.previewId = id
 	V.mode = "preview"
-	V.show(room, string.format("%s  (%d/%d)   scroll = zoom   drag = move   bobba_preview next / prev / off", id, n, #ids))
+	V.show(room, string.format("%s  (%d/%d)   Ctrl+scroll = zoom   drag = move   bobba_preview next / prev / off", id, n, #ids))
 end
 
 concommand.Add("bobba_preview", function(_, _, args)
