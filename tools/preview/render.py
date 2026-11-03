@@ -25,7 +25,7 @@ GetRenderTargetEx = function(name) return { GetName = function() return name end
 CreateMaterial = function(name) return { name = name } end
 local col = { 255, 255, 255, 255 }
 surface = {
-	CreateFont = function() end,
+	CreateFont = function(name, data) PY_CREATE_FONT(name, data.font or "", data.size or 13, data.weight or 500, data.italic and true or false) end,
 	SetDrawColor = function(r, g, b, a) if type(r) == "table" then col = { r.r, r.g, r.b, r.a or 255 } else col = { r, g, b, a or 255 } end end,
 	DrawPoly = function(pts)
 		-- like GMod: only polygons given clockwise on screen are filled
@@ -67,10 +67,10 @@ KEY_R, MOUSE_RIGHT = 28, 108
 bit = bit or require("bit")
 draw.RoundedBox = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
 draw.RoundedBoxEx = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
--- text: about as wide as Ubuntu 24 px (the picture uses DejaVu Sans 20)
+-- text: measured with the real font (see pil_font)
 local font = "BobbaChat"
 surface.SetFont = function(f) font = f end
-surface.GetTextSize = function(t) local n = 0 for _ in t:gmatch("[^\128-\191]") do n = n + 1 end return n * ((font == "BobbaChatBold") and 14 or 12), 24 end
+surface.GetTextSize = function(t) return PY_TEXT_SIZE(font, t) end
 utf8 = utf8 or { len = function(t) local n = 0 for _ in t:gmatch("[^\128-\191]") do n = n + 1 end return n end }
 TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP = 0, 3
 KEY_ENTER, KEY_PAD_ENTER = 64, 65
@@ -108,8 +108,44 @@ G.cmds, G.hooks, G.cursor = cmds, hooks, cursor
 return G
 """
 
+# Fonts like GMod's: surface.CreateFont's size is the height of the font's letters from the top
+# of its tallest to the bottom of its lowest (ascent + descent, Windows' cell height), so the font is
+# drawn at size / (ascent + descent) em. Ubuntu comes from $BOBBA_FONTS (Ubuntu.ttf, Ubuntu-b.ttf,
+# Ubuntu-i.ttf) when set; otherwise DejaVu Sans stands in.
+FONTS = {}
+_pil_cache = {}
+def pil_font(name):
+    from PIL import ImageFont
+    f = FONTS.get(name, ("", 13, 500, False))
+    key = f
+    if key in _pil_cache: return _pil_cache[key]
+    family, size, weight, italic = f
+    files = []
+    d = os.environ.get("BOBBA_FONTS")
+    if d and family.lower() == "ubuntu":
+        files.append(os.path.join(d, "Ubuntu-b.ttf" if weight >= 700 else ("Ubuntu-i.ttf" if italic else "Ubuntu.ttf")))
+    files.append("DejaVuSans-Bold.ttf" if weight >= 700 else "DejaVuSans.ttf")
+    font = None
+    for path in files:
+        try:
+            probe = ImageFont.truetype(path, 1000)
+            a, dsc = probe.getmetrics()
+            font = ImageFont.truetype(path, max(1, round(size * 1000 / (a + dsc))))
+            break
+        except OSError:
+            continue
+    _pil_cache[key] = (font, size)
+    return _pil_cache[key]
+
+def text_size(name, t):
+    font, size = pil_font(name)
+    if font is None: return len(t) * 7, size
+    return round(font.getlength(t)), size
+
 def boot(w, h):
     L = lj.LuaRuntime(unpack_returned_tuples=True)
+    L.globals().PY_CREATE_FONT = lambda name, fam, size, weight, italic: FONTS.__setitem__(name, (fam, size, weight, italic))
+    L.globals().PY_TEXT_SIZE = text_size
     L.globals().SCREEN_W, L.globals().SCREEN_H = w, h
     L.execute("BOBBA = {}")
     files = L.execute(open(os.path.join(GM, "hotel", "files.lua")).read())
@@ -182,14 +218,10 @@ def paint(G, w, h, images=None):
             d.line([(o[2], o[3]), (o[4], o[5])], fill=tuple(o[6][j] for j in (1, 2, 3)))
         elif kind == "text":
             col = tuple(o[5][j] for j in (1, 2, 3)) if o[5] is not None else (255, 255, 255)
-            bold = o[6] in ("BobbaChatBold",)
-            try:
-                from PIL import ImageFont
-                fnt = ImageFont.truetype("DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf", 20)
-            except OSError:
-                fnt = None
-            y = o[4] - 7 if o[7] == 1 else o[4]
-            d.text((o[3], y), o[2], fill=col, font=fnt)
+            fnt, size = pil_font(o[6]) if o[6] in FONTS else (None, 12)
+            # GMod puts the top of the letters' cell at y (TEXT_ALIGN_TOP) or its middle (CENTER)
+            y = o[4] - size / 2 if o[7] == 1 else o[4]
+            d.text((o[3], y), o[2], fill=col, font=fnt, anchor="la")
         elif kind == "image" and images is not None and o[2] in images:
             # a picture: the part of the texture the UVs pick (mirrored when u0 > u1), multiplied by
             # the draw colour (rounded like Habbo), scaled with GMod's filter (point = pixel-sharp)

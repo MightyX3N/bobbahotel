@@ -19,7 +19,11 @@ V.SCALE = 64
 V.MIN_ZOOM, V.MAX_ZOOM = 0.5, 4
 V.ZOOM_STEP = 1.2 -- per scroll notch
 V.ZOOM_SPEED = 14 -- how fast it glides (higher = quicker)
-V.zoomNow = V.zoomNow or 2 -- rooms open zoomed in
+-- The size things are drawn at, by the screen's height: Habbo's size up to 1080 pixels... 2x from
+-- 1440, 3x from 2160 (4K). Whole sizes keep the pixel art sharp. Rooms open at it, and the chat uses
+-- it, so bubbles and avatars keep Habbo's sizes next to each other on any screen.
+function V.uiScale(h) return math.max(1, math.floor((h or ScrH()) / 720)) end
+V.zoomNow = V.zoomNow or V.uiScale() -- rooms open at the screen's size
 V.zoomTarget = V.zoomTarget or V.zoomNow
 V.panX, V.panY = V.panX or 0, V.panY or 0
 

@@ -102,7 +102,7 @@ T["shows a room: clockwise polygons, in the middle of the screen, worked out onc
 		end
 	end
 	assert(math.abs((minX + maxX) / 2 - 960) <= 1 and math.abs((minY + maxY) / 2 - 540) <= 1, "centred: " .. minX .. " " .. maxX .. " " .. minY .. " " .. maxY)
-	assert(maxX - minX > 1000, "zoomed in (double size) by default")
+	assert(maxX - minX > 500, "drawn at the screen's size by default (1x on a 1080 pixel screen)")
 	-- the next frames draw the same polygons without working them out again
 	V.panel:Paint(1920, 1080)
 	V.panel:Paint(1920, 1080)
@@ -152,7 +152,14 @@ T["zoom: Ctrl + scroll glides to the new size, towards the mouse, between half a
 	local V = BOBBA.view
 	G.cmds.bobba_preview(nil, nil, { "model_a" })
 	V.panel:Paint(1920, 1080)
-	eq(V.zoomNow, 2, "opens zoomed in")
+	eq(V.zoomNow, 1, "opens at the screen's size (1x at 1080)")
+	eq(V.uiScale(1080), 1, "1x up to 1080 pixels")
+	eq(V.uiScale(1440), 2, "2x at 1440")
+	eq(V.uiScale(2160), 3, "3x at 4K")
+	-- (the rest from 2x)
+	V.zoomNow, V.zoomTarget = 2, 2
+	V.dirty = true
+	V.panel:Paint(1920, 1080)
 	-- the mouse on tile 9,9
 	local function mouseOn(tx, ty)
 		local x, y = V.project(tx, ty, 0)

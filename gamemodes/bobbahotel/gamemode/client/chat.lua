@@ -23,23 +23,56 @@ local P = BOBBA.platform
 local C = R.chatState or { bubbles = {}, nextId = 1 }
 R.chatState = C
 
--- Sizes are Habbo's pixels; everything is drawn C.SCALE times as big: the room opens at twice
--- Habbo's size, so the chat is too (and, like Nitro, it stays that size when the room is zoomed).
-C.SCALE = 2
+-- Sizes are Habbo's pixels; everything is drawn C.SCALE times as big: the screen's size (V.uiScale,
+-- the size rooms open at). Like Nitro, it stays that size when the room is zoomed.
+function C.scaleFor(h) return V.uiScale(h) end
 C.MAX_LENGTH = 100
 C.SCROLL_EVERY = 6        -- seconds (nitro-react: normal scroll speed)
 C.SCROLL_BY = 15          -- pixels
 C.AREA = 0.40             -- the top 40% of the screen (chat.viewer.height.percentage)
+-- A new bubble starts at the bottom of that area (Nitro), or higher, over the head of whoever talks
+-- when they stand higher up: it never covers them. (A standing Habbo avatar is about 100 pixels
+-- tall from its feet to the top of its head.)
+C.HEAD_HEIGHT = 100
+C.HEAD_GAP = 4
 C.MAX_WIDTH = 350         -- a normal bubble's widest (RoomChatSettings.CHAT_BUBBLE_WIDTH_NORMAL)
-C.FONT_SIZE = 12          -- the bubble style's fontSize (Ubuntu 12)
-C.LINE_H = 13             -- a line of text: one line fills the 24 pixel bubble (margins 4 + 13 + 7)
-R.chatScale = C.SCALE
+-- nitro-react's ChatWidgetView.scss: .chat-bubble { font-size: 14px; min-height: 26px; border-image
+-- outset 2px at the top }, .chat-content { margin-left: 27px; padding: 5px 6px 5px 4px; line-height: 1 },
+-- the name's margin-right .25rem, .pointer { bottom: -5px }, .user-image: the head at half size,
+-- in the middle of a 45 x 65 box at (-9.25, -15)
+C.FONT_SIZE = 14
+C.LINE_H = 14
+C.PAD = { 31, 5, 6, 5 }   -- left (27 + 4), top, right, bottom
+C.MIN_H = 26
+C.OUTSET_TOP = 2
+C.NAME_GAP = 4
+C.HEAD = { 13.25, 17.5 }
+C.COLOR_W = 30
+-- GMod's font size is the whole height of Ubuntu's letters (ascent + descent: 1.197 of the font's
+-- size in CSS); line-height 1 puts that height's middle in the middle of a 14 pixel line
+C.UBUNTU_CELL = 1.197
 
-local S = C.SCALE
-surface.CreateFont("BobbaChat", { font = "Ubuntu", size = C.FONT_SIZE * S, weight = 500, antialias = true, extended = true })
-surface.CreateFont("BobbaChatBold", { font = "Ubuntu", size = C.FONT_SIZE * S, weight = 800, antialias = true, extended = true })
-surface.CreateFont("BobbaChatItalic", { font = "Ubuntu", size = C.FONT_SIZE * S, weight = 500, italic = true, antialias = true, extended = true })
-surface.CreateFont("BobbaChatInput", { font = "Ubuntu", size = 13 * S, weight = 500, antialias = true, extended = true })
+local S, FONT_PX, TEXT_TOP, LINE_H, INPUT_W, INPUT_H, F
+-- (sets the sizes for the screen; again when the game's resolution changes)
+function C.setScale(scale)
+	S = scale
+	C.SCALE, R.chatScale = S, S
+	FONT_PX = math.floor(C.FONT_SIZE * C.UBUNTU_CELL * S + 0.5)
+	TEXT_TOP = -(C.UBUNTU_CELL - 1) / 2 * C.FONT_SIZE * S
+	LINE_H = C.LINE_H * S
+	INPUT_W, INPUT_H = 420 * S, 32 * S
+	-- (the size in the names: GMod keeps a font's first size until the game restarts, so a new size
+	-- needs a new name)
+	F = { chat = "BobbaChat" .. FONT_PX, bold = "BobbaChatBold" .. FONT_PX, italic = "BobbaChatItalic" .. FONT_PX, input = "BobbaChatInput" .. S }
+	surface.CreateFont(F.chat, { font = "Ubuntu", size = FONT_PX, weight = 500, antialias = true, extended = true })
+	surface.CreateFont(F.bold, { font = "Ubuntu", size = FONT_PX, weight = 800, antialias = true, extended = true })
+	surface.CreateFont(F.italic, { font = "Ubuntu", size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
+	surface.CreateFont(F.input, { font = "Ubuntu", size = math.floor(13 * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
+	-- bubbles already up keep their size; the input is made again at the new size
+	if IsValid(C.input) then C.input:Remove() C.input = nil end
+end
+C.setScale(C.scaleFor(ScrH()))
+hook.Add("OnScreenSizeChanged", "bobba.chat", function() C.setScale(C.scaleFor(ScrH())) end)
 
 -- --- sending --------------------------------------------------------------------------------------
 -- nitro-react's ChatInputView.sendChatValue
@@ -80,14 +113,14 @@ end
 
 -- the words of "name: text" in lines no wider than maxW: { { { text, font }, ... }, ... }
 local function wrap(name, text, kind, maxW)
-	local msgFont = (kind == "shout") and "BobbaChatBold" or ((kind == "whisper") and "BobbaChatItalic" or "BobbaChat")
+	local msgFont = (kind == "shout") and F.bold or ((kind == "whisper") and F.italic or F.chat)
 	local words = {}
-	if name then words[#words + 1] = { name .. ": ", "BobbaChatBold", name = true } end
+	if name then words[#words + 1] = { name .. ": ", F.bold, name = true, gap = C.NAME_GAP * S } end
 	for w in text:gmatch("%S+") do words[#words + 1] = { w .. " ", msgFont } end
 	local lines, line, lineW = {}, {}, 0
 	local maxLine = 0
 	for _, w in ipairs(words) do
-		local ww = measure(w[2], w[1])
+		local ww = measure(w[2], w[1]) + (w.gap or 0)
 		if lineW > 0 and lineW + ww > maxW then
 			lines[#lines + 1] = line
 			if lineW > maxLine then maxLine = lineW end
@@ -101,28 +134,30 @@ local function wrap(name, text, kind, maxW)
 	return lines, math.max(1, maxLine - spaceW)
 end
 
-local LINE_H = C.LINE_H * S
 
 -- a new bubble: its size, and where it starts (over the one talking, at the bottom of the chat area)
 local function addBubble(u, text, kind, style)
 	local skin = R.chatSkin and R.chatSkin(style or 0) or nil
 	local anonymous = skin and skin.anonymous
-	local m = skin and skin.margins or { 28, 4, 12, 7 }
+	local m = C.PAD
 	local lines, textW = wrap((not anonymous) and (u.name or "?") or nil, text, kind, (C.MAX_WIDTH - m[1] - m[3]) * S)
 	local w = (m[1] + m[3]) * S + textW
-	local h = (m[2] + m[4]) * S + #lines * LINE_H
-	local baseH = (skin and skin.base.height or 24) * S
-	if h < baseH then h = baseH end
+	local h = math.max(C.MIN_H * S, (m[2] + m[4]) * S + #lines * LINE_H)
 	local sx = ScrW() / 2
+	local bottom = math.floor(ScrH() * C.AREA)
 	if u then
 		local x, y, z = R.unitPosition(u)
-		local px = V.project(x, y, z)
-		if px then sx = px end
+		local px, py, k = V.project(x, y, z)
+		if px then
+			sx = px
+			local head = py - (C.HEAD_HEIGHT + C.HEAD_GAP) * k
+			if head < bottom then bottom = math.floor(head) end
+		end
 	end
 	local b = {
 		id = C.nextId, unit = u and u.id, name = u and u.name, text = text, kind = kind, style = style or 0, skin = skin,
 		lines = lines, width = math.floor(w + 0.5), height = h,
-		left = math.floor(sx - w / 2), top = math.floor(ScrH() * C.AREA - h), drawTop = nil, born = SysTime(),
+		left = math.floor(sx - w / 2), top = bottom - h, drawTop = nil, born = SysTime(),
 		color = (u and R.figureColor) and R.figureColor(u) or 0xC8C8C8, panX = V.panX or 0,
 	}
 	C.nextId = C.nextId + 1
@@ -213,7 +248,7 @@ local function drawLines(b, x, y, textColor)
 		for _, w in ipairs(line) do
 			local r, g, bl = tr, tg, tb
 			if b.kind == "whisper" and not w.name then r, g, bl = 0x59, 0x59, 0x59 end
-			draw.SimpleText(w[1], w[2], x + w.x, y + (i - 1) * LINE_H, Color(r, g, bl), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText(w[1], w[2], x + w.x, math.floor(y + TEXT_TOP + (i - 1) * LINE_H + 0.5), Color(r, g, bl), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 		end
 	end
 end
@@ -226,45 +261,46 @@ local function drawBubble(b, x, y)
 		render.PushFilterMag(TEXFILTER.POINT)
 		render.PushFilterMin(TEXFILTER.POINT)
 		surface.SetDrawColor(255, 255, 255, 255)
-		nineSlice(s.base, s.slice, x, y, w, h)
+		-- the picture reaches 2 pixels above the bubble (border-image-outset)
+		local oy, oh = y - C.OUTSET_TOP * S, h + C.OUTSET_TOP * S
+		nineSlice(s.base, s.slice, x, oy, w, oh)
 		if s.color then
 			local r, g, bl = rgb(b.color)
 			surface.SetDrawColor(r, g, bl, 255)
-			local cs = { s.slice[1], s.slice[2], 0, s.slice[4] }
 			-- the colour part keeps its width, stretches with the bubble's height
 			surface.SetMaterial(mat(s.color.path))
 			local top, bottom = s.slice[2], s.color.height - s.slice[2] - s.slice[4]
-			local cx, cy = x + (s.colorXY and s.colorXY[1] or 0) * S, y + (s.colorXY and s.colorXY[2] or 0) * S
+			local cx, cy = x + (s.colorXY and s.colorXY[1] or 0) * S, oy + (s.colorXY and s.colorXY[2] or 0) * S
 			local cw = s.color.width * S
 			blit(s.color, 0, 0, s.color.width, top, cx, cy, cw, top * S)
-			blit(s.color, 0, top, s.color.width, s.slice[4], cx, cy + top * S, cw, h - (top + bottom) * S)
-			blit(s.color, 0, top + s.slice[4], s.color.width, bottom, cx, cy + h - bottom * S, cw, bottom * S)
+			blit(s.color, 0, top, s.color.width, s.slice[4], cx, cy + top * S, cw, oh - (top + bottom) * S)
+			blit(s.color, 0, top + s.slice[4], s.color.width, bottom, cx, cy + oh - bottom * S, cw, bottom * S)
 		end
 		surface.SetDrawColor(255, 255, 255, 255)
 		if s.pointer then
 			surface.SetMaterial(mat(s.pointer.path))
-			local py = y + h - (s.base.height - (s.pointerY or (s.base.height - 1))) * S
+			local py = y + h - S
 			local pw = s.pointer.width * S
 			blit(s.pointer, 0, 0, s.pointer.width, s.pointer.height, x + math.floor((w - pw) / 2 / S) * S, py, pw, s.pointer.height * S)
 		end
 		render.PopFilterMin()
 		render.PopFilterMag()
-		if not s.anonymous and u and R.figureHeadDrawer and s.faceXY then
-			pcall(R.figureHeadDrawer, u, x + s.faceXY[1] * S, y + s.faceXY[2] * S)
+		if not s.anonymous and u and R.figureHeadDrawer then
+			pcall(R.figureHeadDrawer, u, x + C.HEAD[1] * S, y + C.HEAD[2] * S)
 		end
-		drawLines(b, x + s.margins[1] * S, y + s.margins[2] * S, s.textColor or 0)
+		drawLines(b, x + C.PAD[1] * S, y + C.PAD[2] * S, s.textColor or 0)
 		return
 	end
 	-- plain: a white rounded bubble with a dark edge, the colour part on the left, a little pointer
 	draw.RoundedBox(8, x - S, y - S, w + 2 * S, h + 2 * S, Color(30, 30, 30))
 	draw.RoundedBox(7, x, y, w, h, Color(250, 250, 250))
 	local r, g, bl = rgb(b.color)
-	draw.RoundedBoxEx(7, x, y, 24 * S, h, Color(r, g, bl), true, false, true, false)
+	draw.RoundedBoxEx(7, x, y, C.COLOR_W * S, h, Color(r, g, bl), true, false, true, false)
 	draw.NoTexture()
 	surface.SetDrawColor(250, 250, 250, 255)
 	surface.DrawPoly({ { x = x + w / 2 - 5 * S, y = y + h }, { x = x + w / 2 + 5 * S, y = y + h }, { x = x + w / 2, y = y + h + 6 * S } })
-	if u and R.figureHeadDrawer then pcall(R.figureHeadDrawer, u, x + 12 * S, y + h / 2) end
-	drawLines(b, x + 28 * S, y + 4 * S, 0)
+	if u and R.figureHeadDrawer then pcall(R.figureHeadDrawer, u, x + C.HEAD[1] * S, y + C.HEAD[2] * S) end
+	drawLines(b, x + C.PAD[1] * S, y + C.PAD[2] * S, 0)
 end
 
 -- every frame, over the room
@@ -305,7 +341,6 @@ end)
 BOBBA.events.on("roomShown", "bobba.chat.clear", function() C.bubbles = {} end)
 
 -- --- the input ------------------------------------------------------------------------------------
-local INPUT_W, INPUT_H = 420 * S, 32 * S
 
 local function createInput()
 	if IsValid(C.input) then return C.input end
@@ -321,7 +356,7 @@ local function createInput()
 	local entry = vgui.Create("DTextEntry", frame)
 	entry:Dock(FILL)
 	entry:DockMargin(10, 4, 10, 4)
-	entry:SetFont("BobbaChatInput")
+	entry:SetFont(F.input)
 	entry:SetPaintBackground(false)
 	entry:SetPlaceholderText("Click here to chat...")
 	entry:SetUpdateOnType(true)
@@ -351,12 +386,12 @@ local function createInput()
 	end
 	entry.Paint = function(self, w, h)
 		if C.floodUntil and SysTime() < C.floodUntil then
-			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), "BobbaChatInput", 2, h / 2, Color(200, 60, 60), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), F.input, 2, h / 2, Color(200, 60, 60), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			return
 		end
 		self:DrawTextEntryText(Color(20, 20, 20), Color(80, 140, 230), Color(20, 20, 20))
 		if (self:GetValue() or "") == "" then
-			draw.SimpleText(self:GetPlaceholderText(), "BobbaChatInput", 2, h / 2, Color(150, 150, 150), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(self:GetPlaceholderText(), F.input, 2, h / 2, Color(150, 150, 150), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 	end
 	frame.entry = entry
