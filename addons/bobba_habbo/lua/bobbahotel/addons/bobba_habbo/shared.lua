@@ -13,6 +13,15 @@ H.xml = lib("xml.lua")
 H.zip = lib("zip.lua")
 lib("work.lua")
 
+-- something the hotel's loading screen (the gamemode's client/loading.lua) waits for; addons load
+-- before it, so the list is started here if it isn't there yet
+function H.loadingCheck(id, fn)
+	BOBBA.loading = BOBBA.loading or { checks = {}, order = {} }
+	local LD = BOBBA.loading
+	if not LD.checks[id] then LD.order[#LD.order + 1] = id end
+	LD.checks[id] = fn
+end
+
 function H.inflate(bytes)
 	return (H.deflate:DecompressZlib(bytes))
 end

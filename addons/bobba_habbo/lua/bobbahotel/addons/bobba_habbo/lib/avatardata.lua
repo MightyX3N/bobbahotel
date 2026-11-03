@@ -59,6 +59,24 @@ function H.desktopClient(url, cb)
 	end, function(why) done(nil, "couldn't download Habbo's client: " .. why) end)
 end
 
+-- HabboAir.swf, Habbo's desktop client itself (about 11 MB), kept in the data folder: whatever the
+-- hotel takes from it (avatar data, chat bubbles, editor icons, and anything added later) comes from
+-- this saved copy, without downloading the client again. cb(bytes, version) or cb(nil, nil, why)
+function H.habboAir(cb)
+	H.clientVersion(function(version, url, why)
+		if not version then cb(nil, nil, why) return end
+		local path = H.cachePath("raw/client/HabboAir_" .. version, ".dat")
+		if P.dataExists(path) then cb(P.readData(path), version) return end
+		H.desktopClient(url, function(zip, why1)
+			if not zip then cb(nil, nil, why1) return end
+			local swf, why2 = zip.read("HabboAir.swf", H.inflateRaw)
+			if not swf then cb(nil, nil, why2) return end
+			P.writeData(path, swf)
+			cb(swf, version)
+		end)
+	end)
+end
+
 -- The XML inside Habbo's desktop client, cached per client version. cb(files) or cb(nil, why)
 function H.clientXml(cb)
 	H.clientVersion(function(version, url, why)
@@ -70,9 +88,7 @@ function H.clientXml(cb)
 			if P.dataExists(p) then files[ours] = P.readData(p) else have = false end
 		end
 		if have then cb(files) return end
-		H.desktopClient(url, function(zip, why1)
-			if not zip then cb(nil, why1) return end
-			local swfBytes, why2 = zip.read("HabboAir.swf", H.inflateRaw)
+		H.habboAir(function(swfBytes, _, why2)
 			if not swfBytes then cb(nil, why2) return end
 			-- (the chat bubbles are in the same file: kept for the chat)
 			if H.saveChatStyles then
@@ -215,19 +231,19 @@ function H.figureLibraries(figure, cb)
 		if not data then cb(nil, err) return end
 		H.config(function(cfg, err2)
 			if not cfg then cb(nil, err2) return end
+			-- (all of them at once: H.httpGet lets several download together)
 			local names = H.figureLibraryNames(data, figure)
-			local libs, i = {}, 0
-			local function nxt()
-				i = i + 1
-				local name = names[i]
-				if not name then cb(libs) return end
+			local libs, left, failed = {}, #names, false
+			if left == 0 then cb(libs) return end
+			for i, name in ipairs(names) do
 				H.library("figure/" .. name, cfg.clientUrl .. name .. ".swf", function(lib, e)
-					if not lib then cb(nil, e) return end
-					libs[#libs + 1] = lib
-					nxt()
+					if failed then return end
+					if not lib then failed = true cb(nil, e) return end
+					libs[i] = lib
+					left = left - 1
+					if left == 0 then cb(libs) end
 				end)
 			end
-			nxt()
 		end)
 	end)
 end

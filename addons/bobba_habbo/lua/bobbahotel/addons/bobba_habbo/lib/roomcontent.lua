@@ -169,6 +169,7 @@ function H.roomContent(cb)
 	end
 	fetchRoomContent(function(ok, err)
 		if not ok then done(nil, "Habbo's room content: " .. tostring(err)) return end
+		-- (eager: the gamemode draws the floors and walls with these pictures itself)
 		H.library(H.ROOM_CONTENT, "file://" .. rawPath(), function(lib, err2)
 			if not lib then done(nil, err2) return end
 			H.work(function()
@@ -190,7 +191,7 @@ function H.roomContent(cb)
 				}
 				done(rc)
 			end)
-		end)
+		end, { eager = true })
 	end)
 end
 

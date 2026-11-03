@@ -62,6 +62,7 @@ end
 local function material(path)
 	local m = FU.materials[path]
 	if not m then
+		H.image(path) -- (made into a PNG the first time it's drawn)
 		m = P.dataMaterial(path, "noclamp")
 		FU.materials[path] = m
 	end
@@ -74,11 +75,26 @@ local alphas = {}
 local function solid(img, x, y)
 	local a = alphas[img.path]
 	if a == nil then
+		H.image(img.path)
 		a = H.png.alphaReader(P.readData(img.path), H.inflate) or false
 		alphas[img.path] = a
 	end
 	if not a then return true end
 	return a(x, y) >= 128
+end
+
+-- the hotel's loading screen waits for every furni in the room (asking starts their download)
+do
+	H.loadingCheck("habbo.furni", function()
+		local R = BOBBA.room
+		local total, ready = 0, 0
+		for _, it in pairs(R and R.items or {}) do
+			total = total + 1
+			local base = H.furniBase(it.kind)
+			if typeFor(it.kind) or FU.failed[base] then ready = ready + 1 end
+		end
+		return ready == total, total > 0 and ready / total or 1
+	end)
 end
 
 -- one furni on screen (Nitro's visualization for it, kept while the item is)

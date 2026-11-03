@@ -109,6 +109,7 @@ end
 local function material(path)
 	local m = AV.materials[path]
 	if not m then
+		H.image(path) -- (made into a PNG the first time it's drawn)
 		m = P.dataMaterial(path, "noclamp")
 		AV.materials[path] = m
 	end
@@ -209,6 +210,21 @@ BOBBA.room.figureDrawer = draw
 
 -- for the avatar editor (editor.lua)
 AV.figureReady, AV.material, AV.sprite = figureReady, material, sprite
+
+-- the hotel's loading screen waits for everyone's clothes in the room (unless Habbo can't be reached)
+do
+	H.loadingCheck("habbo.avatars", function()
+		if AV.failed then return true end
+		if not AV.renderer then renderer(function() end) return false, 0 end
+		local total, ready = 0, 0
+		for _, u in pairs(BOBBA.room.units or {}) do
+			total = total + 1
+			local figure = (u.figure and u.figure ~= "") and u.figure or H.DEFAULT_FIGURE
+			if figureReady(figure) then ready = ready + 1 end
+		end
+		return ready == total, total > 0 and ready / total or 1
+	end)
+end
 
 -- --- in chat bubbles: the head, and the shirt's colour --------------------------------------------------
 -- (nitro-react's ChatWidgetMessageView: the head alone, facing the front, at half Habbo's size)

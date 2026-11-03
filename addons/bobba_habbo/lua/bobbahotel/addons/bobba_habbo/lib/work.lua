@@ -14,6 +14,14 @@ local H = BOBBA.habbo
 local P = BOBBA.platform
 
 H.WORK_BUDGET = 0.004 -- seconds of work per frame
+-- ... and while the hotel's loading screen or the avatar editor is open (a lower frame rate there is
+-- better than waiting)
+H.WORK_BUDGET_BUSY = 0.030
+local function budget()
+	if BOBBA.loading and BOBBA.loading.active then return H.WORK_BUDGET_BUSY end
+	if BOBBA.ui and BOBBA.ui.windows and BOBBA.ui.windows["avatar-editor"] then return H.WORK_BUDGET_BUSY end
+	return H.WORK_BUDGET
+end
 
 local jobs = {}
 local started = 0
@@ -26,7 +34,7 @@ end
 function H.yield()
 	local co, main = coroutine.running()
 	if not co or main or not jobs[co] then return end
-	if now() - started >= H.WORK_BUDGET then coroutine.yield() end
+	if now() - started >= budget() then coroutine.yield() end
 end
 
 local function step()
@@ -43,7 +51,7 @@ local function step()
 			elseif coroutine.status(co) == "dead" then
 				jobs[co] = nil
 			end
-			if now() - started >= H.WORK_BUDGET then break end
+			if now() - started >= budget() then break end
 		end
 	end
 	if next(jobs) == nil and P.stop then P.stop("habbo.work") end
@@ -61,12 +69,41 @@ if H.loadingGame and hook then
 	end)
 end
 
-function H.httpGet(url, ok, fail)
+-- Downloads: at most H.DOWNLOADS at once (like a browser), the rest wait their turn
+H.DOWNLOADS = 6
+local active, queue = 0, {}
+local function nextDownload()
+	while active < H.DOWNLOADS and #queue > 0 do
+		local d = table.remove(queue, 1)
+		active = active + 1
+		local finished = false
+		local function finish()
+			if finished then return false end
+			finished = true
+			active = active - 1
+			nextDownload()
+			return true
+		end
+		P.httpGet(d.url, function(body) if finish() then d.ok(body) end end, function(why) if finish() then d.fail(why) end end)
+	end
+end
+
+-- canWait: behind every other download (fetching ahead, like the editor's clothes)
+function H.httpGet(url, ok, fail, canWait)
 	if H.loadingGame then
-		afterLoad[#afterLoad + 1] = function() P.httpGet(url, ok, fail) end
+		afterLoad[#afterLoad + 1] = function() H.httpGet(url, ok, fail, canWait) end
 		return
 	end
-	P.httpGet(url, ok, fail)
+	local d = { url = url, ok = ok, fail = fail, low = canWait }
+	if canWait then
+		queue[#queue + 1] = d
+	else
+		-- (in front of the ones that can wait)
+		local at = #queue + 1
+		for i, q in ipairs(queue) do if q.low then at = i break end end
+		table.insert(queue, at, d)
+	end
+	nextDownload()
 end
 
 function H.work(fn, canWait)

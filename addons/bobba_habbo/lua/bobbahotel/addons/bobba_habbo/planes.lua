@@ -7,12 +7,12 @@ local H = BOBBA.habbo
 BOBBA.view = BOBBA.view or {}
 local V = BOBBA.view
 
-local rc
+local rc, failed
 local cache = {}
 
 local function load()
 	H.roomContent(function(r, err)
-		if not r then print("[Bobba] " .. tostring(err)) return end
+		if not r then failed = true print("[Bobba] " .. tostring(err)) return end
 		rc = r
 		cache = {}
 		V.dirty = true
@@ -33,6 +33,9 @@ end
 
 -- now: while the game loads (from the files saved last time this needs no internet)
 load()
+
+-- the hotel's loading screen waits for the floors and walls
+H.loadingCheck("habbo.planes", function() return rc ~= nil or failed == true end)
 
 -- bobba_habbo_floors / bobba_habbo_wallpapers: the ids Habbo has (for bobba_room_floor / _wallpaper)
 for cmd, kind in pairs({ bobba_habbo_floors = "floor", bobba_habbo_wallpapers = "wall" }) do

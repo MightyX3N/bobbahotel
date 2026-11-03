@@ -57,6 +57,25 @@ local function thumbFor(category, set)
 	return t
 end
 
+-- New pictures are made (H.image) at most about 8 ms a frame here; the rest show "loading" for
+-- a frame or two, so a tab full of new clothes doesn't stall the game.
+H.EDITOR_IMAGE_BUDGET = 0.008
+local budgetFrame, budgetUsed = -1, 0
+local function picturesReady(names)
+	local frame = FrameNumber and FrameNumber() or 0
+	if frame ~= budgetFrame then budgetFrame, budgetUsed = frame, 0 end
+	for _, name in ipairs(names) do
+		local a = AV.assets[name]
+		if a and H.pendingImages[a.path] then
+			if budgetUsed >= H.EDITOR_IMAGE_BUDGET then return false end
+			local t = SysTime()
+			H.image(a.path)
+			budgetUsed = budgetUsed + (SysTime() - t)
+		end
+	end
+	return true
+end
+
 -- (the picture as an image: the box around what's drawn, in the middle of the cell)
 local function drawSprites(t, cx, cy, k, colorOf)
 	if #t.sprites == 0 then return end
@@ -117,11 +136,21 @@ AE.drawPart = function(category, item, figure, cx, cy, s)
 		-- BodyModel: the face, as the head of a figure with only it (in the figure's skin colour)
 		local e = avatarPicture(figure:getFigureStringWithFace(item.id), figure.gender, 2, true)
 		if not e then return false end
+		if not e.names then
+			e.names = {}
+			for _, sp in ipairs(e.sprites) do e.names[#e.names + 1] = sp.name end
+		end
+		if not picturesReady(e.names) then return false end
 		drawPicture(e, math.floor(cx - e.w * s / 2 + 0.5), math.floor(cy - e.h * s / 2 + 0.5), s)
 		return true
 	end
 	local t = thumbFor(category, item.partSet)
 	if not t then return false end
+	if not t.names then
+		t.names = {}
+		for _, sp in ipairs(t.sprites) do t.names[#t.names + 1] = sp.name end
+	end
+	if not picturesReady(t.names) then return false end
 	drawSprites(t, cx, cy, s, function(sp)
 		if item.useColors and sp.colorIndex > 0 then
 			local c = item.partColors and item.partColors[sp.colorIndex]
@@ -202,6 +231,42 @@ function H.loadTexts(prefixes)
 			end
 			if next(strings) then BOBBA.lang.add("en", strings) end
 		end)
+	end)
+end
+
+-- --- the editor's clothes, fetched ahead -----------------------------------------------------------
+-- Once the room is showing, every clothing file the editor can show (552 sets in about 300 files,
+-- a one-time ~30 MB) is downloaded and read in the background, behind everything else, so the
+-- editor's tabs are ready when opened. Only what's not saved yet is downloaded.
+function H.prefetchClothes()
+	H.figureData(function(fd)
+		if not fd then return end
+		H.avatarData(function(data)
+			if not data then return end
+			H.config(function(cfg)
+				if not cfg then return end
+				local seen, names = {}, {}
+				for _, t in ipairs({ "hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "ca", "cp", "lg", "sh", "wa" }) do
+					local st = fd.setTypes[t]
+					for _, set in ipairs(st and st.sets or {}) do
+						if set.selectable and not set.sellable then
+							for _, name in ipairs(H.figureLibraryNames(data, t .. "-" .. set.id)) do
+								if not seen[name] then seen[name] = true names[#names + 1] = name end
+							end
+						end
+					end
+				end
+				for _, name in ipairs(names) do
+					H.library("figure/" .. name, cfg.clientUrl .. name .. ".swf", function() end, { canWait = true })
+				end
+			end)
+		end)
+	end)
+end
+
+if BOBBA.events then
+	BOBBA.events.on("loadingDone", "bobba_habbo.prefetch", function()
+		if P.after then P.after(3, H.prefetchClothes) end
 	end)
 end
 

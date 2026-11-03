@@ -435,7 +435,7 @@ end
 -- the input sits at the bottom in the middle while a room is shown, and keeps the keyboard (so
 -- typing anywhere goes into it, like Habbo) unless something else wants it
 hook.Add("Think", "bobba.chat", function()
-	local show = V.mode == "room" and V.room ~= nil
+	local show = V.mode == "room" and V.room ~= nil and not (BOBBA.loading and BOBBA.loading.active)
 	if not show then
 		if IsValid(C.input) then C.input:SetVisible(false) end
 		return

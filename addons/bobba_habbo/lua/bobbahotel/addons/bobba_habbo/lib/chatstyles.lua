@@ -299,11 +299,9 @@ function H.chatStyles(cb)
 		if not version then done(nil, err) return end
 		local styles = readIndex(version)
 		if styles then done(styles) return end
-		H.desktopClient(url, function(zip, err2)
-			if not zip then done(nil, err2) return end
+		H.habboAir(function(swfBytes, _, err2)
+			if not swfBytes then done(nil, err2) return end
 			H.work(function()
-				local swfBytes, why = zip.read("HabboAir.swf", H.inflateRaw)
-				if not swfBytes then done(nil, why) return end
 				local ok, why2 = H.saveChatStyles(swfBytes, version)
 				swfBytes = nil
 				collectgarbage()

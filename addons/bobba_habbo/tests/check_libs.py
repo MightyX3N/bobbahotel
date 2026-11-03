@@ -192,7 +192,10 @@ check(lib is not None, "library: downloaded and unpacked")
 names = sorted(k.decode() for k in lib[b"images"].keys())
 check(names == ["throne_icon_a", "throne_throne_64_a_2_0", "throne_throne_64_b_2_0"], "library: every picture")
 pngs = [k for k in L2.globals().PY_FILES.keys() if k.endswith(b".png")]
-check(len(pngs) == 3, "library: a PNG file for each picture")
+check(len(pngs) == 0, "library: reading it makes no pictures yet (only their sizes are known)")
+for k in lib[b"images"].keys(): H.image(lib[b"images"][k][b"path"])
+pngs = [k for k in L2.globals().PY_FILES.keys() if k.endswith(b".png")]
+check(len(pngs) == 3, "library: a PNG file for each picture once it's drawn (H.image)")
 img = Image.open(io.BytesIO(L2.globals().PY_FILES[lib[b"images"][b"throne_throne_64_a_2_0"][b"path"]]))
 def pow2(n):
     p = 1
@@ -223,11 +226,26 @@ l3 = got3.get("lib")
 same = l3 is not None and sorted(l3[b"images"].keys()) == sorted(lib[b"images"].keys()) and all(
     l3[b"images"][k][b"path"] == lib[b"images"][k][b"path"] and l3[b"images"][k][b"width"] == lib[b"images"][k][b"width"] for k in lib[b"images"].keys()) and l3[b"xml"][b"throne_throne_visualization"] == lib[b"xml"][b"throne_throne_visualization"]
 check(same, "library: a new game start reads its index: same pictures and XML, the SWF not unpacked again (%s)" % got3.get("err"))
+served["https://example/lazy.swf"] = swf_file([lossless2_argb(1, W3, H3, img3, alpha=False), symbols([(1, "lazy_pic")])])
+gl = {}
+L2.execute(b"BOBBA.habbo.swf = nil")
+L2.execute(open(os.path.join(LIB, "swf.lua"), "rb").read().replace(b"return SWF", b"BOBBA.habbo.swf = SWF return SWF"))
+L2.eval(b"BOBBA.habbo").library(b"furni/lazy", b"https://example/lazy.swf", lambda lib, err=None: gl.update(lib=lib))
+lazy_path = gl["lib"][b"images"][b"lazy_pic"][b"path"]
+L2.execute(b"package = nil")
+L2.execute(open(os.path.join(LIB, "library.lua"), "rb").read())
+gl2 = {}
+L2.eval(b"BOBBA.habbo").library(b"furni/lazy", b"https://example/lazy.swf", lambda lib, err=None: gl2.update(lib=lib))
+made = L2.eval(b"BOBBA.habbo").image(lazy_path)
+lp = L2.globals().PY_FILES[lazy_path]
+ok_px = lp is not None and list(Image.open(io.BytesIO(lp)).convert("RGBA").crop((0, 0, W3, H3)).get_flattened_data()) == img3
+check(gl2["lib"] is not None and made == True and ok_px, "library: a picture never drawn before is made on a later start, from the kept SWF, pixels exact")
 L2.execute(open(os.path.join(LIB, "swf.lua"), "rb").read().replace(b"return SWF", b"BOBBA.habbo.swf = SWF return SWF"))
 served["https://example/dup.swf"] = dup
 gd = {}
 L2.eval(b"BOBBA.habbo").library(b"figure/dup", b"https://example/dup.swf", lambda lib, err=None: gd.update(lib=lib))
 im = gd["lib"][b"images"]
+for k in im.keys(): L2.eval(b"BOBBA.habbo").image(im[k][b"path"])
 check(im[b"a_wlk_2"] is not None and im[b"a_wlk_2"][b"path"] == im[b"a_std_1"][b"path"] and len([k for k in L2.globals().PY_FILES.keys() if b"figure/dup" in k and k.endswith(b".png")]) == 1, "library: a shared picture is one PNG, every name points to it")
 
 bad = {}

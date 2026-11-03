@@ -20,7 +20,7 @@ end
 H.cachePath = cachePath
 
 -- Downloads once; later it comes from the cache. cb(bytes) or cb(nil, why)
-function H.download(key, url, cb)
+function H.download(key, url, cb, canWait)
 	local path = cachePath("raw/" .. key, ".dat")
 	if P.dataExists(path) then
 		cb(P.readData(path))
@@ -29,7 +29,7 @@ function H.download(key, url, cb)
 	H.httpGet(url, function(body)
 		P.writeData(path, body)
 		cb(body)
-	end, function(why) cb(nil, why .. " (" .. url .. ")") end)
+	end, function(why) cb(nil, why .. " (" .. url .. ")") end, canWait)
 end
 
 -- A small file Habbo changes now and then (its settings, its client versions): the copy from last
@@ -75,10 +75,17 @@ end
 local libraries = {}
 local unpacking = {}
 
--- What a library holds, so the next game start needn't unpack the SWF again: one line per picture
--- ("I", name, PNG path, width, height) and per XML ("X", name, path of the text file).
-H.INDEX_VERSION = "2"
+-- What a library holds, so the next game start needn't read the SWF again: one line per picture
+-- ("I", name, PNG path, width, height, its id in the SWF) and per XML ("X", name, path of the text
+-- file), and where the SWF itself is kept ("R", path).
+-- Pictures are made into PNG files only when something first draws them (H.image): a library has
+-- hundreds (every direction and movement) and only a few get drawn.
+H.INDEX_VERSION = "3"
 local function indexPath(key) return cachePath("index/" .. key, ".txt") end
+
+-- pictures not made yet: PNG path -> { raw = path of the SWF, id = its picture id }
+local pending = {}
+H.pendingImages = pending
 
 local function readIndex(key)
 	local path = indexPath(key)
@@ -86,25 +93,32 @@ local function readIndex(key)
 	local text = P.readData(path)
 	if not text or text:sub(1, #H.INDEX_VERSION + 1) ~= H.INDEX_VERSION .. "\n" then return nil end
 	local lib = { key = key, images = {}, xml = {}, problems = {} }
+	local raw
 	for line in text:gmatch("[^\n]+") do
-		local kind, a, b, c, d = line:match("^(%a)\t([^\t]*)\t([^\t]*)\t?([^\t]*)\t?([^\t]*)$")
-		if kind == "I" then
-			if not P.dataExists(b) then return nil end
-			local w, h = tonumber(c), tonumber(d)
-			lib.images[a] = { path = b, width = w, height = h, texWidth = H.pow2(w), texHeight = H.pow2(h) }
-		elseif kind == "X" then
-			local xml = P.readData(b)
+		local f = {}
+		for v in (line .. "\t"):gmatch("([^\t]*)\t") do f[#f + 1] = v end
+		if f[1] == "R" then
+			raw = f[2]
+		elseif f[1] == "I" then
+			local w, h, id = tonumber(f[4]), tonumber(f[5]), tonumber(f[6])
+			lib.images[f[2]] = { path = f[3], width = w, height = h, texWidth = H.pow2(w), texHeight = H.pow2(h) }
+			if not P.dataExists(f[3]) then
+				if not raw or not P.dataExists(raw) then return nil end
+				pending[f[3]] = { raw = raw, id = id }
+			end
+		elseif f[1] == "X" then
+			local xml = P.readData(f[3])
 			if not xml then return nil end
-			lib.xml[a] = xml
+			lib.xml[f[2]] = xml
 		end
 	end
 	return lib
 end
 
-local function writeIndex(key, lib)
-	local lines = { H.INDEX_VERSION }
+local function writeIndex(key, lib, raw, ids)
+	local lines = { H.INDEX_VERSION, "R\t" .. raw }
 	for name, img in pairs(lib.images) do
-		lines[#lines + 1] = table.concat({ "I", name, img.path, img.width, img.height }, "\t")
+		lines[#lines + 1] = table.concat({ "I", name, img.path, img.width, img.height, ids[name] or 0 }, "\t")
 	end
 	for name, xml in pairs(lib.xml) do
 		local path = cachePath("xmlcache/" .. key .. "/" .. name, ".txt")
@@ -141,8 +155,47 @@ local function padded(img)
 end
 H.paddedPixels = padded
 
--- Downloads (or takes from the cache) a SWF and unpacks it: every picture as a PNG, every XML.
-function H.library(key, url, cb)
+-- a SWF's packed pictures, read once (the last few kept, for the pictures still to make)
+local packedCache, packedOrder = {}, {}
+local function packedOf(raw)
+	local p = packedCache[raw]
+	if p then return p end
+	local bytes = P.readData(raw)
+	local swf = bytes and H.swf.read(bytes, H.inflate, { images = "later" })
+	p = swf and swf.packed or {}
+	packedCache[raw] = p
+	packedOrder[#packedOrder + 1] = raw
+	if #packedOrder > 8 then packedCache[table.remove(packedOrder, 1)] = nil end
+	return p
+end
+
+-- Makes sure a library's picture is a PNG file (the first time it's drawn): true, or false when it
+-- can't be made. Everything that makes a material from a library's picture calls this first.
+function H.image(path)
+	local job = pending[path]
+	if not job then return true end
+	pending[path] = nil
+	if P.dataExists(path) then return true end
+	local entry = packedOf(job.raw)[job.id]
+	if not entry then return false end
+	local img = H.swf.unpackImage(entry, H.inflate)
+	if not img then return false end
+	local px, tw, th = padded(img)
+	P.writeData(path, H.png.encode(tw, th, px, H.zlib))
+	return true
+end
+
+-- a picture's size from its packed data (DefineBitsLossless: id, format, width, height), not unpacking it
+local function packedSize(packed)
+	local d = packed.data
+	return d:byte(4) + d:byte(5) * 256, d:byte(6) + d:byte(7) * 256
+end
+
+-- Downloads (or takes from the cache) a SWF and reads it: its XML, and where each picture is (made
+-- into a PNG when first drawn, H.image). opts.eager: make every picture now (the room's floors and
+-- walls, drawn by the gamemode); opts.canWait: fetched ahead of time (downloaded and read only when
+-- nothing else is waiting).
+function H.library(key, url, cb, opts)
 	if libraries[key] then cb(libraries[key]) return end
 	local cached = readIndex(key)
 	if cached then
@@ -150,7 +203,7 @@ function H.library(key, url, cb)
 		cb(cached)
 		return
 	end
-	-- the same library asked for again while it is still being unpacked: wait for that
+	-- the same library asked for again while it is still being read: wait for that
 	if unpacking[key] then table.insert(unpacking[key], cb) return end
 	unpacking[key] = { cb }
 	local function done(lib, err)
@@ -159,13 +212,15 @@ function H.library(key, url, cb)
 		if lib then libraries[key] = lib end
 		for _, w in ipairs(waiting) do w(lib, err) end
 	end
+	local canWait = opts and opts.canWait
 	H.download(key, url, function(bytes, err)
 		if not bytes then done(nil, err) return end
-		-- unpacking is a job: a few milliseconds a frame, so the game doesn't freeze
+		local raw = cachePath("raw/" .. key, ".dat")
 		H.work(function()
 			local swf, why = H.swf.read(bytes, H.inflate, { images = "later" })
 			if not swf then done(nil, key .. ": " .. tostring(why)) return end
 			local lib = { key = key, images = {}, xml = {}, problems = swf.problems }
+			local ids = {}
 			-- one PNG per picture, named after its first name (Habbo gives some pictures many names)
 			local made = {}
 			for name, entry in pairs(swf.byName) do
@@ -173,27 +228,25 @@ function H.library(key, url, cb)
 					local m = made[entry.id]
 					if not m then
 						local path = cachePath("pot/" .. key .. "/" .. swf.symbols[entry.id], ".png")
-						local img, problem = H.swf.unpackImage(entry.packed, H.inflate)
-						if img then
-							if not P.dataExists(path) then
-								local px, tw, th = padded(img)
-								P.writeData(path, H.png.encode(tw, th, px, H.zlib))
-							end
-							m = { path = path, width = img.width, height = img.height, texWidth = H.pow2(img.width), texHeight = H.pow2(img.height) }
-						else
-							lib.problems[#lib.problems + 1] = problem
-							m = false
-						end
+						local w, h = packedSize(entry.packed)
+						m = { path = path, width = w, height = h, texWidth = H.pow2(w), texHeight = H.pow2(h) }
+						if not P.dataExists(path) then pending[path] = { raw = raw, id = entry.id } end
 						made[entry.id] = m
-						H.yield()
 					end
-					if m then lib.images[name] = m end
+					lib.images[name] = m
+					ids[name] = entry.id
 				elseif entry.binary then
 					lib.xml[name] = entry.binary
 				end
 			end
-			if #lib.problems == 0 then writeIndex(key, lib) end
+			-- (the SWF was just read: its pictures are kept for making them below and when drawn)
+			packedCache[raw] = swf.packed
+			packedOrder[#packedOrder + 1] = raw
+			if opts and opts.eager then
+				for _, img in pairs(made) do H.image(img.path) H.yield() end
+			end
+			if #lib.problems == 0 then writeIndex(key, lib, raw, ids) end
 			done(lib)
-		end)
-	end)
+		end, canWait)
+	end, canWait)
 end

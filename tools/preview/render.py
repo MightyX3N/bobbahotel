@@ -180,6 +180,7 @@ def boot(w, h):
     L.execute(open(os.path.join(GM, "client", "chat.lua")).read())
     L.execute(open(os.path.join(GM, "client", "ui.lua")).read())
     L.execute(open(os.path.join(GM, "client", "avatareditor.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "loading.lua")).read())
     return L, G
 
 def paint(G, w, h, images=None, transparent=False):
@@ -269,7 +270,7 @@ def paint(G, w, h, images=None, transparent=False):
             fnt, size = pil_font(o[6]) if o[6] in FONTS else (None, 12)
             # GMod puts the top of the letters' cell at y (TEXT_ALIGN_TOP) or its middle (CENTER), x at
             # their left (LEFT), middle (CENTER) or right (RIGHT)
-            y = o[4] - size / 2 if o[7] == 1 else o[4]
+            y = o[4] - size / 2 if o[7] == 1 else (o[4] - size if o[7] == 4 else o[4])
             x = o[3]
             if o[8] in (1, 2):
                 tw = text_size(o[6], o[2])[0] if o[6] in FONTS else len(o[2]) * 7
