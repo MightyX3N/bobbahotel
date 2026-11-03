@@ -61,6 +61,8 @@ def main():
     ap.add_argument("--editor-clicks", help="then click in it: x,y in CSS pixels from its corner; wheel:x,y,n scrolls;...")
     ap.add_argument("--editor-frames", type=int, default=40, help="paints before the picture (clothes load in between)")
     ap.add_argument("--click", help="after drawing, click at screen x,y[;x,y...] and print what the client sends")
+    ap.add_argument("--hud-click", help="click the toolbar, purse, room tools, me menu or a window: name:x,y[;...] in CSS px from its corner; "
+                    "name:type:box:text types into a window's text box; each step's messages go through the server")
     a = ap.parse_args()
     S = server()
     me = S.table_from({"key": "76561198000000001", "name": "Saint MightyX3N"})
@@ -200,11 +202,56 @@ def main():
                     V.dirty = True
                     V.panel.Paint(V.panel, w, h)
                 picture = render.paint(G, w, h, images)
-        picture = picture.convert("RGBA")
-        if L.eval("BOBBA.ui.windows['avatar-editor']") is not None:
-            picture.alpha_composite(layer, (int(panel.x), int(panel.y)))
         print("editor: figure", L.eval("BOBBA.avatarEditor.editor.figure:getFigureString()"), "| gender", L.eval("BOBBA.avatarEditor.editor.figure.gender"),
               "| sent", [dict(x.data) for x in L.eval("BOBBA.platform.sent").values() if x.name == "user.figure"])
+    # clicks on the toolbar and windows; what the client sends goes through the server and back
+    FORWARD = ("navigator.search", "navigator.create", "room.enter", "user.figure")
+    DELIVER = ("navigator.result", "navigator.created", "room.load", "room.error", "room.units")
+    state = {"sent": len(L.eval("BOBBA.platform.sent")), "seen": {}}
+    for n in DELIVER: state["seen"][n] = S.eval("function(p, n) return #BOBBA.platform.inbox(p, n) end")(me, n)
+    def pump():
+        sent = L.eval("BOBBA.platform.sent")
+        for i in range(state["sent"] + 1, len(sent) + 1):
+            m = sent[i]
+            if m.name in FORWARD:
+                print("client sends", m.name, tojson(L, m.data))
+                S.execute("BOBBA.platform.now = BOBBA.platform.now + 2")
+                S.eval("BOBBA.platform.fromPlayer")(me, m.name, tbl_s(json.loads(tojson(L, m.data))))
+        state["sent"] = len(sent)
+        for n in DELIVER:
+            box = S.eval("function(p, n) return BOBBA.platform.inbox(p, n) end")(me, n)
+            for i in range(state["seen"][n] + 1, len(box) + 1):
+                data = json.loads(tojson(S, box[i]))
+                print("server sends", n, json.dumps(data)[:300])
+                L.eval("function(n, d) BOBBA.platform.receivers[n](nil, d) end")(n, tbl(data))
+            state["seen"][n] = len(box)
+    def tbl_s(v):
+        if isinstance(v, dict):
+            t = S.table()
+            for k, x in v.items(): t[k] = tbl_s(x)
+            return t
+        if isinstance(v, list):
+            t = S.table()
+            for i, x in enumerate(v): t[i + 1] = tbl_s(x)
+            return t
+        return v
+    for c in (a.hud_click or "").split(";"):
+        if not c: continue
+        if ":type:" in c:
+            win, _, box, text = c.split(":", 3)
+            render.hud_type(L, G, win, box, text)
+        else:
+            render.hud_click(L, G, c)
+        pump()
+        if L.eval("BOBBA.room.current") is not None and L.eval("BOBBA.room.current.id") != msg["id"]:
+            # a new room came: draw it
+            V.dirty = True
+            for _ in range(3): V.panel.Paint(V.panel, w, h)
+            G.ops = L.table()
+            V.panel.Paint(V.panel, w, h)
+            picture = render.paint(G, w, h, images)
+    # the toolbar, purse, room tools, chat input and windows over the room
+    picture = render.compose(L, G, picture, images)
     picture.convert("RGB").save(out)
     if a.click:
         for c in a.click.split(";"):
@@ -259,6 +306,7 @@ def habbo(L, folder):
         dofile(ADDON_DIR .. "planes.lua")
         dofile(ADDON_DIR .. "chat.lua")
         dofile(ADDON_DIR .. "editor.lua")
+        dofile(ADDON_DIR .. "ui.lua")
         BOBBA.habbo.preloadAvatars() -- what its timer does as the game starts
         -- the bytes of a stored file as hex (this Lua runtime hands strings to Python as UTF-8 text)
         function STORE_HEX(path)

@@ -352,6 +352,7 @@ function live.start()
 	BOBBA.items.start()
 	BOBBA.chat.start()
 	BOBBA.looks.start()
+	BOBBA.navigator.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

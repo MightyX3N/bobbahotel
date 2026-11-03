@@ -162,6 +162,8 @@ AE.drawPart = function(category, item, figure, cx, cy, s)
 end
 
 AE.drawPreview = function(figure, gender, direction, cx, top, k)
+	-- (someone without a look yet is drawn in the default one, as in the room)
+	if not figure or figure == "" then figure = H.DEFAULT_FIGURE end
 	local e = avatarPicture(figure, gender, direction, false)
 	if not e then return false end
 	-- the canvas in the middle at cx, its top at top
@@ -298,4 +300,5 @@ if BOBBA.events then
 end
 
 -- a few seconds after the game has loaded (so it never holds up the room), like the chat bubbles
-if P.after then P.after(6, function() H.loadTexts({ "avatareditor.", "infostand.button." }) clientImages() end) end
+-- (Habbo's texts: ui.lua loads all of them)
+if P.after then P.after(6, function() clientImages() end) end

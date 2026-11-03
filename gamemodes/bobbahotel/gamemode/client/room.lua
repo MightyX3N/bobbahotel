@@ -32,7 +32,8 @@ function R.show()
 	if not c then return end
 	V.mode = "room"
 	V.look = { floor = c.floor or "", wall = c.wallpaper or "" }
-	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight }), c.name .. "  (room " .. c.id .. ", by " .. c.owner .. ")   click = walk   Ctrl+scroll = zoom   drag = move")
+	-- (the room's name is shown by the room tools, hud.lua)
+	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight }))
 end
 
 local function setUnit(s)
@@ -400,7 +401,9 @@ function R.updateInfo()
 			n = 1
 		end
 		p:SetTall(16 + 18 + n * 28)
-		p:SetPos(ScrW() - p:GetWide() - 16, ScrH() - p:GetTall() - 16)
+		-- (above the toolbar: Nitro's infostand is 10 over it, 10 from the right)
+		local us = BOBBA.ui and BOBBA.ui.scale and BOBBA.ui.scale() or 1
+		p:SetPos(ScrW() - p:GetWide() - 10 * us, ScrH() - p:GetTall() - (55 + 10) * us)
 		p:MakePopup()
 		p:SetKeyboardInputEnabled(false)
 		return
@@ -434,7 +437,9 @@ function R.updateInfo()
 		n = 4
 	end
 	p:SetTall(16 + 18 + n * 28)
-	p:SetPos(ScrW() - p:GetWide() - 16, ScrH() - p:GetTall() - 16)
+	-- (above the toolbar: Nitro's infostand is 10 over it, 10 from the right)
+		local us = BOBBA.ui and BOBBA.ui.scale and BOBBA.ui.scale() or 1
+		p:SetPos(ScrW() - p:GetWide() - 10 * us, ScrH() - p:GetTall() - (55 + 10) * us)
 	p:MakePopup()
 	p:SetKeyboardInputEnabled(false)
 end

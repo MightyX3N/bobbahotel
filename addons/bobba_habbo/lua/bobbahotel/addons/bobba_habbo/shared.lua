@@ -52,6 +52,7 @@ if SERVER then
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/planes.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/chat.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/editor.lua")
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/ui.lua")
 end
 
 -- Looks are checked against Habbo's figuredata, the way Arcturus does (server; lib/figuredata.lua).

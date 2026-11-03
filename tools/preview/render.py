@@ -55,6 +55,7 @@ HSVToColor = function(h, s, v)
 	return Color(math.floor((r + m) * 255), math.floor((g + m) * 255), math.floor((b + m) * 255))
 end
 chat = { AddText = function() end }
+ErrorNoHalt = function(msg) print("ErrorNoHalt: " .. tostring(msg)) end
 LocalPlayer = function() return nil end
 TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM = 1, 4
 render = { SetScissorRect = function(x0, y0, x1, y1, on) op("clip", x0, y0, x1, y1, on) end, PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end,
@@ -81,17 +82,24 @@ math.Round = function(v) return math.floor(v + 0.5) end
 string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local cursor = { 0, 0 }
 KEY_LCONTROL, KEY_RCONTROL = 1, 2
-CreateClientConVar = function(name, default) return { GetBool = function() return default == "1" end } end
+CreateClientConVar = function(name, default) return { GetBool = function() return default == "1" end, GetInt = function() return tonumber(default) or 0 end, GetString = function() return default end, GetName = function() return name end } end
 input = { GetCursorPos = function() return cursor[1], cursor[2] end, IsKeyDown = function() return false end, IsShiftDown = function() return false end }
 gui = { EnableScreenClicker = function() end, IsGameUIVisible = function() return false end, IsConsoleVisible = function() return false end }
 local hooks, cmds = {}, {}
-hook = { Add = function(name, id, fn) hooks[name] = fn end }
+-- (every hook by name and id, like GMod; G.run(name, ...) calls them)
+local hookIds = {}
+hook = { Add = function(name, id, fn) hooks[name] = fn hookIds[name] = hookIds[name] or {} hookIds[name][id] = fn end, Remove = function(name, id) if hookIds[name] then hookIds[name][id] = nil end end }
+function G.run(name, ...) for _, fn in pairs(hookIds[name] or {}) do fn(...) end end
 concommand = { Add = function(name, fn) cmds[name] = fn end }
 IsValid = function(p) return p ~= nil and p.valid end
 local registered = {}
 -- a plain panel (EditablePanel and the like): where it is, how big, the mouse on it
 local function plainPanel()
-	local p = { valid = true, x = 0, y = 0, w = 0, h = 0, mouse = { 0, 0 } }
+	local p = { valid = true, x = 0, y = 0, w = 0, h = 0, mouse = { 0, 0 }, visible = true }
+	function p:SetVisible(v) self.visible = v and true or false end
+	function p:IsVisible() return self.visible end
+	function p:IsHovered() return self.hovered or false end
+	function p:IsChildHovered() return false end
 	function p:SetSize(w, h) self.w, self.h = w, h end
 	function p:GetWide() return self.w end
 	function p:GetTall() return self.h end
@@ -103,10 +111,27 @@ local function plainPanel()
 	function p:Remove() self.valid = false end
 	return setmetatable(p, { __index = function() return function() end end })
 end
+-- a text entry: what's typed (value), its placeholder, its margins inside its parent (Dock FILL)
+local function textEntry(parent)
+	local e = plainPanel()
+	e.value, e.margin = "", { 0, 0, 0, 0 }
+	function e:GetValue() return self.value end
+	function e:SetText(t) self.value = t end
+	function e:SetPlaceholderText(t) self.placeholder = t end
+	function e:GetPlaceholderText() return self.placeholder or "" end
+	function e:SetFont(f) self.font = f end
+	function e:DockMargin(l, t, r, b) self.margin = { l, t, r, b } end
+	function e:DrawTextEntryText(c) if self.value ~= "" then draw.SimpleText(self.value, self.font, 0, self.h / 2, c, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end end
+	if parent then rawset(parent, "children", rawget(parent, "children") or {}) table.insert(rawget(parent, "children"), e) end
+	e.isEntry = true
+	return e
+end
 vgui = {
+	GetKeyboardFocus = function() return nil end,
 	Register = function(name, tbl) registered[name] = tbl end,
-	Create = function(name)
+	Create = function(name, parent)
 		if name == "EditablePanel" or name == "DPanel" then return plainPanel() end
+		if name == "DTextEntry" then return textEntry(parent) end
 		-- Derma's own panels (windows, buttons): they take any call and draw nothing here
 		if not registered[name] then return setmetatable({ valid = true }, { __index = function() return function() return 0 end end }) end
 		local p = setmetatable({ valid = true, w = 0, h = 0 }, { __index = registered[name] })
@@ -188,7 +213,92 @@ def boot(w, h):
     L.execute(open(os.path.join(GM, "client", "ui.lua")).read())
     L.execute(open(os.path.join(GM, "client", "avatareditor.lua")).read())
     L.execute(open(os.path.join(GM, "client", "loading.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "hud.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "navigator.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "windows.lua")).read())
     return L, G
+
+def hud_click(L, G, spec):
+    """Clicks on the toolbar, purse, room tools, "me" menu or a window: "name:x,y" in CSS px from its
+    corner (name: toolbar, purse, roomtools, me, or a window's id)."""
+    L.execute("if BOBBA.loading then BOBBA.loading.active = false end")
+    name, xy = spec.split(":")
+    x, y = map(float, xy.split(","))
+    w = L.eval("BOBBA.ui.huds")[name] or L.eval("BOBBA.ui.windows")[name]
+    if w is None: raise SystemExit("nothing called " + name + " to click")
+    p = w.panel
+    if p.Think: p.Think(p)
+    s = L.eval("BOBBA.ui.scale()")
+    p.mouse[1], p.mouse[2] = x * s, y * s
+    G.ops = L.table()
+    p.Paint(p, p.w, p.h)
+    p.OnMousePressed(p, 107)
+    G.ops = L.table()
+
+def hud_type(L, G, win, box, text):
+    """Types into a window's text box (its id in the window, e.g. navigator's "search" or "name")."""
+    w = L.eval("BOBBA.ui.windows")[win]
+    if w is None: raise SystemExit("no window " + win)
+    p = w.panel
+    G.ops = L.table()
+    p.Paint(p, p.w, p.h)
+    e = w.inputs[box] if w.inputs is not None else None
+    if e is None: raise SystemExit("no text box " + box + " in " + win)
+    e.value = text
+    if e.OnValueChange: e.OnValueChange(e, text)
+    G.ops = L.table()
+
+def compose(L, G, picture, images):
+    """What's over the room, like GMod's panels: the toolbar, purse, room tools and "me" menu
+    (BOBBA.ui.huds), the chat input, then the windows; each painted on its own and put where it is."""
+    picture = picture.convert("RGBA")
+    def put(panel):
+        if panel is None or not panel.valid or panel.visible is False: return
+        G.ops = L.table()
+        panel.Paint(panel, panel.w, panel.h)
+        # text entries docked to fill it, inside their margins
+        kids = panel.children
+        if kids is not None:
+            for i in range(1, len(kids) + 1):
+                e = kids[i]
+                if e.isEntry and e.Paint:
+                    if e.visible is False: continue
+                    m = e.margin
+                    # (docked inside its margins, or put somewhere with SetPos)
+                    if e.x or e.y:
+                        ox, oy = e.x, e.y
+                    else:
+                        ox, oy = m[1], m[2]
+                        e.w, e.h = panel.w - m[1] - m[3], panel.h - m[2] - m[4]
+                    n = len(G.ops)
+                    e.Paint(e, e.w, e.h)
+                    for j in range(n + 1, len(G.ops) + 1):
+                        o = G.ops[j]
+                        if o[1] == "text": o[3], o[4] = o[3] + ox, o[4] + oy
+        if panel.w and panel.h and panel.w > 0 and panel.h > 0:
+            layer = paint(G, int(panel.w), int(panel.h), images, transparent=True)
+            picture.alpha_composite(layer, (int(panel.x), int(panel.y)))
+    # (a preview shows the room after the hotel's loading screen)
+    L.execute("if BOBBA.loading then BOBBA.loading.active = false end")
+    # (the room's name, shown by the room tools for 5 s after coming in: a second in)
+    L.execute("BOBBA.hud.roomInfoShown = SysTime() - 1")
+    huds = L.eval("BOBBA.ui.huds")
+    for name in ("roomtools", "purse", "toolbar", "me"):
+        h = huds[name]
+        if h is not None:
+            if h.panel.Think: h.panel.Think(h.panel)
+            # (a few frames: what it draws may load on the first)
+            if h.panel.visible:
+                for _ in range(3): h.panel.Paint(h.panel, h.panel.w, h.panel.h)
+            put(h.panel)
+    G.run("Think")
+    chat = L.eval("BOBBA.room.chatState")
+    inp = L.eval("BOBBA.room.chatState.input") if chat is not None else None
+    if inp is not None: put(inp)
+    wins = L.eval("BOBBA.ui.windows")
+    for k in list(wins.keys()):
+        put(wins[k].panel)
+    return picture
 
 def paint(G, w, h, images=None, transparent=False):
     base = Image.new("RGBA" if transparent else "RGB", (w, h), (0, 0, 0, 0) if transparent else (0, 0, 0))
@@ -271,7 +381,14 @@ def paint(G, w, h, images=None, transparent=False):
             pts = [(o[2][j][1], o[2][j][2]) for j in range(1, len(o[2]) + 1)]
             d.polygon(pts, fill=tuple(o[3][j] for j in (1, 2, 3, 4)))
         elif kind == "rect":
-            d.rectangle([o[2], o[3], o[2] + o[4] - 1, o[3] + o[5] - 1], fill=tuple(o[6][j] for j in (1, 2, 3, 4)))
+            col = tuple(o[6][j] for j in (1, 2, 3, 4))
+            if im.mode == "RGBA" and col[3] < 255 and o[4] > 0 and o[5] > 0:
+                # (see-through over a see-through layer: blended, as GMod does)
+                layer = Image.new("RGBA", (int(o[4]) + 1, int(o[5]) + 1), (0, 0, 0, 0))
+                ImageDraw.Draw(layer).rectangle([0, 0, int(o[4]) - 1, int(o[5]) - 1], fill=col)
+                im.alpha_composite(layer, (int(o[2]), int(o[3])))
+            else:
+                d.rectangle([o[2], o[3], o[2] + o[4] - 1, o[3] + o[5] - 1], fill=col)
         elif kind == "line":
             d.line([(o[2], o[3]), (o[4], o[5])], fill=tuple(o[6][j] for j in (1, 2, 3)))
         elif kind == "text":

@@ -386,6 +386,15 @@ function PANEL:OnMouseWheeled(delta)
 	V.anchor = { sx = mx, sy = my, rx = rx, ry = ry }
 end
 
+-- The room tools' zoom button (Nitro: the room drawn at half its size, and back): around the middle
+function V.toggleZoom()
+	local full = V.uiScale()
+	V.zoomTarget = (V.zoomTarget >= full * 0.75) and full / 2 or full
+	local cx, cy = ScrW() / 2, ScrH() / 2
+	local rx, ry = toRoom(cx, cy)
+	V.anchor = { sx = cx, sy = cy, rx = rx, ry = ry }
+end
+
 -- Moves the zoom towards its target (called every frame; dt = seconds since the last frame)
 function V.stepZoom(dt)
 	if V.zoomNow == V.zoomTarget then return end

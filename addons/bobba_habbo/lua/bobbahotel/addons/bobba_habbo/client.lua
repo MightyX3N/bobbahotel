@@ -13,6 +13,8 @@ BOBBA.platform.runAddonFile("bobba_habbo", "planes.lua")
 BOBBA.platform.runAddonFile("bobba_habbo", "chat.lua")
 -- Habbo in the avatar editor
 BOBBA.platform.runAddonFile("bobba_habbo", "editor.lua")
+-- Habbo's pictures and texts in the toolbar, the purse and the windows
+BOBBA.platform.runAddonFile("bobba_habbo", "ui.lua")
 
 concommand.Add("bobba_habbo_test", function()
 	print("[Bobba] asking Habbo where its files are...")

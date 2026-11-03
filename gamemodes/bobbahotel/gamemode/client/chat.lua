@@ -60,13 +60,14 @@ C.UBUNTU_CELL = 1.121
 
 local S, FONT_PX, TEXT_TOP, LINE_H, INPUT_W, INPUT_H, F
 local made = {}
+local INPUT_TEXT_PX = 14.4
 local function fonts()
 	if not made[F.chat] then
 		made[F.chat] = true
 		surface.CreateFont(F.chat, { font = C.FONT, size = FONT_PX, weight = 500, antialias = true, extended = true })
 		surface.CreateFont(F.bold, { font = C.FONT, size = FONT_PX, weight = 800, antialias = true, extended = true })
 		surface.CreateFont(F.italic, { font = C.FONT, size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
-		surface.CreateFont(F.input, { font = C.FONT, size = math.floor(13 * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
+		surface.CreateFont(F.input, { font = C.FONT, size = math.floor(INPUT_TEXT_PX * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
 	end
 	return F
 end
@@ -82,7 +83,7 @@ function C.setScale(scale)
 	-- needs a new name)
 	-- (made when first used, not now: right after a game start the hotel's font file isn't ready yet
 	-- while this file loads, and GMod would fall back to Tahoma for the whole session)
-	F = { chat = "BobbaChatU" .. FONT_PX, bold = "BobbaChatUBold" .. FONT_PX, italic = "BobbaChatUItalic" .. FONT_PX, input = "BobbaChatUInput" .. S }
+	F = { chat = "BobbaChatU" .. FONT_PX, bold = "BobbaChatUBold" .. FONT_PX, italic = "BobbaChatUItalic" .. FONT_PX, input = "BobbaChatUIn" .. S }
 	-- bubbles already up keep their size; the input is made again at the new size
 	if IsValid(C.input) then C.input:Remove() C.input = nil end
 end
@@ -177,8 +178,36 @@ local function wrap(name, text, kind, maxW)
 end
 
 
+-- a bubble's look and size (not where it is): u's name and colour, its text, at most maxW wide
+function C.makeBubble(u, text, kind, style, maxW)
+	local skin = R.chatSkin and R.chatSkin(style or 0) or nil
+	local anonymous = skin and skin.anonymous
+	local m = C.PAD
+	local lines, textW = wrap((not anonymous) and (u and u.name or "?") or nil, text, kind, ((maxW or C.MAX_WIDTH) - m[1] - m[3]) * S)
+	local w = (m[1] + m[3]) * S + textW
+	local h = math.max(C.MIN_H * S, (m[2] + m[4]) * S + #lines * LINE_H)
+	return {
+		unit = u and u.id, name = u and u.name, text = text, kind = kind, style = style or 0, skin = skin,
+		lines = lines, width = math.floor(w + 0.5), height = h,
+		color = (u and R.figureColor) and R.figureColor(u) or 0xC8C8C8,
+	}
+end
+
+-- The chat history (nitro-react's ChatHistoryView): every message and room since the game started,
+-- the last 100 (chat.history.max.items)
+C.history = C.history or {}
+C.HISTORY_MAX = 100
+function C.addHistory(entry)
+	entry.time = os.date("%H:%M")
+	C.history[#C.history + 1] = entry
+	while #C.history > C.HISTORY_MAX do table.remove(C.history, 1) end
+	BOBBA.events.emit("chatHistory", entry)
+end
+
 -- a new bubble: its size, and where it starts (over the one talking, at the bottom of the chat area)
 local function addBubble(u, text, kind, style)
+	C.addHistory({ type = "chat", unit = u and u.id, name = u and u.name, text = text, kind = kind, style = style or 0,
+		color = (u and R.figureColor) and R.figureColor(u) or 0xC8C8C8 })
 	local skin = R.chatSkin and R.chatSkin(style or 0) or nil
 	local anonymous = skin and skin.anonymous
 	local m = C.PAD
@@ -348,6 +377,8 @@ local function drawBubble(b, x, y)
 	drawLines(b, x + C.PAD[1] * S, y + C.PAD[2] * S, 0)
 end
 
+C.drawBubble = drawBubble
+
 -- every frame, over the room
 function C.draw()
 	if V.mode ~= "room" then return end
@@ -382,11 +413,17 @@ P.receive("room.chat.flood", function(_, data)
 	C.floodUntil = SysTime() + (tonumber(data.seconds) or 10)
 end)
 
--- a new room: no bubbles from the last one
-BOBBA.events.on("roomShown", "bobba.chat.clear", function() C.bubbles = {} end)
+-- a new room: no bubbles from the last one (and the history says which room it is)
+BOBBA.events.on("roomShown", "bobba.chat.clear", function(data)
+	C.bubbles = {}
+	if data and data.name then C.addHistory({ type = "room", name = data.name }) end
+end)
 
 -- --- the input ------------------------------------------------------------------------------------
 
+-- nitro-react's ChatInputView, in the toolbar (hud.lua says where): 40 high, a 2px black border with
+-- 8px corners, #EDEDED with a white line along the top, the text 14.4px with 12 to its left, Habbo's
+-- chat-styles icon 10 from the right; as wide as what's typed (at least 173 for the text)
 local function createInput()
 	if IsValid(C.input) then return C.input end
 	local frame = vgui.Create("EditablePanel")
@@ -395,16 +432,30 @@ local function createInput()
 	frame:SetKeyboardInputEnabled(true)
 	frame:SetMouseInputEnabled(true)
 	frame.Paint = function(self, w, h)
-		draw.RoundedBox(8, 0, 0, w, h, Color(40, 40, 40, 255))
-		draw.RoundedBox(7, 1, 1, w - 2, h - 2, Color(255, 255, 255, 255))
+		draw.RoundedBox(math.floor(8 * S), 0, 0, w, h, Color(0, 0, 0, 255))
+		draw.RoundedBox(math.floor(6 * S), math.floor(2 * S), math.floor(2 * S), w - math.floor(4 * S), h - math.floor(4 * S), Color(237, 237, 237, 255))
+		surface.SetDrawColor(255, 255, 255, 255)
+		surface.DrawRect(math.floor(2 * S) + math.floor(4 * S), math.floor(3 * S), w - math.floor(4 * S) - math.floor(8 * S), math.floor(5 * S))
+		local U = BOBBA.ui
+		local ic = U and U.icon and U.icon("chat-styles")
+		if ic and ic.material then
+			local iw, ih = math.floor(ic.width * S + 0.5), math.floor(ic.height * S + 0.5)
+			render.PushFilterMag(TEXFILTER.POINT)
+			render.PushFilterMin(TEXFILTER.POINT)
+			surface.SetMaterial(ic.material)
+			surface.SetDrawColor(255, 255, 255, 255)
+			surface.DrawTexturedRectUV(w - math.floor((2 + 10) * S) - iw, math.floor((h - ih) / 2), iw, ih, 0, 0, ic.u, ic.v)
+			render.PopFilterMin()
+			render.PopFilterMag()
+		end
 	end
 	fonts()
 	local entry = vgui.Create("DTextEntry", frame)
 	entry:Dock(FILL)
-	entry:DockMargin(10, 4, 10, 4)
+	entry:DockMargin(math.floor(14 * S), math.floor(10 * S), math.floor((2 + 10 + 17 + 10) * S), math.floor(10 * S))
 	entry:SetFont(F.input)
 	entry:SetPaintBackground(false)
-	entry:SetPlaceholderText("Click here to chat...")
+	entry:SetPlaceholderText(BOBBA.ui and BOBBA.ui.text and BOBBA.ui.text("widgets.chatinput.default", "Click here to chat...") or "Click here to chat...")
 	entry:SetUpdateOnType(true)
 	entry.AllowInput = function(self, ch)
 		if self.dropNextR then
@@ -432,12 +483,14 @@ local function createInput()
 	end
 	entry.Paint = function(self, w, h)
 		if C.floodUntil and SysTime() < C.floodUntil then
-			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), F.input, 2, h / 2, Color(200, 60, 60), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			-- (Text variant="danger")
+			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), F.input, 0, h / 2, Color(220, 53, 69), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			return
 		end
-		self:DrawTextEntryText(Color(20, 20, 20), Color(80, 140, 230), Color(20, 20, 20))
+		self:DrawTextEntryText(Color(0, 0, 0), Color(80, 140, 230), Color(0, 0, 0))
 		if (self:GetValue() or "") == "" then
-			draw.SimpleText(self:GetPlaceholderText(), F.input, 2, h / 2, Color(150, 150, 150), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			-- (the browser's placeholder grey)
+			draw.SimpleText(self:GetPlaceholderText(), F.input, 2, h / 2, Color(117, 117, 117), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 	end
 	frame.entry = entry
@@ -445,8 +498,8 @@ local function createInput()
 	return frame
 end
 
--- the input sits at the bottom in the middle while a room is shown, and keeps the keyboard (so
--- typing anywhere goes into it, like Habbo) unless something else wants it
+-- the input sits in the toolbar while a room is shown, and keeps the keyboard (so typing anywhere goes
+-- into it, like Habbo) unless something else wants it
 hook.Add("Think", "bobba.chat", function()
 	local show = V.mode == "room" and V.room ~= nil and not (BOBBA.loading and BOBBA.loading.active)
 	if not show then
@@ -455,7 +508,20 @@ hook.Add("Think", "bobba.chat", function()
 	end
 	local f = createInput()
 	f:SetVisible(true)
-	f:SetPos(math.floor((ScrW() - INPUT_W) / 2), ScrH() - INPUT_H - 14 * S)
+	-- as wide as what's typed (the ::after copy of it plus two spaces)
+	surface.SetFont(F.input)
+	local tw = surface.GetTextSize((f.entry:GetValue() or "") .. "  ") / S
+	local x, y, w, h
+	if BOBBA.hud and BOBBA.hud.chatInput then
+		x, y, w, h = BOBBA.hud.chatInput(ScrW() / S, ScrH() / S, tw)
+	else
+		w, h = 2 + 10 + math.max(173, tw) + 10 + 17 + 10 + 2, 40
+		x, y = (ScrW() / S - w) / 2, ScrH() / S - h - 14
+	end
+	local X, Y = math.floor(x * S + 0.5), math.floor(y * S + 0.5)
+	local W, H = math.floor((x + w) * S + 0.5) - X, math.floor((y + h) * S + 0.5) - Y
+	if f:GetWide() ~= W or f:GetTall() ~= H then f:SetSize(W, H) end
+	f:SetPos(X, Y)
 	local focus = vgui.GetKeyboardFocus()
 	if not gui.IsGameUIVisible() and not gui.IsConsoleVisible() and (focus == nil or focus == f or focus == V.panel) then
 		f.entry:RequestFocus()

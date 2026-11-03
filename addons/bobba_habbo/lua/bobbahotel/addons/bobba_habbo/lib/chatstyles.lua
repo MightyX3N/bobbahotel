@@ -16,7 +16,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "2"
+H.CHAT_INDEX_VERSION = "3"
 
 -- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
 -- icons ("_off" is how Habbo shows one that isn't chosen)
@@ -30,8 +30,73 @@ end
 for _, n in ipairs({ "avatar_editor_generic_remove_selection", "avatar_editor_rotate_avatar_button", "avatar_editor_generic_platform" }) do
 	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
 end
+-- ... the toolbar, the "me" menu, the purse, the room tools, the friend bar and the navigator (ui.lua
+-- says which is which)
+for _, n in ipairs({ "bottom_bar_logo", "bottom_bar_home", "bottom_bar_navigator", "bottom_bar_shop", "bottom_bar_inventory",
+	"bottom_bar_camera", "bottom_bar_games", "friend_bar_all_friends", "friend_bar_friendlist_messenger",
+	"friend_bar_friendlist_messenger_notify_1", "find_friends_icon_png", "friend_bar_friendlist_chat",
+	"friend_bar_friendlist_go_room", "friend_bar_search_habbos", "me_menu_me_achv", "me_menu_me_profile",
+	"me_menu_me_rooms", "me_menu_me_clothing", "me_menu_me_guide", "me_menu_me_talents", "me_menu_me_forums",
+	"pursearea_credits_icon", "pursearea_duckets_icon", "pursearea_diamond_icon", "pursearea_hc_icon", "help_guide_icon",
+	"roomtools_gear", "roomtools_magnifier", "roomtools_chat_history", "roomtools_like", "roomtools_history_open_icon",
+	"common_chat_styles", "home_png", "navigation_icon_weblink",
+	"newnavigator_button_show_room_info", "newnavigator_icon_group", "newnavigator_doormode_password_small",
+	"newnavigator_doormode_doorbell_small", "newnavigator_doormode_invisible_small", "newnavigator_roominfo_temp",
+	"newnavigator_create_room", "newnavigator_default_room", "newnavigator_icon_usercount", "newnavigator_button_tiles",
+	"newnavigator_button_rows", "newnavigator_button_category_collapse", "newnavigator_button_category_expand",
+	"newnavigator_button_category_show_more", "newnavigator_random_room", "newnavigator_refresh_search_icon",
+	"newnavigator_icon_fav_no", "newnavigator_icon_fav_yes", "newnavigator_icon_home_no", "newnavigator_icon_home_yes",
+	"newnavigator_room_settings_icon", "newnavigator_event_icon", "icons_tickmark", "icons_back", "icons_next",
+	"messenger_caution", "messenger_notification_icon", "ask_for_friend_png", "follow_friend_png",
+	"relationship_status_heart", "relationship_status_smile", "relationship_status_bobba", "small_pen",
+	"inventory_inventory_empty" }) do
+	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
+end
+-- pictures cut out of a bigger one: the "me" menu's settings cog is the cog of settings_color, without
+-- the horn in front of it (mask: per row, the runs of pixels kept, the shape nitro-react's cog has)
+H.CLIENT_IMAGE_CROPS = { settings_color_cog = { from = "settings_color", x = 18, y = 6, w = 28, h = 34,
+	mask = "13-14 6-8,11-16 4-18 4-18 3-18 3-18 4-18,22-24 4-18,20-24 3-25 1-25 0-26 0-26 0-25 0-24 0-12,14-23 1-12,15-23 "
+		.. "3-13,15-23 4-13,16-25 4-14,16-27 4-27 3-27 2-27 2-27 3-26 3-26 4-23 4-6,9-24 9-24 9-24 9-24 9-24 10-23 12-14,18-21 18-19" } }
+-- and grey copies (CSS's filter: grayscale(1), as the "me" menu shows its icons until hovered)
+H.CLIENT_IMAGE_GRAY = { me_menu_me_achv = true, me_menu_me_profile = true, me_menu_me_rooms = true,
+	me_menu_me_clothing = true, me_menu_me_guide = true, me_menu_me_talents = true, settings_color_cog = true }
 
 local byte, sub, find = string.byte, string.sub, string.find
+
+-- { width, height, pixels = { r, g, b, a, ... } } pictures: a piece of one, and a grey copy (CSS's
+-- grayscale(1): each pixel's luminance, 0.2126 R + 0.7152 G + 0.0722 B)
+function H.cropImage(img, x, y, w, h, mask)
+	local keep
+	if mask then
+		keep = {}
+		local r = 0
+		for row in mask:gmatch("%S+") do
+			local set = {}
+			for a, b in row:gmatch("(%d+)%-(%d+)") do for c = tonumber(a), tonumber(b) do set[c] = true end end
+			keep[r] = set
+			r = r + 1
+		end
+	end
+	local out, n = {}, 0
+	for row = y, y + h - 1 do
+		for col = x, x + w - 1 do
+			local i = (row * img.width + col) * 4
+			local inside = row >= 0 and col >= 0 and row < img.height and col < img.width
+			if keep and not (keep[row - y] and keep[row - y][col - x]) then inside = false end
+			for k = 1, 4 do n = n + 1 out[n] = inside and img.pixels[i + k] or 0 end
+		end
+	end
+	return { width = w, height = h, pixels = out }
+end
+
+function H.grayImage(img)
+	local src, out = img.pixels, {}
+	for i = 1, #src, 4 do
+		local l = math.floor(0.2126 * src[i] + 0.7152 * src[i + 1] + 0.0722 * src[i + 2] + 0.5)
+		out[i], out[i + 1], out[i + 2], out[i + 3] = l, l, l, src[i + 3]
+	end
+	return { width = img.width, height = img.height, pixels = out }
+end
 
 local function indexPath(version) return H.cachePath("chat/client_" .. version .. "/styles", ".txt") end
 local function imagePath(version, name) return H.cachePath("chat/client_" .. version .. "/" .. name, ".png") end
@@ -244,16 +309,35 @@ function H.saveChatStyles(swfBytes, version)
 		end
 	end
 	if saved == 0 then return nil, "HabboAir.swf's chat styles have no pictures" end
-	for _, name in ipairs(H.CLIENT_IMAGES) do
-		local png = bytesOf(name)
-		local img = png and H.png.decode(png, H.inflate)
-		if img then
-			local path = imagePath(version, "ui_" .. name)
-			local px, tw, th = H.paddedPixels(img)
-			P.writeData(path, H.png.encode(tw, th, px, H.zlib))
-			lines[#lines + 1] = table.concat({ "U", name, path, img.width, img.height, tw, th }, "\t")
-			H.yield()
+	local function save(name, img)
+		local path = imagePath(version, "ui_" .. name)
+		local px, tw, th = H.paddedPixels(img)
+		P.writeData(path, H.png.encode(tw, th, px, H.zlib))
+		lines[#lines + 1] = table.concat({ "U", name, path, img.width, img.height, tw, th }, "\t")
+		if H.CLIENT_IMAGE_GRAY[name] then
+			local g = H.grayImage(img)
+			local gpath = imagePath(version, "ui_" .. name .. "_gray")
+			local gpx, gtw, gth = H.paddedPixels(g)
+			P.writeData(gpath, H.png.encode(gtw, gth, gpx, H.zlib))
+			lines[#lines + 1] = table.concat({ "U", name .. "_gray", gpath, g.width, g.height, gtw, gth }, "\t")
 		end
+		H.yield()
+	end
+	local decoded = {}
+	local function decode(name)
+		if decoded[name] == nil then
+			local png = bytesOf(name)
+			decoded[name] = png and H.png.decode(png, H.inflate) or false
+		end
+		return decoded[name] or nil
+	end
+	for _, name in ipairs(H.CLIENT_IMAGES) do
+		local img = decode(name)
+		if img then save(name, img) end
+	end
+	for name, c in pairs(H.CLIENT_IMAGE_CROPS) do
+		local img = decode(c.from)
+		if img then save(name, H.cropImage(img, c.x, c.y, c.w, c.h, c.mask)) end
 	end
 	P.writeData(indexPath(version), table.concat(lines, "\n") .. "\n")
 	return true
