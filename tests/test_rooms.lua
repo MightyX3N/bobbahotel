@@ -74,6 +74,38 @@ T["a layout an addon changes gets new geometry"] = function()
 	eq(#b.tiles[2], 4, "new width")
 end
 
+T["the door: a hole in the wall where Nitro puts it, and standing in it counts as behind the wall"] = function()
+	local room = BOBBA.rooms.geometry("model_a")
+	local holes = BOBBA.rooms.holes(room)
+	local n, kinds = 0, {}
+	for index, list in pairs(holes) do
+		n = n + #list
+		kinds[room.planes[index + 1].type] = true
+		local h = list[1]
+		eq(h[2] - h[1], 1, "a tile wide")
+		eq(h[4] - h[3], 3.25, "3.25 high")
+		-- the hole's middle is over the door tile 3,5
+		local x, y = BOBBA.rooms.planePoint(room, index, (h[1] + h[2]) / 2, 0)
+		eq(x .. "," .. y, "3.5,5", "in the wall next to the door tile")
+	end
+	eq(n, 2, "wall and the landscape behind it")
+	eq(kinds[BOBBA.rooms.PLANE_WALL] and kinds[BOBBA.rooms.PLANE_LANDSCAPE], true)
+	-- the wall in pieces: left of, right of and above the hole (it starts at the floor)
+	for index in pairs(holes) do eq(#BOBBA.rooms.planePieces(room, index), 3, "pieces") end
+	eq(BOBBA.rooms.atDoor(room, 3, 5, 0), true, "on the door")
+	eq(BOBBA.rooms.atDoor(room, 3.5, 5, 0), false, "stepping in")
+	eq(BOBBA.rooms.atDoor(room, 4, 5, 0), false, "inside")
+	-- every guest room has its hole
+	for _, l in ipairs(BOBBA.registry.list("layout")) do
+		if l.id:match("^model_[a-z0-9]$") then
+			local r = BOBBA.rooms.geometry(l.id)
+			local any = false
+			for _ in pairs(BOBBA.rooms.holes(r)) do any = true end
+			assert(any, l.id .. " has a door hole")
+		end
+	end
+end
+
 T["plane colours: style colour times Nitro's shade"] = function()
 	local floor = BOBBA.registry.get("plane_style", "default_floor")
 	local r, g, b = BOBBA.rooms.planeColor(floor, 0xFFFFFF)

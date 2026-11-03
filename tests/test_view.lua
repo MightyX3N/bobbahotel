@@ -75,7 +75,13 @@ T["shows a room: clockwise polygons, in the middle of the screen, worked out onc
 	eq(G.hooks.RenderScene(), true, "GMod's world not drawn")
 	V.panel:Paint(1920, 1080)
 	local n = #G.polys
-	eq(n, #BOBBA.rooms.view(V.room, 64), "one polygon per visible plane")
+	local expected = 0
+	local holes = BOBBA.rooms.holes(V.room)
+	for _, p in ipairs(BOBBA.rooms.view(V.room, 64)) do
+		expected = expected + (holes[p.index] and #BOBBA.rooms.planePieces(V.room, p.index) or 1)
+	end
+	eq(n, expected, "one polygon per visible plane, walls with the door hole in pieces")
+	assert(expected > #BOBBA.rooms.view(V.room, 64), "model_a has a door hole")
 	local minX, maxX, minY, maxY = 1e9, -1e9, 1e9, -1e9
 	for _, p in ipairs(G.polys) do
 		assert(area(p.pts) > 0, "clockwise")

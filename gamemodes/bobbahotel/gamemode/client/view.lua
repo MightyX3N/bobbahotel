@@ -80,6 +80,8 @@ local function clockwise(pts)
 	return pts
 end
 
+V.clockwise = clockwise
+
 local STYLE_FOR = { [1] = "floor", [2] = "wall", [3] = "landscape" }
 
 function V.styleFor(kind)
@@ -91,21 +93,36 @@ end
 local function buildPolys()
 	local z = zoomInfo()
 	local view = BOBBA.rooms.view(V.room, z.scale)
+	local camera = V.cameras[z.scale]
+	local holes = BOBBA.rooms.holes(V.room)
 	local ox, oy = origin()
 	local m = z.mult
 	local polys = {}
-	for i, p in ipairs(view) do
+	local function screen(index, u, v)
+		local s = camera.screen(BOBBA.rooms.planePoint(V.room, index, u, v))
+		return { x = ox + math.Round(s[1]) * m, y = oy + math.Round(s[2]) * m }
+	end
+	for _, p in ipairs(view) do
 		local style = V.styleFor(STYLE_FOR[p.type])
 		local r, g, b = BOBBA.rooms.planeColor(style, p.color)
-		polys[i] = {
-			r = r, g = g, b = b,
-			pts = clockwise({
-				{ x = ox + p.a[1] * m, y = oy + p.a[2] * m },
-				{ x = ox + p.b[1] * m, y = oy + p.b[2] * m },
-				{ x = ox + p.c[1] * m, y = oy + p.c[2] * m },
-				{ x = ox + p.d[1] * m, y = oy + p.d[2] * m },
-			}),
-		}
+		if holes[p.index] then
+			-- a plane with the door cut out: drawn as the pieces around the hole
+			for _, q in ipairs(BOBBA.rooms.planePieces(V.room, p.index)) do
+				polys[#polys + 1] = { r = r, g = g, b = b, pts = clockwise({
+					screen(p.index, q[1], q[3]), screen(p.index, q[2], q[3]), screen(p.index, q[2], q[4]), screen(p.index, q[1], q[4]),
+				}) }
+			end
+		else
+			polys[#polys + 1] = {
+				r = r, g = g, b = b,
+				pts = clockwise({
+					{ x = ox + p.a[1] * m, y = oy + p.a[2] * m },
+					{ x = ox + p.b[1] * m, y = oy + p.b[2] * m },
+					{ x = ox + p.c[1] * m, y = oy + p.c[2] * m },
+					{ x = ox + p.d[1] * m, y = oy + p.d[2] * m },
+				}),
+			}
+		end
 	end
 	V.polys = polys
 	V.builds = (V.builds or 0) + 1
@@ -164,9 +181,10 @@ function PANEL:Paint(w, h)
 	end
 	surface.SetDrawColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b, 255)
 	surface.DrawRect(0, 0, w, h)
+	if V.drawUnits then V.drawUnits("behind") end -- in the door: behind the walls (Nitro)
 	drawPlanes()
 	drawCursor()
-	if V.drawUnits then V.drawUnits() end
+	if V.drawUnits then V.drawUnits("front") end
 	if V.label then
 		draw.SimpleText(V.label, "BobbaViewLabel", 12, 12, color_white)
 	end

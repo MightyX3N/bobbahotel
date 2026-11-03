@@ -69,11 +69,11 @@ end
 
 local function ellipse(cx, cy, rx, ry, n)
 	local pts = {}
-	for i = n - 1, 0, -1 do
+	for i = 0, n - 1 do
 		local t = i / n * math.pi * 2
 		pts[#pts + 1] = { x = cx + math.cos(t) * rx, y = cy + math.sin(t) * ry }
 	end
-	return pts
+	return V.clockwise(pts)
 end
 
 -- the stand-in figure: shadow, legs, body, head, a nose showing which way it faces, and the name
@@ -106,14 +106,19 @@ local function drawUnit(u)
 	draw.SimpleTextOutlined(u.name or "?", "BobbaName", sx, sy - 92 * k, u.id == R.you and Color(255, 230, 120) or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, Color(0, 0, 0, 200))
 end
 
-V.drawUnits = function()
+-- phase "behind": whoever stands exactly in the door (drawn before the walls, so the wall hides
+-- them except through the door hole); "front": everyone else
+V.drawUnits = function(phase)
 	if V.mode ~= "room" then return end
 	-- deepest first (Nitro sorts by the screen depth of where each one stands)
 	local list = {}
 	for _, u in pairs(R.units) do
 		local x, y, z = position(u)
-		local _, _, _, depth = V.project(x, y, z)
-		list[#list + 1] = { u = u, depth = depth or 0 }
+		local behind = BOBBA.rooms.atDoor(V.room, x, y, z)
+		if (phase == "behind") == behind then
+			local _, _, _, depth = V.project(x, y, z)
+			list[#list + 1] = { u = u, depth = depth or 0 }
+		end
 	end
 	table.sort(list, function(a, b) return a.depth > b.depth end)
 	for _, e in ipairs(list) do drawUnit(e.u) end

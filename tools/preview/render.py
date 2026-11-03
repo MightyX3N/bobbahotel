@@ -27,7 +27,13 @@ local col = { 255, 255, 255, 255 }
 surface = {
 	CreateFont = function() end,
 	SetDrawColor = function(r, g, b, a) if type(r) == "table" then col = { r.r, r.g, r.b, r.a or 255 } else col = { r, g, b, a or 255 } end end,
-	DrawPoly = function(pts) local t = {} for i, p in ipairs(pts) do t[i] = { p.x, p.y } end op("poly", t, { col[1], col[2], col[3], col[4] }) end,
+	DrawPoly = function(pts)
+		-- like GMod: only polygons given clockwise on screen are filled
+		local area = 0
+		for i = 1, #pts do local a, b = pts[i], pts[i % #pts + 1] area = area + (a.x * b.y - b.x * a.y) end
+		if area <= 0 then op("skipped") return end
+		local t = {} for i, p in ipairs(pts) do t[i] = { p.x, p.y } end op("poly", t, { col[1], col[2], col[3], col[4] })
+	end,
 	DrawLine = function(x1, y1, x2, y2) op("line", x1, y1, x2, y2, { col[1], col[2], col[3] }) end,
 	SetMaterial = function() end,
 	DrawTexturedRect = function() end,
