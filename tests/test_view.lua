@@ -1,5 +1,5 @@
 -- client/view.lua against stand-ins for GMod's drawing, panel and input functions: checks it
--- calls them correctly (clockwise polygons, the room in the middle, redrawing only when needed).
+-- calls them correctly (clockwise polygons, the room in the middle, working out positions only when needed).
 local T = {}
 
 local function fakeGmod()
@@ -18,6 +18,7 @@ local function fakeGmod()
 		DrawLine = function(x1, y1, x2, y2) G.lines[#G.lines + 1] = { x1, y1, x2, y2 } end,
 		SetMaterial = function() end,
 		DrawTexturedRect = function() G.rects = G.rects + 1 end,
+		DrawRect = function() G.rects = G.rects + 1 end,
 	}
 	_G.draw = { NoTexture = function() end, SimpleText = function() end }
 	_G.render = {
@@ -65,7 +66,7 @@ local function area(pts)
 	return a
 end
 
-T["shows a room: clockwise polygons, in the middle of the screen, drawn once"] = function()
+T["shows a room: clockwise polygons, in the middle of the screen, worked out once"] = function()
 	local G = fakeGmod()
 	local V = BOBBA.view
 	G.cmds.bobba_preview(nil, nil, { "model_a" })
@@ -84,12 +85,12 @@ T["shows a room: clockwise polygons, in the middle of the screen, drawn once"] =
 	end
 	assert(math.abs((minX + maxX) / 2 - 960) <= 1 and math.abs((minY + maxY) / 2 - 540) <= 1, "centred: " .. minX .. " " .. maxX .. " " .. minY .. " " .. maxY)
 	assert(maxX - minX > 1000, "zoomed in (double size) by default")
-	-- the next frames reuse the picture
+	-- the next frames draw the same polygons without working them out again
 	V.panel:Paint(1920, 1080)
 	V.panel:Paint(1920, 1080)
-	eq(G.rtDraws, 1, "planes drawn once")
-	eq(G.rects, 3, "picture shown every frame")
-	eq(#G.polys, n, "no new polygons")
+	eq(V.builds, 1, "positions worked out once")
+	eq(#G.polys, n * 3, "drawn every frame")
+	eq(G.rtDraws, 0, "no render target (GMod brightens those on HDR maps)")
 end
 
 T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function()
@@ -106,6 +107,7 @@ T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function
 	G.cursor = { ox + s[1] * z.mult, oy + s[2] * z.mult }
 	V.panel:OnCursorMoved()
 	eq(V.hover and (V.hover.tileX .. "," .. V.hover.tileY), "5,6", "hover")
+	G.lines = {}
 	V.panel:Paint(1920, 1080)
 	eq(#G.lines, 4, "tile cursor drawn")
 	local clicked
@@ -122,9 +124,9 @@ T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function
 	eq(clicked, nil, "a drag is not a click")
 	eq(V.panX .. "," .. V.panY, "100,40", "moved")
 	eq(V.hover and (V.hover.tileX .. "," .. V.hover.tileY), "5,6", "same tile under the mouse after moving the room with it")
-	local draws = G.rtDraws
+	local builds = V.builds
 	V.panel:Paint(1920, 1080)
-	eq(G.rtDraws, draws + 1, "redrawn after moving")
+	eq(V.builds, builds + 1, "worked out again after moving")
 	-- zoom out twice, then no further
 	V.panel:OnMouseWheeled(-1)
 	V.panel:OnMouseWheeled(-1)

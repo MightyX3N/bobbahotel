@@ -2,8 +2,9 @@
 -- sorting); this file only draws them and handles the mouse:
 --   scroll = zoom (Habbo's 32 and 64, and 64 shown at double size), drag = move the room,
 --   click = a tile (walking comes with the server rooms).
--- The planes are drawn once into a texture and only redrawn when something changes (moving,
--- zooming, another room), so a still room costs one picture per frame.
+-- The planes' screen positions and colours are worked out once and only again when something
+-- changes (moving, zooming, another room); each frame just draws them (a room has 60-350 planes).
+-- (Not drawn through a render target: GMod brightens those on HDR maps, and colours must be exact.)
 
 BOBBA.view = BOBBA.view or {}
 local V = BOBBA.view
@@ -64,20 +65,6 @@ end
 -- ---------------------------------------------------------------------------------------------
 -- Drawing
 
-local rt, rtMat, rtW, rtH
-
-local function target()
-	local w, h = ScrW(), ScrH()
-	if not rt or rtW ~= w or rtH ~= h then
-		local name = "bobba_room_" .. w .. "x" .. h
-		-- point sampling, clamped, no mipmaps: pixels stay sharp
-		rt = GetRenderTargetEx(name, w, h, RT_SIZE_LITERAL, MATERIAL_RT_DEPTH_NONE, bit.bor(1, 4, 8, 256, 512), 0, IMAGE_FORMAT_RGBA8888)
-		rtMat = CreateMaterial(name .. "_mat", "UnlitGeneric", { ["$basetexture"] = rt:GetName(), ["$ignorez"] = "1", ["$vertexcolor"] = "1" })
-		rtW, rtH = w, h
-		V.dirty = true
-	end
-end
-
 -- surface.DrawPoly only fills polygons given clockwise on screen
 local function clockwise(pts)
 	local area = 0
@@ -100,28 +87,36 @@ function V.styleFor(kind)
 	return BOBBA.registry.get("plane_style", id) or BOBBA.registry.get("plane_style", "default_" .. kind)
 end
 
-local function drawPlanes()
+-- the planes as screen polygons with their colours, deepest first (like Nitro's RoomSpriteCanvas)
+local function buildPolys()
 	local z = zoomInfo()
 	local view = BOBBA.rooms.view(V.room, z.scale)
 	local ox, oy = origin()
 	local m = z.mult
-	render.PushRenderTarget(rt)
-	render.Clear(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b, 255)
-	cam.Start2D()
-		draw.NoTexture()
-		for _, p in ipairs(view) do -- deepest first, like Nitro's RoomSpriteCanvas
-			local style = V.styleFor(STYLE_FOR[p.type])
-			local r, g, b = BOBBA.rooms.planeColor(style, p.color)
-			surface.SetDrawColor(r, g, b, 255)
-			surface.DrawPoly(clockwise({
+	local polys = {}
+	for i, p in ipairs(view) do
+		local style = V.styleFor(STYLE_FOR[p.type])
+		local r, g, b = BOBBA.rooms.planeColor(style, p.color)
+		polys[i] = {
+			r = r, g = g, b = b,
+			pts = clockwise({
 				{ x = ox + p.a[1] * m, y = oy + p.a[2] * m },
 				{ x = ox + p.b[1] * m, y = oy + p.b[2] * m },
 				{ x = ox + p.c[1] * m, y = oy + p.c[2] * m },
 				{ x = ox + p.d[1] * m, y = oy + p.d[2] * m },
-			}))
-		end
-	cam.End2D()
-	render.PopRenderTarget()
+			}),
+		}
+	end
+	V.polys = polys
+	V.builds = (V.builds or 0) + 1
+end
+
+local function drawPlanes()
+	draw.NoTexture()
+	for _, p in ipairs(V.polys) do
+		surface.SetDrawColor(p.r, p.g, p.b, 255)
+		surface.DrawPoly(p.pts)
+	end
 end
 
 -- the outline of the tile under the mouse, at its floor height
@@ -163,14 +158,13 @@ end
 
 function PANEL:Paint(w, h)
 	if not V.room then return end
-	target()
-	if V.dirty then
-		drawPlanes()
+	if V.dirty or not V.polys then
+		buildPolys()
 		V.dirty = false
 	end
-	surface.SetMaterial(rtMat)
-	surface.SetDrawColor(255, 255, 255, 255)
-	surface.DrawTexturedRect(0, 0, w, h)
+	surface.SetDrawColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b, 255)
+	surface.DrawRect(0, 0, w, h)
+	drawPlanes()
 	drawCursor()
 	if V.label then
 		draw.SimpleText(V.label, "BobbaViewLabel", 12, 12, color_white)
