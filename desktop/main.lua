@@ -22,7 +22,7 @@ local function playOptions()
 		playerKey = settings.playerKey,
 		playerName = settings.playerName,
 		-- (the console's log, where it can be read along with the game's own files)
-		log = settings.garrysmod .. "/data/bobba_temp/desktop_console.log",
+		log = settings.garrysmod and (settings.garrysmod .. "/data/bobba_temp/desktop_console.log") or nil,
 	}
 end
 
