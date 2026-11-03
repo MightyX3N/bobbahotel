@@ -5,7 +5,7 @@
 --
 --   BOBBA.room.furniDrawer(item, info) -> { { depth, x, y, w, h, mouse, hit = fn(mx, my), draw = fn }, ... } or nil
 --   BOBBA.room.furniInfo(kind) -> { name, sit, lay, walk, width, length } (from furnidata) or nil
---   BOBBA.room.furniIcon(kind, x, y, w, h, s, alpha) -> drawn?   the furni's icon (Nitro's
+--   BOBBA.room.furniIcon(kind, x, y, w, h, s, alpha, fit) -> drawn?   the furni's icon (Nitro's
 --     getFurnitureFloorIcon) in the middle of a box, s screen pixels a pixel (catalogue, inventory)
 --   BOBBA.room.furniPreview(kind, x, y, w, h, s, dir) -> drawn?  the furni itself in a box (the
 --     catalogue's and inventory's preview, like Nitro's RoomPreviewer)
@@ -192,7 +192,7 @@ end
 -- the furni's icon: Nitro's getFurnitureFloorIcon, the furni drawn at size 1 (its "icon"
 -- visualization, with its colour), in the middle of a box
 local icons = {}
-function FU.icon(kind, x, y, w, h, s, alpha)
+function FU.icon(kind, x, y, w, h, s, alpha, fit)
 	local t, color = typeFor(kind)
 	if not t then return false end
 	local e = icons[kind]
@@ -210,13 +210,16 @@ function FU.icon(kind, x, y, w, h, s, alpha)
 		x0, y0 = math.min(x0, sp.x), math.min(y0, sp.y)
 		x1, y1 = math.max(x1, sp.x + sp.width), math.max(y1, sp.y + sp.height)
 	end
+	-- (fit: made smaller to fit the box, like a catalogue page's 20 x 20 icon)
+	if fit then s = math.min(s, w / math.max(1, x1 - x0), h / math.max(1, y1 - y0)) end
 	local bx = math.floor(x + (w - (x1 - x0) * s) / 2 - x0 * s + 0.5)
 	local by = math.floor(y + (h - (y1 - y0) * s) / 2 - y0 * s + 0.5)
 	local order = {}
 	for i, sp in ipairs(list) do order[i] = { sp = sp, z = (sp.relativeDepth or 0) + 3.7e-11 * i } end
 	table.sort(order, function(a, b) return a.z > b.z end)
-	render.PushFilterMag(TEXFILTER.POINT)
-	render.PushFilterMin(TEXFILTER.POINT)
+	local filter = (fit and s < 1) and TEXFILTER.LINEAR or TEXFILTER.POINT
+	render.PushFilterMag(filter)
+	render.PushFilterMin(filter)
 	for _, o in ipairs(order) do
 		local sp = o.sp
 		local img = t.images[t.base .. "_" .. sp.source]

@@ -51,7 +51,7 @@ local function build(cb)
 		local kinds = BOBBA.wallet.clubKinds()
 		local clubPages = {}
 		for _, kind in ipairs(kinds) do
-			local page = { name = CAT.CLUB_NAMES[kind], layout = "vip_buy", clubKind = kind, offers = {} }
+			local page = { name = CAT.CLUB_NAMES[kind], layout = "vip_buy", clubKind = kind, iconName = "club-" .. kind, offers = {} }
 			for _, c in ipairs(CAT.CLUB_OFFERS[kind]) do
 				local price = tonumber(BOBBA.store.setting(kind .. ".price." .. c.days, tostring(c.price))) or c.price
 				page.offers[#page.offers + 1] = { club = c.days, tier = kind, name = c.days .. " days", price = { diamonds = price } }
@@ -79,7 +79,8 @@ function CAT.reset() tree, pagesById = nil, nil end
 local function index(list)
 	local out = {}
 	for _, p in ipairs(list) do
-		out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, children = p.children and index(p.children) or nil }
+		out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName,
+			children = p.children and index(p.children) or nil }
 	end
 	return out
 end

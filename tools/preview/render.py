@@ -306,7 +306,12 @@ def compose(L, G, picture, images):
     if inp is not None: put(inp)
     wins = L.eval("BOBBA.ui.windows")
     for k in list(wins.keys()):
-        put(wins[k].panel)
+        # (a few frames: what it draws may load on the first, like a furni's icon)
+        pn = wins[k].panel
+        for _ in range(3):
+            G.ops = L.table()
+            pn.Paint(pn, pn.w, pn.h)
+        put(pn)
     return picture
 
 def paint(G, w, h, images=None, transparent=False):

@@ -292,7 +292,13 @@ local function drawNavItems(d, list, x, y, w, bottom, top)
 				SHOP.openPage(p.id)
 			end)
 			d:round(4, x, y, w, 23, active and U.C.gridActive or U.C.gridItem)
-			if p.icon then d:icon("catalog-icon-" .. p.icon, x + 3, y + 1.5, 20, 20) end
+			-- (CatalogIconView, 20 x 20: a club's coin, or a furni of the page)
+			if p.iconName and p.iconName:find("^club%-") then U.clubIcon(d, p.iconName:sub(6), x + 3, y + 1.5, 20, 20)
+			elseif p.iconName then d:icon(p.iconName, x + 3, y + 1.5, 20, 20)
+			elseif p.iconKind and R.furniIcon then
+				local s = d.s
+				R.furniIcon(p.iconKind, math.floor((x + 3) * s + 0.5), math.floor((y + 1.5) * s + 0.5), math.floor(20 * s + 0.5), math.floor(20 * s + 0.5), s, 255, true)
+			end
 			local tw = w - 27 - 3 - (p.children and 16.6 or 0)
 			d:text(d:fit(p.name, 12.6, tw), 12.6, x + 27, y + 23 / 2, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			if p.children then
@@ -520,7 +526,7 @@ local function drawCatalog(w, d)
 		navList = {}
 		for _, id in ipairs(CAT.search.pages or {}) do
 			local p = findPage(CAT.pages, id)
-			if p then navList[#navList + 1] = { id = p.id, name = p.name, icon = p.icon } end
+			if p then navList[#navList + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName } end
 		end
 	else
 		local tab = CAT.tab and findPage(CAT.pages, CAT.tab)

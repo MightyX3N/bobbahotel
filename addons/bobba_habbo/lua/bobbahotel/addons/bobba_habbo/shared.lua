@@ -121,7 +121,8 @@ if SERVER and BOBBA.catalog then
 			local pages = {}
 			for line, offers in pairs(lines) do
 				table.sort(offers, function(a, b) return a.order < b.order end)
-				pages[#pages + 1] = { name = H.catalogLineName(line), line = line, offers = offers }
+				-- (its icon: the line's first furni, the way Habbo's page icons are a furni of the line)
+				pages[#pages + 1] = { name = H.catalogLineName(line), line = line, offers = offers, iconKind = offers[1].kind }
 			end
 			table.sort(pages, function(a, b)
 				if (a.line == "") ~= (b.line == "") then return b.line == "" end

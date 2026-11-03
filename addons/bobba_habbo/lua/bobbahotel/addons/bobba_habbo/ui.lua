@@ -43,13 +43,20 @@ H.UI_ICONS = {
 	["vip-banner"] = "vip_color", ["currency-vip"] = "vip_color",
 }
 
-local images
+local images, failed
 local function clientImages()
 	if images then return images end
-	H.chatStyles(function(st) if st then images = st.images end end)
+	H.chatStyles(function(st) if st then images = st.images else failed = true end end)
 	return images
 end
 H.clientImages = clientImages
+
+-- the hotel's loading screen waits for these pictures, so the toolbar and purse aren't drawn without
+-- them for a moment after coming in (unless they can't be had)
+H.loadingCheck("habbo.ui", function()
+	clientImages()
+	return images ~= nil or failed == true, images and 1 or 0
+end)
 
 local materials = {}
 U.iconProvider = function(name)
