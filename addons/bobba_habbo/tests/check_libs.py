@@ -126,6 +126,30 @@ check(o is None and e is not None, "a file that isn't a SWF gives a reason, not 
 o, e = call(swf.read, b"CWS\x09\x00\x00\x00\x00garbage", inflate)
 check(o is None, "a broken SWF gives a reason, not a crash")
 
+
+# --- ZIP reading (Habbo's desktop client comes as a ZIP) ------------------------------------------
+import zipfile
+zipmod = load("zip.lua")
+inflate_raw = L.eval(b"function(s) return (LD:DecompressDeflate(s)) end")
+big = bytes(rnd.randrange(256) for _ in range(20000)) + b"HabboAir" * 5000
+zb = io.BytesIO()
+with zipfile.ZipFile(zb, "w") as z:
+    z.writestr(zipfile.ZipInfo("stored.txt"), b"plain bytes", compress_type=zipfile.ZIP_STORED)
+    z.writestr("dir/packed.bin", big, compress_type=zipfile.ZIP_DEFLATED)
+    z.comment = b"a comment at the end"
+zo, ze = call(zipmod.open, zb.getvalue())
+check(zo is not None and sorted(x.decode() for x in zo[b"names"].values()) == ["dir/packed.bin", "stored.txt"], "ZIP: every file listed (%s)" % ze)
+check(call(zo[b"read"], b"stored.txt", inflate_raw)[0] == b"plain bytes", "ZIP: a stored file")
+check(call(zo[b"read"], b"dir/packed.bin", inflate_raw)[0] == big, "ZIP: a packed file comes out exact")
+r, e = call(zo[b"read"], b"nope", inflate_raw)
+check(r is None and e, "ZIP: a missing file gives a reason")
+check(call(zipmod.open, b"not a zip, just text that is long enough")[0] is None, "ZIP: not a ZIP gives a reason")
+
+# --- SWF without pictures (for big files) --------------------------------------------------------
+o2, _ = call(swf.read, swf_file(tags), inflate, L.table_from({b"images": False}))
+by2 = o2[b"byName"]
+check(by2[b"throne_icon_a"][b"image"] is None and by2[b"throne_throne_visualization"][b"binary"] is not None, "SWF: pictures can be skipped, the XML still read")
+
 # --- downloading, the cache and unpacking (library.lua) with a stand-in platform ------------------
 L2 = lj.LuaRuntime(unpack_returned_tuples=True, encoding=None)
 served = {"https://example/throne.swf": swf_file(tags), "https://example/settings": b"x=1\nflash.client.url=https://images/gordon/\nflash.dynamic.download.url=//images/dcr/hof_furni/\n"}
@@ -176,6 +200,72 @@ check(bad["lib"] is None and b"404" in bad["err"], "library: a missing file give
 served["https://example/broken.swf"] = b"CWS\x09\x00\x00\x00\x00broken"
 L2.eval(b"BOBBA.habbo").library(b"furni/broken", b"https://example/broken.swf", lambda lib, err=None: bad.update(lib=lib, err=err))
 check(bad["lib"] is None and bad["err"], "library: a broken file gives a reason")
+
+
+# --- avatar data: Habbo's client ZIP -> HabboAir.swf -> the avatar XML (avatardata.lua) ---------------
+names_in_air = ["HabboAvatarGeometry_xml$abc1", "HabboAvatarPartSets_xml$abc2", "HabboAvatarAnimation_xml$abc3",
+                "HabboAvatarFigure_xml$abc4", "action_offset_lay_xml$abc5", "action_offset_swim_xml$abc6", "some_window_xml$zz"]
+air_tags = [binary(10 + i, ("<data n='%s'/>" % n).encode() * 50) for i, n in enumerate(names_in_air)]
+air_tags.append(lossless2_argb(40, W3, H3, img3, alpha=False))
+air_tags.append(symbols([(10 + i, n) for i, n in enumerate(names_in_air)] + [(40, "a_png$1")]))
+zb = io.BytesIO()
+with zipfile.ZipFile(zb, "w") as z:
+    z.writestr("HabboAir.swf", swf_file(air_tags), compress_type=zipfile.ZIP_DEFLATED)
+    z.writestr("META-INF/AIR/application.xml", b"<x/>")
+served["https://www.habbo.com/gamedata/clienturls"] = b'{"flash-windows-version":"35","flash-windows":"https:\\/\\/clients\\/HabboWin.zip","unity-windows":"x"}'
+served["https://clients/HabboWin.zip"] = zb.getvalue()
+served["https://example/settings"] = (b"x=1\nflash.client.url=https://images/gordon/PRODUCTION-1/\nflash.dynamic.download.url=//images/dcr/hof_furni/\n"
+    b"external.figurepartlist.txt=http://www.habbo.com/gamedata/figuredata\nexternal.figurepartlist.txt=http://www.habbo.com/gamedata/figuredata/f00d\n")
+for f in ("HabboAvatarActions.xml", "figuremap.xml", "effectmap.xml"):
+    served["https://images/gordon/PRODUCTION-1/" + f] = ("<" + f + "/>").encode()
+served["https://www.habbo.com/gamedata/figuredata/f00d"] = b"<figuredata/>"
+L3 = lj.LuaRuntime(unpack_returned_tuples=True, encoding=None)
+L3.globals().PY_HTTP = http
+L3.globals().PY_FILES = L3.table()
+L3.globals().LIB_DIR = LIB.encode()
+L3.execute(b"""
+BOBBA = { platform = {
+	httpGet = function(url, ok, fail) PY_HTTP(url, ok, fail) end,
+	writeData = function(path, bytes) PY_FILES[path] = bytes end,
+	readData = function(path) return PY_FILES[path] end,
+	dataExists = function(path) return PY_FILES[path] ~= nil end,
+	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+} }
+""")
+L3.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())
+H3 = L3.eval(b"BOBBA.habbo")
+H3.SETTINGS_URL = b"https://example/settings"
+ad = {}
+requests.clear()
+H3.avatarData(lambda d, err=None: ad.update(d=d, err=err))
+d = ad["d"]
+check(d is not None, "avatar data: everything found (%s)" % ad.get("err"))
+if d is not None:
+    check(d[b"geometry"] == b"<data n='HabboAvatarGeometry_xml$abc1'/>" * 50, "avatar data: the geometry XML out of HabboAir.swf inside the ZIP, exact")
+    check(d[b"offsets"][b"lay"].startswith(b"<data n='action_offset_lay"), "avatar data: the lay offsets")
+    check(d[b"figuredata"] == b"<figuredata/>" and "https://www.habbo.com/gamedata/figuredata/f00d" in requests, "avatar data: figuredata from the revision Habbo's settings name (the last one, made https)")
+    check(d[b"figuremap"] == b"<figuremap.xml/>" and d[b"actions"] == b"<HabboAvatarActions.xml/>", "avatar data: figuremap and actions from the client folder")
+txt = [k.decode() for k in L3.globals().PY_FILES.keys() if b"client_35" in k]
+check(len(txt) == 6, "avatar data: the 6 client XML kept (per client version), not the ZIP")
+L4 = lj.LuaRuntime(unpack_returned_tuples=True, encoding=None)
+L4.globals().PY_HTTP = http
+L4.globals().PY_FILES = L4.table_from({k: v for k, v in L3.globals().PY_FILES.items()})  # what's on disk, a new run of the game
+L4.globals().LIB_DIR = LIB.encode()
+L4.execute(b"""
+BOBBA = { platform = {
+	httpGet = function(url, ok, fail) PY_HTTP(url, ok, fail) end,
+	writeData = function(path, bytes) PY_FILES[path] = bytes end,
+	readData = function(path) return PY_FILES[path] end,
+	dataExists = function(path) return PY_FILES[path] ~= nil end,
+	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+} }
+""")
+L4.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())
+L4.eval(b"BOBBA.habbo").SETTINGS_URL = b"https://example/settings"
+requests.clear()
+ad2 = {}
+L4.eval(b"BOBBA.habbo").avatarData(lambda d, err=None: ad2.update(d=d, err=err))
+check(ad2["d"] is not None and "https://clients/HabboWin.zip" not in requests and len(requests) == 2, "avatar data: next game start only asks Habbo for its settings and client version (%s)" % requests)
 
 print("\n%d failed" % failed)
 sys.exit(1 if failed else 0)

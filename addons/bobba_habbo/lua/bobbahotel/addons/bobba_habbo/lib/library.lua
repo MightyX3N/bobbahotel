@@ -15,6 +15,7 @@ H.CACHE = "habbo/"
 local function cachePath(key, ending)
 	return H.CACHE .. key:gsub("[^%w_%-/%.]", "_") .. ending
 end
+H.cachePath = cachePath
 
 -- Downloads once; later it comes from the cache. cb(bytes) or cb(nil, why)
 function H.download(key, url, cb)

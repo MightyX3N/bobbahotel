@@ -6,6 +6,7 @@
 --   swf.symbols[id] = "throne_throne_64_a_0_0"
 --   swf.binaries[id] = "<visualizationData ...>"
 --   swf.images[id] = { width = 64, height = 80, pixels = { r, g, b, a, r, g, b, a, ... } }  (not premultiplied)
+--   SWF.read(bytes, inflate, { images = false })   -- only names and XML (fast, for big files)
 
 local SWF = {}
 
@@ -116,7 +117,8 @@ local function lossless(data, inflate, withAlpha)
 	return id, { width = width, height = height, pixels = px }
 end
 
-function SWF.read(bytes, inflate)
+function SWF.read(bytes, inflate, opts)
+	local wantImages = not (opts and opts.images == false)
 	local s, err = SWF.uncompress(bytes, inflate)
 	if not s then return nil, err end
 	local r = reader(s, 9)
@@ -130,8 +132,10 @@ function SWF.read(bytes, inflate)
 		local head = r.u16()
 		local code, len = math.floor(head / 64), head % 64
 		if len == 63 then len = r.u32() end
-		local data = sub(s, r.pos, r.pos + len - 1)
+		local start = r.pos
 		r.pos = r.pos + len
+		local wanted = code == 76 or code == 87 or (wantImages and (code == 20 or code == 36))
+		local data = wanted and sub(s, start, start + len - 1)
 		if code == 0 then break end
 		if code == 76 then -- SymbolClass
 			local t = reader(data)
@@ -144,7 +148,7 @@ function SWF.read(bytes, inflate)
 			local id = t.u16()
 			t.u32() -- reserved
 			out.binaries[id] = sub(data, t.pos)
-		elseif code == 20 or code == 36 then -- DefineBitsLossless / DefineBitsLossless2
+		elseif wantImages and (code == 20 or code == 36) then -- DefineBitsLossless / DefineBitsLossless2
 			local id, img, problem = lossless(data, inflate, code == 36)
 			if img then out.images[id] = img else out.problems[#out.problems + 1] = problem end
 		end

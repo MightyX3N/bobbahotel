@@ -29,3 +29,22 @@ concommand.Add("bobba_habbo_test", function()
 		end)
 	end)
 end)
+
+-- bobba_habbo_avatardata: gets everything Habbo draws avatars with (the first time this downloads
+-- Habbo's desktop client, about 19 MB, and takes the avatar data out of it).
+concommand.Add("bobba_habbo_avatardata", function()
+	print("[Bobba] getting Habbo's avatar data (the first time takes a while)...")
+	local t0 = SysTime()
+	H.avatarData(function(data, err)
+		if not data then print("[Bobba] failed: " .. tostring(err)) return end
+		local names = {}
+		for k, v in pairs(data) do
+			if type(v) == "string" then names[#names + 1] = k end
+		end
+		table.sort(names)
+		for _, k in ipairs(names) do
+			print(string.format("[Bobba]   %-12s %8d bytes", k, #data[k]))
+		end
+		print(string.format("[Bobba] done in %.2f s", SysTime() - t0))
+	end)
+end)
