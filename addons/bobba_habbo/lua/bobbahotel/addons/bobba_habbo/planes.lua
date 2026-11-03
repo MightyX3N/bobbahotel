@@ -19,8 +19,13 @@ local function load()
 	end)
 end
 
+-- a room with no floor or wallpaper chosen gets Nitro's (RoomEngine.createRoomInstance: floor 111,
+-- wallpaper 201; Arcturus only sends a room's paint when it isn't "0.0")
+H.DEFAULT_PLANES = { floor = "111", wall = "201" }
+
 V.planePainter = function(kind, id, plane)
 	if not rc then return nil end
+	if id == nil or id == "" or id == "0.0" or id == "0" then id = H.DEFAULT_PLANES[kind] or id end
 	local n = plane.normal
 	local key = table.concat({ kind, id, plane.textureWidth, plane.textureHeight, plane.textureX, plane.textureY, tostring(plane.texture), n[1], n[2], n[3] }, "|")
 	local paint = cache[key]
