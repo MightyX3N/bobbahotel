@@ -65,6 +65,15 @@ end
 
 local CATEGORY_NAMES = { hd = "Face", hr = "Hair", ha = "Hats", he = "Extras", ea = "Glasses", fa = "Masks", ch = "Shirts", cp = "Prints", cc = "Jackets", ca = "Chains", lg = "Trousers", sh = "Shoes", wa = "Belts" }
 
+-- a club piece or colour: the club's coin in its bottom right corner (LayoutCurrencyIcon type hc,
+-- end-1 bottom-1), so it's clear why it can't be chosen without the club
+local function clubMark(d, item, x, y, w, h)
+	if not item.isHC then return end
+	local level = (item.partColor and item.partColor.clubLevel) or (item.partSet and item.partSet.clubLevel) or 1
+	local kind = U.clubKindFor and U.clubKindFor(level) or "hc"
+	if U.clubIcon then U.clubIcon(d, kind, x + w - 4 - 16, y + h - 4 - 16, 16, 16) end
+end
+
 local function drawModel(w, d, ed)
 	local model = ed:model(w.tab)
 	if not model then return end
@@ -114,6 +123,7 @@ local function drawModel(w, d, ed)
 				end
 				-- HC clothes the player can't wear are dimmed (AvatarEditorGridPartItem: alpha 0.2)
 				if item.isDisabled then d:round(4, x + 2, y2 + 2, cw - 4, ch - 4, Color(205, 211, 217, 204)) end
+				clubMark(d, item, x, y2, cw, ch)
 			end
 		end
 	end)
@@ -136,6 +146,7 @@ local function drawModel(w, d, ed)
 					end)
 					local c = item.partColor.rgb
 					d:gridItem(x, y2, cw, ch, item.isSelected, Color(math.floor(c / 65536) % 256, math.floor(c / 256) % 256, c % 256), true)
+					clubMark(d, item, x, y2, cw, ch)
 				end
 			end
 		end)

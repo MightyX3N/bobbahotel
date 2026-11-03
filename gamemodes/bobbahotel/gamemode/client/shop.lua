@@ -277,7 +277,8 @@ end
 function SHOP.openPage(id)
 	local p = findPage(CAT.pages, id)
 	if not p then return end
-	if not p.parent and p.children and p.children[1] then p = p.children[1] end
+	-- (a page with pages under it has nothing of its own here: its first page opens)
+	while p.children and p.children[1] do p = p.children[1] end
 	CAT.active = p.id
 	local n = p
 	while n do
@@ -357,7 +358,8 @@ local function drawNavItems(d, list, x, y, w, bottom, top)
 		local active = p.id == CAT.active
 		if y + 23 > top and y < bottom then
 			d:click(x, math.max(y, top), w, math.min(y + 23, bottom) - math.max(y, top), function()
-				if p.children then CAT.open[p.id] = not CAT.open[p.id] end
+				-- (an open one closes again; a closed one opens with its first page showing)
+				if p.children and CAT.open[p.id] then CAT.open[p.id] = false return end
 				SHOP.openPage(p.id)
 			end)
 			d:round(4, x, y, w, 23, active and U.C.gridActive or U.C.gridItem)
