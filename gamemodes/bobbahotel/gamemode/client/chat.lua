@@ -58,7 +58,7 @@ C.COLOR_W = 30
 C.FONT = "Ubuntu Condensed"
 C.UBUNTU_CELL = 1.121
 
-local S, FONT_PX, TEXT_TOP, LINE_H, INPUT_W, INPUT_H, F
+local S, IS, FONT_PX, TEXT_TOP, LINE_H, INPUT_W, INPUT_H, F
 local made = {}
 local INPUT_TEXT_PX = 14.4
 local function fonts()
@@ -67,23 +67,26 @@ local function fonts()
 		surface.CreateFont(F.chat, { font = C.FONT, size = FONT_PX, weight = 500, antialias = true, extended = true })
 		surface.CreateFont(F.bold, { font = C.FONT, size = FONT_PX, weight = 800, antialias = true, extended = true })
 		surface.CreateFont(F.italic, { font = C.FONT, size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
-		surface.CreateFont(F.input, { font = C.FONT, size = math.floor(INPUT_TEXT_PX * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
+		surface.CreateFont(F.input, { font = C.FONT, size = math.floor(INPUT_TEXT_PX * C.UBUNTU_CELL * IS + 0.5), weight = 500, antialias = true, extended = true })
 	end
 	return F
 end
 -- (sets the sizes for the screen; again when the game's resolution changes)
-function C.setScale(scale)
+-- the input is part of the toolbar: it has the UI's size (BOBBA.ui.scale), not the room's
+function C.inputScaleFor(h) return math.max(1, math.floor(h / 1080)) end
+function C.setScale(scale, inputScale)
 	S = scale
+	IS = inputScale or C.inputScaleFor(ScrH())
 	C.SCALE, R.chatScale = S, S
 	FONT_PX = math.floor(C.FONT_SIZE * C.UBUNTU_CELL * S + 0.5)
 	TEXT_TOP = -(C.UBUNTU_CELL - 1) / 2 * C.FONT_SIZE * S
 	LINE_H = C.LINE_H * S
-	INPUT_W, INPUT_H = 420 * S, 32 * S
+	INPUT_W, INPUT_H = 420 * IS, 32 * IS
 	-- (the size in the names: GMod keeps a font's first size until the game restarts, so a new size
 	-- needs a new name)
 	-- (made when first used, not now: right after a game start the hotel's font file isn't ready yet
 	-- while this file loads, and GMod would fall back to Tahoma for the whole session)
-	F = { chat = "BobbaChatU" .. FONT_PX, bold = "BobbaChatUBold" .. FONT_PX, italic = "BobbaChatUItalic" .. FONT_PX, input = "BobbaChatUIn" .. S }
+	F = { chat = "BobbaChatU" .. FONT_PX, bold = "BobbaChatUBold" .. FONT_PX, italic = "BobbaChatUItalic" .. FONT_PX, input = "BobbaChatUIn" .. IS }
 	-- bubbles already up keep their size; the input is made again at the new size
 	if IsValid(C.input) then C.input:Remove() C.input = nil end
 end
@@ -432,19 +435,19 @@ local function createInput()
 	frame:SetKeyboardInputEnabled(true)
 	frame:SetMouseInputEnabled(true)
 	frame.Paint = function(self, w, h)
-		draw.RoundedBox(math.floor(8 * S), 0, 0, w, h, Color(0, 0, 0, 255))
-		draw.RoundedBox(math.floor(6 * S), math.floor(2 * S), math.floor(2 * S), w - math.floor(4 * S), h - math.floor(4 * S), Color(237, 237, 237, 255))
+		draw.RoundedBox(math.floor(8 * IS), 0, 0, w, h, Color(0, 0, 0, 255))
+		draw.RoundedBox(math.floor(6 * IS), math.floor(2 * IS), math.floor(2 * IS), w - math.floor(4 * IS), h - math.floor(4 * IS), Color(237, 237, 237, 255))
 		surface.SetDrawColor(255, 255, 255, 255)
-		surface.DrawRect(math.floor(2 * S) + math.floor(4 * S), math.floor(3 * S), w - math.floor(4 * S) - math.floor(8 * S), math.floor(5 * S))
+		surface.DrawRect(math.floor(2 * IS) + math.floor(4 * IS), math.floor(3 * IS), w - math.floor(4 * IS) - math.floor(8 * IS), math.floor(5 * IS))
 		local U = BOBBA.ui
 		local ic = U and U.icon and U.icon("chat-styles")
 		if ic and ic.material then
-			local iw, ih = math.floor(ic.width * S + 0.5), math.floor(ic.height * S + 0.5)
+			local iw, ih = math.floor(ic.width * IS + 0.5), math.floor(ic.height * IS + 0.5)
 			render.PushFilterMag(TEXFILTER.POINT)
 			render.PushFilterMin(TEXFILTER.POINT)
 			surface.SetMaterial(ic.material)
 			surface.SetDrawColor(255, 255, 255, 255)
-			surface.DrawTexturedRectUV(w - math.floor((2 + 10) * S) - iw, math.floor((h - ih) / 2), iw, ih, 0, 0, ic.u, ic.v)
+			surface.DrawTexturedRectUV(w - math.floor((2 + 10) * IS) - iw, math.floor((h - ih) / 2), iw, ih, 0, 0, ic.u, ic.v)
 			render.PopFilterMin()
 			render.PopFilterMag()
 		end
@@ -452,7 +455,7 @@ local function createInput()
 	fonts()
 	local entry = vgui.Create("DTextEntry", frame)
 	entry:Dock(FILL)
-	entry:DockMargin(math.floor(14 * S), math.floor(10 * S), math.floor((2 + 10 + 17 + 10) * S), math.floor(10 * S))
+	entry:DockMargin(math.floor(14 * IS), math.floor(10 * IS), math.floor((2 + 10 + 17 + 10) * IS), math.floor(10 * IS))
 	entry:SetFont(F.input)
 	entry:SetPaintBackground(false)
 	entry:SetPlaceholderText(BOBBA.ui and BOBBA.ui.text and BOBBA.ui.text("widgets.chatinput.default", "Click here to chat...") or "Click here to chat...")
@@ -510,16 +513,16 @@ hook.Add("Think", "bobba.chat", function()
 	f:SetVisible(true)
 	-- as wide as what's typed (the ::after copy of it plus two spaces)
 	surface.SetFont(F.input)
-	local tw = surface.GetTextSize((f.entry:GetValue() or "") .. "  ") / S
+	local tw = surface.GetTextSize((f.entry:GetValue() or "") .. "  ") / IS
 	local x, y, w, h
 	if BOBBA.hud and BOBBA.hud.chatInput then
-		x, y, w, h = BOBBA.hud.chatInput(ScrW() / S, ScrH() / S, tw)
+		x, y, w, h = BOBBA.hud.chatInput(ScrW() / IS, ScrH() / IS, tw)
 	else
 		w, h = 2 + 10 + math.max(173, tw) + 10 + 17 + 10 + 2, 40
-		x, y = (ScrW() / S - w) / 2, ScrH() / S - h - 14
+		x, y = (ScrW() / IS - w) / 2, ScrH() / IS - h - 14
 	end
-	local X, Y = math.floor(x * S + 0.5), math.floor(y * S + 0.5)
-	local W, H = math.floor((x + w) * S + 0.5) - X, math.floor((y + h) * S + 0.5) - Y
+	local X, Y = math.floor(x * IS + 0.5), math.floor(y * IS + 0.5)
+	local W, H = math.floor((x + w) * IS + 0.5) - X, math.floor((y + h) * IS + 0.5) - Y
 	if f:GetWide() ~= W or f:GetTall() ~= H then f:SetSize(W, H) end
 	f:SetPos(X, Y)
 	local focus = vgui.GetKeyboardFocus()

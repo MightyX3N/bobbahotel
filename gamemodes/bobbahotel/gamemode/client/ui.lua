@@ -1,7 +1,6 @@
 -- The hotel's windows (client), drawn the way nitro-react draws its cards (src/common: NitroCardView,
 -- NitroCardHeaderView, NitroCardTabsView, LayoutGridItem, Button; colours and sizes from its
--- compiled SCSS). Sizes are CSS pixels; everything is drawn U.scale() times as big, the size the
--- room opens at for this screen (V.uiScale), like the chat.
+-- compiled SCSS). Sizes are CSS pixels; everything is drawn U.scale() times as big (1 below 4K).
 --
 -- A window is one panel that draws everything itself and keeps a list of what can be clicked:
 --   local w = BOBBA.ui.window("id", 620, 374, function(w, d) ... end)   -- d: drawing helpers
@@ -21,7 +20,10 @@ U.C = {
 	success = Color(0, 128, 11), closeTop = Color(245, 80, 65), closeBottom = Color(194, 48, 39), closeBorder = Color(146, 25, 17),
 }
 
-function U.scale() return (V and V.uiScale) and V.uiScale() or 1 end
+-- The UI's size (toolbar, purse, windows, chat input): Habbo's pixels up to 2159 pixels high, 2x
+-- from 2160 (4K), like a browser at 100% shows Nitro. (Rooms and their chat bubbles have their own,
+-- bigger size: V.uiScale.)
+function U.scale(h) return math.max(1, math.floor((h or ScrH()) / 1080)) end
 
 -- Nitro's font at a CSS size: its "Ubuntu" is Ubuntu Condensed (nitro-react's fonts.scss, Ubuntu-C.ttf,
 -- shipped in addons/bobbahotel/resource/fonts; bold is made from it, as the browser does).
