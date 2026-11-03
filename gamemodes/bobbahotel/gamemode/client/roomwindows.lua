@@ -582,7 +582,8 @@ local function drawRoomInfo(w, d)
 	local cw = W - 9 - cx
 	-- name with the house (your home room: clear; not: half see-through) and the favourite
 	local home = RW.home == c.id
-	d:click(cx, y + 3, 19, 14, function() if not home then P.send("room.home", { id = c.id }) end end)
+	-- (clicked again: not your home room any more)
+	d:click(cx, y + 3, 19, 14, function() P.send("room.home", { id = home and 0 or c.id }) end)
 	d:icon("house-small", cx, y + 3, 19, 14, { alpha = home and 255 or 128 })
 	local fav = RW.favourites and RW.favourites[c.id]
 	d:click(cx + 23, y + 2, 16, 16, function() P.send("room.favourite", { id = c.id, on = not fav }) end)

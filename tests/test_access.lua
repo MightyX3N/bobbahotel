@@ -231,6 +231,9 @@ T["favourites and the home room: listed, and the home room is where you start"] 
 	eq(last(bo, "room.home").id, r.id)
 	P.fromPlayer(bo, "room.ready")
 	eq(unitOf(bo).room.id, r.id, "Bo starts in his home room")
+	P.fromPlayer(bo, "room.home", { id = 0 })
+	eq(last(bo, "room.home").id, 0, "and can have none again")
+	eq(BOBBA.access.home(bo.key), nil)
 end
 
 T["the navigator: room doors, tags, invisible rooms, categories"] = function()
