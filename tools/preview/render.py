@@ -4,7 +4,7 @@ paint into a picture, so rooms can be looked at without starting Garry's Mod.
 
     pip install lupa pillow
     python3 tools/preview/render.py model_a model_h        # -> out/preview/model_a.png ...
-    python3 tools/preview/render.py --all --zoom 2          # every layout, zoom 1 = out, 2 = normal, 3 = double
+    python3 tools/preview/render.py --all --zoom 2          # every layout, at size 1 (Habbo zoomed in)
 """
 import argparse, os, sys
 from lupa import luajit21 as lj
@@ -43,6 +43,7 @@ draw = { NoTexture = function() end, SimpleText = function(t, f, x, y) op("text"
 	SimpleTextOutlined = function(t, f, x, y, c, ax, ay) op("text", t, x - 3 * #t, y - 12) end }
 local fakeTime = 100
 SysTime = function() return fakeTime end
+RealFrameTime = function() return 1 / 60 end
 SetFakeTime = function(t) fakeTime = t end
 HSVToColor = function(h, s, v)
 	local c = v * s; local x = c * (1 - math.abs((h / 60) % 2 - 1)); local m = v - c
@@ -130,7 +131,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("layouts", nargs="*")
     ap.add_argument("--all", action="store_true")
-    ap.add_argument("--zoom", type=int, default=3)
+    ap.add_argument("--zoom", type=float, default=2, help="size: 1 = Habbo zoomed in, 2 = double (the default in game)")
     ap.add_argument("--size", default="1920x1080")
     ap.add_argument("--hover", help="x,y tile to put the mouse on")
     ap.add_argument("--out", default=os.path.join(ROOT, "out", "preview"))
@@ -167,13 +168,14 @@ def main():
         else:
             G.cmds.bobba_preview(None, None, L.table(lid))
         V = L.eval("BOBBA.view")
-        V.zoom = a.zoom
+        V.zoomNow = a.zoom
+        V.zoomTarget = a.zoom
         V.dirty = True
         if a.hover:
             tx, ty = map(int, a.hover.split(","))
             room = V.room
             hgt = L.eval("BOBBA.rooms.tileHeight")(room, tx, ty) or 0
-            z = V.ZOOMS[V.zoom]
+            z = L.table_from({"scale": 64, "mult": V.zoomNow})
             s = L.eval("BOBBA.nitro.create")(z.scale).screen(tx, ty, hgt)
             b = V.bounds[z.scale]
             ox = (w // 2) - (b.minX + b.maxX) / 2 * z.mult

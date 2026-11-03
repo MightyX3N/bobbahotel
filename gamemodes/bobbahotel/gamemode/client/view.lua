@@ -1,6 +1,6 @@
 -- The room on screen (client). The planes come from BOBBA.rooms (Nitro's own geometry, camera and
 -- sorting); this file only draws them and handles the mouse:
---   Ctrl + scroll = zoom, like Habbo (Habbo's 32 and 64, and 64 shown at double size),
+--   Ctrl + scroll = zoom, like Habbo: smooth, any size from half to 4x Habbo's, towards the mouse,
 --   drag = move the room,
 --   click = a tile (walking comes with the server rooms).
 -- The planes' screen positions and colours are worked out once and only again when something
@@ -13,12 +13,14 @@ local V = BOBBA.view
 -- Player setting (saved on their own PC): 1 = zoom with Ctrl + scroll like Habbo, 0 = plain scroll
 V.cvZoomCtrl = V.cvZoomCtrl or CreateClientConVar("bobba_zoom_with_ctrl", "1", true, false, "1 = Ctrl + scroll zooms (like Habbo), 0 = scrolling alone zooms")
 
-V.ZOOMS = {
-	{ scale = 32, mult = 1 },
-	{ scale = 64, mult = 1 },
-	{ scale = 64, mult = 2 },
-}
-V.zoom = V.zoom or #V.ZOOMS -- rooms open fully zoomed in
+-- Zoom: the room is worked out at Nitro's scale 64 (Habbo's zoomed-in size) and drawn V.zoomNow
+-- times as big. Each scroll notch sets a new target and the zoom glides there.
+V.SCALE = 64
+V.MIN_ZOOM, V.MAX_ZOOM = 0.5, 4
+V.ZOOM_STEP = 1.2 -- per scroll notch
+V.ZOOM_SPEED = 14 -- how fast it glides (higher = quicker)
+V.zoomNow = V.zoomNow or 2 -- rooms open zoomed in
+V.zoomTarget = V.zoomTarget or V.zoomNow
 V.panX, V.panY = V.panX or 0, V.panY or 0
 
 local BACKGROUND = Color(0, 0, 0)
@@ -30,7 +32,7 @@ surface.CreateFont("BobbaViewLabel", { font = "Tahoma", size = 13, weight = 700 
 -- Where things are
 
 local function zoomInfo()
-	return V.ZOOMS[V.zoom]
+	return { scale = V.SCALE, mult = V.zoomNow }
 end
 
 -- the room's origin on screen (pixel), so the room's middle is in the middle of the screen
@@ -183,6 +185,7 @@ end
 
 function PANEL:Paint(w, h)
 	if not V.room then return end
+	V.stepZoom(RealFrameTime())
 	if V.dirty or not V.polys then
 		buildPolys()
 		V.dirty = false
@@ -222,6 +225,7 @@ function PANEL:OnCursorMoved()
 	if p then
 		if not p.dragging and (math.abs(x - p.x) > 3 or math.abs(y - p.y) > 3) then p.dragging = true end
 		if p.dragging then
+			V.anchor = nil
 			V.panX, V.panY = p.panX + (x - p.x), p.panY + (y - p.y)
 			V.dirty = true
 		end
@@ -233,13 +237,29 @@ function PANEL:OnMouseWheeled(delta)
 	-- Habbo zooms with Ctrl + scroll (plain scrolling is left for windows); players can switch that off
 	local ctrl = input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)
 	if V.cvZoomCtrl:GetBool() and not ctrl then return end
-	local old = zoomInfo()
-	local new = math.Clamp(V.zoom + (delta > 0 and 1 or -1), 1, #V.ZOOMS)
-	if new == V.zoom then return end
-	V.zoom = new
-	-- keep the same part of the room in the middle
-	local f = (zoomInfo().scale * zoomInfo().mult) / (old.scale * old.mult)
-	V.panX, V.panY = V.panX * f, V.panY * f
+	local target = math.Clamp(V.zoomTarget * (delta > 0 and V.ZOOM_STEP or 1 / V.ZOOM_STEP), V.MIN_ZOOM, V.MAX_ZOOM)
+	if target == V.zoomTarget then return end
+	V.zoomTarget = target
+	-- the spot under the mouse stays under the mouse while zooming
+	local mx, my = input.GetCursorPos()
+	local rx, ry = toRoom(mx, my)
+	V.anchor = { sx = mx, sy = my, rx = rx, ry = ry }
+end
+
+-- Moves the zoom towards its target (called every frame; dt = seconds since the last frame)
+function V.stepZoom(dt)
+	if V.zoomNow == V.zoomTarget then return end
+	local f = 1 - math.exp(-dt * V.ZOOM_SPEED)
+	V.zoomNow = V.zoomNow + (V.zoomTarget - V.zoomNow) * f
+	if math.abs(V.zoomNow - V.zoomTarget) < 0.002 then V.zoomNow = V.zoomTarget end
+	local a = V.anchor
+	if a and V.bounds then
+		local b = V.bounds[V.SCALE]
+		local cx, cy = (b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2
+		V.panX = a.sx - ScrW() / 2 + (cx - a.rx) * V.zoomNow
+		V.panY = a.sy - ScrH() / 2 + (cy - a.ry) * V.zoomNow
+	end
+	if V.zoomNow == V.zoomTarget then V.anchor = nil end
 	V.dirty = true
 	V.updateHover(input.GetCursorPos())
 end
@@ -257,7 +277,7 @@ function V.project(x, y, z)
 	local s = V.cameras[zi.scale].screen(x, y, z)
 	if not s then return nil end
 	local ox, oy = origin()
-	return ox + s[1] * zi.mult, oy + s[2] * zi.mult, zi.scale / 64 * zi.mult, s[3]
+	return ox + s[1] * zi.mult, oy + s[2] * zi.mult, zi.mult, s[3]
 end
 
 function V.updateHover(sx, sy)
@@ -276,13 +296,9 @@ function V.show(room, label)
 	V.room = room
 	V.label = label
 	V.hover = nil
-	V.bounds, V.cameras = {}, {}
-	for _, z in ipairs(V.ZOOMS) do
-		if not V.bounds[z.scale] then
-			V.bounds[z.scale] = boundsOf(BOBBA.rooms.view(room, z.scale))
-			V.cameras[z.scale] = BOBBA.nitro.create(z.scale)
-		end
-	end
+	V.bounds = { [V.SCALE] = boundsOf(BOBBA.rooms.view(room, V.SCALE)) }
+	V.cameras = { [V.SCALE] = BOBBA.nitro.create(V.SCALE) }
+	V.anchor = nil
 	if not IsValid(V.panel) then V.panel = vgui.Create("BobbaRoomView") end
 	V.panel:SetVisible(true)
 	gui.EnableScreenClicker(true)

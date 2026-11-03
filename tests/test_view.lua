@@ -32,6 +32,8 @@ local function fakeGmod()
 	_G.string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 	_G.KEY_LCONTROL, _G.KEY_RCONTROL = 1, 2
 	G.cvars = {}
+	G.frame = 1 / 60
+	_G.RealFrameTime = function() return G.frame end
 	_G.CreateClientConVar = function(name, default)
 		G.cvars[name] = default
 		return { GetBool = function() return G.cvars[name] == "1" end }
@@ -112,7 +114,7 @@ T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function
 	G.cmds.bobba_preview(nil, nil, { "model_a" })
 	V.panel:Paint(1920, 1080)
 	-- put the mouse on tile 5,6 of model_a
-	local z = V.ZOOMS[V.zoom]
+	local z = { scale = V.SCALE, mult = V.zoomNow }
 	local s = BOBBA.nitro.create(z.scale).screen(5, 6, 0)
 	local b = V.bounds[z.scale]
 	local ox = math.floor(960 - (b.minX + b.maxX) / 2 * z.mult)
@@ -140,23 +142,59 @@ T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function
 	local builds = V.builds
 	V.panel:Paint(1920, 1080)
 	eq(V.builds, builds + 1, "worked out again after moving")
+end
+
+T["zoom: Ctrl + scroll glides to the new size, towards the mouse, between half and 4x"] = function()
+	local G = fakeGmod()
+	local V = BOBBA.view
+	G.cmds.bobba_preview(nil, nil, { "model_a" })
+	V.panel:Paint(1920, 1080)
+	eq(V.zoomNow, 2, "opens zoomed in")
+	-- the mouse on tile 9,9
+	local function mouseOn(tx, ty)
+		local x, y = V.project(tx, ty, 0)
+		G.cursor = { x, y }
+		V.panel:OnCursorMoved()
+	end
+	mouseOn(9, 9)
+	local function tile() return V.hover and (V.hover.tileX .. "," .. V.hover.tileY) end
+	eq(tile(), "9,9")
 	-- plain scrolling doesn't zoom (Habbo: Ctrl + scroll)
-	V.panel:OnMouseWheeled(-1)
-	eq(V.zoom, 3, "no zoom without Ctrl")
-	G.keys[KEY_LCONTROL] = true
-	-- zoom out twice, then no further
-	V.panel:OnMouseWheeled(-1)
-	V.panel:OnMouseWheeled(-1)
-	V.panel:OnMouseWheeled(-1)
-	eq(V.zoom, 1, "zoomed out")
-	eq(V.panX .. "," .. V.panY, "25,10", "kept the same spot in the middle")
 	V.panel:OnMouseWheeled(1)
-	eq(V.zoom, 2)
+	eq(V.zoomTarget, 2, "no zoom without Ctrl")
+	G.keys[KEY_LCONTROL] = true
+	V.panel:OnMouseWheeled(1)
+	eq(V.zoomTarget, 2 * V.ZOOM_STEP, "one notch")
+	-- it glides: one frame later it's on its way, not there
+	local builds = V.builds
+	V.panel:Paint(1920, 1080)
+	assert(V.zoomNow > 2 and V.zoomNow < V.zoomTarget, "part of the way after a frame: " .. V.zoomNow)
+	eq(V.builds, builds + 1, "redrawn while zooming")
+	eq(tile(), "9,9", "the tile under the mouse stays under the mouse")
+	for _ = 1, 60 do V.panel:Paint(1920, 1080) end
+	eq(V.zoomNow, V.zoomTarget, "arrived within a second")
+	eq(tile(), "9,9", "still the same tile")
+	builds = V.builds
+	V.panel:Paint(1920, 1080)
+	eq(V.builds, builds, "not redrawn once it stands still")
+	-- the limits
+	for _ = 1, 30 do V.panel:OnMouseWheeled(1) end
+	eq(V.zoomTarget, V.MAX_ZOOM, "at most 4x")
+	for _ = 1, 60 do V.panel:OnMouseWheeled(-1) end
+	eq(V.zoomTarget, V.MIN_ZOOM, "at least half")
+	for _ = 1, 120 do V.panel:Paint(1920, 1080) end
+	eq(V.zoomNow, V.MIN_ZOOM)
 	-- the player setting: scrolling alone zooms
 	G.keys[KEY_LCONTROL] = nil
 	G.cvars.bobba_zoom_with_ctrl = "0"
 	V.panel:OnMouseWheeled(1)
-	eq(V.zoom, 3, "plain scroll zooms when the setting is off")
+	eq(V.zoomTarget, V.MIN_ZOOM * V.ZOOM_STEP, "plain scroll zooms when the setting is off")
+	-- dragging while it glides: the room follows the mouse, no fighting
+	V.panel:OnMousePressed(MOUSE_LEFT)
+	G.cursor = { G.cursor[1] + 50, G.cursor[2] }
+	V.panel:OnCursorMoved()
+	eq(V.anchor, nil, "dragging stops the zoom pulling the room")
+	V.panel:OnMouseReleased(MOUSE_LEFT)
 end
 
 T["preview next/prev go through every layout, off hides"] = function()

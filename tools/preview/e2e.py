@@ -43,7 +43,7 @@ def main():
     ap.add_argument("layout", nargs="?", default="model_a")
     ap.add_argument("--walk")
     ap.add_argument("--steps", type=int, default=0)
-    ap.add_argument("--zoom", type=int, default=2)
+    ap.add_argument("--zoom", type=float, default=2)
     ap.add_argument("--size", default="1600x900")
     a = ap.parse_args()
     S = server()
@@ -78,7 +78,8 @@ def main():
         return v
     L.eval("BOBBA.platform.receivers['room.load']")(None, tbl(msg))
     V = L.eval("BOBBA.view")
-    V.zoom = a.zoom
+    V.zoomNow = a.zoom
+    V.zoomTarget = a.zoom
     V.dirty = True
     V.panel.Paint(V.panel, w, h)
     out = os.path.join(ROOT, "out", "preview", "e2e.png")
