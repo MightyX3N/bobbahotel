@@ -1,6 +1,6 @@
 -- The other windows the toolbar and "me" menu open (client), as nitro-react draws them, ready for
--- their features: the inventory (InventoryView, its empty view), the catalogue (CatalogView: the
--- search and the pages' list on the left, the page on the right), the friends list (FriendsListView:
+-- their features: the inventory (InventoryView, its empty view; the furni are in shop.lua, like the
+-- catalogue), the friends list (FriendsListView:
 -- folding sets), the chat history (ChatHistoryView, with what's been said) and the settings
 -- (UserSettingsView). Sizes measured from nitro-react's CSS in a browser (chatdev/winref).
 
@@ -41,6 +41,7 @@ local function drawInventory(w, d)
 	local tab
 	for _, t in ipairs(INV_TABS) do if t.id == INV.tab then tab = t end end
 	if not tab or not tab.empty then return end
+	if tab.id == "inventory.furni" and BOBBA.shop and BOBBA.shop.drawInventoryFurni(w, d) then return end
 	-- InventoryCategoryEmptyView: Habbo's picture on the left (5 of 12), the title and text (7 of 12)
 	d:icon("inventory-empty", 48.4 + 64.5 - 65.5, 102.5 + 90.5 - 91.5)
 	local tx, tw = 224.8, 294.2
@@ -51,24 +52,12 @@ local function drawInventory(w, d)
 	for i, l in ipairs(lines) do d:text(l, 14.4, tx, ty + 21 + 8 + (i - 1) * 16 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
 end
 
-HUD.actions.inventory = function() U.toggle("inventory", function() U.window("inventory", 528, 320, drawInventory) end) end
-
--- --- the catalogue ----------------------------------------------------------------------------------
-local function drawCatalog(w, d)
-	-- (no tabs: they're the catalogue's top pages, and there are none yet)
-	d:card(U.text("catalog.title", "Catalogue"))
-	local x, y = 9, 42
-	d:input("search", x, y, 113, 28.9, { placeholder = U.text("generic.search", "Search..."), max = 100 })
-	d:btn(126, y, 30, 28.9, U.C.primary, function() end)
-	d:fa("search", 126 + (30 - 14.4) / 2, y + (28.9 - 14.4) / 2, 14.4, U.C.white)
-	-- the pages' list: #cdd3d9 in a 2px #b6bec5 border
-	d:box(x, 78.9, 147, 312.1, 2, 4, U.C.muted, U.C.gridItem)
-	-- the page
-	local lines = wrapText(d, U.text("bobba.catalog.empty", "The catalogue has nothing in it yet."), 14.4, 457)
-	for i, l in ipairs(lines) do d:text(l, 14.4, 164, y + (i - 1) * 16 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
+HUD.actions.inventory = function()
+	U.toggle("inventory", function()
+		U.window("inventory", 528, 320, drawInventory)
+		if BOBBA.shop then BOBBA.shop.inventoryOpened() end
+	end)
 end
-
-HUD.actions.catalog = function() U.toggle("catalog", function() U.window("catalog", 630, 400, drawCatalog) end) end
 
 -- --- the friends list -------------------------------------------------------------------------------
 local FR = { open = { true, false, true, false } }

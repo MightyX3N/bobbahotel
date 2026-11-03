@@ -141,7 +141,7 @@ T["furni under someone changes: a chair put under them makes them sit, picked up
 	eq(u.posture, "sit")
 	assert(BOBBA.items.pickup(r, mia, chair.id))
 	eq(u.posture, nil)
-	eq(BOBBA.store.row("SELECT * FROM bobbahotel_items WHERE id = ?", { chair.id }), nil, "gone")
+	eq(BOBBA.store.row("SELECT room FROM bobbahotel_items WHERE id = ?", { chair.id }).room, "0", "back in the inventory (room 0)")
 end
 
 T["moving and turning: tiles follow, blocked moves say why"] = function()

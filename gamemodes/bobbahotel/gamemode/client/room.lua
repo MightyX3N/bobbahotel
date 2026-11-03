@@ -290,6 +290,10 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 			if pl.id then
 				P.send("room.item.move", { id = pl.id, x = hit.tileX, y = hit.tileY, dir = pl.dir })
 				R.placing = nil
+			elseif pl.inventoryId then
+				-- from the inventory (Nitro's attemptItemPlacement: one of the group, then done)
+				P.send("inventory.place", { id = pl.inventoryId, x = hit.tileX, y = hit.tileY, dir = pl.dir })
+				R.placing = nil
 			else
 				P.send("room.item.place", { kind = pl.kind, x = hit.tileX, y = hit.tileY, dir = pl.dir })
 				R.placing = nil

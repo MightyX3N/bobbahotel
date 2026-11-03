@@ -224,6 +224,7 @@ def boot(w, h):
     L.execute(open(os.path.join(GM, "client", "hud.lua")).read())
     L.execute(open(os.path.join(GM, "client", "navigator.lua")).read())
     L.execute(open(os.path.join(GM, "client", "windows.lua")).read())
+    L.execute(open(os.path.join(GM, "client", "shop.lua")).read())
     return L, G
 
 def hud_click(L, G, spec):

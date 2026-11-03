@@ -192,6 +192,34 @@ local function money(n)
 	return (out:gsub("^,", ""))
 end
 
+-- FriendlyTime.shortFormat (threshold 3): the biggest unit that's over 3 of it
+local function shortTime(seconds)
+	local units = { { "years", 365 * 86400 }, { "months", 30 * 86400 }, { "days", 86400 }, { "hours", 3600 }, { "minutes", 60 } }
+	local short = { years = "y", months = "m", days = "d", hours = "h", minutes = "min" }
+	for _, u in ipairs(units) do
+		if seconds > 3 * u[2] then
+			return U.text("friendlytime.short." .. u[1], "%amount%" .. short[u[1]], { amount = math.floor(seconds / u[2] + 0.5) })
+		end
+	end
+	return U.text("friendlytime.short.seconds", "%amount%s", { amount = math.max(0, math.floor(seconds)) })
+end
+
+-- the server's user.purse (PurseView: credits, activity points 0 duckets and 5 diamonds, club)
+BOBBA.platform.receive("user.purse", function(_, data)
+	HUD.purse = {
+		credits = data.credits or 0, points = { [0] = data.duckets or 0, [5] = data.diamonds or 0 },
+		club = (data.clubLevel or 0) > 0, clubLevel = data.clubLevel or 0,
+		clubDays = data.clubDays or 0, clubMinutes = data.clubMinutes or 0,
+	}
+	-- getClubText: under a day left it counts the minutes, else the days
+	local p = HUD.purse
+	if p.club then
+		p.clubText = (p.clubMinutes < 60 * 24) and shortTime(p.clubMinutes * 60) or shortTime(p.clubDays * 86400)
+	end
+	BOBBA.events.emit("purseChanged", p)
+end)
+BOBBA.events.on("roomShown", "bobba.hud.purse", function() BOBBA.platform.send("user.purse.get", {}) end)
+
 local function drawPurse(w, d)
 	local W, H = d.width, d.height
 	d:darkBox(0, 0, W, H, 4, false, false, true, true)

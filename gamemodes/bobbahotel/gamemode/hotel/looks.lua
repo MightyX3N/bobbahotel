@@ -77,7 +77,7 @@ function looks.set(key, figure, gender)
 	if not parts then return false, "not a figure" end
 	figure = looks.format(parts)
 	if looks.validator then
-		local cleaned, why = looks.validator(figure, gender)
+		local cleaned, why = looks.validator(figure, gender, key)
 		if not cleaned then return false, why or "not a look you can have" end
 		parts = looks.parse(cleaned)
 		if not parts then return false, "not a look you can have" end

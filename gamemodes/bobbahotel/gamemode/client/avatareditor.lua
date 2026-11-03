@@ -249,7 +249,8 @@ function AE.open()
 		local me = R.you and R.units[R.you]
 		local figure = me and me.figure or (AE.defaultFigure and AE.defaultFigure()) or FE.DEFAULT_MALE_FIGURE
 		local gender = me and me.gender or "M"
-		local ed = FE.new(fd, figure, gender, { clubLevel = 0 })
+		local purse = BOBBA.hud and BOBBA.hud.purse
+		local ed = FE.new(fd, figure, gender, { clubLevel = (purse and purse.clubLevel) or 0 })
 		AE.editor = ed
 		U.window("avatar-editor", AE.WIDTH, AE.HEIGHT, function(w, d)
 			w.tab = w.tab or "generic"

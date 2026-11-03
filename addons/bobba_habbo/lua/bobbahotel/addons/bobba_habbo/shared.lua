@@ -65,9 +65,10 @@ if SERVER and BOBBA.looks then
 		end)
 	end
 	if BOBBA.platform.after then BOBBA.platform.after(1, load) else load() end
-	BOBBA.looks.validator = function(figure, gender)
+	BOBBA.looks.validator = function(figure, gender, key)
 		if not fd then return nil, "the hotel's clothes are still loading, try again in a moment" end
-		return H.validateLook(fd, figure, gender, false, {})
+		local club = key ~= nil and BOBBA.wallet ~= nil and BOBBA.wallet.clubLevel(key) > 0
+		return H.validateLook(fd, figure, gender, club, {})
 	end
 end
 
@@ -85,6 +86,48 @@ if SERVER and BOBBA.items then
 				cb({ width = info.width, length = info.length, height = info.height, walk = info.walk, sit = info.sit, lay = info.lay,
 					directions = info.directions, states = info.states })
 			end)
+		end)
+	end
+end
+
+-- The catalogue's furni (server): Habbo's floor furni that Habbo sells (an offerid), a page for each
+-- furni line ("pura", "iced", ...) under "Furni". Left out for now: wall furni, and what needs
+-- something the hotel doesn't have yet (wired, pets, music, teleports, clothing, groups, effects).
+-- Every furni costs the hotel's catalog.price credits (bobba_wallet_setting catalog.price <n>).
+H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true, teleport = true }
+H.CATALOG_SKIP_LINES = { horse = true, nests = true, pet_food = true, pet_accessories = true, clothing = true, guilds = true,
+	sfx = true, wired = true, fxbox = true }
+
+function H.catalogLineName(line)
+	if line == "" then return "Other" end
+	local s = line:gsub("_", " ")
+	return s:sub(1, 1):upper() .. s:sub(2)
+end
+
+if SERVER and BOBBA.catalog then
+	BOBBA.catalog.provider = function(cb)
+		H.furnidata(function(fd, err)
+			if not fd then print("[Bobba] the catalogue: " .. tostring(err)) cb({}) return end
+			local price = tonumber(BOBBA.store.setting("catalog.price", "5")) or 5
+			local lines = {}
+			for class, f in pairs(fd.byClass) do
+				if not f.wall and (f.offer or -1) ~= -1 and f.special == 1 and not H.CATALOG_SKIP_CATEGORIES[f.category]
+					and not f.category:find("^wired") and not H.CATALOG_SKIP_LINES[f.line] then
+					local list = lines[f.line]
+					if not list then list = {} lines[f.line] = list end
+					list[#list + 1] = { kind = class, name = f.name ~= "" and f.name or class, price = { credits = price }, order = f.id or 0 }
+				end
+			end
+			local pages = {}
+			for line, offers in pairs(lines) do
+				table.sort(offers, function(a, b) return a.order < b.order end)
+				pages[#pages + 1] = { name = H.catalogLineName(line), line = line, offers = offers }
+			end
+			table.sort(pages, function(a, b)
+				if (a.line == "") ~= (b.line == "") then return b.line == "" end
+				return a.name:lower() < b.name:lower()
+			end)
+			cb({ { name = "Furni", nameKey = "catalog.furni", children = pages } })
 		end)
 	end
 end

@@ -54,6 +54,7 @@ def main():
     ap.add_argument("--time", type=float, default=0, help="seconds after the room loaded (animation)")
     ap.add_argument("--furni", help="furni to place first (needs --habbo): kind,x,y,dir[,state];...")
     ap.add_argument("--out", default="e2e.png")
+    ap.add_argument("--mine", action="store_true", help="the room is the player's own")
     ap.add_argument("--floor", help="the room's floor id")
     ap.add_argument("--wallpaper", help="the room's wallpaper id")
     ap.add_argument("--say", help="what the player says, then what happens: text[|kind[|seconds later]];... (kind talk/shout/whisper)")
@@ -66,8 +67,9 @@ def main():
     a = ap.parse_args()
     S = server()
     me = S.table_from({"key": "76561198000000001", "name": "Saint MightyX3N"})
-    room_id = S.eval("BOBBA.live.homeRoom")() if a.layout == "model_a" else S.eval("BOBBA.live.create")("1", "Mia", a.layout, "Test room")
-    if a.furni or a.editor:
+    if a.mine: room_id = S.eval("BOBBA.live.create")(me.key, me.name, a.layout, "My room")
+    else: room_id = S.eval("BOBBA.live.homeRoom")() if a.layout == "model_a" else S.eval("BOBBA.live.create")("1", "Mia", a.layout, "Test room")
+    if a.furni or a.editor or a.habbo:
         habbo_server(S, a.habbo)
         # (the addon loads Habbo's figuredata a moment after the server starts: its timer)
         S.execute("BOBBA.platform.now = BOBBA.platform.now + 2; BOBBA.platform.runTimers()")
@@ -205,10 +207,14 @@ def main():
         print("editor: figure", L.eval("BOBBA.avatarEditor.editor.figure:getFigureString()"), "| gender", L.eval("BOBBA.avatarEditor.editor.figure.gender"),
               "| sent", [dict(x.data) for x in L.eval("BOBBA.platform.sent").values() if x.name == "user.figure"])
     # clicks on the toolbar and windows; what the client sends goes through the server and back
-    FORWARD = ("navigator.search", "navigator.create", "room.enter", "user.figure")
-    DELIVER = ("navigator.result", "navigator.created", "room.load", "room.error", "room.units")
+    FORWARD = ("navigator.search", "navigator.create", "room.enter", "user.figure", "user.purse.get", "catalog.index", "catalog.page",
+               "catalog.buy", "catalog.search", "inventory.get", "inventory.place", "room.item.pickup")
+    DELIVER = ("navigator.result", "navigator.created", "room.load", "room.error", "room.units", "user.purse", "catalog.index",
+               "catalog.page", "catalog.bought", "catalog.error", "catalog.search", "inventory.items", "inventory.added",
+               "inventory.removed", "room.items", "room.item.remove")
     state = {"sent": len(L.eval("BOBBA.platform.sent")), "seen": {}}
     for n in DELIVER: state["seen"][n] = S.eval("function(p, n) return #BOBBA.platform.inbox(p, n) end")(me, n)
+    state["seen"]["user.purse"] = 0  # (the purse the server sent when the player came in)
     def pump():
         sent = L.eval("BOBBA.platform.sent")
         for i in range(state["sent"] + 1, len(sent) + 1):
@@ -217,6 +223,13 @@ def main():
                 print("client sends", m.name, tojson(L, m.data))
                 S.execute("BOBBA.platform.now = BOBBA.platform.now + 2")
                 S.eval("BOBBA.platform.fromPlayer")(me, m.name, tbl_s(json.loads(tojson(L, m.data))))
+                # (what the server works on a bit at a time, like the addon reading Habbo's furnidata)
+                total = S.eval("function(p, names) local n = 0 for _, k in ipairs(names) do n = n + #BOBBA.platform.inbox(p, k) end return n end")
+                names = S.table_from(list(DELIVER))
+                before = total(me, names)
+                for _ in range(5000):
+                    if total(me, names) != before: break
+                    S.execute("BOBBA.platform.runTimers()")
         state["sent"] = len(sent)
         for n in DELIVER:
             box = S.eval("function(p, n) return BOBBA.platform.inbox(p, n) end")(me, n)
@@ -243,6 +256,11 @@ def main():
         else:
             render.hud_click(L, G, c)
         pump()
+        # (a second goes by: what waits a moment, like the catalogue's search as you type)
+        state["t"] = state.get("t", 100) + 1
+        L.execute("SetFakeTime(%f)" % state["t"])
+        G.run("Think")
+        pump()
         if L.eval("BOBBA.room.current") is not None and L.eval("BOBBA.room.current.id") != msg["id"]:
             # a new room came: draw it
             V.dirty = True
@@ -262,6 +280,16 @@ def main():
             L.execute("BOBBA.events.emit('roomClick', BOBBA.view.hover or { floor = false })")
             sent = L.eval("BOBBA.platform.sent")
             print("click", c, "->", [(sent[i].name, dict(sent[i].data)) for i in range(1, len(sent) + 1)], "| selected", L.eval("BOBBA.room.selected"))
+            # (and through the server; the room drawn again with what came back)
+            state["sent"] = 0
+            pump()
+        G.ops = L.table()
+        V.dirty = True
+        for _ in range(3): V.panel.Paint(V.panel, w, h)
+        G.ops = L.table()
+        V.panel.Paint(V.panel, w, h)
+        picture = render.compose(L, G, render.paint(G, w, h, images), images)
+        picture.convert("RGB").save(out)
     print(out, "| wall height", V.room.wallHeight, "| units", [(x["name"], x["x"], x["y"]) for x in msg["units"]])
 
 def habbo(L, folder):

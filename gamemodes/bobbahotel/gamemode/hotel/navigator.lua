@@ -111,9 +111,9 @@ function NAV.create(player, data)
 	local model
 	for _, m in ipairs(NAV.MODELS) do if m[1] == tostring(data.model or "") then model = m end end
 	if not model then return nil, "unknown room model" end
-	-- (no Habbo Club yet: only the free models)
-	if model[3] > 0 then return nil, "that room model is for Habbo Club members" end
 	local key = P.playerKey(player)
+	local clubLevel = BOBBA.wallet and BOBBA.wallet.clubLevel(key) or 0
+	if model[3] > clubLevel then return nil, "that room model is for Habbo Club members" end
 	local count = BOBBA.store.row("SELECT COUNT(*) AS n FROM bobbahotel_rooms WHERE owner = ?", { key })
 	if tonumber(count and count.n or 0) >= NAV.MAX_ROOMS_PER_PLAYER then return nil, "you have too many rooms" end
 	local id, err = live.create(key, P.playerName(player), "model_" .. model[1], name)

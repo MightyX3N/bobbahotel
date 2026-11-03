@@ -70,3 +70,40 @@ for _, what in ipairs({ "floor", "wallpaper" }) do
 		if not args[1] or not BOBBA.live.setLook(u.room.id, what, args[1]) then reply(ply, "bobba_room_" .. what .. " <id>   (or default)") end
 	end)
 end
+
+-- bobba_give <player name or steamid64> <credits|duckets|diamonds|club> <amount>: gives a player money
+-- or days of Habbo Club (a minus takes it). For staff with bobba.staff.currency.
+concommand.Add("bobba_give", function(ply, _, args)
+	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.staff.currency") then reply(ply, "that's for staff") return end
+	local who, what, amount = args[1], args[2], tonumber(args[3])
+	if not who or not what or not amount then reply(ply, "bobba_give <player|steamid64> <credits|duckets|diamonds|club> <amount>") return end
+	local key
+	for _, p in ipairs(player.GetAll()) do
+		if p:SteamID64() == who or string.find(string.lower(p:Nick()), string.lower(who), 1, true) then key = BOBBA.platform.playerKey(p) break end
+	end
+	key = key or (who:match("^%d+$") and who)
+	if not key then reply(ply, "no one called " .. who) return end
+	if what == "club" then
+		BOBBA.wallet.addClub(key, amount)
+	elseif not BOBBA.wallet.add(key, what, amount) then
+		reply(ply, "couldn't: " .. what .. " isn't credits, duckets or diamonds, or they don't have that much")
+		return
+	end
+	local p = BOBBA.wallet.purse(key)
+	reply(ply, string.format("%s now has %d credits, %d duckets, %d diamonds, %d days of club", key, p.credits, p.duckets, p.diamonds, p.clubDays))
+end)
+
+-- bobba_wallet_setting <name> [value]: the hotel's money settings (wallet.start.credits,
+-- wallet.pay.every, wallet.pay.duckets, club.price.31, catalog.price, ...). For admins.
+concommand.Add("bobba_wallet_setting", function(ply, _, args)
+	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.admin.settings") then return end
+	if not args[1] then
+		for k, v in SortedPairs(BOBBA.wallet.DEFAULTS) do reply(ply, k .. " = " .. BOBBA.wallet.setting(k) .. "  (default " .. v .. ")") end
+		return
+	end
+	if args[2] then
+		BOBBA.store.setSetting(args[1], args[2])
+		if args[1]:find("^club%.") or args[1]:find("^catalog%.") then BOBBA.catalog.reset() end
+	end
+	reply(ply, args[1] .. " = " .. tostring(BOBBA.store.setting(args[1], "")))
+end)

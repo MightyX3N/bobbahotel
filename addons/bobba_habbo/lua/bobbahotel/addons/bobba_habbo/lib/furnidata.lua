@@ -5,7 +5,9 @@
 --   a furni's SWF: its pictures and XML (H.library), or on the server just what the room needs to
 --     know (H.furniInfo: size, height, directions, how many states).
 --
---   H.furnidata(function(fd, err) ... end)      fd.byClass["throne"] = { id, rev, x, y, walk, sit, lay, wall, name }
+--   H.furnidata(function(fd, err) ... end)      fd.byClass["throne"] = { id, rev, x, y, walk, sit, lay, wall, name,
+--                                                 line, offer, category, special }  (furniline, offerid (-1: not sold),
+--                                                 category, specialtype (1: an ordinary furni))
 --   H.furniLibrary("throne", function(lib, err) ... end)
 --   H.furniInfo("throne", function(info, err) ... end)
 --     info = { width, length, height, walk, sit, lay, directions = { 0, 2, 4, 6 }, states }
@@ -13,7 +15,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.FURNIDATA_INDEX_VERSION = "1"
+H.FURNIDATA_INDEX_VERSION = "2"
 
 -- A Habbo setting with its ${...} filled in (Habbo's settings refer to each other). Some settings
 -- are in the file more than once: the last one counts (it's the one that is filled in).
@@ -65,6 +67,8 @@ local function parse(text)
 					x = tonumber(tag(body, "xdim")) or 1, y = tonumber(tag(body, "ydim")) or 1,
 					walk = tag(body, "canstandon") == "1", sit = tag(body, "cansiton") == "1", lay = tag(body, "canlayon") == "1",
 					wall = wall, name = unescape(tag(body, "name")),
+					line = tag(body, "furniline") or "", offer = tonumber(tag(body, "offerid")) or -1,
+					category = tag(body, "category") or "", special = tonumber(tag(body, "specialtype")) or 1,
 				}
 			end
 			pos = d + 1
@@ -78,7 +82,7 @@ local function parse(text)
 end
 
 local INDEX = "furnidata/index"
-local FIELDS = { "id", "rev", "x", "y", "walk", "sit", "lay", "wall", "name" }
+local FIELDS = { "id", "rev", "x", "y", "walk", "sit", "lay", "wall", "name", "line", "offer", "category", "special" }
 
 local function writeIndex(byClass, length)
 	local lines = { H.FURNIDATA_INDEX_VERSION .. "\t" .. length }
@@ -105,10 +109,11 @@ local function readIndex(length)
 	for line in text:gmatch("[^\n]+") do
 		local c = {}
 		for v in (line .. "\t"):gmatch("([^\t]*)\t") do c[#c + 1] = v end
-		if #c == 10 then
+		if #c == 14 then
 			byClass[c[1]] = {
 				id = tonumber(c[2]), rev = tonumber(c[3]), x = tonumber(c[4]), y = tonumber(c[5]),
 				walk = c[6] == "1", sit = c[7] == "1", lay = c[8] == "1", wall = c[9] == "1", name = c[10],
+				line = c[11], offer = tonumber(c[12]) or -1, category = c[13], special = tonumber(c[14]) or 1,
 			}
 		end
 	end

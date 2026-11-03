@@ -249,7 +249,8 @@ function broadcast(r, name, data)
 end
 
 -- Puts a furni into a room. cb(item) or cb(nil, why) (the furni may first need looking up).
-function items.place(r, player, kind, x, y, dir, cb)
+-- existingId: a saved furni (from someone's inventory) put down instead of a new one.
+function items.place(r, player, kind, x, y, dir, cb, existingId)
 	cb = cb or function() end
 	x, y, dir = math.floor(tonumber(x) or -1), math.floor(tonumber(y) or -1), math.floor(tonumber(dir) or 0)
 	if type(kind) ~= "string" or kind == "" or #kind > 100 then cb(nil, "no such furni") return end
@@ -261,9 +262,19 @@ function items.place(r, player, kind, x, y, dir, cb)
 		local z, err = items.fits(r, def, x, y, dir)
 		if not z then cb(nil, err) return end
 		local owner = player and BOBBA.platform.playerKey(player) or "server"
-		BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
-			{ r.id, owner, kind, x, y, z, dir })
-		local id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
+		local id
+		if existingId then
+			-- (still in the inventory? it may have been placed meanwhile)
+			local row = BOBBA.store.row("SELECT owner FROM bobbahotel_items WHERE id = ? AND room = 0", { existingId })
+			if not row then cb(nil, "that isn't in your inventory any more") return end
+			owner = row.owner
+			BOBBA.store.query("UPDATE bobbahotel_items SET room = ?, x = ?, y = ?, z = ?, dir = ?, state = 0 WHERE id = ?", { r.id, x, y, z, dir, existingId })
+			id = existingId
+		else
+			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
+				{ r.id, owner, kind, x, y, z, dir })
+			id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
+		end
 		local it = { id = id, owner = owner, kind = kind, x = x, y = y, z = z, dir = dir, state = 0, def = def }
 		r.items[id] = it
 		local tiles = items.footprint(def, x, y, dir)
@@ -273,6 +284,10 @@ function items.place(r, player, kind, x, y, dir, cb)
 		BOBBA.events.emit("itemPlaced", r, it)
 		cb(it)
 	end)
+end
+
+function items.placeExisting(r, player, id, kind, x, y, dir, cb)
+	items.place(r, player, kind, x, y, dir, cb, id)
 end
 
 function items.move(r, player, id, x, y, dir)
@@ -307,13 +322,17 @@ function items.rotate(r, player, id)
 	return items.move(r, player, id, it.x, it.y, nextDir)
 end
 
--- No inventory yet: picking furni up takes it out of the room for good
+-- Picking furni up: back into its owner's inventory (Arcturus: RoomItemManager.pickUpItem)
 function items.pickup(r, player, id)
 	local it = r.items[tonumber(id) or -1]
 	if not it then return false, "no such furni" end
 	if not items.canEdit(player, r) then return false, "only the room's owner can pick furni up" end
 	r.items[it.id] = nil
-	BOBBA.store.query("DELETE FROM bobbahotel_items WHERE id = ?", { it.id })
+	if BOBBA.inventory then
+		BOBBA.inventory.take(it.id, it.owner, it.kind)
+	else
+		BOBBA.store.query("DELETE FROM bobbahotel_items WHERE id = ?", { it.id })
+	end
 	broadcast(r, "room.item.remove", { id = it.id })
 	if it.def then
 		local tiles = items.footprint(it.def, it.x, it.y, it.dir)
@@ -399,7 +418,7 @@ function items.start()
 	P.receive("room.item.place", function(player, data)
 		local r = room(player)
 		if not r then return end
-		if not BOBBA.perms.has(player, "bobba.staff.place") then fail(player, "placing furni from nowhere is for staff (no catalogue yet)") return end
+		if not BOBBA.perms.has(player, "bobba.staff.place") then fail(player, "placing furni from nowhere is for staff") return end
 		items.place(r, player, data.kind, data.x, data.y, data.dir, function(it, why) if not it then fail(player, why) end end)
 	end)
 	P.receive("room.item.move", function(player, data)

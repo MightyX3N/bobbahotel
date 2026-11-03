@@ -159,7 +159,8 @@ local function drawCreator(w, d)
 			local iy = top + (i - 1) * (itemH + 4) - off
 			if iy + itemH > top and iy < bottom then
 				local name, tiles, club = mdl[1], mdl[2], mdl[3]
-				local disabled = club > 0
+				local purse = BOBBA.hud and BOBBA.hud.purse
+				local disabled = club > ((purse and purse.clubLevel) or 0)
 				local active = m.model == name
 				d:click(mx, math.max(iy, top), mw, math.min(iy + itemH, bottom) - math.max(iy, top), function()
 					if not disabled then m.model = name end
