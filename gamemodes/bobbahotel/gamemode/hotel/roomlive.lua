@@ -411,6 +411,7 @@ function live.start()
 	BOBBA.catalog.start()
 	BOBBA.gifts.start()
 	BOBBA.access.start()
+	BOBBA.starter.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}
@@ -422,6 +423,8 @@ function live.start()
 		P.send("room.favourites", { ids = A.favourites(key) }, player)
 		P.send("room.home", { id = A.home(key) or 0 }, player)
 		if live.byPlayer[player] then return end
+		-- new here: first pick a room of your own (starter.lua)
+		if BOBBA.starter.maybeOffer(player) then return end
 		-- your home room (when you can go in), else the hotel's first room
 		local home = A.home(key)
 		if not (home and live.enter(player, home)) then live.enter(player, live.homeRoom()) end

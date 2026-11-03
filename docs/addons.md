@@ -34,3 +34,24 @@ Server owners switch addons off with `bobba_disabled_addons "id1,id2"`.
 
 Keep shared and server code to plain Lua where you can (no `!=`, `&&`, `//`, `continue`), so it also runs on
 the custom server later.
+
+## Starter rooms
+
+The hotel has no rooms for new players of its own; a content pack offers them. A new player (one who never
+chose a starter room and owns no room) picks one when they first come in, and gets it decorated, owned by
+them, as their home room, with a gift inside. Register as many as you like:
+
+```lua
+BOBBA.registry.register("starter_room", "mypack_beach", {
+	name = "Beach hut", order = 1, color = { r = 240, g = 200, b = 90 },  -- the picker's card
+	layout = "model_a", wallpaper = "101", floor = "202",                 -- ids your planes know
+	furni = {
+		{ kind = "my_table", x = 6, y = 4, dir = 0 },
+		{ kind = "my_window", wall = ":w=7,0 l=6,47 r" },              -- a wall furni: Habbo's wall location
+	},
+	gift = { kind = "my_lamp", box = "present_gen1", x = 9, y = 8, message = "Welcome!" },
+})
+```
+
+bobba_habbo registers Habbo's six classic coloured rooms (`habbo_classic_1` ... `_6`); replace or unregister
+them to offer your own instead.

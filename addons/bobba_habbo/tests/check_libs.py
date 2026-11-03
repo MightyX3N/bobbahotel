@@ -175,7 +175,7 @@ BOBBA = { platform = {
 	writeData = function(path, bytes) PY_FILES[path] = bytes end,
 	readData = function(path) return PY_FILES[path] end,
 	dataExists = function(path) return PY_FILES[path] ~= nil end,
-	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+	runAddonFile = function(folder, name) return dofile(name:find("^lib/") and (LIB_DIR .. "/" .. name:sub(5)) or (LIB_DIR .. "/../" .. name)) end,
 } }
 """)
 L2.globals().LIB_DIR = LIB.encode()
@@ -270,7 +270,7 @@ BOBBA = { platform = {
 	writeData = function(path, bytes) PY_FILES[path] = bytes end,
 	readData = function(path) return PY_FILES[path] end,
 	dataExists = function(path) return PY_FILES[path] ~= nil end,
-	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+	runAddonFile = function(folder, name) return dofile(name:find("^lib/") and (LIB_DIR .. "/" .. name:sub(5)) or (LIB_DIR .. "/../" .. name)) end,
 	clock = os.clock,
 	every = function(id, s, fn) STEPS = fn end,
 	stop = function(id) STEPS = nil end,
@@ -359,7 +359,7 @@ BOBBA = { platform = {
 	writeData = function(path, bytes) PY_FILES[path] = bytes end,
 	readData = function(path) return PY_FILES[path] end,
 	dataExists = function(path) return PY_FILES[path] ~= nil end,
-	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+	runAddonFile = function(folder, name) return dofile(name:find("^lib/") and (LIB_DIR .. "/" .. name:sub(5)) or (LIB_DIR .. "/../" .. name)) end,
 } }
 """)
 L3.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())
@@ -387,7 +387,7 @@ BOBBA = { platform = {
 	writeData = function(path, bytes) PY_FILES[path] = bytes end,
 	readData = function(path) return PY_FILES[path] end,
 	dataExists = function(path) return PY_FILES[path] ~= nil end,
-	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+	runAddonFile = function(folder, name) return dofile(name:find("^lib/") and (LIB_DIR .. "/" .. name:sub(5)) or (LIB_DIR .. "/../" .. name)) end,
 } }
 """)
 L4.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())
@@ -431,7 +431,7 @@ BOBBA = { platform = {
 	writeData = function(path, bytes) PY_FILES[path] = bytes end,
 	readData = function(path) return PY_FILES[path] end,
 	dataExists = function(path) return PY_FILES[path] ~= nil end,
-	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+	runAddonFile = function(folder, name) return dofile(name:find("^lib/") and (LIB_DIR .. "/" .. name:sub(5)) or (LIB_DIR .. "/../" .. name)) end,
 } }
 """)
     Lx.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())

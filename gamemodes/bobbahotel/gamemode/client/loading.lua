@@ -25,7 +25,8 @@ end
 -- how far it is: 0..1 (the room counts as one step, each check as one; the room is only there when
 -- the server has said what all its furni are)
 function LD.progress()
-	local roomThere = R and R.current and not (R.itemsComing and next(R.itemsComing))
+	-- (or the hotel view: a new player picking a room, someone waiting at a doorbell)
+	local roomThere = (R and R.current and not (R.itemsComing and next(R.itemsComing))) or (BOBBA.view and BOBBA.view.mode == "hotelview")
 	local total, done = 1, roomThere and 1 or 0
 	local allDone = done == 1
 	for _, id in ipairs(LD.order) do

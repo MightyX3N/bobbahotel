@@ -45,6 +45,9 @@ lib("roomcontent.lua")
 lib("chatstyles.lua")
 lib("figuredata.lua")
 
+-- the rooms new players pick from (Habbo's six classic ones)
+P.runAddonFile("bobba_habbo", "starterrooms.lua")
+
 -- client-only file, sent to players by the server
 if SERVER then
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/avatars.lua")
