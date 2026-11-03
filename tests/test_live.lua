@@ -152,22 +152,29 @@ T["wall height: per room, a default for new rooms, everyone in the room gets the
 	P.fromPlayer(mia, "room.ready")
 	P.fromPlayer(bo, "room.ready")
 	local home = BOBBA.live.homeRoom()
-	eq(BOBBA.live.info(home).wall_height, -1, "Habbo's default")
-	eq(BOBBA.live.setWallHeight(home, "0.6"), true)
-	eq(BOBBA.live.info(home).wall_height, 0.5, "steps of 0.25")
+	eq(BOBBA.live.info(home).wall_height, -1, "follows the hotel default")
+	eq(last(mia, "room.load").wallHeight, 0.375, "the hotel default: walls lined up with Habbo's")
+	eq(BOBBA.live.setWallHeight(home, "0.55"), true)
+	eq(BOBBA.live.info(home).wall_height, 0.5, "steps of 0.125")
 	eq(last(mia, "room.load").wallHeight, 0.5, "Mia got the new look")
 	eq(last(bo, "room.load").wallHeight, 0.5, "Bo too")
 	eq(#last(bo, "room.load").units, 2, "with everyone still there")
 	eq(BOBBA.live.setWallHeight(home, 17), false, "too high")
 	eq(BOBBA.live.setWallHeight(home, "abc"), false)
 	eq(BOBBA.live.setWallHeight(home, -0.5), false)
-	eq(BOBBA.live.setWallHeight(home, -1), true, "back to automatic")
+	eq(BOBBA.live.setWallHeight(home, -1), true, "back to following the default")
 	eq(BOBBA.live.setDefaultWallHeight(1), true)
+	eq(last(mia, "room.load").wallHeight, 1, "a new hotel default reaches rooms that follow it")
 	local id = BOBBA.live.create("1", "Mia", "model_b", "Tall")
-	eq(BOBBA.live.info(id).wall_height, 1, "new rooms get the default")
+	eq(BOBBA.live.wallHeightOf(BOBBA.live.info(id)), 1, "new rooms follow the default")
 	-- and the client builds taller walls from it
-	local room = BOBBA.rooms.geometryFor(BOBBA.registry.get("layout", "model_b").heightmap, { wallHeight = BOBBA.live.info(id).wall_height })
+	local room = BOBBA.rooms.geometryFor(BOBBA.registry.get("layout", "model_b").heightmap, { wallHeight = 1 })
 	eq(room.wallHeight, 4.6)
+	BOBBA.rooms.clearCache()
+	local habbo = BOBBA.rooms.geometryFor(BOBBA.registry.get("layout", "model_a").heightmap, { wallHeight = BOBBA.live.DEFAULT_WALL_HEIGHT })
+	local wall
+	for _, p in ipairs(habbo.planes) do if p.type == BOBBA.rooms.PLANE_WALL and p.right[3] > 1 then wall = p break end end
+	eq(wall.right[3], 4.35, "walls 4.35 high with the hotel default")
 end
 
 return T

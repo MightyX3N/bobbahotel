@@ -45,7 +45,7 @@ function live.create(ownerKey, ownerName, layoutId, name)
 	name = clean(name)
 	if name == "" then return nil, "a room needs a name" end
 	BOBBA.store.query("INSERT INTO bobbahotel_rooms (owner, owner_name, name, layout, wall_height, created) VALUES (?, ?, ?, ?, ?, ?)",
-		{ tostring(ownerKey), clean(ownerName), name, layoutId, live.defaultWallHeight(), math.floor(BOBBA.platform.time()) })
+		{ tostring(ownerKey), clean(ownerName), name, layoutId, -1, math.floor(BOBBA.platform.time()) })
 	local id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
 	BOBBA.events.emit("roomCreated", id)
 	return id
@@ -65,24 +65,37 @@ function live.list()
 	return rows
 end
 
--- Wall height (Habbo's floor plan editor setting, as Nitro reads it): -1 = automatic (Habbo's
--- default walls, 3.6 high), otherwise 0 to 16 in steps of 0.25; walls are then 3.6 + 2 x that high.
+-- Wall height (Habbo's floor plan editor setting, as Nitro reads it): 0 to 16 in steps of 0.125,
+-- walls are then 3.6 + 2 x that high; -1 = Nitro's automatic walls (3.6 + the room's highest floor).
+-- A room set to -1 follows the hotel's default. The hotel's default, 0.375, makes walls 4.35 high:
+-- measured from Habbo, where the wall above the door is about 0.34 of the door's height (Nitro's
+-- automatic wall leaves only 0.35 of 3.6 above its 3.25 high door).
+live.DEFAULT_WALL_HEIGHT = 0.375
+
 function live.validWallHeight(v)
 	v = tonumber(v)
 	if not v then return nil end
 	if v == -1 then return -1 end
 	if v < 0 or v > 16 then return nil end
-	return math.floor(v * 4 + 0.5) / 4
+	return math.floor(v * 8 + 0.5) / 8
 end
 
+-- the hotel's default (-1 here means Nitro's automatic walls)
 function live.defaultWallHeight()
-	return live.validWallHeight(BOBBA.store.setting("default_wall_height", "-1")) or -1
+	return live.validWallHeight(BOBBA.store.setting("default_wall_height", tostring(live.DEFAULT_WALL_HEIGHT))) or live.DEFAULT_WALL_HEIGHT
+end
+
+-- what a room's walls are built with: its own setting, or the hotel's default
+function live.wallHeightOf(info)
+	if info.wall_height and info.wall_height ~= -1 then return info.wall_height end
+	return live.defaultWallHeight()
 end
 
 function live.setDefaultWallHeight(v)
 	v = live.validWallHeight(v)
 	if not v then return false end
 	BOBBA.store.setSetting("default_wall_height", v)
+	for id in pairs(live.rooms) do live.refresh(id) end
 	return true
 end
 
@@ -140,7 +153,7 @@ function live.refresh(id)
 		local u = r.units[uid]
 		BOBBA.platform.send("room.load", {
 			id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
-			heightmap = r.layout.heightmap, wallHeight = r.info.wall_height, you = u.id, units = units,
+			heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
 		}, u.player)
 	end
 end
@@ -200,7 +213,7 @@ function live.enter(player, id)
 	for _, uid in ipairs(r.order) do units[#units + 1] = snapshot(r.units[uid]) end
 	BOBBA.platform.send("room.load", {
 		id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
-		heightmap = r.layout.heightmap, wallHeight = r.info.wall_height, you = u.id, units = units,
+		heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
 	}, player)
 	for _, other in ipairs(players(r)) do
 		if other ~= player then BOBBA.platform.send("room.units", { snapshot(u) }, other) end
