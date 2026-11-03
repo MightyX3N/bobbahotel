@@ -76,6 +76,8 @@ local function normals(a)
 	return num(a.normalMinX, -1), num(a.normalMaxX, 1), num(a.normalMinY, -1), num(a.normalMaxY, 1)
 end
 
+local masks
+
 -- one section (wallData, floorData): its planes, materials and textures
 local function section(node, planeName, assets, images)
 	local s = { planes = {}, materials = {}, textures = {} }
@@ -130,7 +132,10 @@ local function section(node, planeName, assets, images)
 		local id = p.attrs.id
 		if id and not s.planes[id] then
 			local plane = { sizes = {}, visualizations = {} }
-			for _, v in ipairs(kids(p, "visualization")) do
+			-- (a landscape's are animatedVisualization: its layers, and its moving clouds, later)
+			local vs = kids(p, "visualization")
+			if #vs == 0 then vs = kids(p, "animatedVisualization") end
+			for _, v in ipairs(vs) do
 				local size = num(v.attrs.size, 64)
 				if not plane.visualizations[size] then
 					local layers = {}
@@ -154,6 +159,37 @@ local function section(node, planeName, assets, images)
 		end
 	end
 	return s
+end
+
+-- PlaneMaskManager.parseMasks: the holes windows cut in walls, per size, with the normals each
+-- picture is for
+function masks(node, assets, images)
+	local out = {}
+	for _, m in ipairs(kids(node, "mask")) do
+		local id = m.attrs.id
+		if id and not out[id] then
+			local mask = { sizes = {}, visualizations = {} }
+			for _, v in ipairs(kids(m, "maskVisualization")) do
+				local size = num(v.attrs.size, 64)
+				local bitmaps = {}
+				for _, b in ipairs(kids(v, "bitmap")) do
+					local name = b.attrs.assetName
+					local asset = name and assets[name]
+					local img = asset and images[asset.source or name]
+					if img then
+						local nx0, nx1, ny0, ny1 = normals(b.attrs)
+						bitmaps[#bitmaps + 1] = { image = img, flipH = asset.flipH, x = asset.x, y = asset.y,
+							normalMinX = nx0, normalMaxX = nx1, normalMinY = ny0, normalMaxY = ny1 }
+					end
+				end
+				mask.visualizations[size] = bitmaps
+				mask.sizes[#mask.sizes + 1] = size
+			end
+			table.sort(mask.sizes)
+			out[id] = mask
+		end
+	end
+	return out
 end
 
 local roomContent, waiting
@@ -181,17 +217,60 @@ function H.roomContent(cb)
 				local assets = {}
 				for _, a in ipairs(H.xml.all(H.xml.parse(assetsXml, H.yield), "asset")) do
 					local n = a.attrs.name
-					if n then assets[n] = { source = a.attrs.source, flipH = a.attrs.flipH == "1" } end
+					if n then assets[n] = { source = a.attrs.source, flipH = a.attrs.flipH == "1", x = num(a.attrs.x, 0), y = num(a.attrs.y, 0) } end
 				end
 				local root = H.xml.find(H.xml.parse(vis, H.yield), "visualizationData")
 				if not root then done(nil, "Habbo's room visualization couldn't be read") return end
 				local rc = {
 					floor = section(kid(root, "floorData"), "floor", assets, images),
 					wall = section(kid(root, "wallData"), "wall", assets, images),
+					landscape = section(kid(root, "landscapeData"), "landscape", assets, images),
+					masks = masks(kid(root, "maskData"), assets, images),
 				}
 				done(rc)
 			end)
 		end, { eager = true })
+	end)
+end
+
+-- The ids of Habbo's floors, wallpapers and landscapes, from the room content's XML alone (the
+-- server's catalogue sells them): cb({ floor = { "101", ... }, wall = { ... }, landscape = { ... } })
+-- or cb(nil, why)
+local contentIds, idsWaiting
+function H.roomContentIds(cb)
+	if contentIds then cb(contentIds) return end
+	if idsWaiting then idsWaiting[#idsWaiting + 1] = cb return end
+	idsWaiting = { cb }
+	local function done(ids, err)
+		local list = idsWaiting
+		idsWaiting = nil
+		contentIds = ids
+		for _, w in ipairs(list) do w(ids, err) end
+	end
+	fetchRoomContent(function(ok, err)
+		if not ok then done(nil, "Habbo's room content: " .. tostring(err)) return end
+		H.download(H.ROOM_CONTENT, "file://" .. rawPath(), function(bytes, why)
+			if not bytes then done(nil, why) return end
+			H.work(function()
+				local swf, why2 = H.swf.read(bytes, H.inflate, { images = false })
+				if not swf then done(nil, tostring(why2)) return end
+				local vis
+				for name, e in pairs(swf.byName) do
+					if e.binary and name:match("_room_visualization$") then vis = e.binary end
+				end
+				if not vis then done(nil, "Habbo's room content has no room visualization") return end
+				local ids = {}
+				for kind, tag in pairs({ floor = "floor", wall = "wall", landscape = "landscape" }) do
+					local part = vis:match("<" .. tag .. "Data>(.-)</" .. tag .. "Data>") or ""
+					local list, seen = {}, {}
+					for id in part:gmatch("<" .. tag .. ' id="([^"]+)"') do
+						if id ~= "default" and not seen[id] then seen[id] = true list[#list + 1] = id end
+					end
+					ids[kind] = list
+				end
+				done(ids)
+			end)
+		end)
 	end)
 end
 
@@ -432,4 +511,70 @@ function H.paintPlane(rc, kind, id, plane, size)
 		end
 	end
 	return out
+end
+
+-- --- a window's hole -----------------------------------------------------------------------------------
+-- The hole a mask cuts (PlaneMaskManager.updateMask: its picture at the mask's spot, moved by the
+-- asset's offset, mirrored when the asset is): rectangles { x0, x1, y0, y1 } in the plane's texture
+-- pixels from that spot, where the picture is solid. size: the room's scale; normal: the plane's.
+-- nil when there's no such mask (or its picture can't be read).
+local shapes = {}
+function H.maskShape(rc, maskType, size, normal)
+	local mask = rc.masks and rc.masks[maskType]
+	if not mask or #mask.sizes == 0 then return nil end
+	-- PlaneMask.getSizeIndex
+	local index = 1
+	for i = 2, #mask.sizes do
+		if mask.sizes[i] > size then
+			if (mask.sizes[i] - size) < (size - mask.sizes[i - 1]) then index = i end
+			break
+		end
+		index = i
+	end
+	local bitmap
+	for _, b in ipairs(mask.visualizations[mask.sizes[index]] or {}) do
+		if inRange(normal, b) then bitmap = b break end
+	end
+	if not bitmap then return nil end
+	local key = bitmap.image.path .. (bitmap.flipH and ":h" or "") .. ":" .. bitmap.x .. "," .. bitmap.y
+	local shape = shapes[key]
+	if shape ~= nil then return shape or nil end
+	H.image(bitmap.image.path)
+	local alpha = H.png.alphaReader(P.readData(bitmap.image.path), H.inflate)
+	if not alpha then shapes[key] = false return nil end
+	local w, h = bitmap.image.width, bitmap.image.height
+	-- where the picture's left edge is from the spot (GraphicAsset offsetX: -x, or x when mirrored)
+	local left = bitmap.flipH and (bitmap.x - w) or -bitmap.x
+	local top = -bitmap.y
+	-- the solid runs of each row, rows with the same runs joined into one rectangle
+	local rects, open = {}, {}
+	local function rowRuns(y)
+		local runs, start = {}, nil
+		for x = 0, w - 1 do
+			local sx = bitmap.flipH and (w - 1 - x) or x
+			local on = alpha(sx, y) >= 128
+			if on and not start then start = x end
+			if not on and start then runs[#runs + 1] = { start, x } start = nil end
+		end
+		if start then runs[#runs + 1] = { start, w } end
+		return runs
+	end
+	local function key2(r) return r[1] .. ":" .. r[2] end
+	for y = 0, h do
+		local runs = (y < h) and rowRuns(y) or {}
+		local now = {}
+		for _, r in ipairs(runs) do now[key2(r)] = r end
+		-- runs that end here close their rectangle
+		for k, o in pairs(open) do
+			if not now[k] then
+				rects[#rects + 1] = { left + o.x0, left + o.x1, top + o.y0, top + y }
+				open[k] = nil
+			end
+		end
+		for k, r in pairs(now) do
+			if not open[k] then open[k] = { x0 = r[1], x1 = r[2], y0 = y } end
+		end
+	end
+	shapes[key] = rects
+	return rects
 end

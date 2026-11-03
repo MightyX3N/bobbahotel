@@ -30,11 +30,22 @@ end
 -- the kind (Nitro's furniture type) for a furni's file, loaded once
 local function typeFor(kind)
 	local base, color = H.furniBase(kind)
+	if FU.aliases and FU.aliases[base] then base = FU.aliases[base] kind = base end
 	local t = FU.types[base]
 	if t then return t, color end
 	if FU.failed[base] or FU.loading[base] then return nil end
 	FU.loading[base] = true
 	H.furniLibrary(kind, function(lib, err)
+		-- (a poster with no file of its own: Habbo's "poster" file)
+		if not lib and H.posterNumber(base) then
+			FU.loading[base] = nil
+			FU.types[base] = nil
+			local t2 = typeFor("poster")
+			if t2 then FU.types[base] = t2 return end
+			FU.aliases = FU.aliases or {}
+			FU.aliases[base] = "poster"
+			return
+		end
 		if not lib then
 			FU.failed[base] = tostring(err)
 			print("[Bobba] furni " .. kind .. ": " .. tostring(err))
@@ -56,6 +67,8 @@ local function typeFor(kind)
 			end
 			made.images = images
 			made.base = base
+			-- (a window's hole in the wall: its logic's mask, Nitro's FurnitureWindowLogic)
+			made.maskType = (findXml(lib, "_logic") or ""):match('<mask%s+type="([^"]+)"')
 			H.warm(lib) -- (its pictures read into memory now, a little each frame, not when first drawn)
 			FU.types[base] = made
 			FU.loading[base] = nil
@@ -123,6 +136,12 @@ function FU.draw(item, info)
 	if not t then return nil end
 	local e = instance(item, t)
 	local now = info.now
+	-- (a stickie's colour is its data's: FurnitureStickieLogic, Habbo's four colours 1 to 4)
+	if t.logicType == "furniture_stickie" then
+		local hex = tostring(item.data or ""):sub(1, 6):upper()
+		color = 4
+		for i, c in ipairs({ "9CCEFF", "FF9CFF", "9CFF9C", "FFFF33" }) do if c == hex then color = i end end
+	end
 	NF.setState(e.furni, { direction = (item.dir or 0) * 45, state = item.state or 0, color = color, time = math.floor(now * 1000) })
 	local frame = math.floor(now * ANIMATION_FPS)
 	if frame ~= e.frame or e.dirty ~= (item.dir or 0) .. ":" .. (item.state or 0) then
@@ -184,12 +203,26 @@ function FU.info(kind)
 	end
 	if not fdCache then return nil end
 	local base = H.furniBase(kind)
-	local f = fdCache.byClass[kind] or fdCache.byClass[base]
+	local f = H.furniEntry(fdCache, kind)
 	if not f then return nil end
+	local name = f.name
+	-- (a poster's name is its number's: Habbo's poster_<n>_name)
+	local poster = H.posterNumber(kind)
+	if poster then name = BOBBA.lang.has("poster_" .. poster .. "_name") and BOBBA.lang.get("poster_" .. poster .. "_name") or name end
+	-- (Habbo's wallpapers, floors and landscapes: put on the room; their names are the inventory's)
+	local paint = (f.special == 2 and "wallpaper") or (f.special == 3 and "floor") or (f.special == 4 and "landscape") or nil
+	if paint and (name or "") == "" then
+		local key = "inventory.furni.item." .. paint .. ".name"
+		name = BOBBA.lang.has(key) and BOBBA.lang.get(key) or (paint:sub(1, 1):upper() .. paint:sub(2))
+	end
 	-- (logic: Nitro's logic type, from the furni's file once it's loaded: furniture_trophy, ...)
+	-- (sizeX, sizeZ, centerZ: how big a wall furni is on the wall, Nitro's FURNITURE_SIZE_X / _Z / CENTER_Z,
+	-- which FurnitureLogic makes half its height)
 	local t = FU.types[base]
-	return { name = f.name, sit = f.sit, lay = f.lay, walk = f.walk, width = f.x, length = f.y, wall = f.wall,
-		logic = t and t.logicType or nil, category = f.category }
+	local dims = t and t.logic
+	return { name = name, sit = f.sit, lay = f.lay, walk = f.walk, width = f.x, length = f.y, wall = f.wall,
+		logic = t and t.logicType or nil, category = f.category, maskType = t and t.maskType or nil, paint = paint,
+		sizeX = dims and dims.x or nil, sizeZ = dims and dims.z or nil, centerZ = dims and dims.z / 2 or nil }
 end
 
 -- the furni's icon: Nitro's getFurnitureFloorIcon, the furni drawn at size 1 (its "icon"

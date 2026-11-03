@@ -63,7 +63,7 @@ function G.send(player, data)
 	end
 	local tag = P.playerName(player) .. "\t" .. message .. "\t" .. face
 	local present = BOBBA.inventory.give(toKey, box, 1, tag)[1]
-	local inside = offer.trophy and CAT.engraving(player, data.extra) or ""
+	local inside = offer.trophy and CAT.engraving(player, data.extra) or offer.data or ""
 	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_gifts (id, kind, data) VALUES (?, ?, ?)", { present.id, offer.kind, inside })
 	BOBBA.events.emit("giftSent", key, toKey, offer)
 	return true, toName

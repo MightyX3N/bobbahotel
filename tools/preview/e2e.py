@@ -60,6 +60,7 @@ def main():
     ap.add_argument("--mine", action="store_true", help="the room is the player's own")
     ap.add_argument("--floor", help="the room's floor id")
     ap.add_argument("--wallpaper", help="the room's wallpaper id")
+    ap.add_argument("--landscape", help="the room's landscape id (seen through windows)")
     ap.add_argument("--say", help="what the player says, then what happens: text[|kind[|seconds later]];... (kind talk/shout/whisper)")
     ap.add_argument("--editor", action="store_true", help="open the avatar editor over the room (needs --habbo)")
     ap.add_argument("--editor-clicks", help="then click in it: x,y in CSS pixels from its corner; wheel:x,y,n scrolls;...")
@@ -87,14 +88,17 @@ def main():
         r = S.eval("function(id) return BOBBA.live.rooms[id] end")
         S.eval("BOBBA.live.enter")(me, room_id)
         for spec in a.furni.split(";"):
-            p = spec.split(",")
-            res = S.eval("""function(id, kind, x, y, dir, state)
+            # (a wall furni: kind@its wall location, e.g. window_basic@:w=6,0 l=10,40 r)
+            wall = None
+            if "@" in spec: spec, wall = spec.split("@", 1); p = [spec, "0", "0", "0"]
+            else: p = spec.split(",")
+            res = S.eval("""function(id, kind, x, y, dir, state, wall)
                 local out
-                BOBBA.items.place(BOBBA.live.rooms[id], nil, kind, x, y, dir, function(it, why) out = it and "ok" or why if it and state ~= 0 then it.state = state BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end end)
+                BOBBA.items.place(BOBBA.live.rooms[id], nil, kind, x, y, dir, function(it, why) out = it and "ok" or why if it and state ~= 0 then it.state = state BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end end, nil, wall)
                 for _ = 1, 200 do if out then break end BOBBA.platform.runTimers() end
-                return out end""")(room_id, p[0], int(p[1]), int(p[2]), int(p[3]), int(p[4]) if len(p) > 4 else 0)
-            print("furni", spec, "->", res)
-    for what in ("floor", "wallpaper"):
+                return out end""")(room_id, p[0], int(p[1]), int(p[2]), int(p[3]), int(p[4]) if len(p) > 4 else 0, wall)
+            print("furni", spec, wall or "", "->", res)
+    for what in ("floor", "wallpaper", "landscape"):
         if getattr(a, what): S.eval("BOBBA.live.setLook")(room_id, what, getattr(a, what))
     S.eval("BOBBA.platform.fromPlayer")(me, "room.enter", S.table_from({"id": room_id}))
     if a.walk:
@@ -173,6 +177,7 @@ def main():
     V = L.eval("BOBBA.view")
     V.zoomNow = a.zoom
     V.zoomTarget = a.zoom
+    G.run("Think")  # (what the client works out each frame: the windows' holes, ...)
     V.dirty = True
     V.panel.Paint(V.panel, w, h)
     out = os.path.join(ROOT, "out", "preview", a.out)
@@ -224,7 +229,8 @@ def main():
               "| sent", [dict(x.data) for x in L.eval("BOBBA.platform.sent").values() if x.name == "user.figure"])
     # clicks on the toolbar and windows; what the client sends goes through the server and back
     FORWARD = ("navigator.search", "navigator.create", "room.enter", "user.figure", "user.purse.get", "catalog.index", "catalog.page",
-               "catalog.buy", "catalog.search", "inventory.get", "inventory.place", "room.item.pickup")
+               "catalog.buy", "catalog.search", "inventory.get", "inventory.place", "room.item.pickup",
+               "room.item.use", "room.item.stickie", "room.item.stickie.delete", "room.item.dimmer", "room.item.move")
     DELIVER = ("navigator.result", "navigator.created", "room.load", "room.error", "room.units", "user.purse", "catalog.index",
                "catalog.page", "catalog.bought", "catalog.error", "catalog.search", "inventory.items", "inventory.added",
                "inventory.removed", "room.items", "room.item.remove")
@@ -298,6 +304,13 @@ def main():
             G.ops = L.table()
             V.panel.Paint(V.panel, w, h)
             picture = render.paint(G, w, h, images)
+    if a.hud_click and L.eval("BOBBA.room.current") is not None:
+        # the room as it is after the clicks (furni changed, the mood light, ...)
+        G.run("Think")
+        V.dirty = True
+        G.ops = L.table()
+        V.panel.Paint(V.panel, w, h)
+        picture = render.paint(G, w, h, images)
     # the toolbar, purse, room tools, chat input and windows over the room
     picture = render.compose(L, G, picture, images)
     picture.convert("RGB").save(out)
@@ -400,7 +413,9 @@ def habbo_server(S, folder):
     settings = (b"x=1\nflash.client.url=https://images.habbo.com/gordon/" + SETTINGS_REV + b"/\n"
                 b"flash.dynamic.download.url=//images.habbo.com/dcr/hof_furni/\n"
                 b"furnidata.load.url=https://www.habbo.com/gamedata/furnidata_xml/" + FURNIDATA_REV + b"\n"
-                b"external.figurepartlist.txt=https://www.habbo.com/gamedata/figuredata/" + FIGUREDATA_REV + b"\n")
+                b"external.figurepartlist.txt=https://www.habbo.com/gamedata/figuredata/" + FIGUREDATA_REV + b"\n"
+                # (the texts: from the cache's remembered/texts.txt, when it has one; the posters' names)
+                b"external.texts.txt=https://www.habbo.com/gamedata/external_flash_texts/1\n")
     def http(url, ok, fail):
         u = url.decode() if isinstance(url, bytes) else url
         if u == "https://www.habbo.com/gamedata/external_variables/1": ok(settings)

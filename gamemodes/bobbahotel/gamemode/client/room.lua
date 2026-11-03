@@ -31,7 +31,8 @@ function R.show()
 	local c = R.current
 	if not c then return end
 	V.mode = "room"
-	V.look = { floor = c.floor or "", wall = c.wallpaper or "" }
+	V.look = { floor = c.floor or "", wall = c.wallpaper or "", landscape = c.landscape or "" }
+	R.paintPreview = nil
 	-- (the room's name is shown by the room tools, hud.lua)
 	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight }))
 end
@@ -54,15 +55,91 @@ local function setItem(s)
 		it = { id = s.id }
 		R.items[s.id] = it
 	end
-	it.kind, it.x, it.y, it.z, it.dir, it.state, it.data = s.kind, s.x, s.y, s.z, s.dir, s.state, s.data
+	it.kind, it.x, it.y, it.z, it.dir, it.state, it.data, it.wall = s.kind, s.x, s.y, s.z, s.dir, s.state, s.data, s.wall
 	-- moved by a roller: it slides there (Nitro's ObjectRollingUpdate, over half a second)
 	if s.slide then it.slideFrom, it.slideStart = s.slide, SysTime() else it.slideFrom = nil end
 	return it
 end
 
+-- --- wall furni: where they hang (Nitro's LegacyWallGeometry, scale 32) ---------------------------
+-- Habbo says where with ":w=x,y l=localX,localY l|r": the wall tile, a point on it (pixels at
+-- scale 32) and which wall (l: the left one, facing 2; r: the right one, facing 4).
+local WALL_SCALE = 32
+
+-- LegacyWallGeometry.getHeight: the room's tile heights (the walls' tiles have their floor's)
+function R.wallTileHeight(x, y)
+	local row = V.room and V.room.heights and V.room.heights[y + 1]
+	return row and row[x + 1] or 0
+end
+
+-- LegacyWallGeometry.getLocation: the point in the room (x, y, z) and the furni's direction
+function R.wallLocation(wall)
+	local wx, wy, lx, ly, side = tostring(wall or ""):match("^:w=(%-?%d+),(%-?%d+) l=(%-?%d+),(%-?%d+) ([lr])$")
+	if not wx then return nil end
+	wx, wy, lx, ly = tonumber(wx), tonumber(wy), tonumber(lx), tonumber(ly)
+	local half = WALL_SCALE / 2
+	local x, y, z = wx, wy, R.wallTileHeight(wx, wy)
+	if side == "r" then
+		x = x + (lx / half - 0.5)
+		y = y + 0.5
+		z = z - (ly - lx / 2) / half
+		return x, y, z, 4
+	end
+	y = y + ((half - lx) / half - 0.5)
+	x = x + 0.5
+	z = z - (ly - (half - lx) / 2) / half
+	return x, y, z, 2
+end
+
+-- LegacyWallGeometry.getOldLocationString: a point on a wall (direction 90 = the left wall, 180 =
+-- the right one) as Habbo's wall location
+function R.wallString(x, y, z, direction)
+	local half = WALL_SCALE / 2
+	local wx, wy, lx, ly, side
+	if direction == 90 then
+		wx, wy = math.floor(x - 0.5), math.floor(y + 0.5)
+		local h = R.wallTileHeight(wx, wy)
+		lx = half - ((y - wy) + 0.5) * half
+		ly = (h - z) * half + (half - lx) / 2
+		side = "l"
+	elseif direction == 180 then
+		wx, wy = math.floor(x + 0.5), math.floor(y - 0.5)
+		local h = R.wallTileHeight(wx, wy)
+		lx = ((x + 0.5) - wx) * half
+		ly = (h - z) * half + lx / 2
+		side = "r"
+	else
+		return nil
+	end
+	local function trunc(n) return n < 0 and math.ceil(n) or math.floor(n) end
+	return ":w=" .. trunc(wx) .. "," .. trunc(wy) .. " l=" .. trunc(lx) .. "," .. trunc(ly) .. " " .. side
+end
+
+-- Nitro's validateWallItemLocation: where on a wall a furni goes for the mouse at wallX, wallY on
+-- its plane (moved in so all of it is on the wall); x, y, z or nil when it doesn't fit
+function R.wallPlacement(plane, wallX, wallY, sizeX, sizeZ, centerZ)
+	local p = V.room and V.room.planes[plane + 1]
+	if not p then return nil end
+	local function len(v) return math.sqrt(v[1] * v[1] + v[2] * v[2] + v[3] * v[3]) end
+	local ll, rl = len(p.left), len(p.right)
+	if ll == 0 or rl == 0 then return nil end
+	if wallX < sizeX / 2 and wallX <= ll - sizeX / 2 then wallX = sizeX / 2
+	elseif wallX >= sizeX / 2 and wallX > ll - sizeX / 2 then wallX = ll - sizeX / 2 end
+	if wallY < centerZ and wallY <= rl - (sizeZ - centerZ) then wallY = centerZ
+	elseif wallY >= centerZ and wallY > rl - (sizeZ - centerZ) then wallY = rl - (sizeZ - centerZ) end
+	if wallX < sizeX / 2 or wallX > ll - sizeX / 2 or wallY < centerZ or wallY > rl - (sizeZ - centerZ) then return nil end
+	local a, b = wallX / ll, wallY / rl
+	return p.loc[1] + p.left[1] * a + p.right[1] * b, p.loc[2] + p.left[2] * a + p.right[2] * b, p.loc[3] + p.left[3] * a + p.right[3] * b
+end
+
 local SLIDE_TIME = 0.5
--- where a furni is drawn now (between where it was and where it is while sliding)
+-- where a furni is drawn now (between where it was and where it is while sliding; a wall furni where
+-- it hangs)
 local function itemPosition(it)
+	if it.wall then
+		local x, y, z, dir = R.wallLocation(it.wall)
+		if x then it.dir = dir return x, y, z end
+	end
 	local f = it.slideFrom
 	if not f then return it.x, it.y, it.z end
 	local k = (SysTime() - it.slideStart) / SLIDE_TIME
@@ -194,14 +271,35 @@ end
 -- own a hair more (so you're on top of someone on the same tile)
 local AVATAR_DEPTH, AVATAR_LAY_DEPTH, OWN_DEPTH = -0.01, -0.409, 0.001
 
+local function info(kind)
+	return R.furniInfo and R.furniInfo(kind) or nil
+end
+
+-- where a wall furni being placed would hang with the mouse over a wall: its wall location, or nil
+local function wallSpot(kind, h)
+	if not h or h.type ~= 2 or not h.direction then return nil end
+	local fi = info(kind)
+	-- (its size on the wall: the furni's logic dimensions, once its file is loaded)
+	local x, y, z = R.wallPlacement(h.plane, h.wallX, h.wallY, fi and fi.sizeX or 1, fi and fi.sizeZ or 1, fi and fi.centerZ or 0)
+	if not x then return nil end
+	return R.wallString(x, y, z, h.direction)
+end
+
 -- the furni being placed or moved: where the mouse is
 local function ghost()
 	local pl = R.placing
 	local h = V.hover
-	if not pl or not h or not h.floor then return nil end
+	if not pl or not h then return nil end
 	-- the same table each frame (the addon keeps the furni's animation with it)
 	local g = pl.ghost or { id = pl.id or "ghost", kind = pl.kind, state = 0, ghost = true }
 	pl.ghost = g
+	local fi = info(pl.kind)
+	if fi and fi.wall then
+		g.wall = wallSpot(pl.kind, h)
+		if not g.wall then return nil end
+		return g
+	end
+	if not h.floor then return nil end
 	g.x, g.y, g.z, g.dir = h.tileX, h.tileY, h.tileZ, pl.dir
 	return g
 end
@@ -261,6 +359,15 @@ V.drawUnits = function(phase)
 		end
 	end
 	if phase == "behind" then return #list > 0 end
+	-- the mood light over the whole room (nitro-react's AdjustmentFilter: each colour multiplied)
+	local t = V.roomTint
+	if t then
+		render.OverrideBlend(true, BLEND_DST_COLOR, BLEND_ZERO, BLENDFUNC_ADD)
+		draw.NoTexture()
+		surface.SetDrawColor(t.r, t.g, t.b, 255)
+		surface.DrawRect(0, 0, ScrW(), ScrH())
+		render.OverrideBlend(false)
+	end
 	R.hits = hits
 	R.unitHits = unitHits
 	for _, u in pairs(R.units) do drawName(u) end
@@ -289,25 +396,29 @@ function R.itemAt(mx, my)
 	return nil
 end
 
-local function info(kind)
-	return R.furniInfo and R.furniInfo(kind) or nil
-end
-
 -- clicking: placing a furni puts it down; a furni is selected (and you walk onto it when it's sat,
 -- laid or walked on; twice quickly uses it); the floor is walked to
 local lastClick = { id = nil, t = 0 }
 BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 	if V.mode ~= "room" then return end
+	if R.placing and R.placing.paint then
+		-- a wallpaper, floor or landscape: onto the room (Nitro previews it while the mouse is on the room)
+		P.send("inventory.place", { id = R.placing.inventoryId })
+		R.placing = nil
+		return
+	end
 	if R.placing then
-		if hit.floor then
-			local pl = R.placing
+		local pl = R.placing
+		local fi = info(pl.kind)
+		local wall = fi and fi.wall and wallSpot(pl.kind, hit) or nil
+		if hit.floor and not (fi and fi.wall) or wall then
 			if pl.id then
-				P.send("room.item.move", { id = pl.id, x = hit.tileX, y = hit.tileY, dir = pl.dir })
+				P.send("room.item.move", { id = pl.id, x = hit.tileX, y = hit.tileY, dir = pl.dir, wall = wall })
 				R.placing = nil
 			elseif pl.inventoryId then
 				-- from the inventory (Nitro's attemptItemPlacement: one of the group); with the setting
 				-- "Place multiple objects" the next of the same kind follows the mouse straight away
-				P.send("inventory.place", { id = pl.inventoryId, x = hit.tileX, y = hit.tileY, dir = pl.dir })
+				P.send("inventory.place", { id = pl.inventoryId, x = hit.tileX, y = hit.tileY, dir = pl.dir, wall = wall })
 				local nextId = GetConVar("bobba_setting_placemultiple") and GetConVar("bobba_setting_placemultiple"):GetBool()
 					and BOBBA.shop and BOBBA.shop.nextOfKind and BOBBA.shop.nextOfKind(pl.kind, pl.inventoryId)
 				if nextId then
@@ -316,7 +427,7 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 					R.placing = nil
 				end
 			else
-				P.send("room.item.place", { kind = pl.kind, x = hit.tileX, y = hit.tileY, dir = pl.dir })
+				P.send("room.item.place", { kind = pl.kind, x = hit.tileX, y = hit.tileY, dir = pl.dir, wall = wall })
 				R.placing = nil
 			end
 		end
@@ -345,7 +456,7 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 		R.selected = it.id
 		R.updateInfo()
 		local fi = info(it.kind)
-		if fi and (fi.sit or fi.lay or fi.walk) then
+		if fi and not fi.wall and (fi.sit or fi.lay or fi.walk) then
 			-- onto the furni: the tile under the mouse if that's one of its tiles, else its own
 			local x, y = it.x, it.y
 			if hit.floor then
@@ -375,12 +486,57 @@ function R.pressR()
 		for j, d in ipairs(dirs) do if d == R.placing.dir then i = j end end
 		R.placing.dir = dirs[i % #dirs + 1]
 		return true
-	elseif R.selected and R.current and R.current.canEdit then
+	elseif R.selected and R.current and R.current.canEdit and not (R.items[R.selected] and R.items[R.selected].wall) then
 		P.send("room.item.rotate", { id = R.selected })
 		return true
 	end
 	return false
 end
+
+-- a wallpaper, floor or landscape being put on: the room shows it while the mouse is over the room
+local PAINT_LOOK = { wallpaper = "wall", floor = "floor", landscape = "landscape" }
+hook.Add("Think", "bobba.room.paint", function()
+	local previewing = R.paintPreview
+	local pl = R.placing
+	local want = (V.mode == "room" and pl and pl.paint and V.hover) and pl or nil
+	local key = want and (want.paint .. "|" .. tostring(want.data)) or nil
+	if key == (previewing and previewing.key) then return end
+	-- back to the room's own look, then the new preview
+	if previewing then V.look[previewing.part] = previewing.was end
+	R.paintPreview = nil
+	if want and PAINT_LOOK[want.paint] then
+		local part = PAINT_LOOK[want.paint]
+		R.paintPreview = { key = key, part = part, was = V.look[part] }
+		V.look[part] = want.data or ""
+	end
+	V.dirty = true
+end)
+
+-- windows cut holes in the walls (the view draws them, V.masks): where each is and its mask
+local maskKey = ""
+hook.Add("Think", "bobba.room.masks", function()
+	if V.mode ~= "room" then return end
+	local list, keys = {}, {}
+	for _, it in pairs(R.items) do
+		if it.wall then
+			local fi = info(it.kind)
+			if fi and fi.maskType then
+				local x, y, z = R.wallLocation(it.wall)
+				if x then
+					list[#list + 1] = { x = x, y = y, z = z, type = fi.maskType, id = it.id }
+				end
+			end
+		end
+	end
+	table.sort(list, function(a, b) return tostring(a.id) < tostring(b.id) end)
+	for i, m in ipairs(list) do keys[i] = m.type .. "@" .. m.x .. "," .. m.y .. "," .. m.z end
+	local key = table.concat(keys, ";")
+	if key ~= maskKey then
+		maskKey = key
+		V.masks = list
+		V.dirty = true
+	end
+end)
 
 local rWasDown = false
 hook.Add("Think", "bobba.room.keys", function()
@@ -453,14 +609,17 @@ function R.updateInfo()
 	local n = 0
 	if edit then
 		button(p, "Use", function() P.send("room.item.use", { id = it.id }) end)
-		button(p, "Rotate  (R)", function() P.send("room.item.rotate", { id = it.id }) end)
+		if not it.wall then
+			button(p, "Rotate  (R)", function() P.send("room.item.rotate", { id = it.id }) end)
+			n = n + 1
+		end
 		button(p, "Move", function()
 			R.placing = { kind = it.kind, dir = it.dir, id = it.id }
 			R.selected = nil
 			R.updateInfo()
 		end)
 		button(p, "Pick up", function() P.send("room.item.pickup", { id = it.id }) end)
-		n = 4
+		n = n + 3
 	end
 	p:SetTall(16 + 18 + n * 28)
 	-- (above the toolbar: Nitro's infostand is 10 over it, 10 from the right)

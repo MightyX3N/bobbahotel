@@ -7,6 +7,9 @@ local function start()
 	local I = BOBBA.items
 	I.define("chair", { width = 1, length = 1, height = 1, sit = true, directions = { 0, 2, 4, 6 } })
 	I.define("lamp", { width = 1, length = 1, height = 2, states = 2 })
+	I.define("wallpaper", { width = 1, length = 1, height = 0, wall = true, paint = "wallpaper" })
+	I.define("landscape", { width = 1, length = 1, height = 0, wall = true, paint = "landscape" })
+	I.define("post.it", { width = 1, length = 1, height = 0, wall = true, logic = "furniture_stickie" })
 	-- a catalogue like the Habbo addon's: one tab, pages under it
 	BOBBA.catalog.reset()
 	BOBBA.catalog.provider = function(cb)
@@ -18,6 +21,11 @@ local function start()
 				{ name = "2015", offers = { { kind = "pumpkin", name = "Pumpkin", price = { credits = 3 } } } },
 			} },
 			{ name = "Trophies", layout = "trophies", offers = { { kind = "prizetrophy*1", name = "Classic trophy", price = { credits = 10 }, trophy = true } } },
+			{ name = "Spaces", offers = {
+				{ kind = "wallpaper", data = "101", name = "Wallpaper 101", price = { credits = 2 } },
+				{ kind = "landscape", data = "1.3", name = "Landscape 1.3", price = { credits = 2 } },
+				{ kind = "post.it", name = "Pad of stickies", price = { credits = 3 }, count = 20 },
+			} },
 		} }, { name = "Rares", staff = true, children = {
 			{ name = "Thrones", offers = { { kind = "throne", name = "Throne", price = {} } } },
 		} } })
@@ -360,6 +368,37 @@ T["staff: giving and taking"] = function()
 	assert(not BOBBA.wallet.add(mia.key, "gold", 1), "not a currency")
 	assert(BOBBA.wallet.add(mia.key, "duckets", -100))
 	eq(BOBBA.wallet.get(mia.key).duckets, 0)
+end
+
+T["wallpapers and landscapes: bought with their pattern, put on the owner's room and used up; stickies come 20 a pad"] = function()
+	local mia = start()
+	P.fromPlayer(mia, "catalog.index")
+	local tab = last(mia, "catalog.index").pages[1]
+	local page = tab.children[#tab.children]
+	eq(page.name, "Spaces")
+	P.fromPlayer(mia, "catalog.page", { id = page.id })
+	local offers = last(mia, "catalog.page").offers
+	eq(offers[1].data, "101", "the pattern is shown")
+	P.fromPlayer(mia, "catalog.buy", { page = page.id, offer = offers[1].id, amount = 1 })
+	local paper = last(mia, "inventory.added")[1]
+	eq(paper.data, "101")
+	P.fromPlayer(mia, "catalog.buy", { page = page.id, offer = offers[2].id, amount = 1 })
+	local land = last(mia, "inventory.added")[1]
+	P.fromPlayer(mia, "catalog.buy", { page = page.id, offer = offers[3].id, amount = 2 })
+	eq(#last(mia, "inventory.added"), 40, "two pads")
+	-- not in someone else's room
+	P.fromPlayer(mia, "inventory.place", { id = paper.id })
+	assert(last(mia, "room.error"), "the Welcome Lounge isn't Mia's")
+	P.fromPlayer(mia, "navigator.create", { name = "Mia's room", model = "a" })
+	P.fromPlayer(mia, "inventory.place", { id = paper.id })
+	P.fromPlayer(mia, "inventory.place", { id = land.id })
+	local load = last(mia, "room.load")
+	eq(load.wallpaper .. " " .. load.landscape, "101 1.3", "the room has them")
+	eq(BOBBA.live.info(load.id).landscape, "1.3", "kept")
+	P.fromPlayer(mia, "inventory.get")
+	for _, it in ipairs(last(mia, "inventory.items")) do
+		assert(it.id ~= paper.id and it.id ~= land.id, "used up")
+	end
 end
 
 return T

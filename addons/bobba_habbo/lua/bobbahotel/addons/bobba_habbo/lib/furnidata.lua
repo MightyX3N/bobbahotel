@@ -149,6 +149,19 @@ function H.furnidata(cb)
 	end)
 end
 
+-- Habbo's posters are one furni ("poster", its number in its data); Nitro makes each its own kind,
+-- "poster" and the number ("poster5"), and so does the hotel. The poster's number, or nil.
+function H.posterNumber(classname)
+	return tonumber(tostring(classname):match("^poster(%d+)$"))
+end
+
+-- the furnidata entry for a kind (a poster's is the poster's)
+function H.furniEntry(fd, classname)
+	local entry = fd.byClass[classname] or fd.byClass[H.furniBase(classname)]
+	if not entry and H.posterNumber(classname) then entry = fd.byClass.poster end
+	return entry
+end
+
 -- where a furni's SWF is (cb(url, base, entry) or cb(nil, why))
 function H.furniUrl(classname, cb)
 	H.config(function(cfg, err)
@@ -156,7 +169,7 @@ function H.furniUrl(classname, cb)
 		H.furnidata(function(fd, err2)
 			if not fd then cb(nil, err2) return end
 			local base = H.furniBase(classname)
-			local entry = fd.byClass[classname] or fd.byClass[base]
+			local entry = H.furniEntry(fd, classname)
 			if not entry then cb(nil, "Habbo has no furni called " .. classname) return end
 			cb(cfg.furniUrl .. entry.rev .. "/" .. base .. ".swf", base, entry)
 		end)

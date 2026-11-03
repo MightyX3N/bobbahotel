@@ -73,18 +73,29 @@ if SERVER and BOBBA.looks then
 end
 
 -- The hotel asks what a kind of furni is (its size, height, sitting...): Habbo's furnidata and the
--- furni's own file say (server; lib/furnidata.lua). Wall furni come later.
+-- furni's own file say (server; lib/furnidata.lua).
 if SERVER and BOBBA.items then
 	BOBBA.items.resolver = function(kind, cb)
 		H.furnidata(function(fd, err)
 			if not fd then cb(nil, err) return end
-			local entry = fd.byClass[kind] or fd.byClass[H.furniBase(kind)]
+			local entry = H.furniEntry(fd, kind)
 			if not entry then cb(nil, "Habbo has no furni called " .. kind) return end
-			if entry.wall then cb(nil, kind .. " goes on a wall (wall furni come later)") return end
-			H.furniInfo(kind, function(info, err2)
+			-- (Habbo's wallpapers, floors and landscapes are put on the room, not placed: nothing more
+			-- to know, their file isn't needed)
+			local paint = (entry.special == 2 and "wallpaper") or (entry.special == 3 and "floor") or (entry.special == 4 and "landscape") or nil
+			if paint then
+				cb({ width = 1, length = 1, height = 0, directions = { 2, 4 }, states = 1, category = entry.category, wall = true, paint = paint })
+				return
+			end
+			local function got(info, err2)
 				if not info then cb(nil, err2) return end
 				cb({ width = info.width, length = info.length, height = info.height, walk = info.walk, sit = info.sit, lay = info.lay,
-					directions = info.directions, states = info.states, logic = info.logic, category = entry.category })
+					directions = info.directions, states = info.states, logic = info.logic, category = entry.category, wall = entry.wall or nil })
+			end
+			-- (a poster without a file of its own is Habbo's "poster")
+			H.furniInfo(kind, function(info, err2)
+				if not info and H.posterNumber(kind) then H.furniInfo("poster", got) return end
+				got(info, err2)
 			end)
 		end)
 	end
@@ -95,9 +106,11 @@ end
 -- years (Habboween 2009 ... 2026, Christmas, Easter, ...) are pages under one; a line with very many
 -- furni is cut into parts. Left out:
 --   rares and limited editions (H.CATALOG_RARE_LINES, and furni called LTD): staff give those
---   what needs something the hotel doesn't have yet (wired, pets, music, teleports, games, trophies,
---     rollers, vending machines, clothing, groups, effects), and wall furni
+--   what needs something the hotel doesn't have yet (wired, pets, music, games, vending machines,
+--     clothing, groups, effects)
 --   Habbo's test furni
+-- Posters (one furni in Habbo, a number each) get a page; so do stickies. Wallpapers, floors and
+-- landscapes (Habbo's room content) are on a tab of their own, "Spaces".
 -- Every furni costs the hotel's catalog.price credits (bobba_wallet_setting catalog.price <n>).
 H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true,
 	vending_machine = true, games = true }
@@ -106,6 +119,7 @@ H.CATALOG_SKIP_LINES = { horse = true, nests = true, pet_food = true, pet_access
 H.CATALOG_RARE_LINES = { rare = true, bonusrare = true, nft = true, nftmint = true, collectibles = true, pixel_collectible = true,
 	gacha = true }
 H.CATALOG_PAGE_SIZE = 150
+H.STICKIES_PER_PAD = 20
 
 -- lines over the years: what they're called together (the rest are their own name, made readable)
 H.CATALOG_FAMILY_NAMES = { xmas = "Christmas", habboween = "Habboween", easter = "Easter", valentine = "Valentine's",
@@ -142,14 +156,16 @@ local function family(line)
 	return base, year
 end
 
-function H.catalogPages(fd, price)
+-- extra: { posters = { { n, name }, ... }, spaces = { floor = ids, wall = ids, landscape = ids } }
+function H.catalogPages(fd, price, extra)
+	extra = extra or {}
 	-- the furni, by line; trophies (specialtype 11, engraved when bought) on a page of their own
 	local lines = {}
 	local trophies = {}
 	-- rares and limited editions: on a staff-only tab, free (staff give them)
 	local rareLines = {}
 	for class, f in pairs(fd.byClass) do
-		if not f.wall and f.special == 1 and H.catalogRare(class, f) and f.name ~= "" and not f.name:find(" name$") then
+		if f.special == 1 and H.catalogRare(class, f) and f.name ~= "" and not f.name:find(" name$") then
 			local list = rareLines[f.line]
 			if not list then list = {} rareLines[f.line] = list end
 			list[#list + 1] = { kind = class, name = f.name, price = {}, order = f.id or 0 }
@@ -157,7 +173,7 @@ function H.catalogPages(fd, price)
 		if not f.wall and f.special == 11 and (f.offer or -1) ~= -1 then
 			trophies[#trophies + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, trophy = true }
 		end
-		if not f.wall and f.special == 1 and not H.CATALOG_SKIP_CATEGORIES[f.category] and not f.category:find("^wired")
+		if f.special == 1 and not H.CATALOG_SKIP_CATEGORIES[f.category] and not f.category:find("^wired")
 			and not H.CATALOG_SKIP_LINES[f.line] and not f.line:find("^pet_") and not H.catalogRare(class, f)
 			and f.name ~= "" and not f.name:find(" name$")
 			-- (random teleports and step-on switches look like teleports but work differently: later)
@@ -243,16 +259,80 @@ function H.catalogPages(fd, price)
 		if (a.name == "Other") ~= (b.name == "Other") then return b.name == "Other" end
 		return a.name:lower() < b.name:lower()
 	end)
+	-- posters: each of Habbo's numbers; stickies: a pad is 20
+	if extra.posters and #extra.posters > 0 then
+		local offers = {}
+		for _, p in ipairs(extra.posters) do
+			offers[#offers + 1] = { kind = "poster" .. p.n, name = p.name, price = { credits = price }, order = p.n }
+		end
+		local pg = page("Posters", offers)
+		table.insert(top, 1, pg)
+	end
+	local stickies = {}
+	for class, f in pairs(fd.byClass) do
+		if f.special == 5 and f.wall then
+			stickies[#stickies + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, count = H.STICKIES_PER_PAD }
+		end
+	end
+	if #stickies > 0 then table.insert(top, 1, page("Stickies", stickies)) end
+	table.sort(top, function(a, b)
+		if (a.name == "Other") ~= (b.name == "Other") then return b.name == "Other" end
+		return a.name:lower() < b.name:lower()
+	end)
+	local out = { { name = "Furni", children = top } }
+	-- Habbo's "Spaces": a wallpaper, floor or landscape each (the furni "wallpaper", "floor" or
+	-- "landscape" with its id as its data)
+	if extra.spaces then
+		local tab = { name = "Spaces", children = {} }
+		for _, part in ipairs({ { "wall", "wallpaper", "Wallpaper", "Wallpaper" }, { "floor", "floor", "Floors", "Floor" }, { "landscape", "landscape", "Landscapes", "Landscape" } }) do
+			local ids = extra.spaces[part[1]] or {}
+			local f = fd.byClass[part[2]]
+			if f and #ids > 0 then
+				local offers = {}
+				for i, id in ipairs(ids) do
+					offers[#offers + 1] = { kind = part[2], data = id, name = part[4] .. " " .. id, price = { credits = price }, order = i }
+				end
+				local pg = page(part[3], offers)
+				pg.iconKind = part[2]
+				tab.children[#tab.children + 1] = pg
+			end
+		end
+		if #tab.children > 0 then out[#out + 1] = tab end
+	end
 	local rareTop = group(rareLines)
 	table.sort(rareTop, function(a, b) return a.name:lower() < b.name:lower() end)
-	return { { name = "Furni", children = top }, { name = "Rares", staff = true, children = rareTop } }
+	out[#out + 1] = { name = "Rares", staff = true, children = rareTop }
+	return out
+end
+
+-- Habbo's posters: the numbers its texts have a name for (poster_<n>_name). cb({ { n, name }, ... })
+function H.posters(cb)
+	H.config(function(cfg)
+		if not cfg then cb({}) return end
+		local url
+		for u in cfg.settings:gmatch("\nexternal%.texts%.txt=([^\r\n]*)") do url = u end
+		if not url or url:find("${", 1, true) then cb({}) return end
+		H.remembered("texts", (url:gsub("^http:", "https:")), function(text)
+			local out = {}
+			for n, name in (text or ""):gmatch("\nposter_(%d+)_name=([^\r\n]*)") do
+				out[#out + 1] = { n = tonumber(n), name = name }
+			end
+			table.sort(out, function(a, b) return a.n < b.n end)
+			cb(out)
+		end)
+	end)
 end
 
 if SERVER and BOBBA.catalog then
 	BOBBA.catalog.provider = function(cb)
 		H.furnidata(function(fd, err)
 			if not fd then print("[Bobba] the catalogue: " .. tostring(err)) cb({}) return end
-			cb(H.catalogPages(fd, tonumber(BOBBA.store.setting("catalog.price", "5")) or 5))
+			H.posters(function(posters)
+				H.roomContentIds(function(spaces, why)
+					if not spaces then print("[Bobba] the catalogue's spaces: " .. tostring(why)) end
+					cb(H.catalogPages(fd, tonumber(BOBBA.store.setting("catalog.price", "5")) or 5, { posters = posters, spaces = spaces }))
+				end)
+			end)
 		end)
 	end
 end

@@ -266,6 +266,9 @@ function D:icon(name, x, y, w, h, opts)
 	elseif opts.shadow then
 		put(1, 1, 0, 0, 0, a * 0.8)
 		put(-1, -1, 255, 255, 255, a)
+	elseif opts.color then
+		-- (tinted: Habbo's blank stickie in the stickie's colour)
+		put(0, 0, opts.color.r, opts.color.g, opts.color.b, a)
 	else
 		put(0, 0, 255, 255, 255, a)
 	end

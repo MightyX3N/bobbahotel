@@ -41,6 +41,10 @@ function live.migrate()
 		"ALTER TABLE bobbahotel_rooms ADD COLUMN floor TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE bobbahotel_rooms ADD COLUMN wallpaper TEXT NOT NULL DEFAULT ''",
 	})
+	-- and what's seen through its windows (Habbo's landscapes)
+	BOBBA.store.migrate("core.014_room_landscape", {
+		"ALTER TABLE bobbahotel_rooms ADD COLUMN landscape TEXT NOT NULL DEFAULT ''",
+	})
 end
 
 -- A floor or wallpaper id: letters, digits, _ . - (at most 32), or '' for the default
@@ -52,10 +56,10 @@ function live.validLook(v)
 	return v
 end
 
--- what = "floor" or "wallpaper"
+-- what = "floor", "wallpaper" or "landscape"
 function live.setLook(id, what, v)
 	v = live.validLook(v)
-	if v == nil or (what ~= "floor" and what ~= "wallpaper") or not live.info(id) then return false end
+	if v == nil or (what ~= "floor" and what ~= "wallpaper" and what ~= "landscape") or not live.info(id) then return false end
 	BOBBA.store.query("UPDATE bobbahotel_rooms SET " .. what .. " = ? WHERE id = ?", { v, tonumber(id) })
 	live.refresh(id)
 	return true
@@ -83,7 +87,7 @@ function live.info(id)
 	local r = BOBBA.store.row("SELECT * FROM bobbahotel_rooms WHERE id = ?", { tonumber(id) or -1 })
 	if not r then return nil end
 	r.id, r.wall_height, r.created = tonumber(r.id), tonumber(r.wall_height) or -1, tonumber(r.created)
-	r.floor, r.wallpaper = r.floor or "", r.wallpaper or ""
+	r.floor, r.wallpaper, r.landscape = r.floor or "", r.wallpaper or "", r.landscape or ""
 	return r
 end
 
@@ -182,7 +186,7 @@ local function roomMessage(r, u, units)
 	return {
 		id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
 		heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
-		floor = r.info.floor, wallpaper = r.info.wallpaper,
+		floor = r.info.floor, wallpaper = r.info.wallpaper, landscape = r.info.landscape,
 		items = BOBBA.items.list(r), itemsComing = BOBBA.items.pending(r),
 		canEdit = u.player ~= nil and BOBBA.items.canEdit(u.player, r) or false,
 		canPlace = u.player ~= nil and BOBBA.perms.has(u.player, "bobba.staff.place") or false,

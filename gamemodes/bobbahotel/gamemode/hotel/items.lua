@@ -6,12 +6,18 @@
 -- What a kind of furni is (its size and height, whether it's walked, sat or laid on) comes from an
 -- addon: BOBBA.items.resolver = function(kind, cb) cb(def) or cb(nil, why) end, with
 --   def = { width, length, height, walk, sit, lay, stack (default: not on seats and beds),
---           directions = { 0, 2, 4, 6 } (Habbo's 0-7), states = 2 }
+--           directions = { 0, 2, 4, 6 } (Habbo's 0-7), states = 2, wall (hangs on a wall),
+--           paint ("wallpaper" / "floor" / "landscape": put on the room, inventory.lua) }
+-- A wall furni hangs where Habbo's wall location says (wall: ":w=x,y l=localX,localY l|r"); it takes
+-- no tiles.
 --
--- Messages to players:  room.items { item, ... } (added or changed: id, kind, x, y, z, dir, state)
+-- Messages to players:  room.items { item, ... } (added or changed: id, kind, x, y, z, dir, state,
+--                         data, wall)
 --                       room.item.remove { id }
--- Messages from players: room.item.place { kind, x, y, dir }, room.item.move { id, x, y, dir },
---                        room.item.pickup { id }, room.item.use { id }
+-- Messages from players: room.item.place { kind, x, y, dir, wall }, room.item.move { id, x, y, dir, wall },
+--                        room.item.pickup { id }, room.item.use { id }, room.item.stickie { id, color, text },
+--                        room.item.stickie.delete { id }, room.item.dimmer { id, preset, effect, color,
+--                        brightness, apply }
 
 BOBBA.items = BOBBA.items or { defs = {}, waiting = {} }
 local items = BOBBA.items
@@ -40,6 +46,8 @@ function items.migrate()
 	})
 	-- what some furni keep (Arcturus extradata): a trophy's engraving, a toner's colour, ...
 	BOBBA.store.migrate("core.010_item_data", { "ALTER TABLE bobbahotel_items ADD COLUMN data TEXT NOT NULL DEFAULT ''" })
+	-- where a wall furni hangs: Habbo's wall location (":w=x,y l=localX,localY l|r")
+	BOBBA.store.migrate("core.013_wall_items", { "ALTER TABLE bobbahotel_items ADD COLUMN wall TEXT NOT NULL DEFAULT ''" })
 end
 
 -- two teleports become each other's partner
@@ -91,7 +99,9 @@ function items.resolve(kind, cb)
 end
 
 -- The tiles a furni covers (Arcturus RoomLayout.getTilesAt): turned sideways it swaps width and length
+-- (wall furni hang on a wall: no tiles)
 function items.footprint(def, x, y, dir)
+	if def.wall then return {} end
 	local w, l = def.width, def.length
 	if dir == 2 or dir == 6 then w, l = l, w end
 	local out = {}
@@ -103,7 +113,7 @@ end
 
 local function covers(item, x, y)
 	local def = item.def
-	if not def then return false end
+	if not def or def.wall then return false end
 	local w, l = def.width, def.length
 	if item.dir == 2 or item.dir == 6 then w, l = l, w end
 	return x >= item.x and x < item.x + w and y >= item.y and y < item.y + l
@@ -211,7 +221,7 @@ end
 
 local function snapshot(it)
 	return { id = it.id, kind = it.kind, x = it.x, y = it.y, z = it.z, dir = it.dir, state = it.state,
-		data = (it.data and it.data ~= "") and it.data or nil }
+		data = (it.data and it.data ~= "") and it.data or nil, wall = (it.wall and it.wall ~= "") and it.wall or nil }
 end
 items.snapshot = snapshot
 
@@ -227,7 +237,7 @@ function items.load(r)
 	local rows = BOBBA.store.query("SELECT * FROM bobbahotel_items WHERE room = ? ORDER BY id", { r.id })
 	for _, row in ipairs(rows) do
 		local it = { id = tonumber(row.id), owner = row.owner, kind = row.kind, x = tonumber(row.x), y = tonumber(row.y),
-			z = tonumber(row.z), dir = tonumber(row.dir) or 0, state = tonumber(row.state) or 0, data = row.data or "" }
+			z = tonumber(row.z), dir = tonumber(row.dir) or 0, state = tonumber(row.state) or 0, data = row.data or "", wall = row.wall or "" }
 		r.items[it.id] = it
 		-- what it is may need a moment (the addon may have to look it up); its tiles change then
 		items.resolve(it.kind, function(def)
@@ -308,7 +318,20 @@ end
 
 -- Puts a furni into a room. cb(item) or cb(nil, why) (the furni may first need looking up).
 -- existingId: a saved furni (from someone's inventory) put down instead of a new one.
-function items.place(r, player, kind, x, y, dir, cb, existingId)
+-- Habbo's wall location: ":w=x,y l=localX,localY l|r" (the wall tile, where on it in pixels at
+-- scale 32, which wall: l the left one, r the right one). x, y, localX, localY, side, or nil.
+function items.parseWall(r, wall)
+	local wx, wy, lx, ly, side = tostring(wall or ""):match("^:w=(%-?%d+),(%-?%d+) l=(%-?%d+),(%-?%d+) ([lr])$")
+	if not wx then return nil end
+	wx, wy, lx, ly = tonumber(wx), tonumber(wy), tonumber(lx), tonumber(ly)
+	local w = r and r.layout and r.layout.width or 64
+	local h = r and r.layout and r.layout.height or 64
+	if wx < -1 or wy < -1 or wx > w or wy > h or math.abs(lx) > 256 or math.abs(ly) > 4096 then return nil end
+	return wx, wy, lx, ly, side
+end
+
+-- wall: where a wall furni goes (Habbo's wall location; see items.parseWall)
+function items.place(r, player, kind, x, y, dir, cb, existingId, wall)
 	cb = cb or function() end
 	x, y, dir = math.floor(tonumber(x) or -1), math.floor(tonumber(y) or -1), math.floor(tonumber(dir) or 0)
 	if type(kind) ~= "string" or kind == "" or #kind > 100 then cb(nil, "no such furni") return end
@@ -316,9 +339,31 @@ function items.place(r, player, kind, x, y, dir, cb, existingId)
 	items.resolve(kind, function(def, why)
 		if not def then cb(nil, why or ("no furni called " .. kind)) return end
 		if not BOBBA.live.rooms[r.id] then cb(nil, "the room closed") return end
-		if dir < 0 or dir > 7 or not validDir(def, dir) then dir = def.directions[1] or 0 end
-		local z, err = items.fits(r, def, x, y, dir)
-		if not z then cb(nil, err) return end
+		local z, err
+		if def.wall then
+			-- on a wall: the wall tile is its x, y; the left wall faces 2, the right wall 4
+			local wx, wy, _, _, side = items.parseWall(r, wall)
+			if not wx then cb(nil, "that goes on a wall") return end
+			x, y, z, dir = wx, wy, 0, side == "l" and 2 or 4
+		else
+			if wall then cb(nil, "that goes on the floor") return end
+			if dir < 0 or dir > 7 or not validDir(def, dir) then dir = def.directions[1] or 0 end
+			z, err = items.fits(r, def, x, y, dir)
+			if not z then cb(nil, err) return end
+		end
+		wall = def.wall and wall or ""
+		-- at most 200 stickies a room (Habbo's room.error.max_stickies)
+		if def.logic == "furniture_stickie" then
+			local n = 0
+			for _, o in pairs(r.items) do if o.def and o.def.logic == "furniture_stickie" then n = n + 1 end end
+			if n >= items.STICKIES_MAX then cb(nil, "Only " .. items.STICKIES_MAX .. " stickies per room are allowed!") return end
+		end
+		-- one mood light a room (Arcturus: max_dimmers)
+		if def.logic == "furniture_roomdimmer" then
+			for _, o in pairs(r.items) do
+				if o.def and o.def.logic == "furniture_roomdimmer" and o.id ~= existingId then cb(nil, "a room has only one mood light") return end
+			end
+		end
 		local owner = player and BOBBA.platform.playerKey(player) or "server"
 		local id, data
 		if existingId then
@@ -326,16 +371,23 @@ function items.place(r, player, kind, x, y, dir, cb, existingId)
 			local row = BOBBA.store.row("SELECT owner FROM bobbahotel_items WHERE id = ? AND room = 0", { existingId })
 			if not row then cb(nil, "that isn't in your inventory any more") return end
 			owner = row.owner
-			BOBBA.store.query("UPDATE bobbahotel_items SET room = ?, x = ?, y = ?, z = ?, dir = ?, state = 0 WHERE id = ?", { r.id, x, y, z, dir, existingId })
+			BOBBA.store.query("UPDATE bobbahotel_items SET room = ?, x = ?, y = ?, z = ?, dir = ?, state = 0, wall = ? WHERE id = ?", { r.id, x, y, z, dir, wall, existingId })
 			id = existingId
 			local row = BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { id })
 			data = row and row.data or ""
 		else
-			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
-				{ r.id, owner, kind, x, y, z, dir })
+			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state, wall) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)",
+				{ r.id, owner, kind, x, y, z, dir, wall })
 			id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
 		end
-		local it = { id = id, owner = owner, kind = kind, x = x, y = y, z = z, dir = dir, state = 0, def = def, data = data or "" }
+		-- a stickie is put up yellow and blank (Arcturus PostItPlaceEvent); a mood light starts with
+		-- Habbo's presets, off
+		if def.logic == "furniture_stickie" and (data or "") == "" then data = items.STICKIE_COLORS[4] end
+		if def.logic == "furniture_roomdimmer" and not items.dimmerData(data) then data = items.DIMMER_DEFAULT end
+		if data and data ~= "" then BOBBA.store.query("UPDATE bobbahotel_items SET data = ? WHERE id = ?", { data, id }) end
+		local state = 0
+		if def.logic == "furniture_roomdimmer" then state = (items.dimmerData(data).on and 1 or 0) end
+		local it = { id = id, owner = owner, kind = kind, x = x, y = y, z = z, dir = dir, state = state, def = def, data = data or "", wall = wall }
 		r.items[id] = it
 		local tiles = items.footprint(def, x, y, dir)
 		updateTiles(r, tiles)
@@ -346,14 +398,23 @@ function items.place(r, player, kind, x, y, dir, cb, existingId)
 	end)
 end
 
-function items.placeExisting(r, player, id, kind, x, y, dir, cb)
-	items.place(r, player, kind, x, y, dir, cb, id)
+function items.placeExisting(r, player, id, kind, x, y, dir, cb, wall)
+	items.place(r, player, kind, x, y, dir, cb, id, wall)
 end
 
-function items.move(r, player, id, x, y, dir)
+function items.move(r, player, id, x, y, dir, wall)
 	local it = r.items[tonumber(id) or -1]
 	if not it or not it.def then return false, "no such furni" end
 	if not items.canEdit(player, r) then return false, "only the room's owner can move furni" end
+	if it.def.wall then
+		-- along the walls
+		local wx, wy, _, _, side = items.parseWall(r, wall)
+		if not wx then return false, "that goes on a wall" end
+		it.x, it.y, it.dir, it.wall = wx, wy, side == "l" and 2 or 4, wall
+		BOBBA.store.query("UPDATE bobbahotel_items SET x = ?, y = ?, dir = ?, wall = ? WHERE id = ?", { it.x, it.y, it.dir, wall, it.id })
+		broadcast(r, "room.items", { snapshot(it) })
+		return true
+	end
 	x, y, dir = math.floor(tonumber(x) or it.x), math.floor(tonumber(y) or it.y), math.floor(tonumber(dir) or it.dir)
 	local z, err = items.fits(r, it.def, x, y, dir, it)
 	if not z then return false, err end
@@ -374,6 +435,7 @@ end
 function items.rotate(r, player, id)
 	local it = r.items[tonumber(id) or -1]
 	if not it or not it.def then return false, "no such furni" end
+	if it.def.wall then return false, "wall furni don't turn" end
 	local dirs = it.def.directions
 	local nextDir = dirs[1]
 	for i, d in ipairs(dirs) do
@@ -487,6 +549,96 @@ function items.stepped(r, u)
 	end
 end
 
+-- --- stickies (Arcturus InteractionPostIt): data "COLOUR text" -------------------------------------
+items.STICKIE_COLORS = { "9CCEFF", "FF9CFF", "9CFF9C", "FFFF33" }
+items.STICKIE_MAX = 500 -- Habbo's stickie window takes 500 letters
+items.STICKIES_MAX = 200
+
+-- the owner writes on it (and picks its colour); true or false, why
+function items.writeStickie(r, player, id, color, text)
+	local it = r.items[tonumber(id) or -1]
+	if not it or not it.def or it.def.logic ~= "furniture_stickie" then return false, "that isn't a stickie" end
+	if not items.canEdit(player, r) then return false, "only the room's owner can write on it" end
+	color = tostring(color or ""):upper()
+	local ok = false
+	for _, c in ipairs(items.STICKIE_COLORS) do if c == color then ok = true end end
+	if not ok then color = items.STICKIE_COLORS[4] end
+	text = tostring(text or ""):gsub("[%z\1-\8\11-\31]", ""):sub(1, items.STICKIE_MAX)
+	it.data = color .. " " .. text
+	BOBBA.store.query("UPDATE bobbahotel_items SET data = ? WHERE id = ?", { it.data, it.id })
+	broadcast(r, "room.items", { snapshot(it) })
+	return true
+end
+
+-- thrown away (Habbo's bin on the stickie: gone for good)
+function items.deleteStickie(r, player, id)
+	local it = r.items[tonumber(id) or -1]
+	if not it or not it.def or it.def.logic ~= "furniture_stickie" then return false, "that isn't a stickie" end
+	if not items.canEdit(player, r) then return false, "only the room's owner can throw it away" end
+	r.items[it.id] = nil
+	BOBBA.store.query("DELETE FROM bobbahotel_items WHERE id = ?", { it.id })
+	items.removed(r, it)
+	return true
+end
+
+-- --- the mood light (Arcturus InteractionMoodLight, RoomMoodlightData) ----------------------------------
+-- data: "on,preset,effect,#RRGGBB,brightness" (what Nitro's FurnitureRoomDimmerLogic reads: on is 2,
+-- off 1; effect 2 = the background only) then its three presets "|effect,#RRGGBB,brightness"
+items.DIMMER_DEFAULT = "1,1,1,#000000,255|1,#000000,255|1,#000000,255|1,#000000,255"
+items.DIMMER_MIN_BRIGHTNESS = 76
+
+function items.dimmerData(data)
+	local cur, rest = tostring(data or ""):match("^([^|]*)(.*)$")
+	local on, preset, effect, color, light = (cur or ""):match("^(%d),(%d),(%d),#(%x%x%x%x%x%x),(%d+)$")
+	if not on then return nil end
+	local d = { on = on == "2", preset = tonumber(preset), effect = tonumber(effect), color = color:upper(), light = tonumber(light), presets = {} }
+	for e, c, l in rest:gmatch("|(%d),#(%x%x%x%x%x%x),(%d+)") do d.presets[#d.presets + 1] = { effect = tonumber(e), color = c:upper(), light = tonumber(l) } end
+	while #d.presets < 3 do d.presets[#d.presets + 1] = { effect = 1, color = "000000", light = 255 } end
+	return d
+end
+
+local function dimmerString(d)
+	local out = { (d.on and 2 or 1) .. "," .. d.preset .. "," .. d.effect .. ",#" .. d.color .. "," .. d.light }
+	for i = 1, 3 do local p = d.presets[i] out[#out + 1] = p.effect .. ",#" .. p.color .. "," .. p.light end
+	return table.concat(out, "|")
+end
+
+local function setDimmer(r, it, d)
+	it.data = dimmerString(d)
+	it.state = d.on and 1 or 0
+	BOBBA.store.query("UPDATE bobbahotel_items SET data = ?, state = ? WHERE id = ?", { it.data, it.state, it.id })
+	broadcast(r, "room.items", { snapshot(it) })
+end
+
+-- a preset saved (Nitro's RoomDimmerSavePresetComposer): its effect, colour and brightness; apply:
+-- the room shows it now
+function items.saveDimmer(r, player, id, preset, effect, color, light, apply)
+	local it = r.items[tonumber(id) or -1]
+	if not it or not it.def or it.def.logic ~= "furniture_roomdimmer" then return false, "that isn't a mood light" end
+	if not items.canEdit(player, r) then return false, "only the room's owner can set the mood light" end
+	local d = items.dimmerData(it.data) or items.dimmerData(items.DIMMER_DEFAULT)
+	preset = math.floor(tonumber(preset) or 0)
+	if preset < 1 or preset > 3 then return false, "no such preset" end
+	effect = (tonumber(effect) == 2) and 2 or 1
+	color = string.format("%06X", math.floor(math.max(0, math.min(0xFFFFFF, tonumber(color) or 0))))
+	light = math.floor(math.max(items.DIMMER_MIN_BRIGHTNESS, math.min(255, tonumber(light) or 255)))
+	d.presets[preset] = { effect = effect, color = color, light = light }
+	if apply then d.preset, d.effect, d.color, d.light = preset, effect, color, light end
+	setDimmer(r, it, d)
+	return true
+end
+
+-- switched on or off (RoomDimmerChangeStateComposer)
+local function useDimmer(r, it)
+	local d = items.dimmerData(it.data) or items.dimmerData(items.DIMMER_DEFAULT)
+	d.on = not d.on
+	-- (on: the chosen preset's look)
+	local p = d.presets[d.preset] or d.presets[1]
+	if d.on and p then d.effect, d.color, d.light = p.effect, p.color, p.light end
+	setDimmer(r, it, d)
+	return true
+end
+
 local function setState(r, it, state, passing)
 	it.state = state
 	-- (a state it's only passing through, like a dice rolling, isn't saved)
@@ -532,6 +684,8 @@ function items.use(r, player, id, tag)
 	local use = items.USES[it.def.logic or ""] or {}
 	if not use.anyone and not items.canEdit(player, r) then return false, "only the room's owner can use this" end
 	if it.def.gate then return useGate(r, it) end
+	if it.def.logic == "furniture_roomdimmer" then return useDimmer(r, it) end
+	if it.def.logic == "furniture_stickie" then return false end
 	if use.adjacent then
 		local u = BOBBA.live.byPlayer[player]
 		if not u or u.room ~= r then return false end
@@ -853,12 +1007,12 @@ function items.start()
 		local r = room(player)
 		if not r then return end
 		if not BOBBA.perms.has(player, "bobba.staff.place") then fail(player, "placing furni from nowhere is for staff") return end
-		items.place(r, player, data.kind, data.x, data.y, data.dir, function(it, why) if not it then fail(player, why) end end)
+		items.place(r, player, data.kind, data.x, data.y, data.dir, function(it, why) if not it then fail(player, why) end end, nil, type(data.wall) == "string" and data.wall or nil)
 	end)
 	P.receive("room.item.move", function(player, data)
 		local r = room(player)
 		if not r then return end
-		local ok, why = items.move(r, player, data.id, data.x, data.y, data.dir)
+		local ok, why = items.move(r, player, data.id, data.x, data.y, data.dir, type(data.wall) == "string" and data.wall or nil)
 		if not ok then fail(player, why) end
 	end)
 	P.receive("room.item.rotate", function(player, data)
@@ -893,6 +1047,26 @@ function items.start()
 		it.data = v(data.hue) .. "," .. v(data.saturation) .. "," .. v(data.lightness)
 		BOBBA.store.query("UPDATE bobbahotel_items SET data = ? WHERE id = ?", { it.data, it.id })
 		broadcast(r, "room.items", { snapshot(it) })
+	end)
+	-- stickies: written on, thrown away
+	P.receive("room.item.stickie", function(player, data)
+		local r = room(player)
+		if not r then return end
+		local ok, why = items.writeStickie(r, player, data.id, data.color, data.text)
+		if not ok then fail(player, why) end
+	end)
+	P.receive("room.item.stickie.delete", function(player, data)
+		local r = room(player)
+		if not r then return end
+		local ok, why = items.deleteStickie(r, player, data.id)
+		if not ok then fail(player, why) end
+	end)
+	-- the mood light's presets: { id, preset, effect (1 all, 2 background), color (0xRRGGBB), brightness, apply }
+	P.receive("room.item.dimmer", function(player, data)
+		local r = room(player)
+		if not r then return end
+		local ok, why = items.saveDimmer(r, player, data.id, data.preset, data.effect, data.color, data.brightness, data.apply == true)
+		if not ok then fail(player, why) end
 	end)
 	P.receive("room.item.use", function(player, data)
 		local r = room(player)

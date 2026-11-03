@@ -42,6 +42,7 @@ H.UI_ICONS = {
 	["inventory-empty"] = "inventory_inventory_empty", ["hc-banner"] = "talent_vip_reward",
 	["vip-banner"] = "vip_color", ["currency-vip"] = "vip_color",
 	["trophy-1"] = "trophy_bg_gold", ["trophy-2"] = "trophy_bg_silver", ["trophy-3"] = "trophy_bg_bronze", ["gift-card"] = "catalogue_giftcard_blank",
+	["stickie"] = "stickie_blanco", ["stickie-close"] = "stickie_close", ["stickie-trash"] = "stickie_remove", ["dimmer-banner"] = "dimmer_info",
 }
 
 local images, failed

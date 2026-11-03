@@ -10,7 +10,7 @@
 -- Messages from players: catalog.index {}, catalog.page { id }, catalog.buy { page, offer, amount },
 --                        catalog.search { query }
 -- Messages to players:   catalog.index { pages = { { id, name, children = {...} }, ... } }
---                        catalog.page { id, name, layout ("default_3x3" / "vip_buy"), offers = { { id, kind, name, price, club } } }
+--                        catalog.page { id, name, layout ("default_3x3" / "vip_buy"), offers = { { id, kind, name, price, club, data, count } } }
 --                        catalog.bought { page, offer, amount }   catalog.error { message }
 --                        catalog.search { query, pages = { id, ... }, offers = { { id, page, kind, name, price }, ... } }
 
@@ -145,7 +145,8 @@ local function isStaff(player) return BOBBA.perms.has(player, "bobba.staff.rares
 local function pageMessage(p)
 	local offers = {}
 	for _, o in ipairs(p.offers or {}) do
-		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club, tier = o.tier, pair = o.pair, trophy = o.trophy }
+		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club, tier = o.tier, pair = o.pair, trophy = o.trophy,
+			data = o.data, count = o.count }
 	end
 	return { id = p.id, name = p.name, layout = p.layout or "default_3x3", clubKind = p.clubKind, offers = offers }
 end
@@ -161,7 +162,7 @@ function CAT.search(query, staff)
 		local p = pagesById[id]
 		for _, o in ipairs((staff or (not p.staff and CAT.inSeason(p.season))) and p.offers or {}) do
 			if o.kind and #offers < CAT.SEARCH_MAX and ((o.name or ""):lower():find(query, 1, true) or o.kind:lower():find(query, 1, true)) then
-				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price, pair = o.pair, trophy = o.trophy }
+				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price, pair = o.pair, trophy = o.trophy, data = o.data, count = o.count }
 				if not seen[p.id] then seen[p.id] = true pages[#pages + 1] = p.id end
 			end
 		end
@@ -210,7 +211,8 @@ function CAT.buy(player, pageId, offerId, amount, extra)
 			-- a trophy is engraved with who bought it, when, and their words (Arcturus: name TAB date TAB text)
 			BOBBA.inventory.give(key, offer.kind, 1, CAT.engraving(player, extra))
 		else
-			BOBBA.inventory.give(key, offer.kind, amount)
+			-- (with its data: a wallpaper's id; count: how many come in one, a pad of stickies)
+			BOBBA.inventory.give(key, offer.kind, amount * (offer.count or 1), offer.data)
 		end
 	end
 	BOBBA.events.emit("catalogBought", key, offer, amount)

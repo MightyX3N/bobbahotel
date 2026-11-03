@@ -100,8 +100,8 @@ function V.styleFor(kind)
 end
 
 -- An addon can paint the floor and walls (e.g. bobba_habbo with Habbo's floors and wallpapers):
---   V.planePainter = function(kind, id, plane) return paint end      kind "floor" / "wall"; id from
---   V.look ({ floor = "", wall = "" }); plane: the view's plane (textureWidth/Height, textureX/Y,
+--   V.planePainter = function(kind, id, plane) return paint end      kind "floor" / "wall" / "landscape";
+--   id from V.look ({ floor = "", wall = "", landscape = "" }); plane: the view's plane (textureWidth/Height, textureX/Y,
 --   normal, texture). paint = { width, height, layers = { { color, fill = true } or
 --   { color, quads = { { image = { path, texWidth, texHeight }, x, y, w, h, u0, v0, u1, v1 } } } } },
 --   in the plane's own texture (width x height pixels), the way Nitro's plane rasterizers paint it;
@@ -133,7 +133,64 @@ local function planeMatrix(p, width, height)
 	return function(bx, by) return cx + bx * xs + by * xk, cy + bx * ys + by * yk end
 end
 
-local KIND = { [1] = "floor", [2] = "wall" }
+local KIND = { [1] = "floor", [2] = "wall", [3] = "landscape" }
+
+-- Windows: holes in the walls (Nitro's plane masks), so the landscape behind shows through.
+--   V.masks = { { x, y, z, type }, ... }   where each window is and its mask type (room.lua)
+--   V.maskShape = function(type, scale, normal) return { { x0, x1, y0, y1 }, ... } end   the hole's
+--     rectangles in the plane's texture pixels from the mask's spot (an addon, from Habbo's room
+--     content); nil while it isn't known
+local function vdot(a, b) return a[1] * b[1] + a[2] * b[2] + a[3] * b[3] end
+local function vlen(a) return math.sqrt(vdot(a, a)) end
+local function vproj(a, b) local l = vlen(b) return l > 0 and vdot(a, b) / l or -1 end
+
+-- RoomVisualization.updatePlaneMasks / RoomPlane.updateMask: the holes the windows cut in a wall,
+-- in units along its sides { u0, u1, v0, v1 }
+local function maskHoles(p, scale)
+	local out = {}
+	if p.type ~= 2 or not V.masks or not V.maskShape then return out end
+	local plane = V.room.planes[p.index + 1]
+	local L, H = vlen(plane.left), vlen(plane.right)
+	local W, Hp = p.textureWidth, p.textureHeight
+	if L <= 0 or H <= 0 then return out end
+	for _, m in ipairs(V.masks) do
+		local diff = { m.x - plane.loc[1], m.y - plane.loc[2], m.z - plane.loc[3] }
+		if math.abs(vproj(diff, plane.normal)) < 0.01 then
+			local u, v = vproj(diff, plane.left), vproj(diff, plane.right)
+			local posX, posY = W - W * u / L, Hp - Hp * v / H
+			local ok, rects = pcall(V.maskShape, m.type, scale, p.normal)
+			for _, r in ipairs(ok and rects or {}) do
+				local u0, u1 = L * (1 - (posX + r[2]) / W), L * (1 - (posX + r[1]) / W)
+				local v0, v1 = H * (1 - (posY + r[4]) / Hp), H * (1 - (posY + r[3]) / Hp)
+				u0, u1, v0, v1 = math.max(0, u0), math.min(L, u1), math.max(0, v0), math.min(H, v1)
+				if u1 > u0 and v1 > v0 then out[#out + 1] = { u0, u1, v0, v1 } end
+			end
+		end
+	end
+	return out
+end
+
+-- a plane as rectangles (u0, u1, v0, v1) leaving its holes out (the door's and the windows')
+local function piecesWithout(L, H, holes)
+	local pieces = { { 0, L, 0, H } }
+	for _, h in ipairs(holes) do
+		local out = {}
+		for _, r in ipairs(pieces) do
+			local a, b = math.max(r[1], h[1]), math.min(r[2], h[2])
+			local c, e = math.max(r[3], h[3]), math.min(r[4], h[4])
+			if a >= b or c >= e then
+				out[#out + 1] = r
+			else
+				if r[1] < a then out[#out + 1] = { r[1], a, r[3], r[4] } end
+				if b < r[2] then out[#out + 1] = { b, r[2], r[3], r[4] } end
+				if c > r[3] then out[#out + 1] = { a, b, r[3], c } end
+				if e < r[4] then out[#out + 1] = { a, b, e, r[4] } end
+			end
+		end
+		pieces = out
+	end
+	return pieces
+end
 
 -- a painted plane as textured polygons (and coloured ones), cut into the plane's pieces (around
 -- the door hole). shade: Nitro's plane colour (0xRRGGBB, multiplied in)
@@ -203,19 +260,30 @@ local function buildPolys()
 		local s = camera.screen(BOBBA.rooms.planePoint(V.room, index, u, v))
 		return { x = ox + math.Round(s[1]) * m, y = oy + math.Round(s[2]) * m }
 	end
+	-- (a landscape's picture runs on from one window wall to the next: RoomVisualization gives each
+	-- landscape plane the length of the ones before it as its texture offset)
+	local landscapeOffset, before = {}, 0
+	for i, pl in ipairs(V.room.planes) do
+		if pl.type == 3 then landscapeOffset[i - 1] = before before = before + vlen(pl.left) end
+	end
 	for _, p in ipairs(view) do
 		local style = V.styleFor(STYLE_FOR[p.type])
 		local r, g, b = BOBBA.rooms.planeColor(style, p.color)
 		local kind = KIND[p.type]
 		local paint
+		if p.type == 3 then p.textureX = math.floor((landscapeOffset[p.index] or 0) * z.scale / 2) end
 		if kind and V.planePainter then
 			local ok, res = pcall(V.planePainter, kind, V.look[kind] or "", p)
 			if ok then paint = res else ErrorNoHalt("[Bobba] plane painter: " .. tostring(res) .. "\n") V.planePainter = nil end
 		end
+		-- the windows' holes in it
+		local windows = maskHoles(p, z.scale)
+		local all = {}
+		for _, h in ipairs(holes[p.index] or {}) do all[#all + 1] = h end
+		for _, h in ipairs(windows) do all[#all + 1] = h end
 		if paint then
-			local pieces = holes[p.index] and BOBBA.rooms.planePieces(V.room, p.index) or nil
 			local L, H = BOBBA.rooms.planeSize(V.room, p.index)
-			pieces = pieces or { { 0, L, 0, H } }
+			local pieces = piecesWithout(L, H, all)
 			pieces.L, pieces.H = L, H
 			local doorFloor = (p.index == BOBBA.rooms.doorFloor(V.room))
 			local list = doorFloor and back or polys
@@ -224,14 +292,15 @@ local function buildPolys()
 			if holes[p.index] then
 				for i = before + 1, #list do doorWall[#doorWall + 1] = list[i] end
 			end
-		elseif holes[p.index] then
-			-- a plane with the door cut out: drawn as the pieces around the hole
-			for _, q in ipairs(BOBBA.rooms.planePieces(V.room, p.index)) do
+		elseif #all > 0 then
+			-- a plane with the door (or windows) cut out: drawn as the pieces around the holes
+			local L, H = BOBBA.rooms.planeSize(V.room, p.index)
+			for _, q in ipairs(piecesWithout(L, H, all)) do
 				local piece = { r = r, g = g, b = b, pts = clockwise({
 					screen(p.index, q[1], q[3]), screen(p.index, q[2], q[3]), screen(p.index, q[2], q[4]), screen(p.index, q[1], q[4]),
 				}) }
 				polys[#polys + 1] = piece
-				doorWall[#doorWall + 1] = piece
+				if holes[p.index] then doorWall[#doorWall + 1] = piece end
 			end
 		else
 			-- the door tile's floor goes behind the walls (seen through the door hole)
@@ -264,9 +333,12 @@ local function buildPolys()
 	V.builds = (V.builds or 0) + 1
 end
 
+-- V.planeTint: a colour the floor and walls are multiplied by (the mood light's "Background only",
+-- Nitro's RoomVisualization plane colours); V.roomTint: the whole room (room.lua draws it)
 local function drawPolys(list)
 	draw.NoTexture()
 	local current = nil
+	local t = V.planeTint
 	render.PushFilterMag(TEXFILTER.POINT)
 	render.PushFilterMin(TEXFILTER.POINT)
 	for _, p in ipairs(list) do
@@ -274,7 +346,8 @@ local function drawPolys(list)
 			current = p.mat
 			if current then surface.SetMaterial(current) else draw.NoTexture() end
 		end
-		surface.SetDrawColor(p.r, p.g, p.b, 255)
+		if t then surface.SetDrawColor(math.floor(p.r * t.r / 255 + 0.5), math.floor(p.g * t.g / 255 + 0.5), math.floor(p.b * t.b / 255 + 0.5), 255)
+		else surface.SetDrawColor(p.r, p.g, p.b, 255) end
 		surface.DrawPoly(p.pts)
 	end
 	render.PopFilterMin()

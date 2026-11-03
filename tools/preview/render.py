@@ -39,7 +39,7 @@ surface = {
 	SetMaterial = function(m) G.material = m end,
 	DrawTexturedRect = function() end,
 	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter, G.blend) end,
-	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }) end,
+	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }, G.blend) end,
 }
 draw = { NoTexture = function() G.material = nil end, SimpleText = function(t, f, x, y, c, ax, ay) op("text", t, x, y, c and { c.r, c.g, c.b, c.a or 255 } or nil, f, ay, ax) end,
 	SimpleTextOutlined = function(t, f, x, y, c, ax, ay) op("text", t, x - 3 * #t, y - 12) end }
@@ -60,8 +60,8 @@ LocalPlayer = function() return nil end
 TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM = 1, 4
 render = { SetScissorRect = function(x0, y0, x1, y1, on) op("clip", x0, y0, x1, y1, on) end, PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end,
 	PushFilterMag = function(f) G.filter = f end, PushFilterMin = function() end, PopFilterMag = function() G.filter = nil end, PopFilterMin = function() end,
-	-- blending: only "add" (light) is painted differently
-	OverrideBlend = function(on, src, dst) G.blend = (on and dst == BLEND_ONE) and "add" or nil end }
+	-- blending: "add" (light) and "mul" (a colour multiplied in: the mood light) are painted differently
+	OverrideBlend = function(on, src, dst) G.blend = (on and dst == BLEND_ONE) and "add" or ((on and src == BLEND_DST_COLOR and dst == BLEND_ZERO) and "mul" or nil) end }
 BLEND_ZERO, BLEND_ONE, BLEND_DST_COLOR, BLEND_ONE_MINUS_DST_COLOR, BLEND_SRC_ALPHA, BLEND_ONE_MINUS_SRC_ALPHA, BLEND_SRC_COLOR, BLEND_ONE_MINUS_SRC_COLOR = 0, 1, 2, 3, 4, 5, 6, 7
 BLENDFUNC_ADD = 0
 KEY_R, MOUSE_RIGHT = 28, 108
@@ -400,7 +400,14 @@ def paint(G, w, h, images=None, transparent=False):
             d.polygon(pts, fill=tuple(o[3][j] for j in (1, 2, 3, 4)))
         elif kind == "rect":
             col = tuple(o[6][j] for j in (1, 2, 3, 4))
-            if im.mode == "RGBA" and col[3] < 255 and o[4] > 0 and o[5] > 0:
+            if o[7] == "mul":
+                from PIL import ImageChops
+                box = (max(0, int(o[2])), max(0, int(o[3])), min(im.width, int(o[2] + o[4])), min(im.height, int(o[3] + o[5])))
+                if box[2] > box[0] and box[3] > box[1]:
+                    part = im.crop(box)
+                    tint = Image.new(part.mode, part.size, col[:3] + ((255,) if part.mode == "RGBA" else ()))
+                    im.paste(ImageChops.multiply(part, tint), box)
+            elif im.mode == "RGBA" and col[3] < 255 and o[4] > 0 and o[5] > 0:
                 # (see-through over a see-through layer: blended, as GMod does)
                 layer = Image.new("RGBA", (int(o[4]) + 1, int(o[5]) + 1), (0, 0, 0, 0))
                 ImageDraw.Draw(layer).rectangle([0, 0, int(o[4]) - 1, int(o[5]) - 1], fill=col)

@@ -58,10 +58,11 @@ concommand.Add("bobba_default_wallheight", function(ply, _, args)
 	else reply(ply, "bobba_default_wallheight <-1, or 0 to 16>") end
 end)
 
--- bobba_room_floor <id> / bobba_room_wallpaper <id>: the floor or wallpaper of the room you're in
+-- bobba_room_floor <id> / bobba_room_wallpaper <id> / bobba_room_landscape <id>: the floor, wallpaper or
+-- landscape of the room you're in
 -- (for its owner and admins; "default" puts the default back). bobba_habbo_floors and
 -- bobba_habbo_wallpapers list Habbo's.
-for _, what in ipairs({ "floor", "wallpaper" }) do
+for _, what in ipairs({ "floor", "wallpaper", "landscape" }) do
 	concommand.Add("bobba_room_" .. what, function(ply, _, args)
 		if not IsValid(ply) then print("use it in game, in the room") return end
 		local u = BOBBA.live.byPlayer[ply]

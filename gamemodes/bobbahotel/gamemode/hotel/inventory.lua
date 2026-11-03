@@ -10,9 +10,10 @@ BOBBA.inventory = BOBBA.inventory or {}
 local INV = BOBBA.inventory
 
 function INV.list(key)
-	local rows = BOBBA.store.query("SELECT id, kind FROM bobbahotel_items WHERE room = 0 AND owner = ? ORDER BY id", { tostring(key) })
+	local rows = BOBBA.store.query("SELECT id, kind, data FROM bobbahotel_items WHERE room = 0 AND owner = ? ORDER BY id", { tostring(key) })
 	local out = {}
-	for _, r in ipairs(rows) do out[#out + 1] = { id = tonumber(r.id), kind = r.kind } end
+	-- (data: what the furni keeps; the inventory shows a wallpaper's id, a trophy's engraving ...)
+	for _, r in ipairs(rows) do out[#out + 1] = { id = tonumber(r.id), kind = r.kind, data = (r.data and r.data ~= "") and r.data or nil } end
 	return out
 end
 
@@ -29,7 +30,8 @@ function INV.give(key, kind, n, data)
 		for _ = 1, math.max(1, math.floor(n or 1)) do
 			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state, data) VALUES (0, ?, ?, 0, 0, 0, 0, 0, ?)", { tostring(key), kind, data or "" })
 			-- (new: the player's inventory marks it until they look, Habbo's unseen items)
-			added[#added + 1] = { id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id), kind = kind, new = true }
+			added[#added + 1] = { id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id), kind = kind, new = true,
+				data = (data and data ~= "") and data or nil }
 		end
 	end)
 	local player = playerFor(key)
@@ -39,9 +41,24 @@ end
 
 -- a furni back into its owner's inventory (picked up)
 function INV.take(itemId, key, kind)
-	BOBBA.store.query("UPDATE bobbahotel_items SET room = 0, x = 0, y = 0, z = 0, state = 0 WHERE id = ?", { itemId })
+	BOBBA.store.query("UPDATE bobbahotel_items SET room = 0, x = 0, y = 0, z = 0, state = 0, wall = '' WHERE id = ?", { itemId })
 	local player = playerFor(key)
-	if player then BOBBA.platform.send("inventory.added", { { id = itemId, kind = kind } }, player) end
+	local row = BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { itemId })
+	local data = row and row.data ~= "" and row.data or nil
+	if player then BOBBA.platform.send("inventory.added", { { id = itemId, kind = kind, data = data } }, player) end
+end
+
+-- puts a wallpaper, floor or landscape (row: its inventory row) on a room: true, or false and why
+local LOOK_COLUMN = { wallpaper = "wallpaper", floor = "floor", landscape = "landscape" }
+function INV.paint(r, player, row, paint)
+	if not BOBBA.items.canEdit(player, r) then return false, "only the room's owner can change how it looks" end
+	local column = LOOK_COLUMN[paint]
+	if not column or not BOBBA.live.validLook(row.data) or row.data == "" then return false, "that has no pattern" end
+	BOBBA.store.query("DELETE FROM bobbahotel_items WHERE id = ?", { tonumber(row.id) })
+	BOBBA.platform.send("inventory.removed", { tonumber(row.id) }, player)
+	BOBBA.live.setLook(r.id, column, row.data)
+	BOBBA.events.emit("roomPainted", r.id, column, row.data)
+	return true
 end
 
 function INV.start()
@@ -55,9 +72,18 @@ function INV.start()
 		local key = P.playerKey(player)
 		local row = BOBBA.store.row("SELECT * FROM bobbahotel_items WHERE id = ? AND room = 0 AND owner = ?", { tonumber(data.id) or -1, key })
 		if not row then P.send("room.error", { message = "that isn't in your inventory" }, player) return end
-		BOBBA.items.placeExisting(u.room, player, tonumber(row.id), row.kind, data.x, data.y, data.dir, function(it, why)
-			if not it then P.send("room.error", { message = tostring(why) }, player) return end
-			P.send("inventory.removed", { it.id }, player)
+		BOBBA.items.resolve(row.kind, function(def, why)
+			if not def then P.send("room.error", { message = tostring(why) }, player) return end
+			-- a wallpaper, floor or landscape goes onto the room and is used up (Arcturus RoomPlaceItemEvent)
+			if def.paint then
+				local ok, why2 = INV.paint(u.room, player, row, def.paint)
+				if not ok then P.send("room.error", { message = tostring(why2) }, player) end
+				return
+			end
+			BOBBA.items.placeExisting(u.room, player, tonumber(row.id), row.kind, data.x, data.y, data.dir, function(it, why3)
+				if not it then P.send("room.error", { message = tostring(why3) }, player) return end
+				P.send("inventory.removed", { it.id }, player)
+			end, type(data.wall) == "string" and data.wall or nil)
 		end)
 	end)
 end

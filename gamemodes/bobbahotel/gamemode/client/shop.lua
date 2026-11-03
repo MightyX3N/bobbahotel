@@ -30,6 +30,13 @@ local function furniName(kind)
 	return (info and info.name and info.name ~= "") and info.name or kind
 end
 
+-- an inventory group's name (a wallpaper's with its number)
+local function groupName(g)
+	local n = furniName(g.kind)
+	if g.data then n = n .. " " .. g.data end
+	return n
+end
+
 -- FaCaretLeft / FaCaretRight in a box of size (CSS px)
 local function caret(d, x, y, size, left, c)
 	local s = d.s
@@ -46,7 +53,13 @@ end
 
 -- LayoutRoomPreviewerView: #dfdfdf, rounded, a dark line over and left of it, white under and right,
 -- shaded inside at the top-left; the furni in the middle
-local function previewBox(d, x, y, w, h, kind)
+-- (a wallpaper, floor or landscape: its pattern, data its id)
+local function paintOfKind(kind)
+	local info = R.furniInfo and R.furniInfo(kind)
+	return info and info.paint or nil
+end
+
+local function previewBox(d, x, y, w, h, kind, data)
 	d:rect(x - 2, y - 2, w + 2, 2, Color(0, 0, 0, 102))
 	d:rect(x - 2, y, 2, h, Color(0, 0, 0, 102))
 	d:round(4, x, y, w, h, Color(223, 223, 223))
@@ -54,7 +67,13 @@ local function previewBox(d, x, y, w, h, kind)
 	d:rect(x, y + 3, 3, h - 5, Color(0, 0, 0, 51))
 	d:rect(x + 2, y + h - 2, w - 2, 2, U.C.white)
 	d:rect(x + w - 2, y + 2, 2, h - 2, U.C.white)
-	if kind and R.furniPreview then
+	local paint = kind and data and paintOfKind(kind)
+	if paint and R.paintSwatch then
+		local s = d.s
+		d:clip(x + 2, y + 2, w - 4, h - 4, function()
+			R.paintSwatch(paint, data, math.floor((x + 2) * s + 0.5), math.floor((y + 2) * s + 0.5), math.floor((w - 4) * s + 0.5), math.floor((h - 4) * s + 0.5), 2 * s)
+		end)
+	elseif kind and R.furniPreview then
 		local s = d.s
 		d:clip(x + 2, y + 2, w - 4, h - 4, function()
 			R.furniPreview(kind, math.floor(x * s + 0.5), math.floor(y * s + 0.5), math.floor(w * s + 0.5), math.floor(h * s + 0.5), s, 2)
@@ -63,9 +82,16 @@ local function previewBox(d, x, y, w, h, kind)
 end
 
 -- a furni's icon in the middle of a grid item
-local function furniIcon(d, kind, x, y, w, h, alpha)
-	if not R.furniIcon then return end
+local function furniIcon(d, kind, x, y, w, h, alpha, data)
 	local s = d.s
+	local paint = data and paintOfKind(kind)
+	if paint and R.paintSwatch then
+		-- (a pattern: a square of it)
+		local q = math.min(w, h) - 8
+		R.paintSwatch(paint, data, math.floor((x + (w - q) / 2) * s + 0.5), math.floor((y + (h - q) / 2) * s + 0.5), math.floor(q * s + 0.5), math.floor(q * s + 0.5), s)
+		return
+	end
+	if not R.furniIcon then return end
 	R.furniIcon(kind, math.floor(x * s + 0.5), math.floor(y * s + 0.5), math.floor(w * s + 0.5), math.floor(h * s + 0.5), s, alpha)
 end
 
@@ -118,14 +144,22 @@ function SHOP.nextOfKind(kind, after)
 end
 
 -- the furni grouped the way Nitro's GroupItem does: one per kind, newest first
+-- (a wallpaper, floor or landscape is grouped with the same one only, like Nitro groups by its data)
+local function paintOf(kind)
+	local info = R.furniInfo and R.furniInfo(kind)
+	return info and info.paint or nil
+end
+
 local function groups()
 	local byKind, list = {}, {}
 	for i = #INV.items, 1, -1 do
 		local it = INV.items[i]
-		local g = byKind[it.kind]
+		local key = it.kind
+		if it.data and paintOf(it.kind) then key = it.kind .. "|" .. it.data end
+		local g = byKind[key]
 		if not g then
-			g = { kind = it.kind, ids = {} }
-			byKind[it.kind] = g
+			g = { kind = it.kind, key = key, ids = {}, data = paintOf(it.kind) and it.data or nil }
+			byKind[key] = g
 			list[#list + 1] = g
 		end
 		g.ids[#g.ids + 1] = it.id
@@ -158,7 +192,7 @@ end)
 -- attemptItemPlacement: the furni follows the mouse in the room (the inventory goes away meanwhile)
 function SHOP.place(g)
 	if not g or not R.current then return end
-	R.placing = { kind = g.kind, dir = 2, inventoryId = g.ids[1] }
+	R.placing = { kind = g.kind, dir = 2, inventoryId = g.ids[1], paint = paintOf(g.kind), data = g.data }
 	R.selected = nil
 	if R.updateInfo then R.updateInfo() end
 	local w = U.windows.inventory
@@ -174,12 +208,12 @@ function SHOP.drawInventoryFurni(w, d)
 	local filter = (search:GetValue() or ""):lower()
 	local list = {}
 	for _, g in ipairs(all) do
-		if filter == "" or furniName(g.kind):lower():find(filter, 1, true) then list[#list + 1] = g end
+		if filter == "" or groupName(g):lower():find(filter, 1, true) then list[#list + 1] = g end
 	end
 	-- the chosen one (the first when none is)
 	local chosen
-	for _, g in ipairs(all) do if g.kind == INV.selected then chosen = g end end
-	if not chosen then chosen = all[1] INV.selected = chosen.kind end
+	for _, g in ipairs(all) do if g.key == INV.selected then chosen = g end end
+	if not chosen then chosen = all[1] INV.selected = chosen.key end
 	-- (looking at a group: its new ones are seen now, resetItems)
 	for _, id in ipairs(chosen.ids) do INV.unseen[id] = nil end
 	-- the grid
@@ -195,23 +229,23 @@ function SHOP.drawInventoryFurni(w, d)
 				local active = g == chosen
 				d:click(x, y, cw, 40, function()
 					local now = SysTime()
-					if INV.lastClick and INV.lastClick.kind == g.kind and now - INV.lastClick.t < 0.4 then SHOP.place(g) return end
-					INV.lastClick = { kind = g.kind, t = now }
-					INV.selected = g.kind
+					if INV.lastClick and INV.lastClick.kind == g.key and now - INV.lastClick.t < 0.4 then SHOP.place(g) return end
+					INV.lastClick = { kind = g.key, t = now }
+					INV.selected = g.key
 				end)
 				-- (new ones: layout-grid-item.unseen, green at 40%)
 				local unseen = false
 				for _, id in ipairs(g.ids) do if INV.unseen[id] then unseen = true end end
 				d:gridItem(x, y, cw, 40, active, (unseen and not active) and Color(134, 185, 138) or nil)
-				d:clip(x + 2, y + 2, cw - 4, 36, function() furniIcon(d, g.kind, x, y, cw, 40) end)
+				d:clip(x + 2, y + 2, cw - 4, 36, function() furniIcon(d, g.kind, x, y, cw, 40, nil, g.data) end)
 				if #g.ids > 1 then countBadge(d, #g.ids, x + cw - 4, y + 4) end
 			end
 		end
 	end)
 	-- the chosen one: preview, name, place
 	local rx, rw = 311.2, 207.8
-	previewBox(d, rx, 75, rw, 140, chosen.kind)
-	d:text(d:fit(furniName(chosen.kind), 14.4, rw), 14.4, rx, 223 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	previewBox(d, rx, 75, rw, 140, chosen.kind, chosen.data)
+	d:text(d:fit(groupName(chosen), 14.4, rw), 14.4, rx, 223 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	if R.current then
 		d:btn(rx, 282.1, rw, 28.9, U.C.success, function() SHOP.place(chosen) end)
 		d:text(U.text("inventory.furni.placetoroom", "Place in room"), 12.6, rx + rw / 2, 282.1 + 28.9 / 2, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
@@ -537,7 +571,7 @@ local function drawDefault(d, page, offers)
 					CAT.offer, CAT.offerPage = o.id, o.page or page.id
 				end)
 				d:gridItem(x, y, cw, 40, active)
-				if o.kind then d:clip(x + 2, y + 2, cw - 4, 36, function() furniIcon(d, o.kind, x, y, cw, 40) end) end
+				if o.kind then d:clip(x + 2, y + 2, cw - 4, 36, function() furniIcon(d, o.kind, x, y, cw, 40, nil, o.data) end) end
 				-- (teleports come two to an offer: PRICING_MODEL_MULTI's count)
 				if o.pair then countBadge(d, 2, x + cw - 4, y + 4) end
 			end
@@ -547,8 +581,8 @@ local function drawDefault(d, page, offers)
 	for _, o in ipairs(offers) do if o.id == CAT.offer and (o.page or page.id) == CAT.offerPage then offer = o end end
 	if not offer then return end
 	local rx, rw = 435.3, 185.8
-	previewBox(d, rx, 75, rw, 140, offer.kind)
-	d:text(d:fit(offer.kind and furniName(offer.kind) or offer.name, 14.4, rw), 14.4, rx, 223 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	previewBox(d, rx, 75, rw, 140, offer.kind, offer.data)
+	d:text(d:fit((offer.kind and not offer.data) and furniName(offer.kind) or offer.name, 14.4, rw), 14.4, rx, 223 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	if trophies then
 		-- (no amount: one trophy, its price at the right above Buy)
 		local prices = priceRows(offer, 1)

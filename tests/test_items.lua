@@ -17,6 +17,9 @@ local function start()
 	I.define("tele", { width = 1, length = 1, height = 2, states = 3, category = "teleport", directions = { 0, 2, 4, 6 } })
 	I.define("toner", { width = 1, length = 1, height = 1, states = 2, logic = "furniture_background_color" })
 	I.define("helper", { width = 2, length = 2, height = 0, walk = true, logic = "furniture_custom_stack_height" })
+	I.define("poster", { width = 1, length = 1, height = 0, wall = true })
+	I.define("post.it", { width = 1, length = 1, height = 0, wall = true, logic = "furniture_stickie" })
+	I.define("roomdimmer", { width = 1, length = 1, height = 0, wall = true, states = 2, logic = "furniture_roomdimmer" })
 	I.define("oneway", { width = 1, length = 1, height = 2, states = 2, logic = "furniture_one_way_door", directions = { 0, 2, 4, 6 } })
 	local mia, bo = { key = "765611980001", name = "Mia" }, { key = "765611980002", name = "Bo" }
 	local id = BOBBA.live.create(mia.key, mia.name, "model_a", "Mia's room")
@@ -414,6 +417,87 @@ T["switching: round and round through its states"] = function()
 	lamp.state = 9
 	assert(BOBBA.items.use(r, mia, lamp.id))
 	eq(lamp.state, 0, "a state it can't have starts again")
+end
+
+T["wall furni: hung on a wall where Habbo says, no tiles taken; moved along it, never turned or on the floor"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	local _, why = place(r, mia, "poster", 6, 3, 0)
+	assert(why, "a wall furni needs a wall")
+	local got
+	BOBBA.items.place(r, mia, "poster", 0, 0, 0, function(it, w) got, why = it, w end, nil, ":w=6,0 l=10,20 r")
+	assert(got, why)
+	local msg = last(bo, "room.items")[1]
+	eq(msg.wall .. " " .. msg.x .. "," .. msg.y .. " " .. msg.dir, ":w=6,0 l=10,20 r 6,0 4", "on the right wall, facing 4")
+	eq(BOBBA.pathfinder.tile(r.grid, 6, 1).state, "open", "no tiles")
+	_, why = place(r, mia, "chair", 6, 1, 0)
+	assert(not why, "a chair goes under it")
+	BOBBA.items.place(r, mia, "chair", 0, 0, 0, function(_, w) why = w end, nil, ":w=6,0 l=10,20 r")
+	eq(why, "that goes on the floor")
+	-- along the walls, to the left one
+	assert(BOBBA.items.move(r, mia, got.id, 0, 0, 0, ":w=3,7 l=4,50 l"))
+	eq(last(bo, "room.items")[1].dir, 2, "the left wall faces 2")
+	local ok
+	ok, why = BOBBA.items.move(r, mia, got.id, 6, 6, 0)
+	assert(not ok, "not to the floor")
+	ok = BOBBA.items.move(r, mia, got.id, 0, 0, 0, "w=bad")
+	assert(not ok, "a bad wall location")
+	ok = BOBBA.items.rotate(r, mia, got.id)
+	assert(not ok, "not turned")
+	-- after a restart it's still there
+	BOBBA.live.leave(mia)
+	BOBBA.live.leave(bo)
+	BOBBA.live.enter(mia, r.id)
+	local wall
+	for _, s in ipairs(last(mia, "room.load").items) do if s.id == got.id then wall = s.wall end end
+	eq(wall, ":w=3,7 l=4,50 l")
+	-- picked up and placed from the inventory onto a wall again
+	assert(BOBBA.items.pickup(BOBBA.live.rooms[r.id], mia, got.id))
+	P.fromPlayer(mia, "inventory.place", { id = got.id, wall = ":w=8,0 l=3,30 r" })
+	eq(BOBBA.live.rooms[r.id].items[got.id].wall, ":w=8,0 l=3,30 r")
+end
+
+T["stickies: put up yellow and blank; the owner writes on them, picks a colour, throws them away"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	local got, why
+	BOBBA.items.place(r, mia, "post.it", 0, 0, 0, function(it, w) got, why = it, w end, nil, ":w=6,0 l=10,30 r")
+	assert(got, why)
+	eq(last(bo, "room.items")[1].data, "FFFF33")
+	P.fromPlayer(bo, "room.item.stickie", { id = got.id, color = "9CCEFF", text = "hi" })
+	assert(last(bo, "room.error"), "Bo can't")
+	P.fromPlayer(mia, "room.item.stickie", { id = got.id, color = "9cceff", text = "Back at 5\nMia\1" })
+	eq(last(bo, "room.items")[1].data, "9CCEFF Back at 5\nMia")
+	P.fromPlayer(mia, "room.item.stickie", { id = got.id, color = "123456", text = "x" })
+	eq(last(bo, "room.items")[1].data, "FFFF33 x", "only Habbo's four colours")
+	P.fromPlayer(mia, "room.item.stickie.delete", { id = got.id })
+	eq(r.items[got.id], nil)
+	eq(BOBBA.store.row("SELECT id FROM bobbahotel_items WHERE id = ?", { got.id }), nil, "gone for good")
+end
+
+T["the mood light: one a room; switched on with its preset, presets saved and applied by the owner"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	local got, why
+	BOBBA.items.place(r, mia, "roomdimmer", 0, 0, 0, function(it, w) got, why = it, w end, nil, ":w=6,0 l=10,30 r")
+	assert(got, why)
+	eq(got.data, BOBBA.items.DIMMER_DEFAULT, "off, Habbo's presets")
+	BOBBA.items.place(r, mia, "roomdimmer", 0, 0, 0, function(it, w) why = w end, nil, ":w=8,0 l=10,30 r")
+	eq(why, "a room has only one mood light")
+	P.fromPlayer(mia, "room.item.dimmer", { id = got.id, preset = 2, effect = 2, color = 0x0053F7, brightness = 200, apply = false })
+	eq(BOBBA.items.dimmerData(got.data).presets[2].color, "0053F7", "saved")
+	eq(BOBBA.items.dimmerData(got.data).on, false, "still off")
+	P.fromPlayer(bo, "room.item.use", { id = got.id })
+	eq(BOBBA.items.dimmerData(got.data).on, false, "Bo can't switch it")
+	P.fromPlayer(mia, "room.item.use", { id = got.id })
+	local d = BOBBA.items.dimmerData(last(bo, "room.items")[1].data)
+	eq(d.on, true)
+	eq(last(bo, "room.items")[1].state, 1, "lit")
+	P.fromPlayer(mia, "room.item.dimmer", { id = got.id, preset = 2, effect = 2, color = 0x0053F7, brightness = 10, apply = true })
+	d = BOBBA.items.dimmerData(got.data)
+	eq(d.preset .. " " .. d.effect .. " " .. d.color .. " " .. d.light, "2 2 0053F7 76", "applied (no darker than Habbo's least)")
+	P.fromPlayer(mia, "room.item.use", { id = got.id })
+	eq(BOBBA.items.dimmerData(got.data).on, false, "off again")
 end
 
 return T
