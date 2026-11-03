@@ -24,7 +24,7 @@ U.C = {
 function U.scale() return (V and V.uiScale) and V.uiScale() or 1 end
 
 -- Nitro's font at a CSS size: its "Ubuntu" is Ubuntu Condensed (nitro-react's fonts.scss, Ubuntu-C.ttf,
--- shipped in the gamemode's content/resource/fonts; bold is made from it, as the browser does).
+-- shipped in addons/bobbahotel/resource/fonts; bold is made from it, as the browser does).
 -- GMod's font size is the letters' whole height: ascent + descent, 1.121 of CSS's size.
 U.FONT, U.FONT_CELL = "Ubuntu Condensed", 1.121
 local fonts = {}
