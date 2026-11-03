@@ -289,8 +289,11 @@ local function drawBubble(b, x, y)
 		end
 		render.PopFilterMin()
 		render.PopFilterMag()
+		-- the head where Habbo's style puts the face (faceXY: level with the arrow), not Nitro's
+		-- lower spot
 		if not s.anonymous and u and R.figureHeadDrawer then
-			pcall(R.figureHeadDrawer, u, x + C.HEAD[1] * S, y + C.HEAD[2] * S)
+			local face = s.faceXY or C.HEAD
+			pcall(R.figureHeadDrawer, u, x + face[1] * S, y + face[2] * S)
 		end
 		drawLines(b, x + C.PAD[1] * S, y + C.PAD[2] * S, s.textColor or 0)
 		return
