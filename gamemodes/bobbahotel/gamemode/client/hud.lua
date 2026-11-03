@@ -185,10 +185,32 @@ local ME = {
 	{ icon = "me-clothing", w = 27, h = 30, action = "avatarEditor" },
 	{ icon = "me-settings", w = 28, h = 34, action = "settings" },
 }
+-- ... and "leave the hotel" last, where the game can be left from inside (HUD.actions.leaveHotel:
+-- the desktop client goes back to its start page)
+local LEAVE = { draw = "leave", w = 28, h = 30, action = "leaveHotel" }
+local function meItems()
+	if not HUD.actions.leaveHotel then return ME end
+	local t = {}
+	for i, it in ipairs(ME) do t[i] = it end
+	t[#t + 1] = LEAVE
+	return t
+end
 local function meSize()
 	local w, h = 0, 0
-	for i, it in ipairs(ME) do w = w + it.w + (i > 1 and 8 or 0) h = math.max(h, it.h) end
+	for i, it in ipairs(meItems()) do w = w + it.w + (i > 1 and 8 or 0) h = math.max(h, it.h) end
 	return w + 18, h + 18
+end
+
+-- the leave icon: a door with an arrow going out of it
+local function leaveIcon(d, x, y, c)
+	d:rect(x + 2, y + 3, 14, 2, c)
+	d:rect(x + 2, y + 25, 14, 2, c)
+	d:rect(x + 2, y + 3, 2, 24, c)
+	d:rect(x + 14, y + 3, 2, 6, c)
+	d:rect(x + 14, y + 21, 2, 6, c)
+	d:line(x + 9, y + 15, x + 22, y + 15, 3, c)
+	d:line(x + 18, y + 10, x + 24, y + 15.5, 3, c)
+	d:line(x + 18, y + 21, x + 24, y + 14.5, 3, c)
 end
 
 local function drawMe(w, d)
@@ -201,10 +223,17 @@ local function drawMe(w, d)
 	d:rect(1, H - 3, W - 2, 2, Color(255, 255, 255, 26))
 	d:rect(W - 3, 1, 2, H - 4, Color(255, 255, 255, 26))
 	local x = 9
-	for _, it in ipairs(ME) do
+	for _, it in ipairs(meItems()) do
 		local y = (H - it.h) / 2
 		local hover = d:click(x, y, it.w, it.h, function() HUD.meOpen = false act(it.action) end)
-		if hover then
+		if it.draw == "leave" then
+			if hover then
+				leaveIcon(d, x + 2, y + 2, Color(0, 0, 0, 204))
+				leaveIcon(d, x, y, Color(255, 255, 255))
+			else
+				leaveIcon(d, x, y, Color(140, 140, 140))
+			end
+		elseif hover then
 			-- grayscale(0) and drop-shadow(2px 2px 0 black 80%), not moved
 			d:icon(it.icon, x + 2, y + 2, it.w, it.h, { alpha = 204, black = true })
 			d:icon(it.icon, x, y, it.w, it.h)

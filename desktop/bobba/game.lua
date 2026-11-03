@@ -49,6 +49,10 @@ end
 local function loadClient()
 	G.runFile(Game.opts.garrysmod .. "/gamemodes/bobbahotel/gamemode/cl_init.lua", "bobbahotel/gamemode/cl_init.lua")
 	hook.Run("Initialize")
+	-- the "me" menu's leave button: back to the start page
+	if BOBBA.hud and BOBBA.hud.actions then
+		BOBBA.hud.actions.leaveHotel = function() love.event.quit("restart") end
+	end
 end
 
 local function serverMessages()
