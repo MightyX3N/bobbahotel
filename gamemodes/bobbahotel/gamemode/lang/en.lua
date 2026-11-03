@@ -10,6 +10,7 @@ BOBBA.lang.add("en", {
 	["status.database"] = "Database: {migrations} migrations applied, setting test {result}",
 	["status.language"] = "Language: {code}",
 	["status.ping"] = "Server answered in {ms} ms",
+	["addons.changed"] = "Switched-off addons are now: {list}. This takes effect on the next map change.",
 	["common.ok"] = "OK",
 	["common.failed"] = "FAILED",
 }, "English")

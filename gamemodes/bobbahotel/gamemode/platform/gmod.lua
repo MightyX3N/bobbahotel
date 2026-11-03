@@ -99,6 +99,11 @@ local disabledVar = CreateConVar("bobba_disabled_addons", "", bit.bor(FCVAR_ARCH
 function P.disabledAddons()
 	return disabledVar:GetString()
 end
+if SERVER then
+	cvars.AddChangeCallback("bobba_disabled_addons", function(_, _, new)
+		P.log("info", BOBBA.L("addons.changed", { list = new == "" and "-" or new }))
+	end, "bobba")
+end
 
 -- Messages between server and players: a name and a table. For the foundation this sends JSON;
 -- busy messages (room updates) get their own compact formats later.
