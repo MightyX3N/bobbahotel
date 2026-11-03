@@ -23,7 +23,8 @@ def fresh_runtime():
         try:
             cur = db.execute(s)
             cols = [d[0] for d in cur.description] if cur.description else []
-            rows = [lua.table_from(dict(zip(cols, r))) for r in cur.fetchall()]
+            # GMod's sql.Query gives every value as text (and leaves out NULLs), so the tests do too
+            rows = [lua.table_from({c: str(v) for c, v in zip(cols, r) if v is not None}) for r in cur.fetchall()]
             return lua.table_from(rows)
         except sqlite3.Error as e:
             return False, str(e)

@@ -62,7 +62,8 @@ end
 -- The same for a heightmap as it is (what the server sends with a room).
 function rooms.geometryFor(heightmap, opts)
 	opts = opts or {}
-	local wh, ft, wt = opts.wallHeight or -1, opts.floorThickness or 1, opts.wallThickness or 1
+	-- numbers only: Nitro's code compares with numbers (text "-1" would count as a fixed height)
+	local wh, ft, wt = tonumber(opts.wallHeight) or -1, tonumber(opts.floorThickness) or 1, tonumber(opts.wallThickness) or 1
 	local key = wh .. "|" .. ft .. "|" .. wt .. "|" .. heightmap
 	if not cache[key] then
 		-- Arcturus sends no separate door tile, so Nitro finds the door from the heightmap (-1, -1)

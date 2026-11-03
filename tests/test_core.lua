@@ -150,7 +150,7 @@ T["store: a migration runs once"] = function()
 	eq(BOBBA.store.migrate("test.001", { "CREATE TABLE t (a TEXT)" }), true)
 	eq(BOBBA.store.migrate("test.001", { "CREATE TABLE t (a TEXT)" }), false)
 	BOBBA.store.query("INSERT INTO t (a) VALUES (?)", { "x" })
-	eq(BOBBA.store.row("SELECT COUNT(*) AS n FROM t").n, 1)
+	eq(BOBBA.store.row("SELECT COUNT(*) AS n FROM t").n, "1", "GMod's SQLite gives text")
 end
 
 T["store: a failing migration leaves nothing behind and can run again"] = function()
@@ -182,7 +182,7 @@ T["store: old tables from earlier Bobba versions in sv.db are left alone"] = fun
 	BOBBA.store.setSetting("lobby", "3")
 	eq(BOBBA.store.setting("lobby"), "3")
 	eq(BOBBA.store.row("SELECT value FROM bobba_settings WHERE key = 'old'").value, "kept")
-	eq(BOBBA.store.row("SELECT COUNT(*) AS n FROM bobba_migrations WHERE name = 'habbo_colours'").n, 1, "old migrations kept")
+	eq(tonumber(BOBBA.store.row("SELECT COUNT(*) AS n FROM bobba_migrations WHERE name = 'habbo_colours'").n), 1, "old migrations kept")
 end
 
 -- addons ---------------------------------------------------------------------------------------

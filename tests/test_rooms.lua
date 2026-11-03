@@ -106,6 +106,16 @@ T["the door: a hole in the wall where Nitro puts it, and standing in it counts a
 	end
 end
 
+T["wall height given as text (GMod's SQLite) builds the same room as the number"] = function()
+	local hm = BOBBA.registry.get("layout", "model_a").heightmap
+	local a = BOBBA.rooms.geometryFor(hm, { wallHeight = "-1" })
+	eq(a.wallHeight, 3.6, "walls 3.6 high, not 2.6")
+	BOBBA.rooms.clearCache()
+	local b = BOBBA.rooms.geometryFor(hm, { wallHeight = -1 })
+	eq(#a.planes, #b.planes)
+	for i, p in ipairs(a.planes) do eq(p.right[3], b.planes[i].right[3], "plane " .. i) end
+end
+
 T["plane colours: style colour times Nitro's shade"] = function()
 	local floor = BOBBA.registry.get("plane_style", "default_floor")
 	local r, g, b = BOBBA.rooms.planeColor(floor, 0xFFFFFF)

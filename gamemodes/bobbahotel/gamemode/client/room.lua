@@ -103,6 +103,13 @@ local function drawUnit(u)
 			surface.DrawRect(sx + dx / len * 9 * k - 2 * k, sy - 74 * k + dy / len * 4 * k - 2 * k, 4 * k, 4 * k)
 		end
 	end
+end
+
+-- names go over everything (also over the wall when someone stands in the door)
+local function drawName(u)
+	local x, y, z = position(u)
+	local sx, sy, k = V.project(x, y, z)
+	if not sx then return end
 	draw.SimpleTextOutlined(u.name or "?", "BobbaName", sx, sy - 92 * k, u.id == R.you and Color(255, 230, 120) or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, Color(0, 0, 0, 200))
 end
 
@@ -122,6 +129,9 @@ V.drawUnits = function(phase)
 	end
 	table.sort(list, function(a, b) return a.depth > b.depth end)
 	for _, e in ipairs(list) do drawUnit(e.u) end
+	if phase == "front" then
+		for _, u in pairs(R.units) do drawName(u) end
+	end
 end
 
 concommand.Add("bobba_room", function(_, _, args)

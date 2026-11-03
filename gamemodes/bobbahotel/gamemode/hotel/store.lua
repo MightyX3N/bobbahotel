@@ -64,6 +64,9 @@ function store.migrate(id, statements)
 end
 
 -- Hotel settings (strings): name, lobby room, ... Changed through the admin menu later.
+-- Rows come back the way GMod's SQLite gives them: every value as text, NULLs left out.
+-- Turn numbers back with tonumber().
+
 function store.setting(key, default)
 	local r = store.row("SELECT v FROM bobbahotel_settings WHERE k = ?", { key })
 	if r then return r.v end

@@ -46,17 +46,23 @@ function live.create(ownerKey, ownerName, layoutId, name)
 	if name == "" then return nil, "a room needs a name" end
 	BOBBA.store.query("INSERT INTO bobbahotel_rooms (owner, owner_name, name, layout, created) VALUES (?, ?, ?, ?, ?)",
 		{ tostring(ownerKey), clean(ownerName), name, layoutId, math.floor(BOBBA.platform.time()) })
-	local id = BOBBA.store.row("SELECT last_insert_rowid() AS id").id
+	local id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
 	BOBBA.events.emit("roomCreated", id)
 	return id
 end
 
+-- (GMod's SQLite gives every value as text: numbers are turned back into numbers here)
 function live.info(id)
-	return BOBBA.store.row("SELECT * FROM bobbahotel_rooms WHERE id = ?", { tonumber(id) or -1 })
+	local r = BOBBA.store.row("SELECT * FROM bobbahotel_rooms WHERE id = ?", { tonumber(id) or -1 })
+	if not r then return nil end
+	r.id, r.wall_height, r.created = tonumber(r.id), tonumber(r.wall_height) or -1, tonumber(r.created)
+	return r
 end
 
 function live.list()
-	return BOBBA.store.query("SELECT id, name, owner_name, layout FROM bobbahotel_rooms ORDER BY id")
+	local rows = BOBBA.store.query("SELECT id, name, owner_name, layout FROM bobbahotel_rooms ORDER BY id")
+	for _, r in ipairs(rows) do r.id = tonumber(r.id) end
+	return rows
 end
 
 -- The room everyone comes to first. Made the first time the hotel starts.
