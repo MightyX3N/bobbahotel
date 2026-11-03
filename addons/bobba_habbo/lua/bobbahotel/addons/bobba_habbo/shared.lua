@@ -90,45 +90,125 @@ if SERVER and BOBBA.items then
 	end
 end
 
--- The catalogue's furni (server): Habbo's floor furni that Habbo sells (an offerid), a page for each
--- furni line ("pura", "iced", ...) under "Furni". Left out for now: wall furni, and what needs
--- something the hotel doesn't have yet (wired, pets, music, teleports, clothing, groups, effects).
+-- The catalogue's furni (server): every floor furni in Habbo's furnidata, sold by Habbo now or not,
+-- on a page for its furni line ("pura", "iced", ...) under "Furni". Lines of the same kind over the
+-- years (Habboween 2009 ... 2026, Christmas, Easter, ...) are pages under one; a line with very many
+-- furni is cut into parts. Left out:
+--   rares and limited editions (H.CATALOG_RARE_LINES, and furni called LTD): staff give those
+--   what needs something the hotel doesn't have yet (wired, pets, music, teleports, games, trophies,
+--     rollers, vending machines, clothing, groups, effects), and wall furni
+--   Habbo's test furni
 -- Every furni costs the hotel's catalog.price credits (bobba_wallet_setting catalog.price <n>).
-H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true, teleport = true }
+H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true, teleport = true,
+	vending_machine = true, games = true, trophy = true, roller = true }
 H.CATALOG_SKIP_LINES = { horse = true, nests = true, pet_food = true, pet_accessories = true, clothing = true, guilds = true,
-	sfx = true, wired = true, fxbox = true }
+	sfx = true, wired = true, fxbox = true, trax = true, credit_furni = true, testing = true, trophies = true }
+H.CATALOG_RARE_LINES = { rare = true, bonusrare = true, nft = true, nftmint = true, collectibles = true, pixel_collectible = true,
+	gacha = true }
+H.CATALOG_PAGE_SIZE = 150
+
+-- lines over the years: what they're called together (the rest are their own name, made readable)
+H.CATALOG_FAMILY_NAMES = { xmas = "Christmas", habboween = "Habboween", easter = "Easter", valentine = "Valentine's",
+	newyear = "New Year", garden = "Garden", nft = "NFT", buildersclub = "Builders Club", habbopalooza = "Habbopalooza",
+	university = "University", summer = "Summer", cyberpunk = "Cyberpunk" }
 
 function H.catalogLineName(line)
 	if line == "" then return "Other" end
-	local s = line:gsub("_", " ")
+	local s = line:gsub("_", " "):gsub("(%a)(%d+)$", "%1 %2")
 	return s:sub(1, 1):upper() .. s:sub(2)
+end
+
+function H.catalogRare(class, f)
+	if H.CATALOG_RARE_LINES[f.line] or f.line:find("^nft") then return true end
+	local base = H.furniBase(class):lower()
+	return base:find("_ltd") ~= nil or base:find("^ltd") ~= nil or (f.name or ""):find("%f[%w]LTD%f[%W]") ~= nil
+end
+
+-- a line's family and year: "habboween_2015" -> habboween, 2015; "xmas2010" -> xmas, 2010;
+-- "garden16" -> garden, 2016 (Habbo's anniversaries habbo15/20/25 are their own lines)
+local function family(line)
+	if line:find("^habbo%d+$") then return nil end
+	-- (Builders Club's lines go together: buildersclub_alpha1, buildersclub_recolorable, ...)
+	if line:find("^buildersclub_") then return "buildersclub", line:sub(14) end
+	local base, year = line:match("^(.-)_?(%d%d%d%d)$")
+	if not base then base, year = line:match("^(%a[%a_]-)_?(%d%d)$") if year then year = "20" .. year end end
+	if not base or base == "" then return nil end
+	return base, year
+end
+
+function H.catalogPages(fd, price)
+	-- the furni, by line
+	local lines = {}
+	for class, f in pairs(fd.byClass) do
+		if not f.wall and f.special == 1 and not H.CATALOG_SKIP_CATEGORIES[f.category] and not f.category:find("^wired")
+			and not H.CATALOG_SKIP_LINES[f.line] and not f.line:find("^pet_") and not H.catalogRare(class, f)
+			and f.name ~= "" and not f.name:find(" name$") then
+			local list = lines[f.line]
+			if not list then list = {} lines[f.line] = list end
+			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0 }
+		end
+	end
+	-- a page for a line (cut into parts when it's big)
+	local function page(name, offers)
+		table.sort(offers, function(a, b) return a.order < b.order end)
+		if #offers <= H.CATALOG_PAGE_SIZE then return { name = name, offers = offers, iconKind = offers[1].kind } end
+		local parts = {}
+		for i = 1, #offers, H.CATALOG_PAGE_SIZE do
+			local part = {}
+			for j = i, math.min(#offers, i + H.CATALOG_PAGE_SIZE - 1) do part[#part + 1] = offers[j] end
+			parts[#parts + 1] = { name = name .. " " .. #parts + 1, offers = part, iconKind = part[1].kind }
+		end
+		return { name = name, children = parts, iconKind = offers[1].kind }
+	end
+	-- families: lines with the same name and a year
+	local families, single = {}, {}
+	for line, offers in pairs(lines) do
+		local base, year = family(line)
+		if base then
+			families[base] = families[base] or {}
+			families[base][#families[base] + 1] = { line = line, year = year, offers = offers }
+		else
+			single[#single + 1] = { line = line, offers = offers }
+		end
+	end
+	-- (a line with the family's own name, "xmas" or "habboween", joins it too)
+	for base, list in pairs(families) do
+		if lines[base] then
+			for i = #single, 1, -1 do if single[i].line == base then table.remove(single, i) end end
+			list[#list + 1] = { line = base, year = nil, offers = lines[base] }
+		end
+	end
+	local top = {}
+	for base, list in pairs(families) do
+		if #list == 1 then
+			local l = list[1]
+			top[#top + 1] = page(H.catalogLineName(l.line), l.offers)
+		else
+			table.sort(list, function(a, b) return (a.year or "0") < (b.year or "0") end)
+			local name = H.CATALOG_FAMILY_NAMES[base] or H.catalogLineName(base)
+			local children = {}
+			for _, l in ipairs(list) do
+				local label = l.year and (l.year:find("^%d+$") and l.year or H.catalogLineName(l.year)) or name
+				children[#children + 1] = page(label, l.offers)
+			end
+			top[#top + 1] = { name = name, children = children, iconKind = children[#children].iconKind }
+		end
+	end
+	for _, l in ipairs(single) do
+		top[#top + 1] = page(H.CATALOG_FAMILY_NAMES[l.line] or H.catalogLineName(l.line), l.offers)
+	end
+	table.sort(top, function(a, b)
+		if (a.name == "Other") ~= (b.name == "Other") then return b.name == "Other" end
+		return a.name:lower() < b.name:lower()
+	end)
+	return { { name = "Furni", children = top } }
 end
 
 if SERVER and BOBBA.catalog then
 	BOBBA.catalog.provider = function(cb)
 		H.furnidata(function(fd, err)
 			if not fd then print("[Bobba] the catalogue: " .. tostring(err)) cb({}) return end
-			local price = tonumber(BOBBA.store.setting("catalog.price", "5")) or 5
-			local lines = {}
-			for class, f in pairs(fd.byClass) do
-				if not f.wall and (f.offer or -1) ~= -1 and f.special == 1 and not H.CATALOG_SKIP_CATEGORIES[f.category]
-					and not f.category:find("^wired") and not H.CATALOG_SKIP_LINES[f.line] then
-					local list = lines[f.line]
-					if not list then list = {} lines[f.line] = list end
-					list[#list + 1] = { kind = class, name = f.name ~= "" and f.name or class, price = { credits = price }, order = f.id or 0 }
-				end
-			end
-			local pages = {}
-			for line, offers in pairs(lines) do
-				table.sort(offers, function(a, b) return a.order < b.order end)
-				-- (its icon: the line's first furni, the way Habbo's page icons are a furni of the line)
-				pages[#pages + 1] = { name = H.catalogLineName(line), line = line, offers = offers, iconKind = offers[1].kind }
-			end
-			table.sort(pages, function(a, b)
-				if (a.line == "") ~= (b.line == "") then return b.line == "" end
-				return a.name:lower() < b.name:lower()
-			end)
-			cb({ { name = "Furni", nameKey = "catalog.furni", children = pages } })
+			cb(H.catalogPages(fd, tonumber(BOBBA.store.setting("catalog.price", "5")) or 5))
 		end)
 	end
 end

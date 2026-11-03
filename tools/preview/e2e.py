@@ -266,7 +266,16 @@ def main():
         return v
     for c in (a.hud_click or "").split(";"):
         if not c: continue
-        if c.startswith("action:"):
+        if ":wheel:" in c:
+            win, _, rest = c.split(":", 2)
+            x, y, n = map(float, rest.split(","))
+            pn = (L.eval("BOBBA.ui.windows")[win]).panel
+            sc = L.eval("BOBBA.ui.scale()")
+            pn.mouse[1], pn.mouse[2] = x * sc, y * sc
+            G.ops = L.table()
+            pn.Paint(pn, pn.w, pn.h)
+            pn.OnMouseWheeled(pn, n)
+        elif c.startswith("action:"):
             L.eval("function(n) BOBBA.hud.actions[n]() end")(c[7:])
         elif ":type:" in c:
             win, _, box, text = c.split(":", 3)
