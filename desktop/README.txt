@@ -5,7 +5,7 @@ Steam libraries itself); the hotel's gamemode, its addons and the Habbo files th
 downloaded come from there. The hotel runs on this computer, like GMod's singleplayer.
 
   F1     the console (what the game prints; commands like bobba_give, bobba_status)
-  F11    full screen
+  F11    full screen (a borderless window the size of the screen)
   disconnect (in the console)   back to the start page
 
 Your hotel (its database, your avatar picture) is kept in %APPDATA%\BobbaHotel\hotels\local.

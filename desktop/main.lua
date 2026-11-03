@@ -51,7 +51,7 @@ function love.load(args)
 	for _, a in ipairs(args or {}) do if a == "--play" then direct = "1" end end
 	if os.getenv("BOBBA_DESKTOP_GARRYSMOD") then settings.garrysmod = os.getenv("BOBBA_DESKTOP_GARRYSMOD") end
 	Launcher = require("bobba.launcher")
-	if settings.fullscreen then love.window.setFullscreen(true, "desktop") end
+	if settings.fullscreen then require("bobba.window").set(true) end
 	if direct and settings.garrysmod then
 		play()
 	else

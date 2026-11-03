@@ -551,10 +551,11 @@ local function settingsPage()
 	link("set-folder", "Change", 42 + textWidth(settings.garrysmod or "(not set)", 14) + 14, y + 46, 14, C.orange, function() page = "setup" end)
 	y = y + 90
 	text("Window", 42, y, 14, "b")
-	local full = love.window.getFullscreen()
+	local Win = require("bobba.window")
+	local full = Win.full()
 	button("fullscreen", full and "Leave full screen" or "Full screen", 42, y + 24, 160, 32, "blue", function()
-		love.window.setFullscreen(not love.window.getFullscreen(), "desktop")
-		settings.fullscreen = love.window.getFullscreen()
+		Win.toggle()
+		settings.fullscreen = Win.full()
 		actions.save()
 	end, 13)
 	text("(F11 does the same, here and in the hotel)", 214, y + 32, 13, "r", C.grey)
@@ -614,7 +615,6 @@ end
 -- --- Love's events --------------------------------------------------------------------------------------------
 function L.start(st, acts)
 	settings, actions = st, acts
-	if settings.fullscreen then love.window.setFullscreen(true, "desktop") end
 	if not (settings.garrysmod and ST.isGarrysmod(settings.garrysmod)) then
 		page = "setup"
 		local p, ok = ST.findGarrysmod()
@@ -691,8 +691,9 @@ end
 
 function L.keypressed(key)
 	if key == "f11" then
-		love.window.setFullscreen(not love.window.getFullscreen(), "desktop")
-		settings.fullscreen = love.window.getFullscreen()
+		local Win = require("bobba.window")
+		Win.toggle()
+		settings.fullscreen = Win.full()
 		actions.save()
 		return
 	end

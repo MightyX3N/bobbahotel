@@ -185,7 +185,14 @@ function Game.wheelmoved(dx, dy)
 	if G and state == "playing" then G.wheelMoved(dx, dy) end
 end
 function Game.keypressed(key, scancode, isRepeat)
-	if key == "f11" then love.window.setFullscreen(not love.window.getFullscreen(), "desktop") return end
+	if key == "f11" then
+		local Win, Settings = require("bobba.window"), require("bobba.settings")
+		Win.toggle()
+		local st = Settings.load()
+		st.fullscreen = Win.full()
+		Settings.save(st)
+		return
+	end
 	if key == "f1" or (key == "`" and Console.isOpen()) then Console.toggle() return end
 	if Console.isOpen() then Console.key(key) return end
 	if G and state == "playing" then G.keyPressed(key, isRepeat) end
