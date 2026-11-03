@@ -116,6 +116,8 @@ local function measure(font, text)
 end
 
 -- the words of "name: text" in lines no wider than maxW: { { { text, font }, ... }, ... }
+-- (nitro-react: .chat-bubble { word-break: break-word }: a word too long for a whole line is
+-- broken between its letters, starting in the room left on the line it's on)
 local function wrap(name, text, kind, maxW)
 	local msgFont = (kind == "shout") and F.bold or ((kind == "whisper") and F.italic or F.chat)
 	local words = {}
@@ -123,19 +125,43 @@ local function wrap(name, text, kind, maxW)
 	for w in text:gmatch("%S+") do words[#words + 1] = { w .. " ", msgFont } end
 	local lines, line, lineW = {}, {}, 0
 	local maxLine = 0
+	-- a line's width without the space after its last word
+	local function finish()
+		local last = line[#line]
+		local w = lineW
+		if last and last[1]:sub(-1) == " " then w = w - measure(last[2], " ") end
+		if w > maxLine then maxLine = w end
+		lines[#lines + 1] = line
+		line, lineW = {}, 0
+	end
+	local function put(textPart, font, width, isName)
+		line[#line + 1] = { textPart, font, x = lineW, name = isName }
+		lineW = lineW + width
+	end
 	for _, w in ipairs(words) do
 		local ww = measure(w[2], w[1]) + (w.gap or 0)
-		if lineW > 0 and lineW + ww > maxW then
-			lines[#lines + 1] = line
-			if lineW > maxLine then maxLine = lineW end
-			line, lineW = {}, 0
+		local bare = measure(w[2], (w[1]:gsub(" $", ""))) + (w.gap or 0)
+		if bare <= maxW then
+			if lineW > 0 and lineW + bare > maxW then finish() end
+			put(w[1], w[2], ww, w.name)
+		else
+			-- too long for any line: letter by letter, as much as fits on each line
+			local piece = ""
+			for ch in w[1]:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+				local try = piece .. ch
+				if ch ~= " " and lineW + measure(w[2], try) > maxW and (piece ~= "" or lineW > 0) then
+					if piece ~= "" then put(piece, w[2], measure(w[2], piece), w.name) end
+					finish()
+					piece = ch
+				else
+					piece = try
+				end
+			end
+			if piece ~= "" then put(piece, w[2], measure(w[2], piece), w.name) end
 		end
-		line[#line + 1] = { w[1], w[2], x = lineW, name = w.name }
-		lineW = lineW + ww
 	end
-	if #line > 0 then lines[#lines + 1] = line if lineW > maxLine then maxLine = lineW end end
-	local spaceW = measure(msgFont, " ")
-	return lines, math.max(1, maxLine - spaceW)
+	if #line > 0 then finish() end
+	return lines, math.max(1, maxLine)
 end
 
 
