@@ -1,6 +1,6 @@
 Bobba Hotel Desktop (test build)
 
-Start BobbaHotel.exe. The first time it asks for your garrysmod folder (it looks for it in your
+Start Bobba Hotel.exe. The first time it asks for your garrysmod folder (it looks for it in your
 Steam libraries itself); the hotel's gamemode, its addons and the Habbo files the game already
 downloaded come from there. The hotel runs on this computer, like GMod's singleplayer.
 

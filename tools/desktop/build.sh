@@ -16,7 +16,7 @@ cp "$LOVEDIR/license.txt" "$OUT/love-license.txt"
 # (the window's and the file's icon: Bobba Hotel's, not Love's; needs node with resedit)
 cp "$LOVEDIR/love.exe" "$TMP/love.exe"
 node "$ROOT/tools/desktop/seticon.mjs" "$TMP/love.exe" "$ROOT/tools/desktop/icon.ico" || echo "(icon not changed: npm i in tools/desktop)"
-cat "$TMP/love.exe" "$TMP/game.love" > "$OUT/BobbaHotel.exe"
+cat "$TMP/love.exe" "$TMP/game.love" > "$OUT/Bobba Hotel.exe"
 cp "$ROOT/desktop/README.txt" "$OUT/README.txt"
 rm -rf "$TMP"
 echo "built $OUT"
