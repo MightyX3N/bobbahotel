@@ -23,13 +23,16 @@ U.C = {
 
 function U.scale() return (V and V.uiScale) and V.uiScale() or 1 end
 
--- Ubuntu at a CSS size (GMod's font size is the letters' whole height: 1.197 of CSS's)
+-- Nitro's font at a CSS size: its "Ubuntu" is Ubuntu Condensed (nitro-react's fonts.scss, Ubuntu-C.ttf,
+-- shipped in the gamemode's content/resource/fonts; bold is made from it, as the browser does).
+-- GMod's font size is the letters' whole height: ascent + descent, 1.121 of CSS's size.
+U.FONT, U.FONT_CELL = "Ubuntu Condensed", 1.121
 local fonts = {}
 function U.font(px, bold)
-	local size = math.floor(px * 1.197 * U.scale() + 0.5)
-	local name = "BobbaUI" .. size .. (bold and "b" or "")
+	local size = math.floor(px * U.FONT_CELL * U.scale() + 0.5)
+	local name = "BobbaUIC" .. size .. (bold and "b" or "")
 	if not fonts[name] then
-		surface.CreateFont(name, { font = "Ubuntu", size = size, weight = bold and 700 or 500, antialias = true, extended = true })
+		surface.CreateFont(name, { font = U.FONT, size = size, weight = bold and 700 or 500, antialias = true, extended = true })
 		fonts[name] = true
 	end
 	return name, size

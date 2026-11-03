@@ -52,9 +52,11 @@ C.OUTSET_TOP = 2
 C.NAME_GAP = 4
 C.HEAD = { 13.25, 17.5 }
 C.COLOR_W = 30
--- GMod's font size is the whole height of Ubuntu's letters (ascent + descent: 1.197 of the font's
--- size in CSS); line-height 1 puts that height's middle in the middle of a 14 pixel line
-C.UBUNTU_CELL = 1.197
+-- Nitro's "Ubuntu" is Ubuntu Condensed (see ui.lua). GMod's font size is the whole height of its
+-- letters (ascent + descent: 1.121 of the font's size in CSS); line-height 1 puts that height's
+-- middle in the middle of a 14 pixel line
+C.FONT = "Ubuntu Condensed"
+C.UBUNTU_CELL = 1.121
 
 local S, FONT_PX, TEXT_TOP, LINE_H, INPUT_W, INPUT_H, F
 -- (sets the sizes for the screen; again when the game's resolution changes)
@@ -67,11 +69,12 @@ function C.setScale(scale)
 	INPUT_W, INPUT_H = 420 * S, 32 * S
 	-- (the size in the names: GMod keeps a font's first size until the game restarts, so a new size
 	-- needs a new name)
-	F = { chat = "BobbaChat" .. FONT_PX, bold = "BobbaChatBold" .. FONT_PX, italic = "BobbaChatItalic" .. FONT_PX, input = "BobbaChatInput" .. S }
-	surface.CreateFont(F.chat, { font = "Ubuntu", size = FONT_PX, weight = 500, antialias = true, extended = true })
-	surface.CreateFont(F.bold, { font = "Ubuntu", size = FONT_PX, weight = 800, antialias = true, extended = true })
-	surface.CreateFont(F.italic, { font = "Ubuntu", size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
-	surface.CreateFont(F.input, { font = "Ubuntu", size = math.floor(13 * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
+	-- ("C" for Condensed: GMod keeps a font name's first definition for the whole session)
+	F = { chat = "BobbaChatC" .. FONT_PX, bold = "BobbaChatCBold" .. FONT_PX, italic = "BobbaChatCItalic" .. FONT_PX, input = "BobbaChatCInput" .. S }
+	surface.CreateFont(F.chat, { font = C.FONT, size = FONT_PX, weight = 500, antialias = true, extended = true })
+	surface.CreateFont(F.bold, { font = C.FONT, size = FONT_PX, weight = 800, antialias = true, extended = true })
+	surface.CreateFont(F.italic, { font = C.FONT, size = FONT_PX, weight = 500, italic = true, antialias = true, extended = true })
+	surface.CreateFont(F.input, { font = C.FONT, size = math.floor(13 * C.UBUNTU_CELL * S + 0.5), weight = 500, antialias = true, extended = true })
 	-- bubbles already up keep their size; the input is made again at the new size
 	if IsValid(C.input) then C.input:Remove() C.input = nil end
 end

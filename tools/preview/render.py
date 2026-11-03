@@ -125,8 +125,8 @@ return G
 
 # Fonts like GMod's: surface.CreateFont's size is the height of the font's letters from the top
 # of its tallest to the bottom of its lowest (ascent + descent, Windows' cell height), so the font is
-# drawn at size / (ascent + descent) em. Ubuntu comes from $BOBBA_FONTS (Ubuntu.ttf, Ubuntu-b.ttf,
-# Ubuntu-i.ttf) when set; otherwise DejaVu Sans stands in.
+# drawn at size / (ascent + descent) em. Ubuntu Condensed comes from $BOBBA_FONTS (Ubuntu-C.ttf) when
+# set; otherwise DejaVu Sans stands in.
 FONTS = {}
 _pil_cache = {}
 def pil_font(name):
@@ -137,7 +137,10 @@ def pil_font(name):
     family, size, weight, italic = f
     files = []
     d = os.environ.get("BOBBA_FONTS")
-    if d and family.lower() == "ubuntu":
+    if d and family.lower() == "ubuntu condensed":
+        # (the only file: bold is made from it, a pixel wider, like Windows does when a font has no bold)
+        files.append(os.path.join(d, "Ubuntu-C.ttf"))
+    elif d and family.lower() == "ubuntu":
         files.append(os.path.join(d, "Ubuntu-b.ttf" if weight >= 700 else ("Ubuntu-i.ttf" if italic else "Ubuntu.ttf")))
     files.append("DejaVuSans-Bold.ttf" if weight >= 700 else "DejaVuSans.ttf")
     font = None
@@ -152,10 +155,14 @@ def pil_font(name):
     _pil_cache[key] = (font, size)
     return _pil_cache[key]
 
+def faux_bold(name):
+    f = FONTS.get(name)
+    return f is not None and f[0].lower() == "ubuntu condensed" and f[2] >= 700
+
 def text_size(name, t):
     font, size = pil_font(name)
     if font is None: return len(t) * 7, size
-    return round(font.getlength(t)), size
+    return round(font.getlength(t)) + (1 if faux_bold(name) and t else 0), size
 
 def boot(w, h):
     L = lj.LuaRuntime(unpack_returned_tuples=True)
@@ -278,6 +285,7 @@ def paint(G, w, h, images=None, transparent=False):
                 tw = text_size(o[6], o[2])[0] if o[6] in FONTS else len(o[2]) * 7
                 x = x - tw / 2 if o[8] == 1 else x - tw
             d.text((x, y), o[2], fill=col, font=fnt, anchor="la")
+            if o[6] in FONTS and faux_bold(o[6]): d.text((x + 1, y), o[2], fill=col, font=fnt, anchor="la")
         elif kind == "image" and images is not None and o[2] in images:
             # a picture: the part of the texture the UVs pick (mirrored when u0 > u1), multiplied by
             # the draw colour (rounded like Habbo), scaled with GMod's filter (point = pixel-sharp)
