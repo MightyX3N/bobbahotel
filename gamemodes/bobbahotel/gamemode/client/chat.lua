@@ -496,7 +496,7 @@ local function createInput()
 			return true
 		end
 		-- turning the furni being placed (when there's nothing typed)
-		if code == KEY_R and (self:GetValue() or "") == "" and R.pressR and R.pressR() then
+		if code == KEY_R and (self:GetValue() or "") == "" and (R.turnedAt or 0) < SysTime() - 0.2 and R.pressR and R.pressR() then
 			-- (and the "r" isn't typed)
 			self.dropNextR = true
 			return true

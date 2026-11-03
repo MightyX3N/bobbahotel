@@ -69,6 +69,11 @@ local function typeFor(kind)
 			made.base = base
 			-- (a window's hole in the wall: its logic's mask, Nitro's FurnitureWindowLogic)
 			made.maskType = (findXml(lib, "_logic") or ""):match('<mask%s+type="([^"]+)"')
+			-- (the ways it can face, Habbo's 0-7, from its logic's directions in degrees)
+			made.directions = {}
+			for deg in ((findXml(lib, "_logic") or ""):match("<directions>(.-)</directions>") or ""):gmatch('id="(%d+)"') do
+				made.directions[#made.directions + 1] = math.floor(tonumber(deg) / 45)
+			end
 			-- (a sound block's sound: its logic's sample, FurnitureSoundBlockLogic)
 			local sample = (findXml(lib, "_logic") or ""):match("<sample([^>]*)>")
 			if sample then
@@ -228,6 +233,7 @@ function FU.info(kind)
 	local dims = t and t.logic
 	return { name = name, sit = f.sit, lay = f.lay, walk = f.walk, width = f.x, length = f.y, wall = f.wall,
 		logic = t and t.logicType or nil, category = f.category, maskType = t and t.maskType or nil, paint = paint,
+		directions = t and t.directions or nil,
 		sizeX = dims and dims.x or nil, sizeZ = dims and dims.z or nil, centerZ = dims and dims.z / 2 or nil }
 end
 

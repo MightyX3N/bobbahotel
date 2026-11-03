@@ -480,8 +480,12 @@ end)
 -- so it calls this when R is pressed with nothing typed; returns whether R turned something.
 function R.pressR()
 	if V.mode ~= "room" then return false end
+	R.turnedAt = SysTime()
 	if R.placing then
-		local dirs = R.placing.dirs or { 0, 2, 4, 6 }
+		-- (the ways the furni can face, Nitro's getValidRoomObjectDirection; a wall furni doesn't turn)
+		local fi = info(R.placing.kind)
+		if fi and fi.wall then return true end
+		local dirs = R.placing.dirs or (fi and fi.directions and #fi.directions > 0 and fi.directions) or { 0, 2, 4, 6 }
 		local i = 1
 		for j, d in ipairs(dirs) do if d == R.placing.dir then i = j end end
 		R.placing.dir = dirs[i % #dirs + 1]
@@ -538,10 +542,17 @@ hook.Add("Think", "bobba.room.masks", function()
 	end
 end)
 
+-- (R is read here whatever has the keyboard, unless it's a text box with something typed in it:
+-- the chat input with nothing typed, a window, the room. The chat input also turns it as the key
+-- comes in, so the "r" isn't typed; R.turnedAt stops it turning twice.)
 local rWasDown = false
 hook.Add("Think", "bobba.room.keys", function()
-	local down = input.IsKeyDown(KEY_R) and not (vgui.GetKeyboardFocus and vgui.GetKeyboardFocus())
-	if down and not rWasDown then R.pressR() end
+	local down = input.IsKeyDown(KEY_R)
+	if down and not rWasDown and (R.turnedAt or 0) < SysTime() - 0.2 then
+		local f = vgui.GetKeyboardFocus and vgui.GetKeyboardFocus()
+		local typing = IsValid(f) and f.GetCaretPos ~= nil and (f:GetValue() or "") ~= ""
+		if not typing then R.pressR() end
+	end
 	rWasDown = down
 end)
 
