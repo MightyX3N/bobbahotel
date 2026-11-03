@@ -5020,6 +5020,20 @@ local PLANE_LANDSCAPE = 3
 local function v(a)
     return __TS__New(Vector3d, a[1], a[2], a[3])
 end
+local planeGeometries = {}
+local function planeGeometry(size)
+    local g = planeGeometries[size]
+    if not g then
+        g = __TS__New(
+            RoomGeometry,
+            size,
+            __TS__New(Vector3d, 45, 30),
+            __TS__New(Vector3d, -10, 0, 0)
+        )
+        planeGeometries[size] = g
+    end
+    return g
+end
 function ____exports.planes(room, scale)
     local geometry = __TS__New(
         RoomGeometry,
@@ -5107,7 +5121,50 @@ function ____exports.planes(room, scale)
                     depth = depth + ROOM_DEPTH_OFFSET * 0.5
                 end
             end
+            local width = leftSide.length * scale
+            local height = rightSide.length * scale
+            local pg = planeGeometry(scale)
+            local textureWidth = width
+            local textureHeight = height
+            local textureX = 0
+            local textureY = 0
+            if p.type == PLANE_FLOOR then
+                local _local_10 = pg:getScreenPoint(__TS__New(Vector3d, 0, 0, 0))
+                local _local_11 = pg:getScreenPoint(__TS__New(Vector3d, 0, height / pg.scale, 0))
+                local _local_12 = pg:getScreenPoint(__TS__New(Vector3d, width / pg.scale, 0, 0))
+                if _local_10 and _local_11 and _local_12 then
+                    textureWidth = math.floor(math.abs(_local_10.x - _local_12.x) + 0.5)
+                    textureHeight = math.floor(math.abs(_local_10.x - _local_11.x) + 0.5)
+                    local _local_15 = _local_10.x - pg:getScreenPoint(__TS__New(Vector3d, 1, 0, 0)).x
+                    textureX = textureOffsetX * __TS__MathTrunc(math.abs(_local_15))
+                    textureY = textureOffsetY * __TS__MathTrunc(math.abs(_local_15))
+                end
+            else
+                local _local_8 = pg:getScreenPoint(__TS__New(Vector3d, 0, 0, 0))
+                local _local_9 = pg:getScreenPoint(__TS__New(Vector3d, 0, 0, height / pg.scale))
+                local _local_10 = pg:getScreenPoint(__TS__New(Vector3d, 0, width / pg.scale, 0))
+                if _local_8 and _local_9 and _local_10 then
+                    textureWidth = math.floor(math.abs(_local_8.x - _local_10.x) + 0.5)
+                    textureHeight = math.floor(math.abs(_local_8.y - _local_9.y) + 0.5)
+                end
+            end
+            if textureWidth < 1 then
+                textureWidth = 1
+            end
+            if textureHeight < 1 then
+                textureHeight = 1
+            end
+            local unit = __TS__New(Vector3d, normal.x, normal.y, normal.z)
+            if unit.length > 0 then
+                unit:multiply(1 / unit.length)
+            end
+            local n = geometry:getCoordinatePosition(unit)
             out[#out + 1] = {
+                textureWidth = textureWidth,
+                textureHeight = textureHeight,
+                textureX = textureX,
+                textureY = textureY,
+                normal = {n.x, n.y, n.z},
                 index = index,
                 type = p.type,
                 color = color,

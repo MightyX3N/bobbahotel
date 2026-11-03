@@ -25,7 +25,9 @@ local function fakeGmod()
 		PushRenderTarget = function() G.rtDraws = G.rtDraws + 1 G.inRT = true end,
 		PopRenderTarget = function() G.inRT = false end,
 		Clear = function() end,
+		PushFilterMag = function() end, PushFilterMin = function() end, PopFilterMag = function() end, PopFilterMin = function() end,
 	}
+	_G.TEXFILTER = { POINT = 1 }
 	_G.cam = { Start2D = function() end, End2D = function() end }
 	_G.math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
 	_G.math.Round = function(v) return math.floor(v + 0.5) end

@@ -31,6 +31,7 @@ function R.show()
 	local c = R.current
 	if not c then return end
 	V.mode = "room"
+	V.look = { floor = c.floor or "", wall = c.wallpaper or "" }
 	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight }), c.name .. "  (room " .. c.id .. ", by " .. c.owner .. ")   click = walk   Ctrl+scroll = zoom   drag = move")
 end
 

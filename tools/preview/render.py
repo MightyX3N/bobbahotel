@@ -32,7 +32,8 @@ surface = {
 		local area = 0
 		for i = 1, #pts do local a, b = pts[i], pts[i % #pts + 1] area = area + (a.x * b.y - b.x * a.y) end
 		if area <= 0 then op("skipped") return end
-		local t = {} for i, p in ipairs(pts) do t[i] = { p.x, p.y } end op("poly", t, { col[1], col[2], col[3], col[4] })
+		local t = {} for i, p in ipairs(pts) do t[i] = { p.x, p.y, p.u, p.v } end
+		op("poly", t, { col[1], col[2], col[3], col[4] }, (pts[1].u ~= nil and G.material) and G.material.path or nil)
 	end,
 	DrawLine = function(x1, y1, x2, y2) op("line", x1, y1, x2, y2, { col[1], col[2], col[3] }) end,
 	SetMaterial = function(m) G.material = m end,
@@ -40,7 +41,7 @@ surface = {
 	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter, G.blend) end,
 	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }) end,
 }
-draw = { NoTexture = function() end, SimpleText = function(t, f, x, y) op("text", t, x, y) end,
+draw = { NoTexture = function() G.material = nil end, SimpleText = function(t, f, x, y) op("text", t, x, y) end,
 	SimpleTextOutlined = function(t, f, x, y, c, ax, ay) op("text", t, x - 3 * #t, y - 12) end }
 local fakeTime = 100
 SysTime = function() return fakeTime end
@@ -128,6 +129,41 @@ def paint(G, w, h, images=None):
         kind = o[1]
         if kind == "clear":
             d.rectangle([0, 0, w, h], fill=(0, 0, 0))
+        elif kind == "poly" and o[4] is not None and images is not None and o[4] in images:
+            # a textured polygon: the picture mapped by its corners' u, v (pixel-sharp), times the colour
+            n = len(o[2])
+            P = [(o[2][j][1], o[2][j][2], o[2][j][3], o[2][j][4]) for j in range(1, n + 1)]
+            pic = images[o[4]].convert("RGBA")
+            (x0, y0, u0, v0), (x1, y1, u1, v1), (x2, y2, u2, v2) = P[0], P[1], P[2]
+            det = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
+            if det == 0: continue
+            def solve(a0, a1, a2):
+                # a = A*x + B*y + C through the three corners
+                A = ((a1 - a0) * (y2 - y0) - (a2 - a0) * (y1 - y0)) / det
+                B = ((x1 - x0) * (a2 - a0) - (x2 - x0) * (a1 - a0)) / det
+                return A, B, a0 - A * x0 - B * y0
+            Au, Bu, Cu = solve(u0 * pic.width, u1 * pic.width, u2 * pic.width)
+            Av, Bv, Cv = solve(v0 * pic.height, v1 * pic.height, v2 * pic.height)
+            bx0, by0 = int(min(p[0] for p in P)), int(min(p[1] for p in P))
+            bx1, by1 = int(max(p[0] for p in P)) + 1, int(max(p[1] for p in P)) + 1
+            bw, bh = bx1 - bx0, by1 - by0
+            if bw <= 0 or bh <= 0: continue
+            # sample at pixel centres, wrapping like a repeating texture
+            import math
+            out = Image.new("RGBA", (bw, bh))
+            src = pic.load(); dst = out.load()
+            c = o[3]
+            for yy in range(bh):
+                for xx in range(bw):
+                    sx, sy = bx0 + xx + 0.5, by0 + yy + 0.5
+                    tu = Au * sx + Bu * sy + Cu; tv = Av * sx + Bv * sy + Cv
+                    r_, g_, b_, a_ = src[int(math.floor(tu)) % pic.width, int(math.floor(tv)) % pic.height]
+                    dst[xx, yy] = ((r_ * c[1] + 127) // 255, (g_ * c[2] + 127) // 255, (b_ * c[3] + 127) // 255, a_)
+            mask = Image.new("L", (bw, bh), 0)
+            ImageDraw.Draw(mask).polygon([(p[0] - bx0, p[1] - by0) for p in P], fill=255)
+            from PIL import ImageChops
+            out.putalpha(ImageChops.multiply(out.getchannel("A"), mask))
+            im.paste(out, (bx0, by0), out)
         elif kind == "poly":
             pts = [(o[2][j][1], o[2][j][2]) for j in range(1, len(o[2]) + 1)]
             d.polygon(pts, fill=tuple(o[3][j] for j in (1, 2, 3, 4)))

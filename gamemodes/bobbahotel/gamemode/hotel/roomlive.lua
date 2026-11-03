@@ -5,7 +5,7 @@
 --   BOBBA.live.enter(player, roomId)       BOBBA.live.leave(player)
 --   BOBBA.live.walk(player, x, y)
 --
--- Messages to players:  room.load { id, name, owner, layout, heightmap, wallHeight, units = {...}, items = {...},
+-- Messages to players:  room.load { id, name, owner, layout, heightmap, wallHeight, floor, wallpaper, units = {...}, items = {...},
 --                                   canEdit (may move furni here), canPlace (may place furni from nowhere) }
 --                       room.units { unit, ... }   (each: id, name, x, y, z, dir, to = {x, y, z} while stepping,
 --                                                   posture "sit"/"lay" and height (the seat's) when on furni)
@@ -35,6 +35,30 @@ function live.migrate()
 		)]],
 		"CREATE INDEX bobbahotel_rooms_owner ON bobbahotel_rooms (owner)",
 	})
+	-- the room's look: its floor and wallpaper ('' = the default; what the ids mean is up to the
+	-- addon that draws them, e.g. bobba_habbo's Habbo floors and wallpapers)
+	BOBBA.store.migrate("core.004_room_look", {
+		"ALTER TABLE bobbahotel_rooms ADD COLUMN floor TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE bobbahotel_rooms ADD COLUMN wallpaper TEXT NOT NULL DEFAULT ''",
+	})
+end
+
+-- A floor or wallpaper id: letters, digits, _ . - (at most 32), or '' for the default
+function live.validLook(v)
+	if v == nil then return nil end
+	v = tostring(v)
+	if v == "" or v == "default" then return "" end
+	if #v > 32 or not v:match("^[%w_%.%-]+$") then return nil end
+	return v
+end
+
+-- what = "floor" or "wallpaper"
+function live.setLook(id, what, v)
+	v = live.validLook(v)
+	if v == nil or (what ~= "floor" and what ~= "wallpaper") or not live.info(id) then return false end
+	BOBBA.store.query("UPDATE bobbahotel_rooms SET " .. what .. " = ? WHERE id = ?", { v, tonumber(id) })
+	live.refresh(id)
+	return true
 end
 
 local function clean(name)
@@ -59,6 +83,7 @@ function live.info(id)
 	local r = BOBBA.store.row("SELECT * FROM bobbahotel_rooms WHERE id = ?", { tonumber(id) or -1 })
 	if not r then return nil end
 	r.id, r.wall_height, r.created = tonumber(r.id), tonumber(r.wall_height) or -1, tonumber(r.created)
+	r.floor, r.wallpaper = r.floor or "", r.wallpaper or ""
 	return r
 end
 
@@ -156,6 +181,7 @@ local function roomMessage(r, u, units)
 	return {
 		id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
 		heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
+		floor = r.info.floor, wallpaper = r.info.wallpaper,
 		items = BOBBA.items.list(r),
 		canEdit = u.player ~= nil and BOBBA.items.canEdit(u.player, r) or false,
 		canPlace = u.player ~= nil and BOBBA.perms.has(u.player, "bobba.staff.place") or false,

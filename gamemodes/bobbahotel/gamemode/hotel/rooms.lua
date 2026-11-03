@@ -201,6 +201,12 @@ function rooms.planePieces(room, index)
 end
 
 -- a point on a plane, from units along its sides
+-- the lengths of a plane's two sides (left, right)
+function rooms.planeSize(room, index)
+	local p = room.planes[index + 1]
+	return len(p.left), len(p.right)
+end
+
 function rooms.planePoint(room, index, u, v)
 	local p = room.planes[index + 1]
 	local L, H = len(p.left), len(p.right)

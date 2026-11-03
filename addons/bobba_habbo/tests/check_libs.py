@@ -384,5 +384,52 @@ ar = png.alphaReader(pngb, inflate)
 check(ar is not None and ar(0, 0) == 0 and ar(4, 2) == 202 and ar(3, 1) == 151 and ar(9, 9) == 0, "PNG: the alpha of each pixel read back")
 check(png.alphaReader(b"not a png", inflate) is None, "PNG: something else gives nothing")
 
+# --- room content: floors and wallpapers painted the way Nitro's plane rasterizers do (roomcontent.lua) --
+rc_vis = (b'<visualizationData><wallData><walls>'
+    b'<wall id="default"><visualization size="64"><visualizationLayer color="0xFFFFFF" materialId="wall_64_1"/></visualization></wall>'
+    b'<wall id="101"><visualization size="32"><visualizationLayer color="0x112233" materialId="wall_64_1"/></visualization>'
+    b'<visualization size="64"><visualizationLayer color="0xFFCC00" materialId="wall_64_1"/></visualization></wall></walls>'
+    b'<materials><material id="wall_64_1"><materialCellMatrix><materialCellColumn width="32"><materialCell textureId="wall_64_1"/></materialCellColumn></materialCellMatrix></material></materials>'
+    b'<textures><texture id="wall_64_1"><bitmap assetName="wall_texture_64_0_wall_white"/></texture></textures></wallData>'
+    b'<floorData><floors><floor id="default"><visualization size="64"><visualizationLayer color="0xFFFFFF" materialId="floor_64_1"/></visualization></floor></floors>'
+    b'<materials><material id="floor_64_1"><materialCellMatrix><materialCellColumn width="32"><materialCell textureId="floor_64_1"/></materialCellColumn></materialCellMatrix></material></materials>'
+    b'<textures><texture id="floor_64_1"><bitmap assetName="floor_texture_64_0_floor_basic"/></texture></textures></floorData></visualizationData>')
+rc_assets = b'<assets><asset name="wall_texture_64_0_wall_white"/><asset name="floor_texture_64_0_floor_basic"/></assets>'
+rc_swf = swf_file([binary(1, rc_vis), binary(2, rc_assets), lossless2_argb(3, 32, 8, [(9, 9, 9, 255)] * 256, alpha=False),
+    lossless2_argb(4, 64, 64, [(7, 7, 7, 255)] * 4096, alpha=False),
+    symbols([(1, "HabboRoomContent_room_visualization"), (2, "HabboRoomContent_room_assets"), (3, "HabboRoomContent_wall_texture_64_0_wall_white"), (4, "HabboRoomContent_floor_texture_64_0_floor_basic")])])
+L7 = runtime({b"habbo/raw/room/HabboRoomContent.dat": rc_swf})
+H7 = L7.eval(b"BOBBA.habbo")
+got = {}
+H7.roomContent(lambda r, err=None: got.update(r=r, err=err))
+rc = got.get("r")
+check(rc is not None, "room content: read from the cache (%s)" % got.get("err"))
+if rc is not None:
+    check(list(H7.roomIds(rc, b"wall").values()) == [b"101"], "room content: the wallpaper ids (not the default)")
+    def plane(**k):
+        t = {b"textureWidth": 70, b"textureHeight": 20, b"textureX": 0, b"textureY": 0, b"texture": True, b"normal": L7.table_from([0, 1, 0])}
+        for a, b in k.items(): t[a.encode()] = b
+        return L7.table_from(t)
+    paint = H7.paintPlane(rc, b"wall", b"101", plane())
+    layers = paint[b"layers"]
+    check(layers[1][b"fill"] == True and layers[1][b"color"] == 0xFFFFFF, "painting: a white base first (PlaneVisualization fills its texture white)")
+    check(layers[2][b"color"] == 0xFFCC00, "painting: the wallpaper's colour for size 64 (the nearest size)")
+    quads = [layers[2][b"quads"][i] for i in range(1, len(layers[2][b"quads"]) + 1)]
+    cells = sorted((q[b"x"], q[b"y"], q[b"w"], q[b"h"]) for q in quads)
+    want = sorted((x, y, min(32, 70 - x), min(8, 20 - y)) for x in (0, 32, 64) for y in (0, 8, 16))
+    check(cells == want, "painting: 32 x 8 cells tile the wall from the top left, cut at its edges (%s)" % cells[:4])
+    edge = [q for q in quads if q[b"x"] == 64 and q[b"y"] == 16][0]
+    check((edge[b"u0"], edge[b"u1"], edge[b"v0"], edge[b"v1"]) == (0, 6, 0, 4), "painting: a cut cell shows the top left part of its picture")
+    unknown = H7.paintPlane(rc, b"wall", b"nope", plane())
+    check(unknown[b"layers"][2][b"color"] == 0xFFFFFF, "painting: an unknown wallpaper is the default one")
+    flat = H7.paintPlane(rc, b"wall", b"101", plane(texture=False))
+    check(len(flat[b"layers"]) == 2 and flat[b"layers"][2][b"fill"] == True, "painting: a plane without texture is filled with the colour")
+    fl = H7.paintPlane(rc, b"floor", b"", plane(textureWidth=32, textureHeight=64, textureX=16, textureY=16))
+    fq = [fl[b"layers"][2][b"quads"][i] for i in range(1, len(fl[b"layers"][2][b"quads"]) + 1)]
+    first = sorted(fq, key=lambda q: (q[b"y"], q[b"x"]))[0]
+    # PixiJS: with an offset the tiling sprite is mirrored around its far edge: pixel X shows (-1 - X - 16) mod size
+    check(len(fq) == 2 and (first[b"x"], first[b"w"], first[b"h"], first[b"u0"], first[b"u1"], first[b"v0"], first[b"v1"]) == (0, 32, 48, 48, 16, 48, 0),
+          "painting: a floor's offset pattern, mirrored the way PixiJS draws it (%s)" % [(q[b"x"], q[b"y"], q[b"w"], q[b"h"], q[b"u0"], q[b"u1"], q[b"v0"], q[b"v1"]) for q in fq])
+
 print("\n%d failed" % failed)
 sys.exit(1 if failed else 0)

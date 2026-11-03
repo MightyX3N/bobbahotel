@@ -46,6 +46,8 @@ function H.clientXml(cb)
 		H.httpGet(url, function(zipBytes)
 			local zip, why = H.zip.open(zipBytes)
 			if not zip then cb(nil, why) return end
+			-- (the floors and wallpapers are in the same download: kept for the rooms)
+			if H.saveRoomContentFromZip then H.saveRoomContentFromZip(zip) end
 			local swfBytes, why2 = zip.read("HabboAir.swf", H.inflateRaw)
 			zipBytes = nil
 			if not swfBytes then cb(nil, why2) return end

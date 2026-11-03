@@ -54,6 +54,8 @@ def main():
     ap.add_argument("--time", type=float, default=0, help="seconds after the room loaded (animation)")
     ap.add_argument("--furni", help="furni to place first (needs --habbo): kind,x,y,dir[,state];...")
     ap.add_argument("--out", default="e2e.png")
+    ap.add_argument("--floor", help="the room's floor id")
+    ap.add_argument("--wallpaper", help="the room's wallpaper id")
     ap.add_argument("--click", help="after drawing, click at screen x,y[;x,y...] and print what the client sends")
     a = ap.parse_args()
     S = server()
@@ -71,6 +73,8 @@ def main():
                 for _ = 1, 200 do if out then break end BOBBA.platform.runTimers() end
                 return out end""")(room_id, p[0], int(p[1]), int(p[2]), int(p[3]), int(p[4]) if len(p) > 4 else 0)
             print("furni", spec, "->", res)
+    for what in ("floor", "wallpaper"):
+        if getattr(a, what): S.eval("BOBBA.live.setLook")(room_id, what, getattr(a, what))
     S.eval("BOBBA.platform.fromPlayer")(me, "room.enter", S.table_from({"id": room_id}))
     if a.walk:
         x, y = map(int, a.walk.split(","))
@@ -177,6 +181,7 @@ def habbo(L, folder):
         dofile(ADDON_DIR .. "shared.lua")
         dofile(ADDON_DIR .. "avatars.lua")
         dofile(ADDON_DIR .. "furni.lua")
+        dofile(ADDON_DIR .. "planes.lua")
         BOBBA.habbo.preloadAvatars() -- what its timer does as the game starts
         -- the bytes of a stored file as hex (this Lua runtime hands strings to Python as UTF-8 text)
         function STORE_HEX(path)

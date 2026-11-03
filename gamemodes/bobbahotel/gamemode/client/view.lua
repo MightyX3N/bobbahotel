@@ -95,6 +95,96 @@ function V.styleFor(kind)
 	return BOBBA.registry.get("plane_style", id) or BOBBA.registry.get("plane_style", "default_" .. kind)
 end
 
+-- An addon can paint the floor and walls (e.g. bobba_habbo with Habbo's floors and wallpapers):
+--   V.planePainter = function(kind, id, plane) return paint end      kind "floor" / "wall"; id from
+--   V.look ({ floor = "", wall = "" }); plane: the view's plane (textureWidth/Height, textureX/Y,
+--   normal, texture). paint = { width, height, layers = { { color, fill = true } or
+--   { color, quads = { { image = { path, texWidth, texHeight }, x, y, w, h, u0, v0, u1, v1 } } } } },
+--   in the plane's own texture (width x height pixels), the way Nitro's plane rasterizers paint it;
+--   nil while it isn't ready (then the plane is plain). Painted planes are shaded like Nitro's.
+V.look = V.look or { floor = "", wall = "" }
+
+local materials = {}
+local function material(path)
+	local m = materials[path]
+	if not m then
+		m = BOBBA.platform.dataMaterial(path, "noclamp")
+		materials[path] = m
+	end
+	return m
+end
+
+-- Nitro's RoomPlane.getMatrixForDimensions: the plane's texture (width x height) onto its corners
+local function planeMatrix(p, width, height)
+	local cx, cy = p.c[1], p.c[2]
+	local l3, l4 = p.d[1] - cx, p.d[2] - cy
+	local l5, l6 = p.b[1] - cx, p.b[2] - cy
+	if p.type == 2 or p.type == 3 then
+		if math.abs(l5 - width) <= 1 then l5 = width end
+		if math.abs(l6 - width) <= 1 then l6 = width end
+		if math.abs(l3 - height) <= 1 then l3 = height end
+		if math.abs(l4 - height) <= 1 then l4 = height end
+	end
+	local xs, ys, xk, yk = l5 / width, l6 / width, l3 / height, l4 / height
+	return function(bx, by) return cx + bx * xs + by * xk, cy + bx * ys + by * yk end
+end
+
+local KIND = { [1] = "floor", [2] = "wall" }
+
+-- a painted plane as textured polygons (and coloured ones), cut into the plane's pieces (around
+-- the door hole). shade: Nitro's plane colour (0xRRGGBB, multiplied in)
+local function paintedPolys(p, paint, pieces, shade, ox, oy, m, out)
+	local W, Hp = paint.width, paint.height
+	local L, H = pieces.L, pieces.H
+	local toScreen = planeMatrix(p, W, Hp)
+	local function at(bx, by)
+		local x, y = toScreen(bx, by)
+		return ox + x * m, oy + y * m
+	end
+	-- the pieces in the texture's pixels (the texture runs from the far corner back: u = L at x = 0)
+	local rects = {}
+	for _, q in ipairs(pieces) do
+		rects[#rects + 1] = { W * (1 - q[2] / L), W * (1 - q[1] / L), Hp * (1 - q[4] / H), Hp * (1 - q[3] / H) }
+	end
+	local sr, sg, sb = math.floor(shade / 65536) % 256, math.floor(shade / 256) % 256, shade % 256
+	for _, layer in ipairs(paint.layers) do
+		local c = layer.color or 0xFFFFFF
+		local r = math.floor((math.floor(c / 65536) % 256) * sr / 255 + 0.5)
+		local g = math.floor((math.floor(c / 256) % 256) * sg / 255 + 0.5)
+		local b = math.floor((c % 256) * sb / 255 + 0.5)
+		for _, rc in ipairs(rects) do
+			if layer.fill then
+				local x1, y1 = at(rc[1], rc[3])
+				local x2, y2 = at(rc[2], rc[3])
+				local x3, y3 = at(rc[2], rc[4])
+				local x4, y4 = at(rc[1], rc[4])
+				out[#out + 1] = { r = r, g = g, b = b, pts = clockwise({ { x = x1, y = y1 }, { x = x2, y = y2 }, { x = x3, y = y3 }, { x = x4, y = y4 } }) }
+			else
+				for _, q in ipairs(layer.quads) do
+					local x0, x1 = math.max(q.x, rc[1]), math.min(q.x + q.w, rc[2])
+					local y0, y1 = math.max(q.y, rc[3]), math.min(q.y + q.h, rc[4])
+					if x1 > x0 and y1 > y0 then
+						local img = q.image
+						local fu, fv = (q.u1 - q.u0) / q.w, (q.v1 - q.v0) / q.h
+						local u0 = (q.u0 + (x0 - q.x) * fu) / img.texWidth
+						local u1 = (q.u0 + (x1 - q.x) * fu) / img.texWidth
+						local v0 = (q.v0 + (y0 - q.y) * fv) / img.texHeight
+						local v1 = (q.v0 + (y1 - q.y) * fv) / img.texHeight
+						local ax, ay = at(x0, y0)
+						local bx, by = at(x1, y0)
+						local cx, cy = at(x1, y1)
+						local dx, dy = at(x0, y1)
+						out[#out + 1] = { r = r, g = g, b = b, mat = material(img.path), pts = clockwise({
+							{ x = ax, y = ay, u = u0, v = v0 }, { x = bx, y = by, u = u1, v = v0 },
+							{ x = cx, y = cy, u = u1, v = v1 }, { x = dx, y = dy, u = u0, v = v1 },
+						}) }
+					end
+				end
+			end
+		end
+	end
+end
+
 -- the planes as screen polygons with their colours, deepest first (like Nitro's RoomSpriteCanvas)
 local function buildPolys()
 	local z = zoomInfo()
@@ -112,7 +202,25 @@ local function buildPolys()
 	for _, p in ipairs(view) do
 		local style = V.styleFor(STYLE_FOR[p.type])
 		local r, g, b = BOBBA.rooms.planeColor(style, p.color)
-		if holes[p.index] then
+		local kind = KIND[p.type]
+		local paint
+		if kind and V.planePainter then
+			local ok, res = pcall(V.planePainter, kind, V.look[kind] or "", p)
+			if ok then paint = res else ErrorNoHalt("[Bobba] plane painter: " .. tostring(res) .. "\n") V.planePainter = nil end
+		end
+		if paint then
+			local pieces = holes[p.index] and BOBBA.rooms.planePieces(V.room, p.index) or nil
+			local L, H = BOBBA.rooms.planeSize(V.room, p.index)
+			pieces = pieces or { { 0, L, 0, H } }
+			pieces.L, pieces.H = L, H
+			local doorFloor = (p.index == BOBBA.rooms.doorFloor(V.room))
+			local list = doorFloor and back or polys
+			local before = #list
+			paintedPolys(p, paint, pieces, p.color, ox, oy, m, list)
+			if holes[p.index] then
+				for i = before + 1, #list do doorWall[#doorWall + 1] = list[i] end
+			end
+		elseif holes[p.index] then
 			-- a plane with the door cut out: drawn as the pieces around the hole
 			for _, q in ipairs(BOBBA.rooms.planePieces(V.room, p.index)) do
 				local piece = { r = r, g = g, b = b, pts = clockwise({
@@ -154,10 +262,19 @@ end
 
 local function drawPolys(list)
 	draw.NoTexture()
+	local current = nil
+	render.PushFilterMag(TEXFILTER.POINT)
+	render.PushFilterMin(TEXFILTER.POINT)
 	for _, p in ipairs(list) do
+		if p.mat ~= current then
+			current = p.mat
+			if current then surface.SetMaterial(current) else draw.NoTexture() end
+		end
 		surface.SetDrawColor(p.r, p.g, p.b, 255)
 		surface.DrawPoly(p.pts)
 	end
+	render.PopFilterMin()
+	render.PopFilterMag()
 end
 
 -- the outline of the tile under the mouse, at its floor height

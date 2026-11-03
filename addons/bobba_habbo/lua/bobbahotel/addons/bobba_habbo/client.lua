@@ -7,6 +7,8 @@ local H = BOBBA.habbo
 BOBBA.platform.runAddonFile("bobba_habbo", "avatars.lua")
 -- Habbo furni in rooms
 BOBBA.platform.runAddonFile("bobba_habbo", "furni.lua")
+-- Habbo floors and wallpapers
+BOBBA.platform.runAddonFile("bobba_habbo", "planes.lua")
 
 concommand.Add("bobba_habbo_test", function()
 	print("[Bobba] asking Habbo where its files are...")
@@ -152,3 +154,4 @@ concommand.Add("bobba_habbo_furni_sample", function(_, _, args)
 		end
 	end)
 end)
+

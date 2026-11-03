@@ -185,4 +185,21 @@ T["wall height: per room, a default for new rooms, everyone in the room gets the
 	eq(wall.right[3], 4.35, "walls 4.35 high with the hotel default")
 end
 
+T["floor and wallpaper: saved per room, everyone in it gets the new look, bad ids refused"] = function()
+	local mia, bo = start()
+	P.fromPlayer(mia, "room.ready")
+	P.fromPlayer(bo, "room.ready")
+	local home = BOBBA.live.homeRoom()
+	eq(last(mia, "room.load").floor, "", "the default to start with")
+	assert(BOBBA.live.setLook(home, "wallpaper", "1701"))
+	assert(BOBBA.live.setLook(home, "floor", "405"))
+	eq(last(bo, "room.load").wallpaper, "1701", "Bo sees the new wallpaper")
+	eq(last(bo, "room.load").floor, "405")
+	eq(BOBBA.live.setLook(home, "floor", "x y"), false, "not an id")
+	eq(BOBBA.live.setLook(home, "ceiling", "1"), false, "not a part of the room")
+	assert(BOBBA.live.setLook(home, "floor", "default"))
+	eq(BOBBA.live.info(home).floor, "", "default puts it back")
+	eq(BOBBA.live.info(home).wallpaper, "1701", "saved")
+end
+
 return T
