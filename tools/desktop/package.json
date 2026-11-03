@@ -1,0 +1,1 @@
+{ "name": "bobba-desktop-build", "private": true, "type": "module", "dependencies": { "resedit": "^2.0.0", "pe-library": "^1.0.0" } }
