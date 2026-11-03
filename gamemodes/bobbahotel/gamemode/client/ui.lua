@@ -600,7 +600,9 @@ function U.hud(id, place, draw)
 		if p:GetWide() ~= W - X or p:GetTall() ~= H - Y then p:SetSize(W - X, H - Y) end
 	end
 	layout()
-	p.Think = layout
+	-- (from a Think hook, not the panel's own Think: GMod doesn't run a hidden panel's Think, and these
+	-- are hidden until a room shows)
+	w.layout = layout
 	p.Paint = function(self)
 		w.clicks = {}
 		if not w.width then return end
@@ -624,6 +626,12 @@ function U.hud(id, place, draw)
 	end
 	return w
 end
+
+hook.Add("Think", "bobba.ui.huds", function()
+	for _, w in pairs(U.huds) do
+		if IsValid(w.panel) and w.layout then w.layout() end
+	end
+end)
 
 function U.hudRemove(id)
 	local w = U.huds[id]

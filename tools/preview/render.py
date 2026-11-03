@@ -227,7 +227,7 @@ def hud_click(L, G, spec):
     w = L.eval("BOBBA.ui.huds")[name] or L.eval("BOBBA.ui.windows")[name]
     if w is None: raise SystemExit("nothing called " + name + " to click")
     p = w.panel
-    if p.Think: p.Think(p)
+    G.run("Think")
     s = L.eval("BOBBA.ui.scale()")
     p.mouse[1], p.mouse[2] = x * s, y * s
     G.ops = L.table()
@@ -282,16 +282,16 @@ def compose(L, G, picture, images):
     L.execute("if BOBBA.loading then BOBBA.loading.active = false end")
     # (the room's name, shown by the room tools for 5 s after coming in: a second in)
     L.execute("BOBBA.hud.roomInfoShown = SysTime() - 1")
+    G.run("Think")
     huds = L.eval("BOBBA.ui.huds")
     for name in ("roomtools", "purse", "toolbar", "me"):
         h = huds[name]
         if h is not None:
-            if h.panel.Think: h.panel.Think(h.panel)
+            # (laid out by the Think hook, as in GMod; a hidden panel's own Think never runs)
             # (a few frames: what it draws may load on the first)
             if h.panel.visible:
                 for _ in range(3): h.panel.Paint(h.panel, h.panel.w, h.panel.h)
             put(h.panel)
-    G.run("Think")
     chat = L.eval("BOBBA.room.chatState")
     inp = L.eval("BOBBA.room.chatState.input") if chat is not None else None
     if inp is not None: put(inp)
