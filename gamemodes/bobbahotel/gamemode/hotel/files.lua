@@ -23,6 +23,7 @@ return {
 	"hotel/catalog.lua",
 	"hotel/gifts.lua",
 	"hotel/navigator.lua",
+	"hotel/roomaccess.lua",
 	"hotel/chat.lua",
 	"hotel/looks.lua",
 	"hotel/figureeditor.lua",

@@ -31,9 +31,9 @@ T["the views: public rooms, everyone's rooms, events, my world"] = function()
 	P.fromPlayer(mia, "navigator.search", { view = "roomads_view", query = "" })
 	eq(codes(last(mia, "navigator.result")), "top_promotions:0 new_ads:0")
 	P.fromPlayer(mia, "navigator.search", { view = "myworld_view", query = "" })
-	eq(codes(last(mia, "navigator.result")), "my:0 favorites:0", "Mia has no rooms yet")
+	eq(codes(last(mia, "navigator.result")), "my:0", "Mia has no rooms yet (empty lists left out, as Arcturus)")
 	P.fromPlayer(bo, "navigator.search", { view = "myworld_view", query = "" })
-	eq(codes(last(bo, "navigator.result")), "my:1 favorites:0")
+	eq(codes(last(bo, "navigator.result")), "my:1")
 end
 
 T["searching: by name, by owner, anything"] = function()

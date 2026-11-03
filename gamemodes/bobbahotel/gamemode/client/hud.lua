@@ -10,14 +10,25 @@ local HUD = BOBBA.hud
 local U = BOBBA.ui
 local R = BOBBA.room
 local V = BOBBA.view
+local P = BOBBA.platform
 
 -- a text from Habbo's texts when an addon gave them, else the English one here, with its values
 -- filled in the way Nitro's getValueWithParameters does: %name% (any case: Habbo writes both), and
 -- Habbo's plurals %{NAME|none|one|more} where %% in "more" is the number
 local function pattern(s) return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")) end
 local function anyCase(s) return (s:gsub("%a", function(c) return "[" .. c:lower() .. c:upper() .. "]" end)) end
+-- the hotel's own name instead of Habbo's (hotel.info): "Habbo Hotel" is the whole name, "Habbo" on
+-- its own the name without "Hotel" (Habbo Club -> Bobba Club, Habbos -> Bobbas)
+function U.hotelText(t)
+	local name = BOBBA.hotelName or "Bobba Hotel"
+	local short = name:gsub("%s+[Hh]otel$", "")
+	if short == "" then short = name end
+	t = t:gsub("%f[%a]Habbo Hotel%f[%A]", (name:gsub("%%", "%%%%")))
+	t = t:gsub("%f[%a]Habbo", (short:gsub("%%", "%%%%")))
+	return t
+end
 function U.text(key, fallback, vars)
-	local t = (BOBBA.lang.has(key) and BOBBA.lang.get(key)) or fallback or key
+	local t = U.hotelText((BOBBA.lang.has(key) and BOBBA.lang.get(key)) or fallback or key)
 	for k, v in pairs(vars or {}) do
 		local name = anyCase(pattern(tostring(k)))
 		local value = tostring(v)
@@ -62,6 +73,8 @@ local function act(name, ...)
 end
 
 local function inRoom() return V.mode == "room" and V.room ~= nil and not (BOBBA.loading and BOBBA.loading.active) end
+-- the toolbar, purse and "me" menu are also there in the hotel view
+local function inHotel() return (inRoom() or V.mode == "hotelview") and not (BOBBA.loading and BOBBA.loading.active) end
 
 -- --- the toolbar -------------------------------------------------------------------------------------
 -- left: your avatar (50 x 45), then the icons 8 apart, each in the middle of the bar's 47 high inside;
@@ -121,11 +134,15 @@ local function drawToolbar(w, d)
 	for _, it in ipairs(LEFT) do
 		local y = 4 + (47 - it.h) / 2
 		local hover = d:click(x, y, it.w, it.h, function()
-			if it.id == "avatar" then HUD.meOpen = not HUD.meOpen else HUD.meOpen = false act(it.action) end
+			if it.id == "avatar" then HUD.meOpen = not HUD.meOpen
+			-- (in the hotel view Habbo's logo is the house: back to your home room)
+			elseif it.id == "habbo" and V.mode == "hotelview" then HUD.meOpen = false act("home")
+			else HUD.meOpen = false act(it.action) end
 		end)
 		if it.id == "avatar" then
 			-- the avatar facing right, cut to 50 x 45 (.item-avatar .avatar-image: margin -5px 25px)
 			local me = R.units and R.units[R.you]
+			if me then HUD.lastMe = { figure = me.figure, gender = me.gender } else me = HUD.lastMe end
 			local AE = BOBBA.avatarEditor
 			local dx = (hover and not HUD.meOpen) and -1 or 0
 			if me and AE and AE.drawPreview then
@@ -133,6 +150,8 @@ local function drawToolbar(w, d)
 					AE.drawPreview(me.figure or "", me.gender or "M", 2, (x + 22.5 + dx) * d.s, (y - 38 + dx) * d.s, d.s)
 				end)
 			end
+		elseif it.id == "habbo" and V.mode == "hotelview" then
+			d:icon("house", x, y, it.w, it.h, { shadow = hover })
 		else
 			d:icon(it.icon, x, y, it.w, it.h, { shadow = hover })
 		end
@@ -347,7 +366,11 @@ local function infoBox(d)
 	if not c then return 0, 0 end
 	local nameW = math.min(218, d:textWidth(c.name or "", 21.6))
 	local ownerW = math.min(218, d:textWidth(c.owner or "", 18))
-	return math.max(nameW, ownerW) + 32, 8 + 25 + 4 + 21 + 8
+	-- the room's tags under them (#tag chips, 8 apart)
+	local tags = c.access and c.access.tags or {}
+	local tagsW = 0
+	for i, t in ipairs(tags) do tagsW = tagsW + d:textWidth("#" .. t, 12.6) + 8 + (i > 1 and 8 or 0) end
+	return math.min(250, math.max(nameW, ownerW, tagsW) + 32), 8 + 25 + 4 + 21 + (#tags > 0 and (8 + 26.9) or 0) + 8
 end
 
 local function drawTools(w, d)
@@ -377,6 +400,15 @@ local function drawTools(w, d)
 		d:darkBox(bx, by, bw, bh, 4)
 		d:text(c.name or "", 21.6, bx + 16, by + 8 + 12.5, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		d:text(c.owner or "", 18, bx + 16, by + 8 + 25 + 4 + 10.5, Color(108, 117, 125), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		local tx = bx + 16
+		for _, t in ipairs(c.access and c.access.tags or {}) do
+			local tw = d:textWidth("#" .. t, 12.6) + 8
+			local ty2 = by + 8 + 25 + 4 + 21 + 8
+			d:click(tx, ty2, tw, 26.9, function() act("tagSearch", t) end)
+			d:round(4, tx, ty2, tw, 26.9, U.C.primary)
+			d:text("#" .. t, 12.6, tx + 4, ty2 + 26.9 / 2, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			tx = tx + tw + 8
+		end
 	end)
 end
 
@@ -385,16 +417,16 @@ BOBBA.events.on("roomShown", "bobba.hud.roominfo", function() HUD.roomInfoShown 
 -- --- putting them on the screen ---------------------------------------------------------------------
 function HUD.update()
 	U.hud("toolbar", function(sw, sh)
-		if not inRoom() then return nil end
+		if not inHotel() then return nil end
 		return 0, sh - HUD.TOOLBAR_H, sw, HUD.TOOLBAR_H
 	end, drawToolbar)
 	U.hud("me", function(sw, sh)
-		if not inRoom() or not HUD.meOpen then return nil end
+		if not inHotel() or not HUD.meOpen then return nil end
 		local mw, mh = meSize()
 		return 15, sh - 60 - mh, mw, mh
 	end, drawMe)
 	U.hud("purse", function(sw, sh)
-		if not inRoom() then return nil end
+		if not inHotel() then return nil end
 		return sw - 10 - 200, 0, 200, 71
 	end, drawPurse)
 	U.hud("roomtools", function(sw, sh)
@@ -417,3 +449,6 @@ HUD.update()
 -- the buttons that already have something to open
 HUD.actions.avatarEditor = function() if BOBBA.avatarEditor and BOBBA.avatarEditor.open then BOBBA.avatarEditor.open() end end
 HUD.actions.zoom = function() if V.toggleZoom then V.toggleZoom() end end
+-- the Habbo button: out of the room to the hotel view; in the hotel view the house: home
+HUD.actions.hotelView = function() P.send("room.leave", {}) end
+HUD.actions.home = function() P.send("room.ready", {}) end

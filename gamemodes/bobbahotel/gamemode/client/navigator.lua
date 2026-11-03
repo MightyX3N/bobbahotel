@@ -52,7 +52,10 @@ local function drawBlock(d, block, x, y, w, clipTop, clipBottom)
 	if y + 25 > clipTop and y < clipBottom then
 		d:click(x + 1, y + 1, w - 60, 24, function() S.folded[block.code] = open or nil end)
 		d:fa(open and "minus" or "plus", x + 9, y + 5.8, 14.4, U.C.secondaryText)
-		d:text(U.text("navigator.searchcode.title." .. block.code, block.code), 14.4, x + 27.4, y + 1 + 12, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		-- (a category's list is called by the category)
+		local cat = block.code:match("^category%.(.+)$")
+		local title = cat and U.text("navigator.flatcategory.global." .. cat, cat) or U.text("navigator.searchcode.title." .. block.code, block.code)
+		d:text(title, 14.4, x + 27.4, y + 1 + 12, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		d:fa("th", x + w - 9 - 14.4, y + 5.8, 14.4, U.C.secondaryText)
 	end
 	if not open then return h end
@@ -60,7 +63,10 @@ local function drawBlock(d, block, x, y, w, clipTop, clipBottom)
 		local ry = y + 25 + (i - 1) * 26
 		if ry + 26 > clipTop and ry < clipBottom then
 			if i % 2 == 1 then d:rect(x + 1, ry, w - 2, 26, U.C.gridActive) end
-			local hover = d:click(x + 1, ry, w - 2, 26, function() P.send("room.enter", { id = room.id }) end)
+			local hover = d:click(x + 1, ry, w - 2, 26, function()
+				-- (a doorbell or a password asks first: roomwindows.lua)
+				if BOBBA.roomWindows and BOBBA.roomWindows.visit then BOBBA.roomWindows.visit(room) else P.send("room.enter", { id = room.id }) end
+			end)
 			-- the badge: 35 wide, the person and how many
 			local c = counterColor(room)
 			d:round(4, x + 9, ry + 4.3, 35, 17.5, c)
@@ -70,10 +76,12 @@ local function drawBlock(d, block, x, y, w, clipTop, clipBottom)
 			local bx = x + 9 + (35 - cw) / 2
 			d:fa("user", bx, ry + 4.3 + 4, 9.4, U.C.white)
 			d:text(num, 9.45, bx + 9.4 + 4, ry + 4.3 + 17.5 / 2, U.C.white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
-			-- the name, cut to fit before the info button
-			local nameW = w - 2 - 8 - 35 - 8 - 8 - 18 - 8
+			-- the name, cut to fit before the icons: the door's lock (13 x 16) and the info button
+			local lock = ({ doorbell = "nav-locked", password = "nav-password", invisible = "nav-invisible" })[room.door or ""]
+			local nameW = w - 2 - 8 - 35 - 8 - 8 - 18 - 8 - (lock and 17 or 0)
 			d:text(d:fit(room.name, 12.6, nameW), 12.6, x + 52, ry + 13, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			d:icon("nav-info", x + w - 9 - 18, ry + 4, 18, 18)
+			if lock then d:icon(lock, x + w - 9 - 18 - 4 - 13, ry + 5, 13, 16) end
 			if hover then d:rect(x + 1, ry, w - 2, 26, Color(0, 0, 0, 10)) end
 		end
 	end
@@ -138,7 +146,11 @@ local function drawCreator(w, d)
 		onChange = function(v) m.description = v end })
 	m.description = descBox:GetValue() or ""
 	label(U.text("navigator.category", "Category"), 232.7)
-	d:select("category", x0, 252.7, colW, 28.9, { { 0, U.text("navigator.category.no_category", "No category") } }, m.category, function(v) m.category = v end)
+	local cats = { { 0, U.text("navigator.category.no_category", "No category") } }
+	for _, c in ipairs(BOBBA.roomWindows and BOBBA.roomWindows.CATEGORIES or {}) do
+		if not c.staff then cats[#cats + 1] = { c.id, U.text("navigator.flatcategory.global." .. c.code, c.name) } end
+	end
+	d:select("category", x0, 252.7, colW, 28.9, cats, m.category, function(v) m.category = v end)
 	label(U.text("navigator.maxvisitors", "Maximum amount of visitors"), 285.6)
 	local maxOpts = {}
 	for _, v in ipairs(NAV.MAX_USERS) do maxOpts[#maxOpts + 1] = { v, tostring(v) } end
@@ -209,7 +221,15 @@ local function drawNavigator(w, d)
 		search(S.view, ((text ~= "" and f[2]) and (f[2] .. ":") or "") .. text)
 	end
 	d:select("filter", 9, y, selW, 28.9, opts, S.filter, function(v) S.filter = v end)
-	d:input("search", 9 + selW + 4, y, 402 - selW - 4 - 4 - 40.4, 28.9, { placeholder = U.text("navigator.filter.input.placeholder", "filter rooms by..."), max = 100, onEnter = go })
+	local box = d:input("search", 9 + selW + 4, y, 402 - selW - 4 - 4 - 40.4, 28.9, { placeholder = U.text("navigator.filter.input.placeholder", "filter rooms by..."), max = 100, onEnter = go })
+	-- (a search from elsewhere: its filter and text in the box)
+	if S.pendingQuery then
+		local kind, text = S.pendingQuery:match("^(%a+):(.*)$")
+		S.filter = 1
+		for i, f in ipairs(FILTERS) do if f[2] == kind then S.filter = i end end
+		box:SetText(text or S.pendingQuery)
+		S.pendingQuery = nil
+	end
 	d:btn(411 - 40.4, y, 40.4, 28.9, U.C.primary, go)
 	d:fa("search", 411 - 40.4 + 13, y + 7.3, 14.4, U.C.white)
 	-- the results, scrolling
@@ -228,10 +248,12 @@ local function drawNavigator(w, d)
 	if S.loading then d:rect(1, 67, W - 2, H - 68, Color(182, 190, 197, 128)) end
 end
 
-function NAV.open(view)
+-- (query: a search to show, e.g. "tag:party" from a room's tag)
+function NAV.open(view, query)
 	if view then S.view = view S.creator = false end
 	U.window("navigator", W, H, drawNavigator)
-	search(S.view, "")
+	search(S.view, query or "")
+	if query and query ~= "" then S.pendingQuery = query end
 end
 
 -- the toolbar's rooms button, and the "me" menu's (My World)

@@ -33,14 +33,18 @@ function R.show()
 	V.mode = "room"
 	V.look = { floor = c.floor or "", wall = c.wallpaper or "", landscape = c.landscape or "" }
 	R.paintPreview = nil
+	-- the room's settings: wall and floor thickness (Nitro: -2 a quarter, -1 half, 1 double), walls hidden
+	local a = c.access or {}
+	local function thick(v) return ({ [-2] = 0.25, [-1] = 0.5, [1] = 2 })[tonumber(v) or 0] or 1 end
+	V.hideWalls = a.hideWall and true or false
 	-- (the room's name is shown by the room tools, hud.lua)
-	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight }))
+	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight, wallThickness = thick(a.wallThickness), floorThickness = thick(a.floorThickness) }))
 end
 
 local function setUnit(s)
 	local u = R.units[s.id] or { id = s.id }
 	R.units[s.id] = u
-	u.name, u.dir, u.figure, u.gender = s.name, s.dir, s.figure, s.gender
+	u.name, u.dir, u.figure, u.gender, u.key = s.name, s.dir, s.figure, s.gender, s.key
 	u.from = { x = s.x, y = s.y, z = s.z }
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
@@ -439,10 +443,16 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 	if unit then
 		R.selected = nil
 		R.selectedUnit = unit.id
+		-- (its menu and infostand: roomwindows.lua)
+		if BOBBA.roomWindows and BOBBA.roomWindows.selectUnit then BOBBA.roomWindows.selectUnit(unit.id) end
 		R.updateInfo()
 		return
 	end
-	if R.selectedUnit then R.selectedUnit = nil R.updateInfo() end
+	if R.selectedUnit then
+		R.selectedUnit = nil
+		if BOBBA.roomWindows and BOBBA.roomWindows.selectUnit then BOBBA.roomWindows.selectUnit(nil) end
+		R.updateInfo()
+	end
 	local it, tag = R.itemAt(mx, my)
 	if it then
 		local now = SysTime()
@@ -575,6 +585,8 @@ end
 function R.updateInfo()
 	if IsValid(R.infoPanel) then R.infoPanel:Remove() end
 	local unit = R.selectedUnit and R.units[R.selectedUnit]
+	-- (someone selected: nitro-react's avatar menu and infostand, roomwindows.lua)
+	if unit and BOBBA.roomWindows and BOBBA.roomWindows.selectUnit then return end
 	if unit and V.mode == "room" then
 		local p = vgui.Create("DPanel")
 		R.infoPanel = p

@@ -266,7 +266,13 @@ local function buildPolys()
 	for i, pl in ipairs(V.room.planes) do
 		if pl.type == 3 then landscapeOffset[i - 1] = before before = before + vlen(pl.left) end
 	end
-	for _, p in ipairs(view) do
+	-- (the room's settings can hide the walls: only the floor is drawn then)
+	local planes = view
+	if V.hideWalls then
+		planes = {}
+		for _, p in ipairs(view) do if p.type == 1 then planes[#planes + 1] = p end end
+	end
+	for _, p in ipairs(planes) do
 		local style = V.styleFor(STYLE_FOR[p.type])
 		local r, g, b = BOBBA.rooms.planeColor(style, p.color)
 		local kind = KIND[p.type]

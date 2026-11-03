@@ -130,7 +130,7 @@ T["leaving: the others are told, an empty room is unloaded; entering another roo
 	eq(BOBBA.live.rooms[other] ~= nil, true, "entering the same room again keeps it loaded")
 	eq(#BOBBA.live.rooms[other].order, 1, "and Mia is in it once")
 	P.fromPlayer(mia, "room.enter", { id = 99999 })
-	eq(last(mia, "room.error").message, "no room 99999")
+	eq(last(mia, "room.denied").reason, "no room 99999")
 	eq(BOBBA.live.byPlayer[mia].room.id, other, "still in her room")
 end
 

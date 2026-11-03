@@ -58,6 +58,14 @@ concommand.Add("bobba_default_wallheight", function(ply, _, args)
 	else reply(ply, "bobba_default_wallheight <-1, or 0 to 16>") end
 end)
 
+-- bobba_hotel_name <name>: what the hotel is called (in Habbo's texts too: "Habbo Hotel" becomes it);
+-- without a name it says what it is now (the server panel will have this later)
+concommand.Add("bobba_hotel_name", function(ply, _, args, line)
+	if #args == 0 then reply(ply, "the hotel is called " .. BOBBA.access.hotelName()) return end
+	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.admin.settings") then return end
+	reply(ply, "the hotel is now called " .. BOBBA.access.setHotelName(line or table.concat(args, " ")))
+end)
+
 -- bobba_room_floor <id> / bobba_room_wallpaper <id> / bobba_room_landscape <id>: the floor, wallpaper or
 -- landscape of the room you're in
 -- (for its owner and admins; "default" puts the default back). bobba_habbo_floors and

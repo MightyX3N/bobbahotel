@@ -370,6 +370,20 @@ function D:fa(name, x, y, size, c)
 	elseif name == "times" then
 		self:line(x + 3 * u, y + 3 * u, x + 13 * u, y + 13 * u, 3.2 * u, c)
 		self:line(x + 13 * u, y + 3 * u, x + 3 * u, y + 13 * u, 3.2 * u, c)
+	elseif name == "caret-down" or name == "caret-up" then
+		-- (a filled triangle, 10 wide)
+		local s = self.s
+		local top, bottom = y + 5 * u, y + 11 * u
+		local pts = name == "caret-down"
+			and { { x = (x + 3) * s, y = top * s }, { x = (x + 13 * u) * s, y = top * s }, { x = (x + 8 * u) * s, y = bottom * s } }
+			or { { x = (x + 8 * u) * s, y = top * s }, { x = (x + 13 * u) * s, y = bottom * s }, { x = (x + 3) * s, y = bottom * s } }
+		surface.SetDrawColor(c.r, c.g, c.b, c.a or 255)
+		draw.NoTexture()
+		surface.DrawPoly(pts)
+	elseif name == "link" then
+		self:ring(x + 5 * u, y + 11 * u, 4 * u, 2 * u, c)
+		self:ring(x + 11 * u, y + 5 * u, 4 * u, 2 * u, c)
+		self:line(x + 6 * u, y + 10 * u, x + 10 * u, y + 6 * u, 2.4 * u, c)
 	elseif name == "window-maximize" then
 		self:round(2 * u, x + 0.5 * u, y + 1.5 * u, 15 * u, 13 * u, c)
 		self:rect(x + 2.5 * u, y + 5.5 * u, 11 * u, 7 * u, Color(255, 255, 255))
@@ -421,7 +435,18 @@ function D:input(id, x, y, w, h, opts)
 			local font = self2.bobbaFont
 			if not font then return end
 			self2:SetFont(font)
-			self2:DrawTextEntryText(Color(0, 0, 0), Color(143, 185, 202), Color(0, 0, 0))
+			if self2.bobbaPassword then
+				-- (input type="password": dots for what's typed, the caret after them)
+				local t = self2:GetValue() or ""
+				local dots = string.rep("•", utf8.len(t) or #t)
+				local tw = draw.SimpleText(dots, font, 2, ph / 2, Color(0, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				if self2:HasFocus() and (SysTime() % 1) < 0.5 then
+					surface.SetDrawColor(0, 0, 0, 255)
+					surface.DrawRect(2 + (t == "" and 0 or tw), math.floor(ph * 0.2), 1, math.ceil(ph * 0.6))
+				end
+			else
+				self2:DrawTextEntryText(Color(0, 0, 0), Color(143, 185, 202), Color(0, 0, 0))
+			end
 			if (self2:GetValue() or "") == "" and self2.bobbaPlaceholder then
 				local multi = self2.bobbaMultiline
 				draw.SimpleText(self2.bobbaPlaceholder, font, 2, multi and 1 or ph / 2, U.C.placeholder, TEXT_ALIGN_LEFT, multi and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
@@ -431,6 +456,11 @@ function D:input(id, x, y, w, h, opts)
 		win.panel:SetKeyboardInputEnabled(true)
 	end
 	e.bobbaEnter, e.bobbaChange, e.bobbaPlaceholder = opts.onEnter, opts.onChange, opts.placeholder
+	e.bobbaPassword = opts.password or nil
+	-- (opts.onBlur(text): when the box lets go of the keyboard, like a browser's blur)
+	local hasFocus = e:HasFocus()
+	if e.bobbaHadFocus and not hasFocus and opts.onBlur then opts.onBlur(e:GetValue() or "") end
+	e.bobbaHadFocus = hasFocus
 	e.bobbaFont = U.font(12.6)
 	e.bobbaSeen = true
 	local focus = e:HasFocus()
@@ -445,6 +475,25 @@ function D:input(id, x, y, w, h, opts)
 	-- (a click on the box puts the caret in it)
 	self:click(x, y, w, h, function() e:RequestFocus() end)
 	return e
+end
+
+-- a checkbox or a radio (form-check-input, 14.4 x 14.4): white with a grey border; ticked: the
+-- primary blue with a white tick (or dot)
+function D:check(x, y, on, radio, fn)
+	local hover = fn and self:click(x, y, 14.4, 14.4, fn) or false
+	local r = radio and 7.2 or 3.6
+	if on then
+		self:round(r, x, y, 14.4, 14.4, U.C.primary)
+		if radio then
+			self:circle(x + 7.2, y + 7.2, 2.6, U.C.white)
+		else
+			self:line(x + 3.4, y + 7.4, x + 6.3, y + 10.3, 2.2, U.C.white)
+			self:line(x + 6.3, y + 10.3, x + 11.2, y + 4.4, 2.2, U.C.white)
+		end
+	else
+		self:box(x, y, 14.4, 14.4, 1, r, Color(0, 0, 0, 64), U.C.white)
+	end
+	return hover
 end
 
 -- a drop-down (form-select-sm): options = { { value, label }, ... }; onChange(value)
@@ -502,6 +551,14 @@ U.C.danger, U.C.warning, U.C.secondaryText = Color(168, 26, 18), Color(255, 193,
 -- --- windows --------------------------------------------------------------------------------------
 local Window = {}
 Window.__index = Window
+
+-- a window whose height follows what's in it (a card with no height set)
+function Window:setHeight(h)
+	if self.height == h then return end
+	self.height = h
+	local s = U.scale()
+	if IsValid(self.panel) then self.panel:SetTall(math.floor((h + 2) * s + 0.5)) end
+end
 
 function Window:close()
 	if IsValid(self.panel) then self.panel:Remove() end
@@ -658,3 +715,64 @@ function U.hudRemove(id)
 	U.huds[id] = nil
 end
 
+
+
+-- --- alerts and confirms (nitro-react's NotificationDefaultAlertView / ...ConfirmView) ---------------
+-- primary-slim cards: an alert 350 wide with Close, a confirm 250 wide with Cancel and Confirm
+local alertCount = 0
+function U.alert(title, message)
+	alertCount = alertCount + 1
+	local id = "alert" .. alertCount
+	local W = 350
+	U.window(id, W, 150, function(w, d)
+		d:slimCard(title or U.text("notifications.broadcast.title", "Notice"))
+		local lines = d:wrap(message or "", 14.4, W - 34)
+		local h = math.max(150, 31 + 8 + #lines * 21.6 + 8 + 17 + 28 + 8)
+		w:setHeight(h)
+		for i, l in ipairs(lines) do d:text(l, 14.4, 17, 31 + 8 + (i - 1) * 21.6, U.C.black) end
+		local by = h - 8 - 28
+		d:rect(9, by - 9, W - 18, 1, Color(0, 0, 0, 26))
+		d:btn(W / 2 - 30, by, 60, 28, U.C.primary, function() w:close() end)
+		d:text(U.text("generic.close", "Close"), 12.6, W / 2, by + 14, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end)
+end
+
+function U.confirm(title, message, onConfirm)
+	alertCount = alertCount + 1
+	local id = "confirm" .. alertCount
+	local W = 250
+	U.window(id, W, 150, function(w, d)
+		d:slimCard(title or "")
+		local lines = d:wrap(message or "", 14.4, W - 18)
+		local textH = #lines * 21.6
+		local h = math.max(150, 31 + 8 + textH + 8 + 28 + 8)
+		w:setHeight(h)
+		local top = 31 + 8 + ((h - 31 - 8 - 28 - 16) - textH) / 2
+		for i, l in ipairs(lines) do d:text(l, 14.4, W / 2, top + (i - 1) * 21.6, U.C.black, TEXT_ALIGN_CENTER) end
+		local by = h - 8 - 28
+		local bw = (W - 18 - 4) / 2
+		d:btn(9, by, bw, 28, U.C.danger, function() w:close() end)
+		d:text(U.text("generic.cancel", "Cancel"), 12.6, 9 + bw / 2, by + 14, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		d:btn(9 + bw + 4, by, bw, 28, U.C.primary, function() w:close() if onConfirm then onConfirm() end end)
+		d:text(U.text("generic.confirm", "Confirm"), 12.6, 9 + bw + 4 + bw / 2, by + 14, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end)
+end
+
+-- a text broken into lines that fit a width (at spaces; a word too long for a line is cut)
+function D:wrap(t, size, maxW, bold)
+	local out = {}
+	for para in (tostring(t) .. "\n"):gmatch("(.-)\n") do
+		local line = ""
+		for word in para:gmatch("%S+") do
+			local try = line == "" and word or (line .. " " .. word)
+			if self:textWidth(try, size, bold) <= maxW or line == "" then
+				line = try
+			else
+				out[#out + 1] = line
+				line = word
+			end
+		end
+		out[#out + 1] = line
+	end
+	return out
+end

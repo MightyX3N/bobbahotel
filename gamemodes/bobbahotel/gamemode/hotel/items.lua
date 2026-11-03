@@ -272,10 +272,12 @@ function items.list(r)
 end
 
 -- --- who may do what -------------------------------------------------------------------------------
+-- the owner, staff, and those the owner gave rights
 function items.canEdit(player, r)
 	if not player then return true end -- the server itself
 	if r.info.owner == BOBBA.platform.playerKey(player) then return true end
-	return BOBBA.perms.has(player, "bobba.staff.anyroom")
+	if BOBBA.perms.has(player, "bobba.staff.anyroom") then return true end
+	return BOBBA.access ~= nil and BOBBA.access.hasRightsKey(r.id, BOBBA.platform.playerKey(player))
 end
 
 -- --- placing ---------------------------------------------------------------------------------------
@@ -449,6 +451,11 @@ function items.pickup(r, player, id)
 	local it = r.items[tonumber(id) or -1]
 	if not it then return false, "no such furni" end
 	if not items.canEdit(player, r) then return false, "only the room's owner can pick furni up" end
+	-- (someone with rights can't take the owner's furni: Arcturus's RoomPickupItemEvent)
+	if player and it.owner == r.info.owner and it.owner ~= BOBBA.platform.playerKey(player)
+		and not BOBBA.perms.has(player, "bobba.staff.anyroom") then
+		return false, "that's the room owner's furni"
+	end
 	r.items[it.id] = nil
 	if BOBBA.inventory then
 		BOBBA.inventory.take(it.id, it.owner, it.kind)

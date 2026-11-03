@@ -6,7 +6,9 @@
 -- Messages from players: navigator.search { view, query }
 --                        navigator.create { name, description, layout, maxUsers, trade, category }
 -- Messages to players:   navigator.result { view, query, blocks = { { code, rooms = { room, ... } }, ... } }
---                          room: { id, name, owner, description, users, maxUsers, door = "open" }
+--                          room: { id, name, owner, description, users, maxUsers, door = "open" | "doorbell" |
+--                                  "password" | "invisible", tags, category, official }
+--                        navigator.roominfo { id } -> navigator.roominfo { room ..., favourite, home, canEdit, hasRights }
 --                        navigator.created { id }   (then the room is entered)
 
 BOBBA.navigator = BOBBA.navigator or {}
@@ -39,10 +41,23 @@ local function isOfficial(row) return row.owner == "server" end
 
 local function roomData(row)
 	local loaded = live.rooms[tonumber(row.id)]
+	local A = BOBBA.access
 	return {
 		id = tonumber(row.id), name = row.name, owner = row.owner_name, description = row.description or "",
-		users = loaded and #loaded.order or 0, maxUsers = tonumber(row.max_users) or 25, door = "open",
+		users = loaded and #loaded.order or 0, maxUsers = tonumber(row.max_users) or 25,
+		door = A and A.STATES[tonumber(row.state) or 0] or "open", tags = A and A.tags(row) or {},
+		category = tonumber(row.category) or 0, official = isOfficial(row) or nil,
 	}
+end
+NAV.roomData = roomData
+
+-- invisible rooms are only listed for their owner, those with rights and staff
+local function visibleTo(player, row)
+	if tonumber(row.state) ~= 3 then return true end
+	if not player then return true end
+	local A = BOBBA.access
+	local info = { id = tonumber(row.id), owner = row.owner }
+	return A.level(player, info) > 0
 end
 
 local function allRooms()
@@ -59,44 +74,64 @@ local function byUsers(list)
 end
 
 -- the blocks of a view (Arcturus's navigator filters)
-function NAV.view(view, playerKey)
+function NAV.view(view, playerKey, player)
 	local rows = allRooms()
-	local function pick(fn)
+	local function pick(fn, all)
 		local out = {}
-		for _, r in ipairs(rows) do if fn(r) then out[#out + 1] = roomData(r) end end
+		for _, r in ipairs(rows) do if fn(r) and (all or visibleTo(player, r)) then out[#out + 1] = roomData(r) end end
 		return out
 	end
 	if view == "official_view" then
 		return { { code = "official-root", rooms = byUsers(pick(isOfficial)) } }
 	elseif view == "hotel_view" then
 		-- (Habbo shows only rooms with people in "popular"; here every room is listed, the fullest first,
-		-- so rooms can be found while the hotel is small)
-		return { { code = "popular", rooms = byUsers(pick(function(r) return not isOfficial(r) end)) } }
+		-- so rooms can be found while the hotel is small); then a list per category (Arcturus's
+		-- NavigatorHotelFilter: the top 10 of each, those with rooms)
+		local blocks = { { code = "popular", rooms = byUsers(pick(function(r) return not isOfficial(r) end)) } }
+		for _, c in ipairs(BOBBA.access.CATEGORIES) do
+			local list = byUsers(pick(function(r) return not isOfficial(r) and tonumber(r.category) == c.id end))
+			while #list > 10 do table.remove(list) end
+			if #list > 0 then blocks[#blocks + 1] = { code = "category." .. c.code, category = c.id, rooms = list } end
+		end
+		return blocks
 	elseif view == "roomads_view" then
 		return { { code = "top_promotions", rooms = {} }, { code = "new_ads", rooms = {} } }
 	elseif view == "myworld_view" then
-		return {
-			{ code = "my", rooms = pick(function(r) return r.owner == playerKey end) },
-			{ code = "favorites", rooms = {} },
-		}
+		local A = BOBBA.access
+		local fav = {}
+		for _, id in ipairs(A.favourites(playerKey)) do fav[id] = true end
+		local withRights = {}
+		for _, r in ipairs(BOBBA.store.query("SELECT room FROM bobbahotel_room_rights WHERE key = ?", { tostring(playerKey) })) do withRights[tonumber(r.room)] = true end
+		-- (Arcturus leaves out the empty lists, except your own rooms)
+		local blocks = { { code = "my", rooms = pick(function(r) return r.owner == playerKey end, true) } }
+		local favs = pick(function(r) return fav[tonumber(r.id)] end, true)
+		if #favs > 0 then blocks[#blocks + 1] = { code = "favorites", rooms = favs } end
+		local rights = pick(function(r) return withRights[tonumber(r.id)] end, true)
+		if #rights > 0 then blocks[#blocks + 1] = { code = "with_rights", rooms = rights } end
+		return blocks
 	end
 	return {}
 end
 
--- a search: "roomname:x", "owner:x", "tag:x", "group:x" or just x (name, owner or description)
-function NAV.search(query)
+-- a search: "roomname:x", "owner:x", "tag:x", "desc:x", "group:x" or just x (name, owner,
+-- description or tags); a tag is any one of the room's tags, exactly (any case)
+function NAV.search(query, player)
 	local kind, text = query:match("^(%a+):(.*)$")
 	if not kind then kind, text = "anything", query end
 	text = text:lower()
 	local out = {}
 	for _, r in ipairs(allRooms()) do
 		local name, owner, desc = (r.name or ""):lower(), (r.owner_name or ""):lower(), (r.description or ""):lower()
+		local tags = (r.tags or ""):lower()
+		local function hasTag(t) for x in tags:gmatch("[^;]+") do if x == t then return true end end return false end
 		local hit
 		if kind == "roomname" then hit = name:find(text, 1, true)
 		elseif kind == "owner" then hit = owner == text
-		elseif kind == "tag" or kind == "group" then hit = false -- (no tags or groups yet)
-		else hit = name:find(text, 1, true) or owner:find(text, 1, true) or desc:find(text, 1, true) end
-		if hit then out[#out + 1] = roomData(r) end
+		elseif kind == "tag" then hit = hasTag(text)
+		elseif kind == "desc" then hit = desc:find(text, 1, true)
+		elseif kind == "group" then hit = false -- (no groups yet)
+		else hit = name:find(text, 1, true) or owner:find(text, 1, true) or desc:find(text, 1, true) or tags:find(text, 1, true) end
+		if hit and visibleTo(player, r) then out[#out + 1] = roomData(r) end
 	end
 	return { { code = "query", rooms = byUsers(out) } }
 end
@@ -124,8 +159,12 @@ function NAV.create(player, data)
 	if not okMax then maxUsers = 10 end
 	local trade = math.Clamp and math.Clamp(tonumber(data.trade) or 0, 0, 2) or math.min(2, math.max(0, tonumber(data.trade) or 0))
 	local desc = tostring(data.description or ""):gsub("[%c]", " "):sub(1, 255)
+	local category = 0
+	for _, c in ipairs(BOBBA.access.CATEGORIES) do
+		if c.id == tonumber(data.category) and (not c.staff or BOBBA.access.isStaff(player)) then category = c.id end
+	end
 	BOBBA.store.query("UPDATE bobbahotel_rooms SET description = ?, max_users = ?, trade = ?, category = ? WHERE id = ?",
-		{ desc, maxUsers, math.floor(trade), math.floor(tonumber(data.category) or 0), id })
+		{ desc, maxUsers, math.floor(trade), category, id })
 	return id
 end
 
@@ -135,8 +174,22 @@ function NAV.start()
 	P.receive("navigator.search", function(player, data)
 		local view = tostring(data.view or "official_view")
 		local query = tostring(data.query or ""):sub(1, 100)
-		local blocks = (query ~= "") and NAV.search(query) or NAV.view(view, P.playerKey(player))
+		local blocks = (query ~= "") and NAV.search(query, player) or NAV.view(view, P.playerKey(player), player)
 		P.send("navigator.result", { view = view, query = query, blocks = blocks }, player)
+	end)
+	-- the room info popup (the "i" button): the room's data, and whether it's your favourite / home
+	P.receive("navigator.roominfo", function(player, data)
+		local info = live.info(data.id)
+		if not info then return end
+		local A = BOBBA.access
+		local d = roomData(info)
+		local key = P.playerKey(player)
+		d.favourite = false
+		for _, id in ipairs(A.favourites(key)) do if id == info.id then d.favourite = true end end
+		d.home = A.home(key) == info.id
+		d.canEdit = A.ownerLevel(player, info)
+		d.hasRights = A.hasRights(player, info)
+		P.send("navigator.roominfo", d, player)
 	end)
 	P.receive("navigator.create", function(player, data)
 		local id, err = NAV.create(player, data)

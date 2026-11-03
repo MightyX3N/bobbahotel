@@ -160,6 +160,8 @@ local function load(id)
 		grid = (function()
 			local g = PF.grid(layout.heightmap, layout.door.x, layout.door.y, layout.door.dir)
 			g.doorStraight = true -- out of the door straight, then turn
+			-- (people walk through each other unless the room's settings say no)
+			g.allowWalkthrough = tonumber(info.allow_walkthrough or 1) == 1
 			return g
 		end)(),
 		units = {}, order = {},
@@ -189,6 +191,8 @@ local function roomMessage(r, u, units)
 		floor = r.info.floor, wallpaper = r.info.wallpaper, landscape = r.info.landscape,
 		items = BOBBA.items.list(r), itemsComing = BOBBA.items.pending(r),
 		canEdit = u.player ~= nil and BOBBA.items.canEdit(u.player, r) or false,
+		-- (the room's settings and what this player may do in it: roomaccess.lua)
+		access = BOBBA.access.forPlayer(r, u),
 		canPlace = u.player ~= nil and BOBBA.perms.has(u.player, "bobba.staff.place") or false,
 	}
 end
@@ -234,13 +238,34 @@ function live.leave(player)
 end
 
 -- (at: where they come in instead of the door, e.g. out of a teleport: { x, y, z, dir })
-function live.enter(player, id, at)
+-- (opts.password: what they typed for a room with a password; opts.override: let in at the door)
+-- Not let in: false and why ("banned", "full", "password" (asked for), "wrongpassword",
+-- "doorbell" (ringing now), "noanswer", "invisible", "not allowed")
+function live.enter(player, id, at, opts)
 	id = tonumber(id)
 	if not live.info(id) then return false, "no room " .. tostring(id) end
-	-- leave the old room first (if it's this same room and now empty, it's loaded again below)
-	live.leave(player)
 	local r, err = load(id)
 	if not r then return false, err end
+	local A = BOBBA.access
+	local current = live.byPlayer[player]
+	if A and not (current and current.room == r) then
+		if A.unqueue then A.unqueue(player) end
+		local ok, why = A.check(r, player, opts)
+		if not ok then
+			-- the doorbell: out of where they were, waiting in the hotel view for someone to open
+			if why == "doorbell" then
+				live.leave(player)
+				BOBBA.platform.send("room.hotelview", {}, player)
+				if not A.ring(r, player) then why = "noanswer" end
+			end
+			if #r.order == 0 then unload(r) end
+			return false, why
+		end
+	end
+	-- leave the old room first (if it's this same room and now empty, it's loaded again below)
+	live.leave(player)
+	r = live.rooms[id] or load(id)
+	if not r then return false, "no room" end
 	local allowed = BOBBA.events.emit("roomCanEnter", r, player)
 	if allowed == false then
 		if #r.order == 0 then unload(r) end
@@ -286,7 +311,7 @@ end
 
 function live.walk(player, x, y)
 	local u = live.byPlayer[player]
-	if not u or u.teleporting then return false end
+	if not u or u.teleporting or u.kicked then return false end
 	x, y = math.floor(tonumber(x) or -1), math.floor(tonumber(y) or -1)
 	local t = PF.tile(u.room.grid, x, y)
 	if not t or t.state == PF.INVALID then return false end
@@ -316,7 +341,8 @@ local function step(r, u, moved)
 	local nextTile = path[1]
 	-- someone stepped in the way (or the tile changed): find a new way, like Arcturus does each step
 	local blocked = nextTile.state == PF.BLOCKED or nextTile.state == PF.INVALID
-		or (nextTile.units.n > 0 and math.sqrt((g.door.x - nextTile.x) ^ 2 + (g.door.y - nextTile.y) ^ 2) > 2)
+		or (nextTile.units.n > 0 and math.sqrt((g.door.x - nextTile.x) ^ 2 + (g.door.y - nextTile.y) ^ 2) > 2
+			and not (g.allowWalkthrough and #path > 1))
 		or (nextTile.state == PF.OPEN and nextTile.stackHeight - PF.tile(g, u.x, u.y).stackHeight > PF.MAXIMUM_STEP_HEIGHT)
 	if blocked then
 		path = PF.find(g, u.x, u.y, u.goal.x, u.goal.y)
@@ -384,16 +410,32 @@ function live.start()
 	BOBBA.inventory.start()
 	BOBBA.catalog.start()
 	BOBBA.gifts.start()
+	BOBBA.access.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}
 	P.onLeave(function(player) live.leave(player) lastWalk[player] = nil end)
 	P.receive("room.ready", function(player)
-		if not live.byPlayer[player] then live.enter(player, live.homeRoom()) end
+		local A = BOBBA.access
+		local key = P.playerKey(player)
+		P.send("hotel.info", { name = A.hotelName() }, player)
+		P.send("room.favourites", { ids = A.favourites(key) }, player)
+		P.send("room.home", { id = A.home(key) or 0 }, player)
+		if live.byPlayer[player] then return end
+		-- your home room (when you can go in), else the hotel's first room
+		local home = A.home(key)
+		if not (home and live.enter(player, home)) then live.enter(player, live.homeRoom()) end
 	end)
 	P.receive("room.enter", function(player, data)
-		local ok, err = live.enter(player, data.id)
-		if not ok then P.send("room.error", { message = tostring(err) }, player) end
+		local ok, err = live.enter(player, data.id, nil, { password = data.password and tostring(data.password):sub(1, 40) or nil })
+		if not ok then
+			if err == "password" then
+				local info = live.info(data.id)
+				P.send("room.password", { id = tonumber(data.id), name = info and info.name or "" }, player)
+			elseif err ~= "doorbell" then
+				P.send("room.denied", { id = tonumber(data.id), reason = tostring(err) }, player)
+			end
+		end
 	end)
 	P.receive("room.walk", function(player, data)
 		local now = P.clock()
