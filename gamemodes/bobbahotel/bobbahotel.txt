@@ -1,0 +1,10 @@
+"bobbahotel"
+{
+	"base"		"base"
+	"title"		"Bobba Hotel"
+	"maps"		""
+	"menusystem"	"1"
+	"settings"
+	{
+	}
+}
