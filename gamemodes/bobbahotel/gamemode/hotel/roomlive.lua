@@ -183,7 +183,7 @@ local function roomMessage(r, u, units)
 		id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
 		heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
 		floor = r.info.floor, wallpaper = r.info.wallpaper,
-		items = BOBBA.items.list(r),
+		items = BOBBA.items.list(r), itemsComing = BOBBA.items.pending(r),
 		canEdit = u.player ~= nil and BOBBA.items.canEdit(u.player, r) or false,
 		canPlace = u.player ~= nil and BOBBA.perms.has(u.player, "bobba.staff.place") or false,
 	}

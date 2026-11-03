@@ -160,7 +160,13 @@ local function snapshot(it)
 end
 items.snapshot = snapshot
 
+-- the players in a room (defined below)
+local broadcast
+
 -- --- loading a room's furni ------------------------------------------------------------------------
+-- What a furni is may take the addon a moment to look up (after a server start it reads Habbo's
+-- furnidata first). Players who come in meanwhile are told which furni are still coming
+-- (items.pending), and get each one as soon as it's known, so no furni is ever missing from a room.
 function items.load(r)
 	r.items = {}
 	local rows = BOBBA.store.query("SELECT * FROM bobbahotel_items WHERE room = ? ORDER BY id", { r.id })
@@ -174,12 +180,22 @@ function items.load(r)
 			if not def then
 				BOBBA.warn("room %d: furni %d is '%s', which isn't known; left out", r.id, it.id, it.kind)
 				r.items[it.id] = nil
+				broadcast(r, "room.item.remove", { id = it.id })
 				return
 			end
 			it.def = def
 			updateTiles(r, items.footprint(def, it.x, it.y, it.dir))
+			broadcast(r, "room.items", { snapshot(it) })
 		end)
 	end
+end
+
+-- the ids of the furni still being looked up (sent with room.load)
+function items.pending(r)
+	local out = {}
+	for id, it in pairs(r.items) do if not it.def then out[#out + 1] = id end end
+	table.sort(out)
+	return out
 end
 
 -- the list sent with room.load
@@ -223,7 +239,7 @@ function items.fits(r, def, x, y, dir, exclude)
 	return z
 end
 
-local function broadcast(r, name, data)
+function broadcast(r, name, data)
 	local list = {}
 	for _, uid in ipairs(r.order) do
 		local u = r.units[uid]

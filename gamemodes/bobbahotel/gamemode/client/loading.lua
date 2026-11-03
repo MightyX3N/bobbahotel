@@ -22,9 +22,11 @@ function LD.add(id, fn)
 	LD.checks[id] = fn
 end
 
--- how far it is: 0..1 (the room counts as one step, each check as one)
+-- how far it is: 0..1 (the room counts as one step, each check as one; the room is only there when
+-- the server has said what all its furni are)
 function LD.progress()
-	local total, done = 1, (R and R.current) and 1 or 0
+	local roomThere = R and R.current and not (R.itemsComing and next(R.itemsComing))
+	local total, done = 1, roomThere and 1 or 0
 	local allDone = done == 1
 	for _, id in ipairs(LD.order) do
 		local ok, isDone, fraction = pcall(LD.checks[id])
@@ -83,7 +85,7 @@ hook.Add("Think", "bobba.loading", function()
 		LD.panel = p
 	end
 	local _, allDone = LD.progress()
-	if (allDone and R and R.current) or SysTime() - LD.started > LD.MAX_WAIT then
+	if allDone or SysTime() - LD.started > LD.MAX_WAIT then
 		LD.active = false
 		if IsValid(LD.panel) then LD.panel:Remove() end
 		BOBBA.events.emit("loadingDone")

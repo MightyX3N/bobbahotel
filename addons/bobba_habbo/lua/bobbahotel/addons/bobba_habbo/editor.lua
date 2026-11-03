@@ -223,13 +223,33 @@ function H.loadTexts(prefixes)
 		if not url or url:find("${", 1, true) then return end
 		H.remembered("texts", url:gsub("^http:", "https:"), function(text)
 			if not text then return end
-			local strings = {}
-			for k, v in text:gmatch("([%w%._%-]+)=([^\r\n]*)") do
+			-- (Habbo's texts are about a megabyte: only the lines starting with these are looked at,
+			-- in a job that can wait, so it never holds up a frame)
+			H.work(function()
+				local strings = {}
+				local k0, v0 = text:match("^([%w%._%-]+)=([^\r\n]*)")
 				for _, pre in ipairs(prefixes) do
-					if k:sub(1, #pre) == pre then strings[k] = v end
+					if k0 and k0:sub(1, #pre) == pre then strings[k0] = v0 end
 				end
-			end
-			if next(strings) then BOBBA.lang.add("en", strings) end
+				-- (a piece at a time: one search through all of it would take a frame on its own)
+				local PIECE = 131072
+				for _, pre in ipairs(prefixes) do
+					local needle = "\n" .. pre
+					for from = 1, #text, PIECE do
+						local piece = text:sub(from, from + PIECE + #needle - 2)
+						local at = 1
+						while true do
+							local s = piece:find(needle, at, true)
+							if not s then break end
+							local k, v = text:match("^([%w%._%-]+)=([^\r\n]*)", from + s)
+							if k then strings[k] = v end
+							at = s + 1
+						end
+						H.yield()
+					end
+				end
+				if next(strings) then BOBBA.lang.add("en", strings) end
+			end, true)
 		end)
 	end)
 end

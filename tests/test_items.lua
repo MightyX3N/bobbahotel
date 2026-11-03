@@ -179,4 +179,30 @@ T["using: the owner switches its state round; messages from players"] = function
 	eq(#BOBBA.items.list(r), 2)
 end
 
+T["a server start: furni still being looked up come as soon as they're known, none go missing"] = function()
+	local mia, bo, r = start()
+	place(r, mia, "table", 6, 3, 0)
+	place(r, mia, "chair", 9, 9, 0)
+	local I = BOBBA.items
+	-- like a fresh server: nothing known yet, the addon answers later
+	BOBBA.live.leave(mia)
+	I.defs = {}
+	local answers = {}
+	local old = I.resolver
+	I.resolver = function(kind, cb) answers[#answers + 1] = { kind, cb } end
+	BOBBA.live.enter(mia, r.id)
+	local load = last(mia, "room.load")
+	eq(#load.items, 0, "nothing known yet")
+	eq(#load.itemsComing, 2, "but two are coming")
+	local before = #P.inbox(mia, "room.items")
+	for _, a in ipairs(answers) do
+		if a[1] == "table" then a[2]({ width = 2, length = 1, height = 0.8, directions = { 0, 2 } }) else a[2](nil, "unknown") end
+	end
+	local box = P.inbox(mia, "room.items")
+	eq(#box, before + 1, "the table is sent when it's known")
+	eq(box[#box][1].kind, "table")
+	eq(last(mia, "room.item.remove") ~= nil, true, "the unknown one is taken off the list coming")
+	I.resolver = old
+end
+
 return T

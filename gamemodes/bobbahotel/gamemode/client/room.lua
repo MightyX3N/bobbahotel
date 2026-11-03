@@ -65,6 +65,9 @@ P.receive("room.load", function(_, data)
 	R.you = data.you
 	for _, s in ipairs(data.units or {}) do setUnit(s) end
 	for _, s in ipairs(data.items or {}) do setItem(s) end
+	-- furni the server is still looking up: they come with room.items (or room.item.remove)
+	R.itemsComing = {}
+	for _, id in ipairs(data.itemsComing or {}) do R.itemsComing[id] = true end
 	R.show()
 	R.updateInfo()
 	BOBBA.events.emit("roomShown", data)
@@ -79,12 +82,16 @@ P.receive("room.unit.remove", function(_, data)
 end)
 
 P.receive("room.items", function(_, list)
-	for _, s in ipairs(list) do setItem(s) end
+	for _, s in ipairs(list) do
+		setItem(s)
+		if R.itemsComing then R.itemsComing[s.id] = nil end
+	end
 	R.updateInfo()
 end)
 
 P.receive("room.item.remove", function(_, data)
 	R.items[data.id] = nil
+	if R.itemsComing then R.itemsComing[data.id] = nil end
 	if R.selected == data.id then R.selected = nil end
 	R.updateInfo()
 end)
