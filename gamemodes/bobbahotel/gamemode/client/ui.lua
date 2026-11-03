@@ -20,10 +20,16 @@ U.C = {
 	success = Color(0, 128, 11), closeTop = Color(245, 80, 65), closeBottom = Color(194, 48, 39), closeBorder = Color(146, 25, 17),
 }
 
--- The UI's size (toolbar, purse, windows, chat input): Habbo's pixels up to 2159 pixels high, 2x
--- from 2160 (4K), like a browser at 100% shows Nitro. (Rooms and their chat bubbles have their own,
--- bigger size: V.uiScale.)
-function U.scale(h) return math.max(1, math.floor((h or ScrH()) / 1080)) end
+-- The UI's size (toolbar, purse, windows, chat input): Habbo's pixels on a 1080 high screen, and
+-- that much bigger on a bigger one (1.33x on 1440, 2x on 4K), like a browser zoomed to fit.
+-- bobba_ui_scale <n> sets it yourself (0 = by the screen). Rooms and their chat bubbles have their
+-- own size (V.uiScale).
+local scaleVar = CreateClientConVar("bobba_ui_scale", "0", true, false, "The hotel's UI size (0 = by the screen, e.g. 1, 1.25, 1.5)")
+function U.scale(h)
+	local set = scaleVar:GetFloat()
+	if set and set > 0 then return math.Clamp(set, 0.5, 4) end
+	return math.max(1, math.floor((h or ScrH()) / 1080 * 4 + 0.5) / 4)
+end
 
 -- Nitro's font at a CSS size: its "Ubuntu" is Ubuntu Condensed (nitro-react's fonts.scss, Ubuntu-C.ttf,
 -- shipped in addons/bobbahotel/resource/fonts; bold is made from it, as the browser does).

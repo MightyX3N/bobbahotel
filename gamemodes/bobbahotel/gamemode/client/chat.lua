@@ -73,7 +73,10 @@ local function fonts()
 end
 -- (sets the sizes for the screen; again when the game's resolution changes)
 -- the input is part of the toolbar: it has the UI's size (BOBBA.ui.scale), not the room's
-function C.inputScaleFor(h) return math.max(1, math.floor(h / 1080)) end
+function C.inputScaleFor(h)
+	if BOBBA.ui and BOBBA.ui.scale then return BOBBA.ui.scale(h) end
+	return math.max(1, math.floor(h / 1080 * 4 + 0.5) / 4)
+end
 function C.setScale(scale, inputScale)
 	S = scale
 	IS = inputScale or C.inputScaleFor(ScrH())
@@ -509,6 +512,9 @@ hook.Add("Think", "bobba.chat", function()
 		if IsValid(C.input) then C.input:SetVisible(false) end
 		return
 	end
+	-- (the UI's size can change: bobba_ui_scale)
+	local want = C.inputScaleFor(ScrH())
+	if want ~= IS then C.setScale(S, want) end
 	local f = createInput()
 	f:SetVisible(true)
 	-- as wide as what's typed (the ::after copy of it plus two spaces)
