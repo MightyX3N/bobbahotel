@@ -1,5 +1,7 @@
--- Full screen as a borderless window the size of the screen ("windowed full screen"): alt-tab and
--- other windows work as normal, nothing is minimised. Win.set(true/false), Win.toggle(), Win.full().
+-- Full screen as a borderless window ("windowed full screen"): alt-tab, HDR and other monitors work
+-- as normal. It's one pixel taller than the screen (the last row hangs off the bottom): a window that
+-- covers the screen exactly is taken for real full screen by Windows and the graphics driver.
+-- Win.set(true/false), Win.toggle(), Win.full().
 local Win = {}
 local full = false
 local before -- the window as it was: w, h, x, y, display
@@ -19,7 +21,7 @@ function Win.set(on)
 		local x, y, display = love.window.getPosition()
 		before = { w = w, h = h, x = x, y = y, display = display }
 		local dw, dh = love.window.getDesktopDimensions(display)
-		love.window.setMode(dw, dh, windowFlags({ borderless = true, resizable = false, display = display, x = 0, y = 0 }))
+		love.window.setMode(dw, dh + 1, windowFlags({ borderless = true, resizable = false, display = display, x = 0, y = 0 }))
 		love.window.setPosition(0, 0, display)
 	else
 		local b = before or { w = 1280, h = 760 }
