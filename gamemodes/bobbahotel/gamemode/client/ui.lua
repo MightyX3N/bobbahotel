@@ -87,11 +87,21 @@ function D:scroll(id, x, y, w, h, contentHeight)
 end
 
 -- only draw inside x, y, w, h (in CSS pixels) while fn runs
+-- (clips inside clips: the inner one is cut to the outer one, and the outer one comes back after)
+local clips = {}
 function D:clip(x, y, w, h, fn)
 	local ox, oy = self.w.panel:LocalToScreen(0, 0)
-	render.SetScissorRect(ox + px(self, x), oy + px(self, y), ox + px(self, x + w), oy + px(self, y + h), true)
+	local r = { ox + px(self, x), oy + px(self, y), ox + px(self, x + w), oy + px(self, y + h) }
+	local outer = clips[#clips]
+	if outer then
+		r[1], r[2] = math.max(r[1], outer[1]), math.max(r[2], outer[2])
+		r[3], r[4] = math.max(r[1], math.min(r[3], outer[3])), math.max(r[2], math.min(r[4], outer[4]))
+	end
+	clips[#clips + 1] = r
+	render.SetScissorRect(r[1], r[2], r[3], r[4], true)
 	local ok, err = pcall(fn)
-	render.SetScissorRect(0, 0, 0, 0, false)
+	clips[#clips] = nil
+	if outer then render.SetScissorRect(outer[1], outer[2], outer[3], outer[4], true) else render.SetScissorRect(0, 0, 0, 0, false) end
 	if not ok then ErrorNoHalt("[Bobba] window: " .. tostring(err) .. "\n") end
 end
 

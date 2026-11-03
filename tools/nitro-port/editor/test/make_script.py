@@ -18,5 +18,6 @@ for i in range(int(sys.argv[2]) if len(sys.argv) > 2 else 12):
         elif k < 0.93: steps.append({"op": "clear"})
         elif k < 0.96: steps.append({"op": "reset"})
         else: steps.append({"op": "random"})
-    runs.append({"club": [0, 0, 1, 2][i % 4], "steps": steps})
+    # (both orders: club clothes first, Nitro's default, and the ones you can wear first, the hotel's)
+    runs.append({"club": [0, 0, 1, 2][i % 4], "clubFirst": (i // 4) % 2 == 0, "steps": steps})
 json.dump({"random": [rnd.random() for _ in range(5000)], "runs": runs}, open(sys.argv[1], "w"))

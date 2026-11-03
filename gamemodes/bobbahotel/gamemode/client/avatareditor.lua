@@ -103,7 +103,11 @@ local function drawModel(w, d, ed)
 				if item.isClear then
 					icon(d, "clear", false, x, y2, cw, ch, "X")
 				elseif AE.drawPart then
-					local drawn = AE.drawPart(category.name, item, ed.figure, (x + cw / 2) * s, (y2 + ch / 2) * s, s)
+					-- (the picture stays inside its box, like a CSS background: big hats and wings are cut)
+					local drawn
+					d:clip(x, y2, cw, ch, function()
+						drawn = AE.drawPart(category.name, item, ed.figure, (x + cw / 2) * s, (y2 + ch / 2) * s, s)
+					end)
 					if drawn == false then icon(d, "loading", false, x, y2, cw, ch, "...") end
 				else
 					d:text(category.name .. "-" .. item.id, 9, x + cw / 2, y2 + ch / 2, U.C.paleSky, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)

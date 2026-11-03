@@ -38,27 +38,37 @@ T["the editor opens on your look, the clothes for your gender, club clothes dimm
 	eq(hr.parts[1].isClear, true)
 	local ids = {}
 	for i = 2, #hr.parts do ids[#ids + 1] = hr.parts[i].id end
-	eq(table.concat(ids, ","), "110,100", "highest id first (Nitro's club sorter)")
+	eq(table.concat(ids, ","), "100,110", "what you can wear first, then by id (Nitro's noob sorter)")
 	eq(hr:getCurrentPart().id, 100, "your hair chosen")
 	local hd = ed:model("generic").byName.hd
 	eq(hd.parts[1].isClear, false, "the face is mandatory: no nothing")
-	eq(hd.parts[1].id, 185, "club first")
-	eq(hd.parts[1].isDisabled, true, "and dimmed without club")
+	eq(hd.parts[1].id, 180, "what you can wear first")
+	eq(hd.parts[2].id, 185, "club after it")
+	eq(hd.parts[2].isDisabled, true, "and dimmed without club")
 	local ha = ed:model("head").byName.ha
 	eq(#ha.parts, 2, "hats: nothing, 1002 (not the unselectable one, not the sellable one)")
 end
 
 T["choosing: a piece, its colours, nothing, club things refused"] = function()
 	local ed = FE.new(fd(), "hd-180-1.hr-100-61.ch-210-62.lg-270-61", "M")
-	ed:selectPart("head", "hr", 1) -- (0-based: 110, two colours)
+	ed:selectPart("head", "hr", 2) -- (0-based: 110, two colours)
 	eq(ed.figure:getPartSetId("hr"), 110)
 	ed:selectColor("head", "hr", 1, 1)
 	eq(ed.figure:getFigureString(), "hd-180-1.hr-110-61-62.ch-210-62.lg-270-61")
 	eq(ed:selectColor("head", "hr", 2, 0), false, "a club colour can't be chosen")
 	ed:selectPart("head", "hr", 0)
 	eq(ed.figure:getFigureString(), "hd-180-1.ch-210-62.lg-270-61", "no hair")
-	eq(ed:selectPart("generic", "hd", 0), false, "club face refused")
+	eq(ed:selectPart("generic", "hd", 1), false, "club face refused")
 	eq(ed.figure:getPartSetId("hd"), 180)
+end
+
+T["Habbo's other order: club clothes first"] = function()
+	FE.CLUB_ITEMS_FIRST = true
+	local ed = FE.new(fd(), "hd-180-1.hr-100-61.ch-210-62.lg-270-61", "M", { clubLevel = 0 })
+	local hd, hr = ed:model("generic").byName.hd, ed:model("head").byName.hr
+	FE.CLUB_ITEMS_FIRST = false
+	eq(hd.parts[1].id, 185, "club first (Nitro's club sorter)")
+	eq(hr.parts[2].id .. "," .. hr.parts[3].id, "110,100", "highest id first")
 end
 
 T["gender, clear, reset and random"] = function()

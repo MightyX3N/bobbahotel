@@ -20,10 +20,11 @@ export class Editor
     categories: Map<string, any>;
     lastFigure: string; lastGender: string;
 
-    constructor(xml: string, clubLevel: number)
+    constructor(xml: string, clubLevel: number, config: any = {})
     {
         Env.figureData = loadFigureData(xml);
         Env.clubLevel = clubLevel;
+        Env.config = config;
         AvatarEditorUtilities.FIGURE_SET_IDS = [];
         AvatarEditorUtilities.BOUND_FURNITURE_NAMES = [];
         const male = new FigureData(), female = new FigureData();

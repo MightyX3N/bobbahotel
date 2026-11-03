@@ -32,8 +32,9 @@ local SAVED_TYPES = { hd = true, hr = true, ha = true, he = true, ea = true, fa 
 FE.DEFAULT_MALE_FIGURE = "hr-100.hd-180-7.ch-215-66.lg-270-79.sh-305-62.ha-1002-70.wa-2007"
 FE.DEFAULT_FEMALE_FIGURE = "hr-515-33.hd-600-1.ch-635-70.lg-716-66-62.sh-735-68"
 FE.MAX_PALETTES = 2
--- avatareditor.show.clubitems.first / .dimmed (Nitro's defaults)
-FE.CLUB_ITEMS_FIRST = true
+-- avatareditor.show.clubitems.first / .dimmed (Habbo's settings: here the clothes you can wear come
+-- first, the club ones after them, so nobody scrolls past what they can't use to find what they can)
+FE.CLUB_ITEMS_FIRST = false
 FE.CLUB_ITEMS_DIMMED = true
 
 FE.random = math.random

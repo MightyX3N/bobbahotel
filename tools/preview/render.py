@@ -193,19 +193,21 @@ def paint(G, w, h, images=None, transparent=False):
         o = ops[i]
         kind = o[1]
         if kind == "clip":
-            # render.SetScissorRect: what's drawn until it's switched off is kept inside the rectangle
+            # render.SetScissorRect: what's drawn until it's switched off (or another rectangle is
+            # set, which replaces it) is kept inside the rectangle
+            if clip:
+                layer = im
+                im = base
+                d = ImageDraw.Draw(im, "RGBA")
+                if clip[2] > clip[0] and clip[3] > clip[1]:
+                    part = layer.crop(clip)
+                    if im.mode == "RGBA": im.alpha_composite(part, (clip[0], clip[1]))
+                    else: im.paste(part, (clip[0], clip[1]), part)
+                clip = None
             if o[6]:
                 clip = (int(o[2]), int(o[3]), int(o[4]), int(o[5]))
                 im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
                 d = ImageDraw.Draw(im, "RGBA")
-            elif clip:
-                layer = im
-                im = base
-                d = ImageDraw.Draw(im, "RGBA")
-                part = layer.crop(clip)
-                if im.mode == "RGBA": im.alpha_composite(part, (clip[0], clip[1]))
-                else: im.paste(part, (clip[0], clip[1]), part)
-                clip = None
             continue
         if kind == "rrect":
             x, y, rw, rh = o[2], o[3], o[4], o[5]

@@ -10,7 +10,7 @@ const states = [];
 for(const run of script.runs)
 {
     r = 0;
-    const ed = new Editor(xml, run.club);
+    const ed = new Editor(xml, run.club, { 'avatareditor.show.clubitems.first': run.clubFirst });
     for(const s of run.steps)
     {
         try

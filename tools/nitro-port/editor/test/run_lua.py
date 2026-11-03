@@ -17,8 +17,9 @@ script = json.load(open(script_path))
 L.globals().RANDOM = L.table_from(script["random"])
 L.globals().SCRIPT = L.eval("function(s) return s end")(None)
 L.globals().FD = L.eval("function(x) return BOBBA.habbo.parseFigureData(x) end")(open(xml_path, encoding="utf-8").read())
-run = L.eval(r"""function(club, steps)
+run = L.eval(r"""function(club, steps, clubFirst)
     local FE = BOBBA.figureEditor
+    FE.CLUB_ITEMS_FIRST = clubFirst
     local r = 0
     FE.random = function() r = r + 1 return RANDOM[((r - 1) % #RANDOM) + 1] end
     local ed = FE.new(FD, nil, "M", { clubLevel = club })
@@ -81,6 +82,6 @@ def py(x):
 states = []
 for rn in script["runs"]:
     steps = L.table_from([L.table_from(s) for s in rn["steps"]])
-    states += py(run(rn["club"], steps))
+    states += py(run(rn["club"], steps, rn.get("clubFirst", True)))
 json.dump(states, open(out_path, "w"))
 print("lua:", len(states), "states")
