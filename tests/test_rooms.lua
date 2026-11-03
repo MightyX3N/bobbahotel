@@ -122,12 +122,38 @@ T["wall height given as text (GMod's SQLite) builds the same room as the number"
 	for i, p in ipairs(a.planes) do eq(p.right[3], b.planes[i].right[3], "plane " .. i) end
 end
 
+T["floor tile lines: one on each tile's back edges, 1/32 of a tile wide"] = function()
+	local room = BOBBA.rooms.geometry("model_a")
+	local total, tiles = 0, 0
+	for i, p in ipairs(room.planes) do
+		if p.type == BOBBA.rooms.PLANE_FLOOR and p.left[3] == 0 and p.right[3] == 0 then
+			local lines = BOBBA.rooms.gridLines(room, i - 1)
+			total = total + #lines
+			for _, l in ipairs(lines) do
+				local w = math.min(l[2] - l[1], l[4] - l[3])
+				assert(math.abs(w - 1 / 32) < 1e-9, "1/32 wide")
+				assert((l[2] - l[1] == 1 / 32 and (l[1] + 0.5) % 1 == 0) or (l[4] - l[3] == 1 / 32 and (l[3] + 0.5) % 1 == 0), "on a tile edge")
+			end
+		end
+	end
+	assert(total > 20, "model_a's floor has lines: " .. total)
+	-- the edges (thickness) of the floor get none
+	for i, p in ipairs(room.planes) do
+		if p.type == BOBBA.rooms.PLANE_FLOOR and (p.left[3] ~= 0 or p.right[3] ~= 0) then eq(#BOBBA.rooms.gridLines(room, i - 1), 0) end
+	end
+end
+
 T["plane colours: style colour times Nitro's shade"] = function()
 	local floor = BOBBA.registry.get("plane_style", "default_floor")
 	local r, g, b = BOBBA.rooms.planeColor(floor, 0xFFFFFF)
-	eq(r .. "," .. g .. "," .. b, "161,99,55", "top")
-	r, g, b = BOBBA.rooms.planeColor(floor, 0xBBBBBB)
-	eq(r .. "," .. g .. "," .. b, "118,72,40", "right edge")
+	eq(r .. "," .. g .. "," .. b, "152,152,98", "Habbo's plain floor")
+	local wall = BOBBA.registry.get("plane_style", "default_wall")
+	r, g, b = BOBBA.rooms.planeColor(wall, 0xFFFFFF)
+	eq(r .. "," .. g .. "," .. b, "181,185,197", "Habbo's right wall")
+	r, g, b = BOBBA.rooms.planeColor(wall, 0xCCCCCC)
+	eq(r .. "," .. g .. "," .. b, "144,148,157", "Habbo's left wall is (145, 147, 159)")
+	r, g, b = BOBBA.rooms.planeColor(wall, 0x999999)
+	eq(r .. "," .. g .. "," .. b, "108,111,118", "Habbo's wall top is (110, 113, 122)")
 	eq(BOBBA.registry.register("plane_style", "t_bad", { kind = "roof", color = { r = 1, g = 1, b = 1 } }), false, "bad kind")
 	eq(BOBBA.registry.register("plane_style", "t_bad2", { kind = "wall", color = { r = 300, g = 1, b = 1 } }), false, "bad colour")
 end

@@ -104,10 +104,12 @@ function rooms.tileHeight(room, x, y)
 end
 
 -- How floors, walls and the outside (landscape) look. Addons register more (with a texture later);
--- the core's defaults are flat colours taken from Habbo's default floor and wallpaper. Nitro then
--- shades each side (floor edges, left and right walls) the way RoomVisualization does.
+-- the core's defaults are Habbo's plain room: measured from a Habbo screenshot, and the same as
+-- Nitro's default floor (#989862). Nitro then shades each side (floor edges, left and right walls,
+-- wall tops) the way RoomVisualization does: Habbo's left wall is exactly 0.8 of its right wall.
+-- grid (optional): the thin lines on each tile's back edges, as a share of the floor's colour.
 BOBBA.registry.defineType("plane_style", {
-	fields = { kind = "string", color = "table", material = "string?", name = "string?" },
+	fields = { kind = "string", color = "table", material = "string?", name = "string?", grid = "number?" },
 	validate = function(def)
 		if def.kind ~= "floor" and def.kind ~= "wall" and def.kind ~= "landscape" then return false, "kind must be floor, wall or landscape" end
 		local c = def.color
@@ -118,8 +120,8 @@ BOBBA.registry.defineType("plane_style", {
 	end,
 })
 
-BOBBA.registry.register("plane_style", "default_floor", { kind = "floor", color = { r = 161, g = 99, b = 55 } })
-BOBBA.registry.register("plane_style", "default_wall", { kind = "wall", color = { r = 193, g = 173, b = 112 } })
+BOBBA.registry.register("plane_style", "default_floor", { kind = "floor", color = { r = 152, g = 152, b = 98 }, grid = 0.93 })
+BOBBA.registry.register("plane_style", "default_wall", { kind = "wall", color = { r = 181, g = 185, b = 197 } })
 BOBBA.registry.register("plane_style", "default_landscape", { kind = "landscape", color = { r = 134, g = 182, b = 217 } })
 
 -- A plane's colour on screen: its style's colour times Nitro's shade for that side (0xRRGGBB).
@@ -234,4 +236,30 @@ function rooms.doorFloor(room)
 		end
 	end
 	return room.doorFloorIndex or nil
+end
+
+-- The thin lines of a floor's tiles (Habbo's plain floor has a line on each tile's back edges, one
+-- texture pixel wide: 1/32 of a tile). For a flat floor plane (index from 0): a list of strips,
+-- each { x0, x1, y0, y1, z } in room coordinates.
+rooms.GRID_WIDTH = 1 / 32
+function rooms.gridLines(room, index)
+	local p = room.planes[index + 1]
+	if p.type ~= rooms.PLANE_FLOOR or p.left[3] ~= 0 or p.right[3] ~= 0 then return {} end
+	local xs = { p.loc[1], p.loc[1] + p.left[1] + p.right[1] }
+	local ys = { p.loc[2], p.loc[2] + p.left[2] + p.right[2] }
+	local x0, x1 = math.min(xs[1], xs[2]), math.max(xs[1], xs[2])
+	local y0, y1 = math.min(ys[1], ys[2]), math.max(ys[1], ys[2])
+	local z, w, out = p.loc[3], rooms.GRID_WIDTH, {}
+	-- tile edges lie on .5; a line runs along the back (smaller x / y) edge of each tile
+	local bx = math.ceil(x0 - 0.5 - 1e-9) + 0.5
+	while bx < x1 - 1e-9 do
+		out[#out + 1] = { bx, math.min(bx + w, x1), y0, y1, z }
+		bx = bx + 1
+	end
+	local by = math.ceil(y0 - 0.5 - 1e-9) + 0.5
+	while by < y1 - 1e-9 do
+		out[#out + 1] = { x0, x1, by, math.min(by + w, y1), z }
+		by = by + 1
+	end
+	return out
 end

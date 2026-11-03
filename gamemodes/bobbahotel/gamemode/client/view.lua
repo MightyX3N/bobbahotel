@@ -131,6 +131,17 @@ local function buildPolys()
 					{ x = ox + p.d[1] * m, y = oy + p.d[2] * m },
 				}),
 			}
+			-- the floor's tile lines, right on top of it (they are part of its look)
+			if style.grid and p.type == 1 then
+				local gr, gg, gb = math.floor(r * style.grid), math.floor(g * style.grid), math.floor(b * style.grid)
+				for _, l in ipairs(BOBBA.rooms.gridLines(V.room, p.index)) do
+					local function at(x, y)
+						local s = camera.screen(x, y, l[5])
+						return { x = ox + s[1] * m, y = oy + s[2] * m }
+					end
+					list[#list + 1] = { r = gr, g = gg, b = gb, pts = clockwise({ at(l[1], l[3]), at(l[2], l[3]), at(l[2], l[4]), at(l[1], l[4]) }) }
+				end
+			end
 		end
 	end
 	V.polys = polys

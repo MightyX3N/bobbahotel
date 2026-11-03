@@ -88,8 +88,9 @@ T["shows a room: clockwise polygons, in the middle of the screen, worked out onc
 	local holes = BOBBA.rooms.holes(V.room)
 	for _, p in ipairs(BOBBA.rooms.view(V.room, 64)) do
 		expected = expected + (holes[p.index] and #BOBBA.rooms.planePieces(V.room, p.index) or 1)
+		if p.type == BOBBA.rooms.PLANE_FLOOR then expected = expected + #BOBBA.rooms.gridLines(V.room, p.index) end
 	end
-	eq(n, expected, "one polygon per visible plane, walls with the door hole in pieces")
+	eq(n, expected, "one polygon per visible plane, walls with the door hole in pieces, floor tile lines")
 	assert(expected > #BOBBA.rooms.view(V.room, 64), "model_a has a door hole")
 	local minX, maxX, minY, maxY = 1e9, -1e9, 1e9, -1e9
 	for _, p in ipairs(G.polys) do
