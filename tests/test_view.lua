@@ -31,6 +31,11 @@ local function fakeGmod()
 	_G.math.Round = function(v) return math.floor(v + 0.5) end
 	_G.string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 	_G.KEY_LCONTROL, _G.KEY_RCONTROL = 1, 2
+	G.cvars = {}
+	_G.CreateClientConVar = function(name, default)
+		G.cvars[name] = default
+		return { GetBool = function() return G.cvars[name] == "1" end }
+	end
 	G.keys = {}
 	_G.input = { GetCursorPos = function() return G.cursor[1], G.cursor[2] end, IsKeyDown = function(k) return G.keys[k] == true end }
 	_G.gui = { EnableScreenClicker = function(b) G.clicker = b end }
@@ -147,6 +152,11 @@ T["mouse: hover a tile, click it, drag moves the room, scroll zooms"] = function
 	eq(V.panX .. "," .. V.panY, "25,10", "kept the same spot in the middle")
 	V.panel:OnMouseWheeled(1)
 	eq(V.zoom, 2)
+	-- the player setting: scrolling alone zooms
+	G.keys[KEY_LCONTROL] = nil
+	G.cvars.bobba_zoom_with_ctrl = "0"
+	V.panel:OnMouseWheeled(1)
+	eq(V.zoom, 3, "plain scroll zooms when the setting is off")
 end
 
 T["preview next/prev go through every layout, off hides"] = function()

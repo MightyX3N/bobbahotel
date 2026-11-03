@@ -10,6 +10,9 @@
 BOBBA.view = BOBBA.view or {}
 local V = BOBBA.view
 
+-- Player setting (saved on their own PC): 1 = zoom with Ctrl + scroll like Habbo, 0 = plain scroll
+V.cvZoomCtrl = V.cvZoomCtrl or CreateClientConVar("bobba_zoom_with_ctrl", "1", true, false, "1 = Ctrl + scroll zooms (like Habbo), 0 = scrolling alone zooms")
+
 V.ZOOMS = {
 	{ scale = 32, mult = 1 },
 	{ scale = 64, mult = 1 },
@@ -227,8 +230,9 @@ function PANEL:OnCursorMoved()
 end
 
 function PANEL:OnMouseWheeled(delta)
-	-- Habbo zooms with Ctrl + scroll; plain scrolling is left for windows
-	if not (input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)) then return end
+	-- Habbo zooms with Ctrl + scroll (plain scrolling is left for windows); players can switch that off
+	local ctrl = input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)
+	if V.cvZoomCtrl:GetBool() and not ctrl then return end
 	local old = zoomInfo()
 	local new = math.Clamp(V.zoom + (delta > 0 and 1 or -1), 1, #V.ZOOMS)
 	if new == V.zoom then return end

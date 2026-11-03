@@ -61,6 +61,7 @@ math.Round = function(v) return math.floor(v + 0.5) end
 string.Trim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local cursor = { 0, 0 }
 KEY_LCONTROL, KEY_RCONTROL = 1, 2
+CreateClientConVar = function(name, default) return { GetBool = function() return default == "1" end } end
 input = { GetCursorPos = function() return cursor[1], cursor[2] end, IsKeyDown = function() return false end }
 gui = { EnableScreenClicker = function() end }
 local hooks, cmds = {}, {}
