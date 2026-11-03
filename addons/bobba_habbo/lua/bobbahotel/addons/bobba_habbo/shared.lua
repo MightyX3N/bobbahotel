@@ -110,7 +110,13 @@ H.CATALOG_PAGE_SIZE = 150
 -- lines over the years: what they're called together (the rest are their own name, made readable)
 H.CATALOG_FAMILY_NAMES = { xmas = "Christmas", habboween = "Habboween", easter = "Easter", valentine = "Valentine's",
 	newyear = "New Year", garden = "Garden", nft = "NFT", buildersclub = "Builders Club", habbopalooza = "Habbopalooza",
-	university = "University", summer = "Summer", cyberpunk = "Cyberpunk" }
+	university = "University", summer = "Summer", cyberpunk = "Cyberpunk", cny = "Lunar New Year", st_patricks = "St. Patrick's Day" }
+
+-- seasonal lines (by their family's name): only sold in their season (the hotel's catalogue.lua says
+-- when each is, and whether that's switched on)
+H.CATALOG_SEASONS = { xmas = "christmas", habboween = "halloween", easter = "easter", valentine = "valentine",
+	newyear = "newyear", summer = "summer", winter = "winter", wintercabin = "winter", winterhorizon = "winter",
+	st_patricks = "stpatricks", cny = "lunarnewyear", xmas2010_quest_items = "christmas", summer2011_quest_items = "summer" }
 
 function H.catalogLineName(line)
 	if line == "" then return "Other" end
@@ -198,7 +204,9 @@ function H.catalogPages(fd, price)
 		for base, list in pairs(families) do
 			if #list == 1 then
 				local l = list[1]
-				top[#top + 1] = page(H.catalogLineName(l.line), l.offers)
+				local p = page(H.catalogLineName(l.line), l.offers)
+				p.season = H.CATALOG_SEASONS[base]
+				top[#top + 1] = p
 			else
 				table.sort(list, function(a, b) return (a.year or "0") < (b.year or "0") end)
 				local name = H.CATALOG_FAMILY_NAMES[base] or H.catalogLineName(base)
@@ -207,11 +215,13 @@ function H.catalogPages(fd, price)
 					local label = l.year and (l.year:find("^%d+$") and l.year or H.catalogLineName(l.year)) or name
 					children[#children + 1] = page(label, l.offers)
 				end
-				top[#top + 1] = { name = name, children = children, iconKind = children[#children].iconKind }
+				top[#top + 1] = { name = name, children = children, iconKind = children[#children].iconKind, season = H.CATALOG_SEASONS[base] }
 			end
 		end
 		for _, l in ipairs(single) do
-			top[#top + 1] = page(H.CATALOG_FAMILY_NAMES[l.line] or H.catalogLineName(l.line), l.offers)
+			local p = page(H.CATALOG_FAMILY_NAMES[l.line] or H.catalogLineName(l.line), l.offers)
+			p.season = H.CATALOG_SEASONS[l.line]
+			top[#top + 1] = p
 		end
 		return top
 	end

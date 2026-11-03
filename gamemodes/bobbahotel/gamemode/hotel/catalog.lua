@@ -31,6 +31,52 @@ CAT.MAX_AMOUNT = 100
 BOBBA.perms.define("bobba.staff.rares", { default = "admin", description = "See the catalogue's staff pages (rares) and take from them" })
 CAT.TROPHY_MAX = 300
 
+-- Seasons: pages marked with one (Christmas, Habboween, ...) are only in the catalogue in it, like
+-- Habbo's seasonal pages. The hotel's settings: catalog.seasons (1 on, the default; 0 off: always
+-- sold), season.<name> = "MM-DD..MM-DD" to change when one is (it may run over the new year).
+-- Staff see and buy them all year.
+CAT.SEASONS = {
+	valentine = "02-01..02-29", stpatricks = "03-10..03-20", summer = "06-01..08-31", halloween = "10-01..11-07",
+	christmas = "12-01..01-06", newyear = "12-26..01-15", winter = "12-01..02-28", lunarnewyear = "01-15..02-25",
+	easter = "easter",
+}
+
+-- Easter Sunday of a year (the Gregorian computus)
+function CAT.easter(year)
+	local a, b, c = year % 19, math.floor(year / 100), year % 100
+	local d, e = math.floor(b / 4), b % 4
+	local f = math.floor((b + 8) / 25)
+	local g = math.floor((b - f + 1) / 3)
+	local h = (19 * a + b - d - g + 15) % 30
+	local i, k = math.floor(c / 4), c % 4
+	local l = (32 + 2 * e + 2 * i - h - k) % 7
+	local m = math.floor((a + 11 * h + 22 * l) / 451)
+	local month = math.floor((h + l - 7 * m + 114) / 31)
+	local day = (h + l - 7 * m + 114) % 31 + 1
+	return month, day
+end
+
+-- is it a season now (t: a time, default now)?
+function CAT.inSeason(season, t)
+	if not season then return true end
+	if BOBBA.store.setting("catalog.seasons", "1") == "0" then return true end
+	local span = BOBBA.store.setting("season." .. season, CAT.SEASONS[season] or "")
+	t = t or BOBBA.platform.time()
+	local now = os.date("*t", t)
+	local today = now.month * 100 + now.day
+	if span == "easter" then
+		-- three weeks before Easter Sunday to two weeks after
+		local m, d = CAT.easter(now.year)
+		local sunday = os.time({ year = now.year, month = m, day = d, hour = 12 })
+		return t >= sunday - 21 * 86400 and t <= sunday + 15 * 86400
+	end
+	local m1, d1, m2, d2 = span:match("^(%d+)%-(%d+)%.%.(%d+)%-(%d+)$")
+	if not m1 then return true end
+	local from, to = tonumber(m1) * 100 + tonumber(d1), tonumber(m2) * 100 + tonumber(d2)
+	if from <= to then return today >= from and today <= to end
+	return today >= from or today <= to
+end
+
 local tree, pagesById, building
 
 local function build(cb)
@@ -40,9 +86,10 @@ local function build(cb)
 	local function done(pages)
 		pagesById = {}
 		local nextPage, nextOffer = 1, 1
-		local function number(list, staff)
+		local function number(list, staff, season)
 			for _, p in ipairs(list) do
 				p.staff = p.staff or staff
+				p.season = p.season or season
 				p.id = nextPage
 				nextPage = nextPage + 1
 				pagesById[p.id] = p
@@ -50,7 +97,7 @@ local function build(cb)
 					o.id = nextOffer
 					nextOffer = nextOffer + 1
 				end
-				number(p.children or {}, p.staff)
+				number(p.children or {}, p.staff, p.season)
 			end
 		end
 		-- the club (a tab with a buy page for each club on sale, Habbo's "vip_buy"), after the addon's
@@ -85,7 +132,7 @@ function CAT.reset() tree, pagesById = nil, nil end
 local function index(list, staff)
 	local out = {}
 	for _, p in ipairs(list) do
-		if staff or not p.staff then
+		if staff or (not p.staff and CAT.inSeason(p.season)) then
 			out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName,
 				children = p.children and index(p.children, staff) or nil }
 		end
@@ -112,7 +159,7 @@ function CAT.search(query, staff)
 	if query == "" then return offers, pages end
 	for id = 1, #pagesById do
 		local p = pagesById[id]
-		for _, o in ipairs((staff or not p.staff) and p.offers or {}) do
+		for _, o in ipairs((staff or (not p.staff and CAT.inSeason(p.season))) and p.offers or {}) do
 			if o.kind and #offers < CAT.SEARCH_MAX and ((o.name or ""):lower():find(query, 1, true) or o.kind:lower():find(query, 1, true)) then
 				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price, pair = o.pair, trophy = o.trophy }
 				if not seen[p.id] then seen[p.id] = true pages[#pages + 1] = p.id end
@@ -126,6 +173,7 @@ end
 function CAT.find(player, pageId, offerId)
 	local page = pagesById and pagesById[tonumber(pageId) or -1]
 	if not page or (page.staff and not isStaff(player)) then return nil, "that page isn't in the catalogue" end
+	if not CAT.inSeason(page.season) and not isStaff(player) then return nil, "that's only sold in its season" end
 	for _, o in ipairs(page.offers or {}) do if o.id == tonumber(offerId) then return page, o end end
 	return nil, "that isn't on this page"
 end
@@ -141,11 +189,8 @@ end
 function CAT.buy(player, pageId, offerId, amount, extra)
 	local P = BOBBA.platform
 	local key = P.playerKey(player)
-	local page = pagesById and pagesById[tonumber(pageId) or -1]
-	if not page or (page.staff and not isStaff(player)) then return false, "that page isn't in the catalogue" end
-	local offer
-	for _, o in ipairs(page.offers or {}) do if o.id == tonumber(offerId) then offer = o end end
-	if not offer then return false, "that isn't on this page" end
+	local page, offer = CAT.find(player, pageId, offerId)
+	if not page then return false, offer end
 	amount = math.floor(tonumber(amount) or 1)
 	if offer.club or offer.trophy then amount = 1 end
 	if amount < 1 or amount > CAT.MAX_AMOUNT then return false, "you can buy 1 to " .. CAT.MAX_AMOUNT .. " at a time" end
@@ -184,7 +229,7 @@ function CAT.start()
 	P.receive("catalog.page", function(player, data)
 		build(function()
 			local p = pagesById[tonumber(data.id) or -1]
-			if p and p.offers and (not p.staff or isStaff(player)) then P.send("catalog.page", pageMessage(p), player) end
+			if p and p.offers and (isStaff(player) or (not p.staff and CAT.inSeason(p.season))) then P.send("catalog.page", pageMessage(p), player) end
 		end)
 	end)
 	P.receive("catalog.search", function(player, data)

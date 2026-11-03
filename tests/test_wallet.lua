@@ -14,6 +14,9 @@ local function start()
 			{ name = "Pura", offers = { { kind = "chair", name = "Pura Chair", price = { credits = 5 } } } },
 			{ name = "Lights", offers = { { kind = "lamp", name = "Lava Lamp", price = { credits = 20, duckets = 10 } } } },
 			{ name = "Teleports", offers = { { kind = "tele", name = "Door", price = { credits = 6 }, pair = true } } },
+			{ name = "Habboween", season = "halloween", children = {
+				{ name = "2015", offers = { { kind = "pumpkin", name = "Pumpkin", price = { credits = 3 } } } },
+			} },
 			{ name = "Trophies", layout = "trophies", offers = { { kind = "prizetrophy*1", name = "Classic trophy", price = { credits = 10 }, trophy = true } } },
 		} }, { name = "Rares", staff = true, children = {
 			{ name = "Thrones", offers = { { kind = "throne", name = "Throne", price = {} } } },
@@ -306,6 +309,47 @@ T["gifts: bought for someone (by name, online or not), wrapped with a greeting; 
 	local month = last(mia, "catalog.page").offers[1]
 	P.fromPlayer(mia, "catalog.gift", { page = clubPage.id, offer = month.id, receiver = "Bo" })
 	assert(last(mia, "catalog.error").message:find("gift"))
+end
+
+T["seasonal pages: only in their season (the admin can switch it off or move a season)"] = function()
+	local mia = start()
+	local CAT = BOBBA.catalog
+	local function day(m, d) return os.time({ year = 2026, month = m, day = d, hour = 12 }) end
+	P.now = day(7, 1)
+	local function names()
+		P.fromPlayer(mia, "catalog.index")
+		local out = {}
+		for _, p in ipairs(last(mia, "catalog.index").pages[1].children) do out[#out + 1] = p.name end
+		return table.concat(out, ",")
+	end
+	assert(not names():find("Habboween"), "July: no Habboween")
+	P.fromPlayer(mia, "catalog.search", { query = "pumpkin" })
+	eq(#last(mia, "catalog.search").offers, 0)
+	P.now = day(10, 20)
+	assert(names():find("Habboween"), "October: Habboween")
+	-- buying it is only in season too
+	P.fromPlayer(mia, "catalog.index")
+	local hw
+	for _, p in ipairs(last(mia, "catalog.index").pages[1].children) do if p.name == "Habboween" then hw = p.children[1] end end
+	P.fromPlayer(mia, "catalog.page", { id = hw.id })
+	local pumpkin = last(mia, "catalog.page").offers[1]
+	P.now = day(12, 20)
+	P.fromPlayer(mia, "catalog.buy", { page = hw.id, offer = pumpkin.id, amount = 1 })
+	assert(last(mia, "catalog.error").message:find("season"))
+	-- switched off: always
+	BOBBA.store.setSetting("catalog.seasons", "0")
+	assert(names():find("Habboween"))
+	BOBBA.store.setSetting("catalog.seasons", "1")
+	-- moved: Habboween in December this hotel
+	BOBBA.store.setSetting("season.halloween", "12-15..12-31")
+	assert(names():find("Habboween"))
+	-- seasons over the new year, and Easter (5 April 2026)
+	assert(CAT.inSeason("christmas", day(1, 3)) and CAT.inSeason("christmas", day(12, 2)) and not CAT.inSeason("christmas", day(1, 10)))
+	assert(CAT.inSeason("easter", day(3, 20)) and CAT.inSeason("easter", day(4, 18)) and not CAT.inSeason("easter", day(3, 10)))
+	local m, d = CAT.easter(2026)
+	eq(m * 100 + d, 405)
+	local m2, d2 = CAT.easter(2027)
+	eq(m2 * 100 + d2, 328)
 end
 
 T["staff: giving and taking"] = function()

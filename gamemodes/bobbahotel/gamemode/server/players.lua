@@ -102,12 +102,18 @@ concommand.Add("bobba_wallet_setting", function(ply, _, args)
 		for k, v in SortedPairs(BOBBA.wallet.DEFAULTS) do reply(ply, k .. " = " .. BOBBA.wallet.setting(k) .. "  (default " .. v .. ")") end
 		reply(ply, "club.mode = " .. BOBBA.wallet.clubMode() .. "  (hc, vip or both; default hc)")
 		reply(ply, "catalog.price, club.price.31 / .93, vip.price.31 / .93: prices")
+		reply(ply, "catalog.seasons = " .. BOBBA.store.setting("catalog.seasons", "1") .. "  (1: seasonal furni only in their season, 0: always)")
+		for name, span in SortedPairs(BOBBA.catalog.SEASONS) do
+			reply(ply, "season." .. name .. " = " .. BOBBA.store.setting("season." .. name, span) .. (BOBBA.catalog.inSeason(name) and "  (now)" or ""))
+		end
 		return
 	end
 	if args[2] then
 		BOBBA.store.setSetting(args[1], args[2])
 		if args[1] == "club.mode" and not BOBBA.wallet.CLUB_MODES[args[2]] then reply(ply, "club.mode is hc, vip or both") return end
 		if args[1]:find("^club%.") or args[1]:find("^vip%.") or args[1]:find("^catalog%.") then BOBBA.catalog.reset() end
+		-- (everyone's catalogue changes: who has it open gets it again)
+		if args[1] == "catalog.seasons" or args[1]:find("^season%.") then BOBBA.platform.send("catalog.changed", {}) end
 	end
 	reply(ply, args[1] .. " = " .. tostring(BOBBA.store.setting(args[1], "")))
 end)

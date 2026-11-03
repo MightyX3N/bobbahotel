@@ -701,8 +701,22 @@ BOBBA.events.on("purseChanged", "bobba.shop.club", function(p)
 end)
 
 -- opens the catalogue (at a tab, by its name, or "club": the club's tab)
+-- the catalogue changed (a season began or ended, an admin changed it): asked for again
+local function catalogChanged()
+	CAT.pages, CAT.page, CAT.active, CAT.tab, CAT.asked, CAT.search = nil, nil, nil, nil, nil, nil
+	if U.windows.catalog then P.send("catalog.index", {}) end
+end
+P.receive("catalog.changed", catalogChanged)
+
 function SHOP.openCatalog(tabName)
-	if not U.windows.catalog then U.window("catalog", 630, 400, drawCatalog) end
+	if not U.windows.catalog then
+		-- (each time it opens: what's in it may have changed with the date, a season)
+		if CAT.pages and CAT.openedDay ~= os.date("%Y-%m-%d") then
+			CAT.pages, CAT.page, CAT.active, CAT.tab, CAT.asked, CAT.search = nil, nil, nil, nil, nil, nil
+		end
+		CAT.openedDay = os.date("%Y-%m-%d")
+		U.window("catalog", 630, 400, drawCatalog)
+	end
 	if not CAT.pages then
 		CAT.wantTab = tabName
 		P.send("catalog.index", {})
