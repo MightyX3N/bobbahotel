@@ -546,6 +546,20 @@ hook.Add("Think", "bobba.chat", function()
 	local W, H = math.floor((x + w) * IS + 0.5) - X, math.floor((y + h) * IS + 0.5) - Y
 	if f:GetWide() ~= W or f:GetTall() ~= H then f:SetSize(W, H) end
 	f:SetPos(X, Y)
+	-- while a furni is being placed the input lets go of the keyboard, so R turns it (GMod doesn't
+	-- see keys while a text box has them); afterwards it takes it back
+	if R.placing then
+		if f.hasKeyboard ~= false then
+			f.hasKeyboard = false
+			f:SetKeyboardInputEnabled(false)
+			f.entry:KillFocus()
+		end
+		return
+	end
+	if f.hasKeyboard == false then
+		f.hasKeyboard = true
+		f:SetKeyboardInputEnabled(true)
+	end
 	local focus = vgui.GetKeyboardFocus()
 	if not gui.IsGameUIVisible() and not gui.IsConsoleVisible() and (focus == nil or focus == f or focus == V.panel) then
 		f.entry:RequestFocus()
