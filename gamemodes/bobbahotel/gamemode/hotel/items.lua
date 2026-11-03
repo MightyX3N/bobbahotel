@@ -34,11 +34,36 @@ function items.migrate()
 		)]],
 		"CREATE INDEX bobbahotel_items_room ON bobbahotel_items (room)",
 	})
+	-- teleports come in pairs (Arcturus items_teleports): each one's partner
+	BOBBA.store.migrate("core.009_teleports", {
+		"CREATE TABLE bobbahotel_teleports (a INTEGER PRIMARY KEY, b INTEGER NOT NULL)",
+	})
+	-- what some furni keep (Arcturus extradata): a trophy's engraving, a toner's colour, ...
+	BOBBA.store.migrate("core.010_item_data", { "ALTER TABLE bobbahotel_items ADD COLUMN data TEXT NOT NULL DEFAULT ''" })
+end
+
+-- two teleports become each other's partner
+function items.link(a, b)
+	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_teleports (a, b) VALUES (?, ?)", { a, b })
+	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_teleports (a, b) VALUES (?, ?)", { b, a })
+end
+
+function items.partner(id)
+	local row = BOBBA.store.row("SELECT b FROM bobbahotel_teleports WHERE a = ?", { id })
+	return row and tonumber(row.b)
 end
 
 -- What a kind of furni is. cb(def) or cb(nil, why); straight away when it's known.
 function items.define(kind, def)
 	def.width, def.length, def.height = def.width or 1, def.length or 1, def.height or 0
+	-- gates (furnidata's category; Arcturus InteractionGate): walked through when open
+	if def.gate == nil then def.gate = def.category == "gate" end
+	-- one-way gates (Arcturus InteractionOneWayGate): only ever passed through, one person at a time
+	if def.oneWay == nil then def.oneWay = def.logic == "furniture_one_way_door" end
+	-- rollers (category roller; Arcturus InteractionRoller): move what's on them along
+	if def.roller == nil then def.roller = def.category == "roller" end
+	-- teleports (category teleport; Arcturus InteractionTeleport): walked into, out of their partner
+	if def.teleport == nil then def.teleport = def.category == "teleport" and (def.logic or ""):find("random") == nil end
 	def.directions = def.directions or { 0, 2, 4, 6 }
 	def.states = math.max(1, def.states or 1)
 	if def.stack == nil then def.stack = not def.sit and not def.lay end
@@ -87,7 +112,22 @@ function items.at(r, x, y, exclude)
 	return out
 end
 
-local function top(it) return it.z + it.def.height end
+-- can people walk on (or through) it now: walkable furni, an open gate, a one-way gate someone's
+-- going through
+local function walkable(it)
+	local d = it.def
+	if d.gate then return tonumber(it.state) == 1 end
+	if d.oneWay or d.teleport then return it.passing ~= nil end
+	return d.walk
+end
+items.walkable = walkable
+
+-- (an open gate is walked through on the floor, not on top of it)
+local function top(it)
+	if it.def.gate or it.def.oneWay then return walkable(it) and it.z or it.z + it.def.height end
+	if it.def.teleport then return it.z end
+	return it.z + it.def.height
+end
 
 -- Room.getTopItemAt: the furni whose top is highest
 function items.topAt(r, x, y, exclude)
@@ -126,17 +166,17 @@ function items.updateTile(r, x, y)
 	end
 	topItem = items.topAt(r, x, y)
 	if topItem then
-		stack = topItem.z + (topItem.def.sit and 0 or topItem.def.height)
+		stack = (topItem.def.sit and topItem.z) or top(topItem)
 		if state ~= PF.LAY then
 			local d = topItem.def
 			state = PF.BLOCKED
-			if d.walk then state = PF.OPEN end
+			if walkable(topItem) then state = PF.OPEN end
 			if d.sit then state = PF.SIT end
 			if d.lay then state = PF.LAY end
 		end
 	end
 	t.state, t.stackHeight = state, stack
-	t.allowStack = not topItem or topItem.def.stack
+	t.allowStack = not topItem or (topItem.def.stack and not topItem.def.gate and not topItem.def.oneWay and not topItem.def.teleport)
 end
 
 local function updateTiles(r, list)
@@ -156,7 +196,8 @@ function items.standZ(r, x, y)
 end
 
 local function snapshot(it)
-	return { id = it.id, kind = it.kind, x = it.x, y = it.y, z = it.z, dir = it.dir, state = it.state }
+	return { id = it.id, kind = it.kind, x = it.x, y = it.y, z = it.z, dir = it.dir, state = it.state,
+		data = (it.data and it.data ~= "") and it.data or nil }
 end
 items.snapshot = snapshot
 
@@ -172,7 +213,7 @@ function items.load(r)
 	local rows = BOBBA.store.query("SELECT * FROM bobbahotel_items WHERE room = ? ORDER BY id", { r.id })
 	for _, row in ipairs(rows) do
 		local it = { id = tonumber(row.id), owner = row.owner, kind = row.kind, x = tonumber(row.x), y = tonumber(row.y),
-			z = tonumber(row.z), dir = tonumber(row.dir) or 0, state = tonumber(row.state) or 0 }
+			z = tonumber(row.z), dir = tonumber(row.dir) or 0, state = tonumber(row.state) or 0, data = row.data or "" }
 		r.items[it.id] = it
 		-- what it is may need a moment (the addon may have to look it up); its tiles change then
 		items.resolve(it.kind, function(def)
@@ -230,7 +271,7 @@ function items.fits(r, def, x, y, dir, exclude)
 		if not t or base(t).state == PF.INVALID then return nil, "not on the floor" end
 		if g.door and p.x == g.door.x and p.y == g.door.y then return nil, "not in the door" end
 		local under = items.topAt(r, p.x, p.y, exclude)
-		if under and not under.def.stack then return nil, "it can't go on top of that" end
+		if under and (not under.def.stack or under.def.gate or under.def.oneWay or under.def.teleport) then return nil, "it can't go on top of that" end
 		if t.units.n > 0 and not (def.walk or def.sit or def.lay) then return nil, "someone is standing there" end
 		local h = under and (under.z + (under.def.sit and 0 or under.def.height)) or base(t).stack
 		if h > z then z = h end
@@ -262,7 +303,7 @@ function items.place(r, player, kind, x, y, dir, cb, existingId)
 		local z, err = items.fits(r, def, x, y, dir)
 		if not z then cb(nil, err) return end
 		local owner = player and BOBBA.platform.playerKey(player) or "server"
-		local id
+		local id, data
 		if existingId then
 			-- (still in the inventory? it may have been placed meanwhile)
 			local row = BOBBA.store.row("SELECT owner FROM bobbahotel_items WHERE id = ? AND room = 0", { existingId })
@@ -270,12 +311,14 @@ function items.place(r, player, kind, x, y, dir, cb, existingId)
 			owner = row.owner
 			BOBBA.store.query("UPDATE bobbahotel_items SET room = ?, x = ?, y = ?, z = ?, dir = ?, state = 0 WHERE id = ?", { r.id, x, y, z, dir, existingId })
 			id = existingId
+			local row = BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { id })
+			data = row and row.data or ""
 		else
 			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
 				{ r.id, owner, kind, x, y, z, dir })
 			id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id)
 		end
-		local it = { id = id, owner = owner, kind = kind, x = x, y = y, z = z, dir = dir, state = 0, def = def }
+		local it = { id = id, owner = owner, kind = kind, x = x, y = y, z = z, dir = dir, state = 0, def = def, data = data or "" }
 		r.items[id] = it
 		local tiles = items.footprint(def, x, y, dir)
 		updateTiles(r, tiles)
@@ -349,11 +392,78 @@ end
 --   walked there first, like Habbo); roll: it spins (state "rolling") for some seconds, then lands
 --   on a random state from..to
 items.USES = {
-	furniture_dice = { anyone = true, adjacent = true, roll = { rolling = -1, seconds = 1.5, from = 1, to = 6 } },
+	furniture_dice = { anyone = true, adjacent = true, closes = true, roll = { rolling = -1, seconds = 1.5, from = 1, to = 6 } },
 	furniture_bottle = { anyone = true, roll = { rolling = -1, seconds = 2, from = 0, to = 7 } },
 	furniture_habbowheel = { anyone = true, roll = { rolling = -1, seconds = 3, from = 1, to = 10 } },
 	furniture_random_state = { roll = { rolling = nil, seconds = 0 } },
 }
+
+-- Habbo's directions: 0 up-right (y - 1), 2 down-right (x + 1), 4 down-left (y + 1), 6 up-left (x - 1)
+local AHEAD = { [0] = { 0, -1 }, [2] = { 1, 0 }, [4] = { 0, 1 }, [6] = { -1, 0 } }
+local function ahead(x, y, dir)
+	local v = AHEAD[(dir or 0) % 8] or AHEAD[0]
+	return x + v[1], y + v[2]
+end
+items.ahead = ahead
+
+local function unitAt(r, x, y)
+	for _, u in pairs(r.units) do if u.x == x and u.y == y then return u end end
+end
+
+-- a gate: open or shut (not shut on someone)
+local function useGate(r, it)
+	if tonumber(it.state) == 1 then
+		for _, t in ipairs(items.footprint(it.def, it.x, it.y, it.dir)) do
+			if unitAt(r, t.x, t.y) then return false, "someone's in the way" end
+		end
+	end
+	it.state = tonumber(it.state) == 1 and 0 or 1
+	BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { it.state, it.id })
+	updateTiles(r, items.footprint(it.def, it.x, it.y, it.dir))
+	broadcast(r, "room.items", { snapshot(it) })
+	return true
+end
+
+-- a one-way gate: from the tile in front of it (the side it faces away from) you go through it to
+-- the tile behind; it opens for you and shuts after
+local function oneWayTiles(it)
+	local fx, fy = ahead(it.x, it.y, it.dir + 4)
+	local bx, by = ahead(it.x, it.y, it.dir)
+	return fx, fy, bx, by
+end
+
+local function useOneWay(r, it, player)
+	local u = BOBBA.live.byPlayer[player]
+	if not u or u.room ~= r or it.passing then return false end
+	local fx, fy, bx, by = oneWayTiles(it)
+	if u.x ~= fx or u.y ~= fy or (u.path and #u.path > 0) then
+		if not BOBBA.live.walk(player, fx, fy) then return false, "you can't get to it" end
+		u.useOnArrive = it.id
+		return true
+	end
+	local behind = PF.tile(r.grid, bx, by)
+	if not behind or behind.state == PF.BLOCKED or behind.state == PF.INVALID or unitAt(r, bx, by) then return false, "the way through is blocked" end
+	it.passing = u.id
+	it.state = 1
+	updateTiles(r, { { x = it.x, y = it.y } })
+	broadcast(r, "room.items", { snapshot(it) })
+	-- through it and out the other side
+	u.goal = { x = bx, y = by }
+	u.path = { PF.tile(r.grid, it.x, it.y), behind }
+	return true
+end
+
+-- after someone's step: a one-way gate they've gone through shuts behind them
+function items.stepped(r, u)
+	for _, it in pairs(r.items) do
+		if it.passing == u.id and not (u.x == it.x and u.y == it.y) and not (u.path and #u.path > 0 and u.path[1].x == it.x and u.path[1].y == it.y) then
+			it.passing = nil
+			it.state = 0
+			updateTiles(r, { { x = it.x, y = it.y } })
+			broadcast(r, "room.items", { snapshot(it) })
+		end
+	end
+end
 
 local function setState(r, it, state, passing)
 	it.state = state
@@ -392,11 +502,14 @@ local function tileNextTo(r, it, u)
 end
 
 -- Using a furni (double-click in Habbo)
-function items.use(r, player, id)
+function items.use(r, player, id, tag)
 	local it = r.items[tonumber(id) or -1]
 	if not it or not it.def then return false, "no such furni" end
+	if it.def.oneWay then return useOneWay(r, it, player) end
+	if it.def.teleport then return items.useTeleport(r, it, player) end
 	local use = items.USES[it.def.logic or ""] or {}
 	if not use.anyone and not items.canEdit(player, r) then return false, "only the room's owner can use this" end
+	if it.def.gate then return useGate(r, it) end
 	if use.adjacent then
 		local u = BOBBA.live.byPlayer[player]
 		if not u or u.room ~= r then return false end
@@ -405,11 +518,14 @@ function items.use(r, player, id)
 			local t = tileNextTo(r, it, u)
 			if not t or not BOBBA.live.walk(player, t.x, t.y) then return false, "you can't get to it" end
 			u.useOnArrive = it.id
+			u.useTag = tag
 			return true
 		end
 	end
 	if use.roll then
 		if it.rolling then return true end
+		-- (a dice's side, Nitro's "deactivate" tag: closed again, DiceOff)
+		if tag == "deactivate" and use.closes then setState(r, it, 0) return true end
 		local roll = use.roll
 		local states = it.def.states
 		local from, to = roll.from or 0, roll.to or (states - 1)
@@ -434,12 +550,193 @@ function items.use(r, player, id)
 	return true
 end
 
+-- Teleports (Arcturus InteractionTeleport + TeleportActionOne..Five): from the tile in front of one
+-- you walk in (it opens), it shuts and flashes, you come out of its partner (in this room or
+-- another) which opens and lets you out onto the tile in front of it. Without a partner placed
+-- anywhere it opens again and you walk back out.
+items.TELEPORT = { open = 1, flash = 2, closed = 0, step = 0.5 }
+
+local function setTeleState(r, it, state)
+	it.state = state
+	broadcast(r, "room.items", { snapshot(it) })
+end
+
+local function passIn(r, it, u)
+	it.passing = u.id
+	updateTiles(r, { { x = it.x, y = it.y } })
+end
+
+local function passOut(r, it)
+	it.passing = nil
+	updateTiles(r, { { x = it.x, y = it.y } })
+end
+
+-- walk a unit one tile (onto or off a teleport) by hand
+local function stepTo(r, u, x, y)
+	local t = PF.tile(r.grid, x, y)
+	if not t then return end
+	u.goal = { x = x, y = y }
+	u.path = { t }
+end
+
+function items.useTeleport(r, it, player)
+	local T = items.TELEPORT
+	local after = BOBBA.platform.after
+	local u = BOBBA.live.byPlayer[player]
+	if not u or u.room ~= r or it.passing or it.busy then return false end
+	local fx, fy = ahead(it.x, it.y, it.dir)
+	if u.x ~= fx or u.y ~= fy or (u.path and #u.path > 0) then
+		if not BOBBA.live.walk(player, fx, fy) then return false, "you can't get to it" end
+		u.useOnArrive = it.id
+		return true
+	end
+	-- in: it opens, you step in, it shuts and flashes
+	it.busy = true
+	passIn(r, it, u)
+	setTeleState(r, it, T.open)
+	stepTo(r, u, it.x, it.y)
+	u.teleporting = true
+	after(T.step * 2, function()
+		setTeleState(r, it, T.flash)
+		after(T.step * 2, function()
+			local pid = items.partner(it.id)
+			local row = pid and BOBBA.store.row("SELECT room, x, y, z, dir FROM bobbahotel_items WHERE id = ?", { pid })
+			local stillHere = BOBBA.live.byPlayer[player] == u and u.room == r
+			if not stillHere then it.busy = nil passOut(r, it) setTeleState(r, it, T.closed) return end
+			if not row or tonumber(row.room) == 0 then
+				-- nowhere to go: back out the way you came
+				setTeleState(r, it, T.open)
+				stepTo(r, u, fx, fy)
+				after(T.step * 2, function()
+					u.teleporting = nil
+					it.busy = nil
+					passOut(r, it)
+					setTeleState(r, it, T.closed)
+				end)
+				return
+			end
+			setTeleState(r, it, T.closed)
+			it.busy = nil
+			passOut(r, it)
+			local roomId = tonumber(row.room)
+			local px, py, pz, pdir = tonumber(row.x), tonumber(row.y), tonumber(row.z), tonumber(row.dir) or 0
+			local function arrive(r2, u2)
+				local p = r2.items[pid]
+				if not p then u2.teleporting = nil return end
+				p.busy = true
+				passIn(r2, p, u2)
+				setTeleState(r2, p, T.flash)
+				after(T.step * 2, function()
+					setTeleState(r2, p, T.open)
+					local ox, oy = ahead(p.x, p.y, p.dir)
+					stepTo(r2, u2, ox, oy)
+					after(T.step * 2, function()
+						u2.teleporting = nil
+						p.busy = nil
+						passOut(r2, p)
+						setTeleState(r2, p, T.closed)
+					end)
+				end)
+			end
+			if roomId == r.id then
+				-- in this room: from one to the other
+				local moved = {}
+				BOBBA.live.slide(r, u, px, py, pz, moved)
+				u.to = nil
+				broadcast(r, "room.units", { BOBBA.live.snapshot(u) })
+				arrive(r, u)
+			else
+				local ok = BOBBA.live.enter(player, roomId, { x = px, y = py, z = pz, dir = pdir })
+				local u2 = BOBBA.live.byPlayer[player]
+				if not ok or not u2 then return end
+				u2.teleporting = true
+				-- (its furni may still be being looked up: wait for the partner a little)
+				local tries = 0
+				local function wait()
+					if u2.room.items[pid] or tries > 20 then arrive(u2.room, u2) return end
+					tries = tries + 1
+					after(0.25, wait)
+				end
+				wait()
+			end
+		end)
+	end)
+	return true
+end
+
+-- Rollers (Arcturus Room.cycleRollers): everyone standing on one (not walking) and the furni on top
+-- of it go one tile the way it points, when there's room there. Each thing moves once a turn.
+function items.rollers(r, moved)
+	local done = {}
+	local list = {}
+	for _, it in pairs(r.items) do if it.def and it.def.roller then list[#list + 1] = it end end
+	table.sort(list, function(a, b) return a.id < b.id end)
+	for _, roller in ipairs(list) do
+		local fx, fy = ahead(roller.x, roller.y, roller.dir)
+		local front = PF.tile(r.grid, fx, fy)
+		local rollerTop = roller.z + roller.def.height
+		if front and front.state ~= PF.INVALID then
+			local frontRoller
+			for _, o in ipairs(items.at(r, fx, fy)) do if o.def.roller then frontRoller = o end end
+			-- the furni on it (not other rollers), lowest first
+			local riders = {}
+			for _, it in ipairs(items.at(r, roller.x, roller.y)) do
+				if it ~= roller and not it.def.roller and not done[it] and it.z >= rollerTop - 0.01 then riders[#riders + 1] = it end
+			end
+			table.sort(riders, function(a, b) return a.z < b.z end)
+			-- where they land: on top of what's there (the front roller, or the floor), keeping their stack
+			local landZ
+			do
+				local topThere
+				for _, o in ipairs(items.at(r, fx, fy)) do
+					local mine = false
+					for _, rd in ipairs(riders) do if rd == o then mine = true end end
+					if not mine and (not topThere or top(o) > top(topThere)) then topThere = o end
+				end
+				landZ = topThere and top(topThere) or base(front).stack
+				if topThere and not topThere.def.roller and not topThere.def.stack then landZ = nil end
+			end
+			local u = unitAt(r, roller.x, roller.y)
+			local someoneThere = unitAt(r, fx, fy)
+			if #riders > 0 and landZ and not someoneThere and front.state ~= PF.BLOCKED and (front.allowStack or frontRoller) then
+				local slid = {}
+				for _, it in ipairs(riders) do
+					local from = { x = it.x, y = it.y, z = it.z }
+					it.x, it.y, it.z = it.x + (fx - roller.x), it.y + (fy - roller.y), landZ + (it.z - rollerTop)
+					done[it] = true
+					BOBBA.store.query("UPDATE bobbahotel_items SET x = ?, y = ?, z = ? WHERE id = ?", { it.x, it.y, it.z, it.id })
+					local snap = snapshot(it)
+					snap.slide = from
+					slid[#slid + 1] = snap
+				end
+				updateTiles(r, { { x = roller.x, y = roller.y }, { x = fx, y = fy } })
+				broadcast(r, "room.items", slid)
+			end
+			-- someone standing on it (not walking): onto the next tile if they can stand there
+			if u and not done[u] and not u.teleporting and not (u.path and #u.path > 0) and not someoneThere
+				and (front.state == PF.OPEN or front.state == PF.SIT or front.state == PF.LAY) then
+				done[u] = true
+				BOBBA.live.slide(r, u, fx, fy, items.standZ(r, fx, fy), moved)
+			end
+		end
+	end
+end
+
 -- someone who was walked to a furni to use it got there (roomlive.lua, when they stop)
 function items.arrived(r, u)
-	local id = u.useOnArrive
-	u.useOnArrive = nil
+	local id, tag = u.useOnArrive, u.useTag
+	u.useOnArrive, u.useTag = nil, nil
 	local it = id and r.items[id]
-	if it and u.player and nextTo(it, u.x, u.y) then items.use(r, u.player, id) end
+	if not it or not u.player then return end
+	if it.def.teleport then
+		local fx, fy = ahead(it.x, it.y, it.dir)
+		if u.x == fx and u.y == fy then items.use(r, u.player, id) end
+	elseif it.def.oneWay then
+		local fx, fy = oneWayTiles(it)
+		if u.x == fx and u.y == fy then items.use(r, u.player, id) end
+	elseif nextTo(it, u.x, u.y) then
+		items.use(r, u.player, id, tag)
+	end
 end
 
 -- --- people on furni (Room.cycleRoomUnit) ----------------------------------------------------------
@@ -526,9 +823,22 @@ function items.start()
 		local ok, why = items.pickup(r, player, data.id)
 		if not ok then fail(player, why) end
 	end)
+	-- a room background toner's colour (Nitro's SetRoomBackgroundColorDataComposer: hue, saturation,
+	-- lightness, 0 to 255 each)
+	P.receive("room.item.toner", function(player, data)
+		local r = room(player)
+		if not r then return end
+		local it = r.items[tonumber(data.id) or -1]
+		if not it or not it.def or it.def.logic ~= "furniture_background_color" then return end
+		if not items.canEdit(player, r) then fail(player, "only the room's owner can do that") return end
+		local function v(x) return math.min(255, math.max(0, math.floor(tonumber(x) or 0))) end
+		it.data = v(data.hue) .. "," .. v(data.saturation) .. "," .. v(data.lightness)
+		BOBBA.store.query("UPDATE bobbahotel_items SET data = ? WHERE id = ?", { it.data, it.id })
+		broadcast(r, "room.items", { snapshot(it) })
+	end)
 	P.receive("room.item.use", function(player, data)
 		local r = room(player)
 		if not r then return end
-		items.use(r, player, data.id)
+		items.use(r, player, data.id, type(data.tag) == "string" and data.tag or nil)
 	end)
 end

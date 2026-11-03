@@ -147,7 +147,7 @@ function FU.draw(item, info)
 			local a = math.floor((s.alpha or 255) * ghost)
 			local blend = BLENDS[s.blend]
 			out[#out + 1] = {
-				depth = s.relativeDepth, x = sx, y = sy, w = sw, h = sh, mouse = not s.ignoreMouse,
+				depth = s.relativeDepth, x = sx, y = sy, w = sw, h = sh, mouse = not s.ignoreMouse, tag = s.tag,
 				hit = function(mx, my)
 					local px = math.floor((mx - sx) / sw * s.width)
 					local py = math.floor((my - sy) / sh * s.height)
@@ -186,7 +186,10 @@ function FU.info(kind)
 	local base = H.furniBase(kind)
 	local f = fdCache.byClass[kind] or fdCache.byClass[base]
 	if not f then return nil end
-	return { name = f.name, sit = f.sit, lay = f.lay, walk = f.walk, width = f.x, length = f.y, wall = f.wall }
+	-- (logic: Nitro's logic type, from the furni's file once it's loaded: furniture_trophy, ...)
+	local t = FU.types[base]
+	return { name = f.name, sit = f.sit, lay = f.lay, walk = f.walk, width = f.x, length = f.y, wall = f.wall,
+		logic = t and t.logicType or nil, category = f.category }
 end
 
 -- the furni's icon: Nitro's getFurnitureFloorIcon, the furni drawn at size 1 (its "icon"

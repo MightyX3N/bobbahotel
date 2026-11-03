@@ -325,7 +325,9 @@ function PANEL:Paint(w, h)
 		buildPolys()
 		V.dirty = false
 	end
-	surface.SetDrawColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b, 255)
+	-- (black, or a background toner's colour: V.background)
+	local bg = V.background or BACKGROUND
+	surface.SetDrawColor(bg.r, bg.g, bg.b, 255)
 	surface.DrawRect(0, 0, w, h)
 	drawPolys(V.backPolys) -- the door tile's floor
 	drawPolys(V.polys)
@@ -463,7 +465,8 @@ end
 -- While a room is shown, GMod's own 3D world isn't drawn at all (it would be hidden anyway).
 hook.Add("RenderScene", "bobba.view", function()
 	if not V.room then return end
-	render.Clear(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b, 255, true, true)
+	local bg = V.background or BACKGROUND
+	render.Clear(bg.r, bg.g, bg.b, 255, true, true)
 	return true
 end)
 

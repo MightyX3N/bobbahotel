@@ -21,12 +21,13 @@ local function playerFor(key)
 	for player, u in pairs(BOBBA.live.byPlayer) do if u.key == key then return player end end
 end
 
--- new furni for someone: n of a kind; returns the new rows
-function INV.give(key, kind, n)
+-- new furni for someone: n of a kind (data: what they keep, e.g. a trophy's engraving); returns
+-- the new rows
+function INV.give(key, kind, n, data)
 	local added = {}
 	BOBBA.store.transaction(function()
 		for _ = 1, math.max(1, math.floor(n or 1)) do
-			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state) VALUES (0, ?, ?, 0, 0, 0, 0, 0)", { tostring(key), kind })
+			BOBBA.store.query("INSERT INTO bobbahotel_items (room, owner, kind, x, y, z, dir, state, data) VALUES (0, ?, ?, 0, 0, 0, 0, 0, ?)", { tostring(key), kind, data or "" })
 			added[#added + 1] = { id = tonumber(BOBBA.store.row("SELECT last_insert_rowid() AS id").id), kind = kind }
 		end
 	end)

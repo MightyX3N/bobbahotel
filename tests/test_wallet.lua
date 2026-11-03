@@ -13,6 +13,8 @@ local function start()
 		cb({ { name = "Furni", children = {
 			{ name = "Pura", offers = { { kind = "chair", name = "Pura Chair", price = { credits = 5 } } } },
 			{ name = "Lights", offers = { { kind = "lamp", name = "Lava Lamp", price = { credits = 20, duckets = 10 } } } },
+			{ name = "Teleports", offers = { { kind = "tele", name = "Door", price = { credits = 6 }, pair = true } } },
+			{ name = "Trophies", layout = "trophies", offers = { { kind = "prizetrophy*1", name = "Classic trophy", price = { credits = 10 }, trophy = true } } },
 		} } })
 	end
 	BOBBA.live.start()
@@ -195,6 +197,39 @@ T["the inventory: placing takes it out, picking up brings it back"] = function()
 	P.fromPlayer(mia, "inventory.get")
 	eq(#last(mia, "inventory.items"), 1)
 	eq(u.room.items[id], nil)
+end
+
+T["teleports are bought as a pair that go together"] = function()
+	local mia = start()
+	P.fromPlayer(mia, "catalog.index")
+	local page = last(mia, "catalog.index").pages[1].children[3]
+	P.fromPlayer(mia, "catalog.page", { id = page.id })
+	local offer = last(mia, "catalog.page").offers[1]
+	assert(offer.pair, "shown as two")
+	P.fromPlayer(mia, "catalog.buy", { page = page.id, offer = offer.id, amount = 2 })
+	P.fromPlayer(mia, "inventory.get")
+	local list = last(mia, "inventory.items")
+	eq(#list, 4)
+	eq(BOBBA.items.partner(list[1].id), list[2].id)
+	eq(BOBBA.items.partner(list[2].id), list[1].id)
+	eq(BOBBA.items.partner(list[3].id), list[4].id)
+	eq(BOBBA.wallet.get(mia.key).credits, 5000 - 12, "6 a pair")
+end
+
+T["a trophy is engraved with who bought it, when, and what they wrote"] = function()
+	local mia = start()
+	P.fromPlayer(mia, "catalog.index")
+	local page = last(mia, "catalog.index").pages[1].children[4]
+	P.fromPlayer(mia, "catalog.page", { id = page.id })
+	local msg = last(mia, "catalog.page")
+	eq(msg.layout, "trophies")
+	local offer = msg.offers[1]
+	assert(offer.trophy)
+	P.fromPlayer(mia, "catalog.buy", { page = page.id, offer = offer.id, amount = 5, extra = "Best room\nof 2026\1" })
+	local list = BOBBA.inventory.list(mia.key)
+	eq(#list, 1, "one trophy, whatever the amount")
+	local row = BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { list[1].id })
+	eq(row.data, "Mia\t" .. os.date("%d-%m-%Y", P.time()) .. "\tBest room\nof 2026")
 end
 
 T["staff: giving and taking"] = function()

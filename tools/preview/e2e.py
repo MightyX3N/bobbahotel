@@ -266,7 +266,10 @@ def main():
         return v
     for c in (a.hud_click or "").split(";"):
         if not c: continue
-        if ":wheel:" in c:
+        if c.startswith("lua:"):
+            # (a bit of the client's Lua, to open something the preview can't click to)
+            L.execute(c[4:])
+        elif ":wheel:" in c:
             win, _, rest = c.split(":", 2)
             x, y, n = map(float, rest.split(","))
             pn = (L.eval("BOBBA.ui.windows")[win]).panel

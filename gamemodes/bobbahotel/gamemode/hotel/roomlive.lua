@@ -229,7 +229,8 @@ function live.leave(player)
 	if #r.order == 0 then unload(r) end
 end
 
-function live.enter(player, id)
+-- (at: where they come in instead of the door, e.g. out of a teleport: { x, y, z, dir })
+function live.enter(player, id, at)
 	id = tonumber(id)
 	if not live.info(id) then return false, "no room " .. tostring(id) end
 	-- leave the old room first (if it's this same room and now empty, it's loaded again below)
@@ -248,6 +249,7 @@ function live.enter(player, id)
 		x = r.layout.door.x, y = r.layout.door.y, z = g.doorZ, dir = r.layout.door.dir,
 		path = nil,
 	}
+	if at then u.x, u.y, u.z, u.dir = at.x, at.y, at.z or u.z, at.dir or u.dir end
 	u.figure, u.gender = BOBBA.looks.get(u.key)
 	live.nextUnit = live.nextUnit + 1
 	r.units[u.id] = u
@@ -280,7 +282,7 @@ end
 
 function live.walk(player, x, y)
 	local u = live.byPlayer[player]
-	if not u then return false end
+	if not u or u.teleporting then return false end
 	x, y = math.floor(tonumber(x) or -1), math.floor(tonumber(y) or -1)
 	local t = PF.tile(u.room.grid, x, y)
 	if not t or t.state == PF.INVALID then return false end
@@ -335,7 +337,22 @@ local function step(r, u, moved)
 	local s = snapshot(u)
 	s.x, s.y, s.z = from.x, from.y, from.z
 	moved[#moved + 1] = s
+	BOBBA.items.stepped(r, u)
 	BOBBA.events.emit("unitStepped", r, u)
+end
+
+live.ROLLER_EVERY = 4
+
+-- a unit moved by something else (a roller): from where it was to x, y, z, seen as a step
+function live.slide(r, u, x, y, z, moved)
+	local from = { x = u.x, y = u.y, z = u.z }
+	PF.removeUnit(r.grid, u.x, u.y)
+	PF.addUnit(r.grid, x, y)
+	u.x, u.y, u.z = x, y, z
+	u.to = { x = x, y = y, z = z }
+	local s = snapshot(u)
+	s.x, s.y, s.z = from.x, from.y, from.z
+	moved[#moved + 1] = s
 end
 
 function live.tick()
@@ -345,6 +362,9 @@ function live.tick()
 			local u = r.units[id]
 			if u then step(r, u, moved) end
 		end
+		-- rollers move what's on them every 4 steps (Arcturus: the room's roller speed, 2 s)
+		r.rollerCycle = ((r.rollerCycle or 0) + 1) % live.ROLLER_EVERY
+		if r.rollerCycle == 0 then BOBBA.items.rollers(r, moved) end
 		if #moved > 0 then broadcast(r, "room.units", moved) end
 	end
 end

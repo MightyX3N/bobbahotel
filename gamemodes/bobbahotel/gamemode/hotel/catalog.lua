@@ -25,6 +25,7 @@ CAT.CLUB_OFFERS = {
 }
 CAT.CLUB_NAMES = { hc = "Habbo Club", vip = "VIP" }
 CAT.MAX_AMOUNT = 100
+CAT.TROPHY_MAX = 300
 
 local tree, pagesById, building
 
@@ -88,7 +89,7 @@ end
 local function pageMessage(p)
 	local offers = {}
 	for _, o in ipairs(p.offers or {}) do
-		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club, tier = o.tier }
+		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club, tier = o.tier, pair = o.pair, trophy = o.trophy }
 	end
 	return { id = p.id, name = p.name, layout = p.layout or "default_3x3", clubKind = p.clubKind, offers = offers }
 end
@@ -113,7 +114,7 @@ function CAT.search(query)
 end
 
 -- buys: n of an offer for a player. true or false, why
-function CAT.buy(player, pageId, offerId, amount)
+function CAT.buy(player, pageId, offerId, amount, extra)
 	local P = BOBBA.platform
 	local key = P.playerKey(player)
 	local page = pagesById and pagesById[tonumber(pageId) or -1]
@@ -122,7 +123,7 @@ function CAT.buy(player, pageId, offerId, amount)
 	for _, o in ipairs(page.offers or {}) do if o.id == tonumber(offerId) then offer = o end end
 	if not offer then return false, "that isn't on this page" end
 	amount = math.floor(tonumber(amount) or 1)
-	if offer.club then amount = 1 end
+	if offer.club or offer.trophy then amount = 1 end
 	if amount < 1 or amount > CAT.MAX_AMOUNT then return false, "you can buy 1 to " .. CAT.MAX_AMOUNT .. " at a time" end
 	local price = {}
 	for c, n in pairs(offer.price or {}) do price[c] = n * amount end
@@ -130,7 +131,19 @@ function CAT.buy(player, pageId, offerId, amount)
 	if offer.club then
 		BOBBA.wallet.addClub(key, offer.club, offer.tier)
 	else
-		BOBBA.inventory.give(key, offer.kind, amount)
+		if offer.pair then
+			-- a pair that are each other's partner (teleports)
+			for _ = 1, amount do
+				local two = BOBBA.inventory.give(key, offer.kind, 2)
+				BOBBA.items.link(two[1].id, two[2].id)
+			end
+		elseif offer.trophy then
+			-- a trophy is engraved with who bought it, when, and their words (Arcturus: name TAB date TAB text)
+			local text = tostring(extra or ""):gsub("[%z\1-\9\11-\31]", ""):sub(1, CAT.TROPHY_MAX)
+			BOBBA.inventory.give(key, offer.kind, 1, P.playerName(player) .. "\t" .. os.date("%d-%m-%Y", P.time()) .. "\t" .. text)
+		else
+			BOBBA.inventory.give(key, offer.kind, amount)
+		end
 	end
 	BOBBA.events.emit("catalogBought", key, offer, amount)
 	return true
@@ -159,7 +172,7 @@ function CAT.start()
 	end)
 	P.receive("catalog.buy", function(player, data)
 		build(function()
-			local ok, why = CAT.buy(player, data.page, data.offer, data.amount)
+			local ok, why = CAT.buy(player, data.page, data.offer, data.amount, data.extra)
 			if ok then P.send("catalog.bought", { page = data.page, offer = data.offer, amount = data.amount }, player)
 			else P.send("catalog.error", { message = tostring(why) }, player) end
 		end)

@@ -54,8 +54,20 @@ local function setItem(s)
 		it = { id = s.id }
 		R.items[s.id] = it
 	end
-	it.kind, it.x, it.y, it.z, it.dir, it.state = s.kind, s.x, s.y, s.z, s.dir, s.state
+	it.kind, it.x, it.y, it.z, it.dir, it.state, it.data = s.kind, s.x, s.y, s.z, s.dir, s.state, s.data
+	-- moved by a roller: it slides there (Nitro's ObjectRollingUpdate, over half a second)
+	if s.slide then it.slideFrom, it.slideStart = s.slide, SysTime() else it.slideFrom = nil end
 	return it
+end
+
+local SLIDE_TIME = 0.5
+-- where a furni is drawn now (between where it was and where it is while sliding)
+local function itemPosition(it)
+	local f = it.slideFrom
+	if not f then return it.x, it.y, it.z end
+	local k = (SysTime() - it.slideStart) / SLIDE_TIME
+	if k >= 1 then it.slideFrom = nil return it.x, it.y, it.z end
+	return f.x + (it.x - f.x) * k, f.y + (it.y - f.y) * k, f.z + (it.z - f.z) * k
 end
 
 P.receive("room.load", function(_, data)
@@ -197,7 +209,8 @@ end
 -- a furni's pictures on screen (from the addon), each with its depth
 local function furniSprites(it, list, now)
 	if not R.furniDrawer then return end
-	local sx, sy, k, depth = V.project(it.x, it.y, it.z)
+	local ix, iy, iz = itemPosition(it)
+	local sx, sy, k, depth = V.project(ix, iy, iz)
 	if not sx then return end
 	local ok, sprites = pcall(R.furniDrawer, it, { sx = sx, sy = sy, k = k, now = now, alpha = it.ghost and 0.5 or 1 })
 	if not ok then ErrorNoHalt("[Bobba] furni drawer: " .. tostring(sprites) .. "\n") R.furniDrawer = nil return end
@@ -244,7 +257,7 @@ V.drawUnits = function(phase)
 			if sx then unitHits[#unitHits + 1] = { unit = e.unit, x = sx - 20 * k, y = sy - 100 * k, w = 40 * k, h = 104 * k } end
 		else
 			e.draw()
-			if e.item and e.sprite.mouse then hits[#hits + 1] = { item = e.item, x = e.sprite.x, y = e.sprite.y, w = e.sprite.w, h = e.sprite.h, hit = e.sprite.hit } end
+			if e.item and e.sprite.mouse then hits[#hits + 1] = { item = e.item, x = e.sprite.x, y = e.sprite.y, w = e.sprite.w, h = e.sprite.h, hit = e.sprite.hit, tag = e.sprite.tag } end
 		end
 	end
 	if phase == "behind" then return #list > 0 end
@@ -270,7 +283,8 @@ function R.itemAt(mx, my)
 	local hits = R.hits or {}
 	for i = #hits, 1, -1 do
 		local h = hits[i]
-		if mx >= h.x and mx < h.x + h.w and my >= h.y and my < h.y + h.h and (not h.hit or h.hit(mx, my)) then return h.item end
+		-- (and the tag of the picture hit: a dice's top "activate", its side "deactivate")
+		if mx >= h.x and mx < h.x + h.w and my >= h.y and my < h.y + h.h and (not h.hit or h.hit(mx, my)) then return h.item, h.tag end
 	end
 	return nil
 end
@@ -311,11 +325,12 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 		return
 	end
 	if R.selectedUnit then R.selectedUnit = nil R.updateInfo() end
-	local it = R.itemAt(mx, my)
+	local it, tag = R.itemAt(mx, my)
 	if it then
 		local now = SysTime()
 		if lastClick.id == it.id and now - lastClick.t < 0.4 then
-			P.send("room.item.use", { id = it.id })
+			-- (some furni open a window instead: a trophy, a background toner; furniwidgets.lua)
+			if not (R.widgets and R.widgets.open(it)) then P.send("room.item.use", { id = it.id, tag = tag }) end
 			lastClick.id = nil
 		else
 			lastClick.id, lastClick.t = it.id, now

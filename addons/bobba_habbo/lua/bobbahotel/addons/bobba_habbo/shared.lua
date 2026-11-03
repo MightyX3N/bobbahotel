@@ -84,7 +84,7 @@ if SERVER and BOBBA.items then
 			H.furniInfo(kind, function(info, err2)
 				if not info then cb(nil, err2) return end
 				cb({ width = info.width, length = info.length, height = info.height, walk = info.walk, sit = info.sit, lay = info.lay,
-					directions = info.directions, states = info.states, logic = info.logic })
+					directions = info.directions, states = info.states, logic = info.logic, category = entry.category })
 			end)
 		end)
 	end
@@ -99,10 +99,10 @@ end
 --     rollers, vending machines, clothing, groups, effects), and wall furni
 --   Habbo's test furni
 -- Every furni costs the hotel's catalog.price credits (bobba_wallet_setting catalog.price <n>).
-H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true, teleport = true,
-	vending_machine = true, games = true, trophy = true, roller = true }
+H.CATALOG_SKIP_CATEGORIES = { pets = true, sound_fx = true, leaderboards = true, music = true, credit = true,
+	vending_machine = true, games = true }
 H.CATALOG_SKIP_LINES = { horse = true, nests = true, pet_food = true, pet_accessories = true, clothing = true, guilds = true,
-	sfx = true, wired = true, fxbox = true, trax = true, credit_furni = true, testing = true, trophies = true }
+	sfx = true, wired = true, fxbox = true, trax = true, credit_furni = true, testing = true }
 H.CATALOG_RARE_LINES = { rare = true, bonusrare = true, nft = true, nftmint = true, collectibles = true, pixel_collectible = true,
 	gacha = true }
 H.CATALOG_PAGE_SIZE = 150
@@ -137,15 +137,22 @@ local function family(line)
 end
 
 function H.catalogPages(fd, price)
-	-- the furni, by line
+	-- the furni, by line; trophies (specialtype 11, engraved when bought) on a page of their own
 	local lines = {}
+	local trophies = {}
 	for class, f in pairs(fd.byClass) do
+		if not f.wall and f.special == 11 and (f.offer or -1) ~= -1 then
+			trophies[#trophies + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, trophy = true }
+		end
 		if not f.wall and f.special == 1 and not H.CATALOG_SKIP_CATEGORIES[f.category] and not f.category:find("^wired")
 			and not H.CATALOG_SKIP_LINES[f.line] and not f.line:find("^pet_") and not H.catalogRare(class, f)
-			and f.name ~= "" and not f.name:find(" name$") then
+			and f.name ~= "" and not f.name:find(" name$")
+			-- (random teleports and step-on switches look like teleports but work differently: later)
+			and not (f.category == "teleport" and (class:find("rnd") or class:find("random") or class:find("change_state"))) then
 			local list = lines[f.line]
 			if not list then list = {} lines[f.line] = list end
-			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0 }
+			-- (teleports are sold in linked pairs, like Habbo's)
+			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, pair = f.category == "teleport" or nil }
 		end
 	end
 	-- a page for a line (cut into parts when it's big)
@@ -196,6 +203,19 @@ function H.catalogPages(fd, price)
 	end
 	for _, l in ipairs(single) do
 		top[#top + 1] = page(H.CATALOG_FAMILY_NAMES[l.line] or H.catalogLineName(l.line), l.offers)
+	end
+	if #trophies > 0 then
+		-- (with the "trophies" line's own furni when there is one: one Trophies page)
+		local p
+		for _, t in ipairs(top) do if t.name == "Trophies" and t.offers then p = t end end
+		if p then
+			for _, o2 in ipairs(trophies) do p.offers[#p.offers + 1] = o2 end
+			table.sort(p.offers, function(a, b) return a.order < b.order end)
+		else
+			p = page("Trophies", trophies)
+			top[#top + 1] = p
+		end
+		p.layout = "trophies"
 	end
 	table.sort(top, function(a, b)
 		if (a.name == "Other") ~= (b.name == "Other") then return b.name == "Other" end

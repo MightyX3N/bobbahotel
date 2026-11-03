@@ -369,7 +369,8 @@ local function buyButton(d, x, y, w, h, offer, quantity, buyColor, page, buyKey)
 			fn = function()
 				CAT.state = "purchase"
 				CAT.stateUntil = nil
-				P.send("catalog.buy", { page = offer.page or page.id, offer = offer.id, amount = quantity })
+				-- (a trophy's engraving goes with it: CatalogLayoutTrophiesView's extraData)
+				P.send("catalog.buy", { page = offer.page or page.id, offer = offer.id, amount = quantity, extra = offer.trophy and CAT.trophyText or nil })
 			end
 		elseif CAT.state == "purchase" then
 			label, disabled = "...", true
@@ -386,9 +387,18 @@ end
 
 -- CatalogLayoutDefaultView: the offers (5 to a row), the chosen one on the right
 local function drawDefault(d, page, offers)
+	local trophies = page.layout == "trophies"
 	local gx, gy, gw, gh = 164, 75, 263.3, 391 - 75
 	local n, cw = columns(gw)
 	local rows = math.ceil(#offers / n)
+	-- CatalogLayoutTrophiesView: the grid, and under it the words to engrave (a text box that takes
+	-- the rest of the height)
+	if trophies then
+		gh = math.min(rows * 48 - 8, 316 - 8 - 80)
+		local ty = gy + gh + 8
+		local box = d:input("trophy", gx, ty, gw, 391 - ty, { multiline = true, max = 300, onChange = function(t) CAT.trophyText = t end })
+		CAT.trophyText = box:GetValue() or ""
+	end
 	local off = d:scroll("offers", gx, gy, gw, gh, rows * 48 - 8)
 	d:clip(gx, gy, gw, gh, function()
 		for i, o in ipairs(offers) do
@@ -402,6 +412,8 @@ local function drawDefault(d, page, offers)
 				end)
 				d:gridItem(x, y, cw, 40, active)
 				if o.kind then d:clip(x + 2, y + 2, cw - 4, 36, function() furniIcon(d, o.kind, x, y, cw, 40) end) end
+				-- (teleports come two to an offer: PRICING_MODEL_MULTI's count)
+				if o.pair then countBadge(d, 2, x + cw - 4, y + 4) end
 			end
 		end
 	end)
@@ -411,6 +423,15 @@ local function drawDefault(d, page, offers)
 	local rx, rw = 435.3, 185.8
 	previewBox(d, rx, 75, rw, 140, offer.kind)
 	d:text(d:fit(offer.kind and furniName(offer.kind) or offer.name, 14.4, rw), 14.4, rx, 223 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	if trophies then
+		-- (no amount: one trophy, its price at the right above Buy)
+		local prices = priceRows(offer, 1)
+		for i, r in ipairs(prices) do priceRow(d, r[1], r[2], rx + rw, 309.2 - (#prices - i) * 20, true) end
+		buyButton(d, rx, 329.2, rw, 28.9, offer, 1, U.C.primary, page)
+		d:btn(rx, 362.1, rw, 28.9, U.C.primary, function() end, true)
+		d:text(U.text("catalog.purchase_confirmation.gift", "Give as a gift"), 12.6, rx + rw / 2, 362.1 + 28.9 / 2, Color(255, 255, 255, 166), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		return
+	end
 	-- the amount (CatalogSpinnerWidgetView: 1 to 100)
 	d:text(U.text("catalog.bundlewidget.spinner.select.amount", "Amount:"), 14.4, rx, 288.2 + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	local function setQuantity(q) CAT.quantity = math.Clamp(q, 1, 100) if CAT.state ~= "purchase" then CAT.state = "none" end end

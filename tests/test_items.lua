@@ -12,6 +12,11 @@ local function start()
 	I.define("bed", { width = 2, length = 3, height = 1.2, lay = true, directions = { 0, 2 } })
 	I.define("lamp", { width = 1, length = 1, height = 2, states = 2 })
 	I.define("dice", { width = 1, length = 1, height = 1, states = 7, logic = "furniture_dice" })
+	I.define("gate", { width = 1, length = 1, height = 1.5, states = 2, category = "gate", directions = { 0, 2 } })
+	I.define("roller", { width = 1, length = 1, height = 0.2, walk = true, category = "roller" })
+	I.define("tele", { width = 1, length = 1, height = 2, states = 3, category = "teleport", directions = { 0, 2, 4, 6 } })
+	I.define("toner", { width = 1, length = 1, height = 1, states = 2, logic = "furniture_background_color" })
+	I.define("oneway", { width = 1, length = 1, height = 2, states = 2, logic = "furniture_one_way_door", directions = { 0, 2, 4, 6 } })
 	local mia, bo = { key = "765611980001", name = "Mia" }, { key = "765611980002", name = "Bo" }
 	local id = BOBBA.live.create(mia.key, mia.name, "model_a", "Mia's room")
 	BOBBA.live.enter(mia, id)
@@ -233,6 +238,153 @@ T["a dice: anyone rolls it, walked next to it first; it lands on 1 to 6, again a
 	end
 	P.after = old
 	eq(rolls, 20)
+end
+
+T["gates: shut they block the way, open they're walked through; not shut on someone"] = function()
+	local mia, _, r = start()
+	-- a wall of gates across the room at y = 6 would be a lot: one gate, and check the tile
+	local g = place(r, mia, "gate", 7, 6, 0)
+	eq(BOBBA.pathfinder.tile(r.grid, 7, 6).state, "blocked")
+	assert(BOBBA.items.use(r, mia, g.id))
+	eq(g.state, 1)
+	eq(BOBBA.pathfinder.tile(r.grid, 7, 6).state, "open", "open: walk through")
+	eq(BOBBA.items.standZ(r, 7, 6), 0, "on the floor, not on top of it")
+	walkTo(mia, 7, 6)
+	local ok, why = BOBBA.items.use(r, mia, g.id)
+	assert(not ok and why:find("way"), "not shut on Mia")
+	walkTo(mia, 7, 7)
+	assert(BOBBA.items.use(r, mia, g.id))
+	eq(BOBBA.pathfinder.tile(r.grid, 7, 6).state, "blocked")
+	local _, why2 = place(r, mia, "chair", 7, 6, 0)
+	assert(why2, "nothing on a gate")
+end
+
+T["a one-way gate: walked to its front, through it, and it shuts behind"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	-- facing 2 (x + 1): in front is x - 1, behind is x + 1
+	local g = place(r, mia, "oneway", 7, 6, 2)
+	eq(BOBBA.pathfinder.tile(r.grid, 7, 6).state, "blocked")
+	assert(BOBBA.items.use(r, bo, g.id), "anyone uses it")
+	tick(40)
+	local u = BOBBA.live.byPlayer[bo]
+	eq(u.x .. "," .. u.y, "8,6", "Bo is through")
+	eq(g.state, 0, "shut again")
+	eq(g.passing, nil)
+	eq(BOBBA.pathfinder.tile(r.grid, 7, 6).state, "blocked")
+	-- from behind it doesn't go back the other way: he's walked round to the front first
+	P.now = P.now + 1
+	assert(BOBBA.items.use(r, bo, g.id))
+	tick(60)
+	eq(u.x .. "," .. u.y, "8,6", "through again")
+end
+
+T["rollers: what's on them, and who stands on them, go along; a line of rollers carries it on"] = function()
+	local mia, _, r = start()
+	-- two rollers pointing x + 1 at 6,3 and 7,3
+	local r1 = place(r, mia, "roller", 6, 3, 2)
+	local r2 = place(r, mia, "roller", 7, 3, 2)
+	walkTo(mia, 6, 5)
+	local roll = function() for _ = 1, BOBBA.live.ROLLER_EVERY do tick() end end
+	roll()
+	local lamp = place(r, mia, "lamp", 6, 3, 0)
+	eq(lamp.z, 0.2, "on the roller")
+	roll()
+	eq(lamp.x .. "," .. lamp.y .. " z " .. lamp.z, "7,3 z 0.2", "onto the next roller")
+	local msg = last(mia, "room.items")
+	eq(msg[1].slide.x, 6, "seen sliding from where it was")
+	roll()
+	eq(lamp.x .. "," .. lamp.y .. " z " .. lamp.z, "8,3 z 0", "off the end, on the floor")
+	roll()
+	eq(lamp.x, 8, "not on a roller any more")
+	-- Mia steps on and is carried (along both rollers while she walked there? no: she's put on the first)
+	walkTo(mia, 6, 4)
+	BOBBA.live.walk(mia, 6, 3)
+	for _ = 1, 3 do tick() end
+	r.rollerCycle = 0
+	roll()
+	local u = BOBBA.live.byPlayer[mia]
+	eq(u.x .. "," .. u.y, "7,3")
+	roll()
+	eq(u.x .. "," .. u.y, "7,3", "the lamp is in front: she stays")
+	local _ = r1, r2
+end
+
+-- timers that go off as the room ticks (P.after), for things that take time
+local function laterTimers()
+	local queue = {}
+	local old = P.after
+	P.after = function(sec, fn) queue[#queue + 1] = { at = P.now + sec, fn = fn } end
+	local function run()
+		local due = {}
+		for i = #queue, 1, -1 do if queue[i].at <= P.now then due[#due + 1] = table.remove(queue, i) end end
+		table.sort(due, function(a, b) return a.at < b.at end)
+		for _, q in ipairs(due) do q.fn() end
+	end
+	return run, function() P.after = old end
+end
+
+local function tickAll(n, run)
+	for _ = 1, n do
+		P.now = P.now + 0.5
+		P.runTimers()
+		run()
+	end
+end
+
+T["teleports: in one, out of its partner (this room or another); alone it lets you back out"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	local run, restore = laterTimers()
+	local a = place(r, mia, "tele", 6, 3, 4)
+	local b = place(r, mia, "tele", 10, 10, 2)
+	BOBBA.items.link(a.id, b.id)
+	eq(BOBBA.pathfinder.tile(r.grid, 6, 3).state, "blocked", "you don't just walk in")
+	-- Bo uses it from the door: walked to its front (facing 4: y + 1), in, out of b, onto b's front (x + 1)
+	assert(BOBBA.items.use(r, bo, a.id))
+	tickAll(60, run)
+	local u = BOBBA.live.byPlayer[bo]
+	eq(u.x .. "," .. u.y, "11,10", "out of the other one")
+	eq(a.state .. b.state, "00", "both shut")
+	eq(BOBBA.pathfinder.tile(r.grid, 10, 10).state, "blocked")
+	-- to another room: b goes to Mia's other room
+	local other = BOBBA.live.create(mia.key, mia.name, "model_a", "Other room")
+	BOBBA.live.enter(mia, other)
+	local r2 = BOBBA.live.rooms[other]
+	BOBBA.items.pickup(r, mia, b.id)
+	BOBBA.items.placeExisting(r2, mia, b.id, "tele", 8, 8, 2, function() end)
+	assert(BOBBA.items.use(r, bo, a.id))
+	tickAll(60, run)
+	u = BOBBA.live.byPlayer[bo]
+	eq(u.room.id, other, "Bo is in the other room")
+	eq(u.x .. "," .. u.y, "9,8", "out of b")
+	-- b's partner in the inventory: back out the same one
+	BOBBA.items.pickup(r, mia, a.id)
+	assert(BOBBA.items.use(r2, bo, b.id))
+	tickAll(60, run)
+	eq(u.room.id, other)
+	eq(u.x .. "," .. u.y, "9,8", "back out where he went in")
+	eq(b.state, 0)
+	restore()
+end
+
+T["a background toner: its colour set by the owner, kept; switched on and off"] = function()
+	local mia, bo, r = start()
+	BOBBA.live.enter(bo, r.id)
+	local t = place(r, mia, "toner", 6, 3, 0)
+	P.fromPlayer(mia, "room.item.toner", { id = t.id, hue = 120, saturation = 300, lightness = -5 })
+	eq(t.data, "120,255,0")
+	eq(last(bo, "room.items")[1].data, "120,255,0", "everyone sees it")
+	P.fromPlayer(bo, "room.item.toner", { id = t.id, hue = 1, saturation = 1, lightness = 1 })
+	eq(t.data, "120,255,0", "not Bo's to change")
+	assert(BOBBA.items.use(r, mia, t.id))
+	eq(t.state, 1)
+	eq(BOBBA.store.row("SELECT data FROM bobbahotel_items WHERE id = ?", { t.id }).data, "120,255,0")
+	-- picked up and put back it keeps its colour
+	BOBBA.items.pickup(r, mia, t.id)
+	local got
+	BOBBA.items.placeExisting(r, mia, t.id, "toner", 7, 3, 0, function(it) got = it end)
+	eq(got.data, "120,255,0")
 end
 
 T["switching: round and round through its states"] = function()
