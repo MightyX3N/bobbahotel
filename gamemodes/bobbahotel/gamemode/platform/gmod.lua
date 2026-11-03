@@ -86,6 +86,33 @@ function P.hasPermission(ply, name, default)
 	return fallback(ply, default)
 end
 
+-- Downloads (http.Fetch): ok(body) or fail(reason)
+function P.httpGet(url, ok, fail)
+	http.Fetch(url, function(body, _, _, code)
+		if code == 200 then ok(body) else fail("HTTP " .. tostring(code)) end
+	end, function(err) fail(tostring(err)) end)
+end
+
+-- Files in garrysmod/data/bobbahotel/ (GMod only allows some endings there: .txt .dat .png .json ...)
+function P.writeData(path, bytes)
+	local dir = ("bobbahotel/" .. path):match("^(.*)/[^/]*$")
+	if dir then file.CreateDir(dir) end
+	file.Write("bobbahotel/" .. path, bytes)
+end
+
+function P.readData(path)
+	return file.Read("bobbahotel/" .. path, "DATA")
+end
+
+function P.dataExists(path)
+	return file.Exists("bobbahotel/" .. path, "DATA")
+end
+
+-- A material from a PNG written with writeData (pixel-sharp, no mipmaps)
+function P.dataMaterial(path)
+	return Material("../data/bobbahotel/" .. path, "noclamp smooth")
+end
+
 -- Hotel addons live in lua/bobbahotel/addons/<id>/ (a Workshop addon or a folder in garrysmod/addons).
 local ADDONS = "bobbahotel/addons/"
 
