@@ -27,6 +27,28 @@ end
 
 lib("library.lua")
 lib("avatardata.lua")
+lib("furnidata.lua")
 
 -- client-only file, sent to players by the server
-if SERVER then AddCSLuaFile("bobbahotel/addons/bobba_habbo/avatars.lua") end
+if SERVER then
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/avatars.lua")
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/furni.lua")
+end
+
+-- The hotel asks what a kind of furni is (its size, height, sitting...): Habbo's furnidata and the
+-- furni's own file say (server; lib/furnidata.lua). Wall furni come later.
+if SERVER and BOBBA.items then
+	BOBBA.items.resolver = function(kind, cb)
+		H.furnidata(function(fd, err)
+			if not fd then cb(nil, err) return end
+			local entry = fd.byClass[kind] or fd.byClass[H.furniBase(kind)]
+			if not entry then cb(nil, "Habbo has no furni called " .. kind) return end
+			if entry.wall then cb(nil, kind .. " goes on a wall (wall furni come later)") return end
+			H.furniInfo(kind, function(info, err2)
+				if not info then cb(nil, err2) return end
+				cb({ width = info.width, length = info.length, height = info.height, walk = info.walk, sit = info.sit, lay = info.lay,
+					directions = info.directions, states = info.states })
+			end)
+		end)
+	end
+end

@@ -37,7 +37,7 @@ surface = {
 	DrawLine = function(x1, y1, x2, y2) op("line", x1, y1, x2, y2, { col[1], col[2], col[3] }) end,
 	SetMaterial = function(m) G.material = m end,
 	DrawTexturedRect = function() end,
-	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter) end,
+	DrawTexturedRectUV = function(x, y, w, h, u0, v0, u1, v1) op("image", G.material and G.material.path, x, y, w, h, { u0, v0, u1, v1 }, { col[1], col[2], col[3], col[4] }, G.filter, G.blend) end,
 	DrawRect = function(x, y, w, h) op("rect", x, y, w, h, { col[1], col[2], col[3], col[4] }) end,
 }
 draw = { NoTexture = function() end, SimpleText = function(t, f, x, y) op("text", t, x, y) end,
@@ -57,7 +57,14 @@ chat = { AddText = function() end }
 LocalPlayer = function() return nil end
 TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM = 1, 4
 render = { PushRenderTarget = function() op("clear") end, PopRenderTarget = function() end, Clear = function() end,
-	PushFilterMag = function(f) G.filter = f end, PushFilterMin = function() end, PopFilterMag = function() G.filter = nil end, PopFilterMin = function() end }
+	PushFilterMag = function(f) G.filter = f end, PushFilterMin = function() end, PopFilterMag = function() G.filter = nil end, PopFilterMin = function() end,
+	-- blending: only "add" (light) is painted differently
+	OverrideBlend = function(on, src, dst) G.blend = (on and dst == BLEND_ONE) and "add" or nil end }
+BLEND_ZERO, BLEND_ONE, BLEND_DST_COLOR, BLEND_ONE_MINUS_DST_COLOR, BLEND_SRC_ALPHA, BLEND_ONE_MINUS_SRC_ALPHA, BLEND_SRC_COLOR, BLEND_ONE_MINUS_SRC_COLOR = 0, 1, 2, 3, 4, 5, 6, 7
+BLENDFUNC_ADD = 0
+KEY_R, MOUSE_RIGHT = 28, 108
+bit = bit or require("bit")
+draw.RoundedBox = function(r, x, y, w, h, c) op("rect", x, y, w, h, { c.r, c.g, c.b, c.a or 255 }) end
 TEXFILTER = { POINT = "point", LINEAR = "linear" }
 cam = { Start2D = function() end, End2D = function() end }
 math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
@@ -76,6 +83,8 @@ local registered = {}
 vgui = {
 	Register = function(name, tbl) registered[name] = tbl end,
 	Create = function(name)
+		-- Derma's own panels (windows, buttons): they take any call and draw nothing here
+		if not registered[name] then return setmetatable({ valid = true }, { __index = function() return function() return 0 end end }) end
 		local p = setmetatable({ valid = true, w = 0, h = 0 }, { __index = registered[name] })
 		for _, f in ipairs({ "SetMouseInputEnabled", "SetKeyboardInputEnabled", "SetPos", "MouseCapture" }) do p[f] = function() end end
 		p.SetSize = function(self, w, h) self.w, self.h = w, h end
@@ -150,7 +159,14 @@ def paint(G, w, h, images=None):
             pw, ph = int(o[5]), int(o[6])
             if pw > 0 and ph > 0:
                 pic = pic.resize((pw, ph), Image.NEAREST if o[9] == "point" else Image.BILINEAR)
-                im.paste(pic, (int(o[3]), int(o[4])), pic)
+                if o[10] == "add":
+                    from PIL import ImageChops
+                    a = pic.getchannel("A")
+                    lit = Image.merge("RGB", [ImageChops.multiply(ch, a) for ch in pic.convert("RGB").split()])
+                    box = (int(o[3]), int(o[4]), int(o[3]) + pw, int(o[4]) + ph)
+                    im.paste(ImageChops.add(im.crop(box), lit), box)
+                else:
+                    im.paste(pic, (int(o[3]), int(o[4])), pic)
     return im
 
 def main():

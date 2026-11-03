@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", "lib": ["ESNext"], "moduleResolution": "Node", "strict": false, "rootDir": "src", "outDir": "out", "types": [],
+    "baseUrl": ".", "paths": { "@pixi/*": ["src/pixi/index.ts"] }
+  },
+  "include": ["src/**/*.ts"],
+  "tstl": { "luaTarget": "JIT", "luaLibImport": "require-minimal", "luaBundle": "furni.lua", "luaBundleEntry": "src/Furni.ts", "noHeader": true }
+}

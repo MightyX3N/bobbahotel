@@ -52,10 +52,25 @@ def main():
     ap.add_argument("--habbo")
     ap.add_argument("--at", help="draw the player at x,y[,dir] (e.g. halfway through a step)")
     ap.add_argument("--time", type=float, default=0, help="seconds after the room loaded (animation)")
+    ap.add_argument("--furni", help="furni to place first (needs --habbo): kind,x,y,dir[,state];...")
+    ap.add_argument("--out", default="e2e.png")
+    ap.add_argument("--click", help="after drawing, click at screen x,y[;x,y...] and print what the client sends")
     a = ap.parse_args()
     S = server()
     me = S.table_from({"key": "76561198000000001", "name": "Saint MightyX3N"})
     room_id = S.eval("BOBBA.live.homeRoom")() if a.layout == "model_a" else S.eval("BOBBA.live.create")("1", "Mia", a.layout, "Test room")
+    if a.furni:
+        habbo_server(S, a.habbo)
+        r = S.eval("function(id) return BOBBA.live.rooms[id] end")
+        S.eval("BOBBA.live.enter")(me, room_id)
+        for spec in a.furni.split(";"):
+            p = spec.split(",")
+            res = S.eval("""function(id, kind, x, y, dir, state)
+                local out
+                BOBBA.items.place(BOBBA.live.rooms[id], nil, kind, x, y, dir, function(it, why) out = it and "ok" or why if it and state > 0 then it.state = state BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end end)
+                for _ = 1, 200 do if out then break end BOBBA.platform.runTimers() end
+                return out end""")(room_id, p[0], int(p[1]), int(p[2]), int(p[3]), int(p[4]) if len(p) > 4 else 0)
+            print("furni", spec, "->", res)
     S.eval("BOBBA.platform.fromPlayer")(me, "room.enter", S.table_from({"id": room_id}))
     if a.walk:
         x, y = map(int, a.walk.split(","))
@@ -68,7 +83,7 @@ def main():
     u = S.eval("function(p) return BOBBA.live.byPlayer[p] end")(me)
     if u is not None:  # where the server has the player now (as the client would after the steps)
         for unit in msg["units"]:
-            if unit["id"] == u.id: unit.update({"x": u.x, "y": u.y, "z": u.z, "dir": u.dir}); unit.pop("to", None)
+            if unit["id"] == u.id: unit.update({"x": u.x, "y": u.y, "z": u.z, "dir": u.dir, "posture": u.posture, "height": u.height}); unit.pop("to", None)
     if a.at:
         parts = [float(v) for v in a.at.split(",")]
         for unit in msg["units"]:
@@ -109,9 +124,18 @@ def main():
     V.zoomTarget = a.zoom
     V.dirty = True
     V.panel.Paint(V.panel, w, h)
-    out = os.path.join(ROOT, "out", "preview", "e2e.png")
+    out = os.path.join(ROOT, "out", "preview", a.out)
     os.makedirs(os.path.dirname(out), exist_ok=True)
     render.paint(G, w, h, images).save(out)
+    if a.click:
+        for c in a.click.split(";"):
+            cx, cy = map(int, c.split(","))
+            L.execute("BOBBA.platform.sent = {}")
+            G.cursor[1], G.cursor[2] = cx, cy
+            V.updateHover(cx, cy)
+            L.execute("BOBBA.events.emit('roomClick', BOBBA.view.hover or { floor = false })")
+            sent = L.eval("BOBBA.platform.sent")
+            print("click", c, "->", [(sent[i].name, dict(sent[i].data)) for i in range(1, len(sent) + 1)], "| selected", L.eval("BOBBA.room.selected"))
     print(out, "| wall height", V.room.wallHeight, "| units", [(x["name"], x["x"], x["y"]) for x in msg["units"]])
 
 def habbo(L, folder):
@@ -129,7 +153,8 @@ def habbo(L, folder):
     for k, v in files.items(): store[k] = v  # bytes go into Lua as they are
     settings = (b"x=1\nflash.client.url=https://images.habbo.com/gordon/" + SETTINGS_REV + b"/\n"
                 b"flash.dynamic.download.url=//images.habbo.com/dcr/hof_furni/\n"
-                b"external.figurepartlist.txt=https://www.habbo.com/gamedata/figuredata/" + FIGUREDATA_REV + b"\n")
+                b"external.figurepartlist.txt=https://www.habbo.com/gamedata/figuredata/" + FIGUREDATA_REV + b"\n"
+                b"furnidata.load.url=https://www.habbo.com/gamedata/furnidata_xml/" + FURNIDATA_REV + b"\n")
     served = {"https://www.habbo.com/gamedata/external_variables/1": settings,
               "https://www.habbo.com/gamedata/clienturls": b'{"flash-windows-version":"35","flash-windows":"https://x/HabboWin.zip"}'}
     asked = []
@@ -151,6 +176,7 @@ def habbo(L, folder):
         bit = bit or require("bit")
         dofile(ADDON_DIR .. "shared.lua")
         dofile(ADDON_DIR .. "avatars.lua")
+        dofile(ADDON_DIR .. "furni.lua")
         BOBBA.habbo.preloadAvatars() -- what its timer does as the game starts
         -- the bytes of a stored file as hex (this Lua runtime hands strings to Python as UTF-8 text)
         function STORE_HEX(path)
@@ -171,6 +197,38 @@ def habbo(L, folder):
     habbo.asked = asked
     return Images()
 
+def habbo_server(S, folder):
+    """The bobba_habbo addon on the server side (says what furni are), on the same cache files."""
+    S.globals().SERVER = True
+    S.globals().AddCSLuaFile = lambda *a: None
+    files = {}
+    for dirpath, _, names in os.walk(folder):
+        for n in names:
+            rel = os.path.relpath(os.path.join(dirpath, n), folder).replace(os.sep, "/")
+            files["habbo/" + rel] = open(os.path.join(dirpath, n), "rb").read()
+    store = S.table()
+    for k, v in files.items(): store[k] = v
+    S.globals().PY_STORE = store
+    settings = (b"x=1\nflash.client.url=https://images.habbo.com/gordon/" + SETTINGS_REV + b"/\n"
+                b"flash.dynamic.download.url=//images.habbo.com/dcr/hof_furni/\n"
+                b"furnidata.load.url=https://www.habbo.com/gamedata/furnidata_xml/" + FURNIDATA_REV + b"\n")
+    def http(url, ok, fail):
+        u = url.decode() if isinstance(url, bytes) else url
+        if u == "https://www.habbo.com/gamedata/external_variables/1": ok(settings)
+        else: fail("not in the test cache: " + u)
+    S.globals().PY_HTTP = http
+    S.globals().ADDON_DIR = os.path.join(ROOT, "addons", "bobba_habbo", "lua", "bobbahotel", "addons", "bobba_habbo") + "/"
+    S.execute("""
+        local P = BOBBA.platform
+        P.httpGet = function(url, ok, fail) PY_HTTP(url, ok, fail) end
+        P.writeData = function(path, bytes) PY_STORE[path] = bytes end
+        P.readData = function(path) return PY_STORE[path] end
+        P.dataExists = function(path) return PY_STORE[path] ~= nil end
+        P.runAddonFile = function(folder, name) return dofile(ADDON_DIR .. name) end
+        dofile(ADDON_DIR .. "shared.lua")
+    """)
+
+FURNIDATA_REV = b"345cedafe14d7703a394dee44c00fd9af9935279"
 SETTINGS_REV = b"flash-assets-PRODUCTION-202610210900-108929075"
 FIGUREDATA_REV = b"bc45c6fd6b284b5bf43af4b295b3ac7b85ece5ee"
 

@@ -5,6 +5,8 @@ local H = BOBBA.habbo
 
 -- Habbo avatars in rooms
 BOBBA.platform.runAddonFile("bobba_habbo", "avatars.lua")
+-- Habbo furni in rooms
+BOBBA.platform.runAddonFile("bobba_habbo", "furni.lua")
 
 concommand.Add("bobba_habbo_test", function()
 	print("[Bobba] asking Habbo where its files are...")
@@ -94,4 +96,59 @@ concommand.Add("bobba_habbo_imaging", function(_, _, args)
 			if done == #list then print("[Bobba] saved " .. done .. " pictures from Habbo") end
 		end, function(why) print("[Bobba] " .. item[1] .. ": " .. tostring(why)) end)
 	end
+end)
+
+-- bobba_habbo_furni <classname>: downloads and unpacks one furni (e.g. throne, rare_dragonlamp*1)
+concommand.Add("bobba_habbo_furni", function(_, _, args)
+	local class = args[1] or "throne"
+	local t0 = SysTime()
+	H.furniLibrary(class, function(lib, err)
+		if not lib then print("[Bobba] " .. class .. ": " .. tostring(err)) return end
+		local n = 0
+		for _ in pairs(lib.images) do n = n + 1 end
+		print(string.format("[Bobba] %s: %d pictures, %d problems, %.2f s", lib.key, n, #lib.problems, SysTime() - t0))
+	end)
+end)
+
+-- bobba_habbo_furni_sample [count]: downloads (without unpacking) a set of furni to check the
+-- furniture code with: some chosen ones and [count] (default 60) picked at random from furnidata.
+-- They land in garrysmod/data/bobbahotel/habbo/raw/furni/. For testing.
+H.FURNI_SAMPLE = {
+	"throne", "chair_polyfon", "sofa_polyfon", "bed_polyfon", "bed_budget", "bed_budget_one", "table_polyfon_small",
+	"rare_dragonlamp", "rare_fan", "lamp_basic", "scifiport", "edice", "pillow", "chair_norja", "sofachair_norja",
+	"rare_icecream", "hc_lmp", "habbowheel", "doorD", "rare_parasol", "carpet_standard", "pura_mdl1", "teleport_door",
+}
+concommand.Add("bobba_habbo_furni_sample", function(_, _, args)
+	local count = tonumber(args[1]) or 60
+	H.furnidata(function(fd, err)
+		if not fd then print("[Bobba] " .. tostring(err)) return end
+		local classes, seen = {}, {}
+		local function add(c)
+			local base = H.furniBase(c)
+			if seen[base] or not fd.byClass[c] then return end
+			seen[base] = true
+			classes[#classes + 1] = c
+		end
+		for _, c in ipairs(H.FURNI_SAMPLE) do add(c) end
+		local all = {}
+		for c, f in pairs(fd.byClass) do if not f.wall then all[#all + 1] = c end end
+		table.sort(all)
+		math.randomseed(12345)
+		for _ = 1, count * 3 do
+			if #classes >= #H.FURNI_SAMPLE + count then break end
+			add(all[math.random(#all)])
+		end
+		print("[Bobba] downloading " .. #classes .. " furni...")
+		local left, failed = #classes, 0
+		for _, c in ipairs(classes) do
+			H.furniUrl(c, function(url, base)
+				if not url then failed = failed + 1 left = left - 1 return end
+				H.download("furni/" .. base, url, function(bytes, e)
+					if not bytes then failed = failed + 1 print("[Bobba]   " .. c .. ": " .. tostring(e)) end
+					left = left - 1
+					if left == 0 then print("[Bobba] done: " .. (#classes - failed) .. " furni, " .. failed .. " failed") end
+				end)
+			end)
+		end
+	end)
 end)

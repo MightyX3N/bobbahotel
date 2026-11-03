@@ -5,8 +5,11 @@
 --   BOBBA.live.enter(player, roomId)       BOBBA.live.leave(player)
 --   BOBBA.live.walk(player, x, y)
 --
--- Messages to players:  room.load { id, name, owner, layout, heightmap, wallHeight, units = {...} }
---                       room.units { unit, ... }   (each: id, name, x, y, z, dir, to = {x, y, z} while stepping)
+-- Messages to players:  room.load { id, name, owner, layout, heightmap, wallHeight, units = {...}, items = {...},
+--                                   canEdit (may move furni here), canPlace (may place furni from nowhere) }
+--                       room.units { unit, ... }   (each: id, name, x, y, z, dir, to = {x, y, z} while stepping,
+--                                                   posture "sit"/"lay" and height (the seat's) when on furni)
+--                       furni: see items.lua
 --                       room.unit.remove { id }
 -- Messages from players: room.enter { id }, room.walk { x, y }, room.ready {}
 
@@ -133,6 +136,7 @@ local function load(id)
 		units = {}, order = {},
 	}
 	live.rooms[id] = r
+	BOBBA.items.load(r)
 	BOBBA.events.emit("roomLoaded", r)
 	return r
 end
@@ -143,7 +147,19 @@ local function unload(r)
 end
 
 local function snapshot(u)
-	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to }
+	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to, posture = u.posture, height = u.height }
+end
+live.snapshot = snapshot
+
+-- room.load for one player
+local function roomMessage(r, u, units)
+	return {
+		id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
+		heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
+		items = BOBBA.items.list(r),
+		canEdit = u.player ~= nil and BOBBA.items.canEdit(u.player, r) or false,
+		canPlace = u.player ~= nil and BOBBA.perms.has(u.player, "bobba.staff.place") or false,
+	}
 end
 
 -- Sends the room again to everyone in it (after its look changed)
@@ -155,10 +171,7 @@ function live.refresh(id)
 	for _, uid in ipairs(r.order) do units[#units + 1] = snapshot(r.units[uid]) end
 	for _, uid in ipairs(r.order) do
 		local u = r.units[uid]
-		BOBBA.platform.send("room.load", {
-			id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
-			heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
-		}, u.player)
+		if u.player then BOBBA.platform.send("room.load", roomMessage(r, u, units), u.player) end
 	end
 end
 
@@ -215,10 +228,7 @@ function live.enter(player, id)
 	PF.addUnit(g, u.x, u.y)
 	local units = {}
 	for _, uid in ipairs(r.order) do units[#units + 1] = snapshot(r.units[uid]) end
-	BOBBA.platform.send("room.load", {
-		id = r.id, name = r.info.name, owner = r.info.owner_name, layout = r.info.layout,
-		heightmap = r.layout.heightmap, wallHeight = live.wallHeightOf(r.info), you = u.id, units = units,
-	}, player)
+	BOBBA.platform.send("room.load", roomMessage(r, u, units), player)
 	for _, other in ipairs(players(r)) do
 		if other ~= player then BOBBA.platform.send("room.units", { snapshot(u) }, other) end
 	end
@@ -250,11 +260,13 @@ end
 local function step(r, u, moved)
 	local path = u.path
 	if not path or #path == 0 then
-		if u.to then
+		u.path = nil
+		-- standing still: on a seat they sit, on a bed they lie down (items.lua)
+		local settled = BOBBA.items.settle(r, u)
+		if u.to or settled then
 			u.to = nil
 			moved[#moved + 1] = snapshot(u)
 		end
-		u.path = nil
 		return
 	end
 	local g = r.grid
@@ -279,7 +291,9 @@ local function step(r, u, moved)
 	u.dir = live.direction(u.x, u.y, nextTile.x, nextTile.y) or u.dir
 	-- players see the step from where the unit was to the next tile
 	local from = { x = u.x, y = u.y, z = u.z }
-	u.x, u.y, u.z = nextTile.x, nextTile.y, nextTile.stackHeight
+	-- Arcturus: on a seat or bed at its own height, on other furni on top of it
+	u.x, u.y, u.z = nextTile.x, nextTile.y, BOBBA.items.standZ(r, nextTile.x, nextTile.y)
+	u.posture, u.height = nil, nil
 	u.to = { x = u.x, y = u.y, z = u.z }
 	local s = snapshot(u)
 	s.x, s.y, s.z = from.x, from.y, from.z
@@ -301,6 +315,7 @@ end
 -- messages from players
 function live.start()
 	live.migrate()
+	BOBBA.items.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

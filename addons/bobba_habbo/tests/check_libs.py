@@ -311,5 +311,78 @@ check(len(requests) == 0 and L4.eval(b"LATER") is not None, "settings: last time
 L4.eval(b"LATER")()
 check(requests == ["https://example/settings"] and b"new.setting=1" in L4.globals().PY_FILES[b"habbo/remembered/settings.txt"], "settings: the fresh copy is kept for the next start")
 
+# --- furnidata and furni info (furnidata.lua) ----------------------------------------------------------
+fd_xml = (b'<?xml version="1.0" encoding="UTF-8"?>\n<furnidata><roomitemtypes>'
+    b'<furnitype id="13" classname="throne"><revision>45512</revision><defaultdir>0</defaultdir><xdim>1</xdim><ydim>1</ydim>'
+    b'<name>Throne &amp; co</name><canstandon>0</canstandon><cansiton>1</cansiton><canlayon>0</canlayon></furnitype>'
+    b'<furnitype id="14" classname="bed_budget*3"><revision>7</revision><xdim>2</xdim><ydim>3</ydim><name>Bed</name>'
+    b'<canstandon>0</canstandon><cansiton>0</cansiton><canlayon>1</canlayon></furnitype>'
+    b'</roomitemtypes><wallitemtypes><furnitype id="4001" classname="poster"><revision>3</revision><name>Poster</name></furnitype></wallitemtypes></furnidata>')
+logic_xml = b'<objectData type="throne"><model><dimensions x="1" y="1" z="1.25"/><directions><direction id="90"/><direction id="180"/></directions></model></objectData>'
+vis_xml = (b'<visualizationData type="throne"><graphics><visualization size="64" layerCount="2" angle="45"><animations>'
+    b'<animation id="0"/><animation id="1"/><animation id="2" transitionTo="1"/><animation id="1000"/></animations></visualization></graphics></visualizationData>')
+served["https://example/settings"] = (b"x=1\nurl.prefix=https://www.habbo.test\nflash.client.url=https://images/gordon/PRODUCTION-1/\n"
+    b"flash.dynamic.download.url=//images/dcr/hof_furni/\nfurnidata.load.url=${url.prefix}/gamedata/furnidata_xml/1\nfurnidata.load.url=https://www.habbo.test/gamedata/furnidata_xml/abc\n")
+served["https://www.habbo.test/gamedata/furnidata_xml/abc"] = fd_xml
+served["https://images/dcr/hof_furni/45512/throne.swf"] = swf_file([binary(1, logic_xml), binary(2, vis_xml), lossless2_argb(3, 2, 2, [(1, 2, 3, 255)] * 4, alpha=False),
+    symbols([(1, "throne_throne_logic"), (2, "throne_throne_visualization"), (3, "throne_throne_64_a_2_0")])])
+def runtime(files=None):
+    Lx = lj.LuaRuntime(unpack_returned_tuples=True, encoding=None)
+    Lx.globals().PY_HTTP = http
+    Lx.globals().PY_FILES = Lx.table_from(files or {})
+    Lx.globals().LIB_DIR = LIB.encode()
+    Lx.execute(b"""
+BOBBA = { platform = {
+	httpGet = function(url, ok, fail) PY_HTTP(url, ok, fail) end,
+	writeData = function(path, bytes) PY_FILES[path] = bytes end,
+	readData = function(path) return PY_FILES[path] end,
+	dataExists = function(path) return PY_FILES[path] ~= nil end,
+	runAddonFile = function(folder, name) return dofile(LIB_DIR .. "/" .. name:gsub("^lib/", "")) end,
+} }
+""")
+    Lx.execute(open(os.path.join(LIB, "..", "shared.lua"), "rb").read())
+    Lx.eval(b"BOBBA.habbo").SETTINGS_URL = b"https://example/settings"
+    return Lx
+L5 = runtime()
+H5 = L5.eval(b"BOBBA.habbo")
+fr = {}
+H5.furnidata(lambda f, err=None: fr.update(f=f, err=err))
+f5 = fr["f"]
+check(f5 is not None, "furnidata: read (%s)" % fr.get("err"))
+if f5 is not None:
+    t = f5[b"byClass"][b"throne"]
+    check(t[b"rev"] == 45512 and t[b"sit"] == True and t[b"lay"] == False and t[b"name"] == b"Throne & co" and t[b"wall"] == False, "furnidata: a furni's revision, sitting, name")
+    b2 = f5[b"byClass"][b"bed_budget*3"]
+    check(b2[b"x"] == 2 and b2[b"y"] == 3 and b2[b"lay"] == True, "furnidata: size and laying")
+    check(f5[b"byClass"][b"poster"][b"wall"] == True, "furnidata: wall furni")
+check(b"habbo/furnidata/index.txt" in list(L5.globals().PY_FILES.keys()), "furnidata: a small index kept")
+ur = {}
+H5.furniUrl(b"bed_budget*3", lambda u, base=None, e=None: ur.update(u=u, base=base))
+check(ur["u"] == b"https://images/dcr/hof_furni/7/bed_budget.swf" and ur["base"] == b"bed_budget", "furnidata: a coloured furni's file is its base name's")
+fi = {}
+H5.furniInfo(b"throne", lambda i, err=None: fi.update(i=i, err=err))
+i5 = fi["i"]
+check(i5 is not None, "furni info: read from the SWF (%s)" % fi.get("err"))
+if i5 is not None:
+    check(i5[b"height"] == 1.25 and i5[b"sit"] == True and i5[b"width"] == 1, "furni info: height from its logic, sitting from furnidata")
+    check(list(i5[b"directions"].values()) == [2, 4], "furni info: its directions (Habbo's 0-7)")
+    check(i5[b"states"] == 2, "furni info: states counted from its animations (not transitions, not 1000+)")
+requests.clear()
+L6 = runtime({k: v for k, v in L5.globals().PY_FILES.items()})
+H6 = L6.eval(b"BOBBA.habbo")
+L6.execute(b"BOBBA.habbo.swf = { read = function() error('read again') end }")
+fi2, fr2 = {}, {}
+H6.furnidata(lambda f, err=None: fr2.update(f=f))
+H6.furniInfo(b"throne", lambda i, err=None: fi2.update(i=i, err=err))
+check(fr2["f"] is not None and fr2["f"][b"byClass"][b"throne"][b"rev"] == 45512 and fi2["i"] is not None and fi2["i"][b"height"] == 1.25 and len(requests) == 0,
+    "furnidata and furni info: the next start reads its own small files (%s, %s)" % (requests, fi2.get("err")))
+
+# --- reading a PNG's alpha back (clicking furni) ---------------------------------------------------------
+px = L.table_from([v for y in range(3) for x in range(5) for v in (10, 20, 30, (x * 50 + y) % 256)])
+pngb = png.encode(5, 3, px, compress)
+ar = png.alphaReader(pngb, inflate)
+check(ar is not None and ar(0, 0) == 0 and ar(4, 2) == 202 and ar(3, 1) == 151 and ar(9, 9) == 0, "PNG: the alpha of each pixel read back")
+check(png.alphaReader(b"not a png", inflate) is None, "PNG: something else gives nothing")
+
 print("\n%d failed" % failed)
 sys.exit(1 if failed else 0)

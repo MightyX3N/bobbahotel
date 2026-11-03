@@ -12,9 +12,11 @@ return {
 	"hotel/store.lua",
 	"nitro/port.lua",
 	"nitro/avatar.lua",
+	"nitro/furni.lua",
 	"hotel/rooms.lua",
 	"hotel/layouts.lua",
 	"hotel/pathfinder.lua",
 	"hotel/roomlive.lua",
+	"hotel/items.lua",
 	"hotel/addons.lua",
 }

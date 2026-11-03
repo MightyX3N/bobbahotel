@@ -220,6 +220,7 @@ function PANEL:Paint(w, h)
 end
 
 function PANEL:OnMousePressed(code)
+	if code == MOUSE_RIGHT then BOBBA.events.emit("roomRightClick", V.hover or { floor = false }) return end
 	if code ~= MOUSE_LEFT then return end
 	self:MouseCapture(true)
 	local x, y = input.GetCursorPos()
@@ -231,8 +232,9 @@ function PANEL:OnMouseReleased(code)
 	self:MouseCapture(false)
 	local wasDrag = V.press.dragging
 	V.press = nil
-	if not wasDrag and V.hover then
-		BOBBA.events.emit("roomClick", V.hover)
+	-- (also off the floor: furni can stand up over the walls)
+	if not wasDrag then
+		BOBBA.events.emit("roomClick", V.hover or { floor = false })
 	end
 end
 
@@ -402,7 +404,7 @@ end, function(cmd, argStr)
 end)
 
 BOBBA.events.on("roomClick", "bobba.view.print", function(hit)
-	if V.mode == "preview" then
+	if V.mode == "preview" and hit.floor then
 		print(string.format("tile %d, %d  height %d", hit.tileX, hit.tileY, hit.tileZ))
 	end
 end)
