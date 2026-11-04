@@ -28,6 +28,10 @@ borderless full screen, its own icon.
    - walking with WASD, the arrow keys or a stick: continuous tile walking (holding a direction keeps
      stepping tile after tile, smoothly; diagonals with two keys; screen-relative by default, room
      axes as an option). Everything stays on tiles: sitting, rollers, wired and rooms keep working.
+   - an interact button (E / A): the nearest usable thing (on your tile or next to you, the one
+     you face first) is highlighted, and the button does what a double-click does: sit, lie down,
+     switch, go through a teleport, open a gift, an avatar's menu; another button cycles between
+     things equally close. The mouse keeps working alongside.
    - controller support (Steam Deck: GMod and the desktop app): walking as above, a cursor mode for
      furni, avatars and the UI, a radial menu for the toolbar, the on-screen keyboard or a
      quick-message wheel for chat, bumpers to turn furni and cycle selection
