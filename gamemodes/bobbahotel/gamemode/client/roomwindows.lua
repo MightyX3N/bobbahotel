@@ -760,6 +760,8 @@ local function menuItems()
 	end
 	local p = powers(u)
 	if m == "normal" then
+		-- (Nitro shows Trade to everyone; the room's setting is checked when it's asked for)
+		if BOBBA.trade then item(T("infostand.button.trade", "Trade"), function() close() BOBBA.trade.start(id) end) end
 		item(T("infostand.button.whisper", "Whisper"), function()
 			close()
 			-- (the chat input gets ":whisper name ", nitro-react's whisper prefix)

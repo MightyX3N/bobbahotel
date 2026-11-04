@@ -55,7 +55,7 @@ function G.send(player, data)
 	if not toKey then return false, "no one called " .. tostring(data.receiver) end
 	local box = G.BOXES[tonumber(data.box) or 1] or G.BOXES[1]
 	local key = P.playerKey(player)
-	if not BOBBA.wallet.pay(key, offer.price or {}) then return false, "you don't have enough to buy that" end
+	if not BOBBA.wallet.pay(key, offer.price or {}, "gift", offer.kind, toKey) then return false, "you don't have enough to buy that" end
 	-- the tag: who it's from (and their face), the greeting
 	local message = tostring(data.message or ""):gsub("[%z\1-\9\11-\31]", ""):sub(1, G.MESSAGE_MAX)
 	local face = ""
@@ -64,7 +64,7 @@ function G.send(player, data)
 		if figure then face = figure .. "|" .. (gender or "M") end
 	end
 	local tag = P.playerName(player) .. "\t" .. message .. "\t" .. face
-	local present = BOBBA.inventory.give(toKey, box, 1, tag)[1]
+	local present = BOBBA.inventory.give(toKey, box, 1, tag, "gift", key)[1]
 	local inside = offer.trophy and CAT.engraving(player, data.extra) or offer.data or ""
 	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_gifts (id, kind, data) VALUES (?, ?, ?)", { present.id, offer.kind, inside })
 	BOBBA.events.emit("giftSent", key, toKey, offer)
@@ -89,7 +89,7 @@ function G.open(r, player, id)
 	BOBBA.events.emit("giftOpened", r, player, it)
 	if not row then P.send("gift.opened", { present = it.id, from = from }, player) return true end
 	-- what was in it: into the owner's inventory, then put where the box was if it fits there
-	local added = BOBBA.inventory.give(owner, row.kind, 1, row.data)[1]
+	local added = BOBBA.inventory.give(owner, row.kind, 1, row.data, "gift opened")[1]
 	I.placeExisting(r, player, added.id, row.kind, x, y, dir, function(placed)
 		if placed then
 			P.send("inventory.removed", { added.id }, player)

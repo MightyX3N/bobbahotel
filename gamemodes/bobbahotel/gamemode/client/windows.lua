@@ -35,6 +35,13 @@ local INV_TABS = {
 }
 
 local function drawInventory(w, d)
+	-- (trading: the trade instead, client/trading.lua)
+	if BOBBA.trade and BOBBA.trade.state then
+		w.onClose = function() BOBBA.trade.cancel() end
+		BOBBA.trade.drawClassic(w, d)
+		return
+	end
+	w.onClose = nil
 	local tabs = {}
 	for _, t in ipairs(INV_TABS) do tabs[#tabs + 1] = { id = t.id, label = U.text(t.id, t.fallback) } end
 	d:card(U.text("inventory.title", "Inventory"), tabs, INV.tab, function(id) INV.tab = id end)

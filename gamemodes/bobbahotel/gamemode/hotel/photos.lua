@@ -67,9 +67,9 @@ function PH.finish(player, purpose, bytes)
 	local u = live.byPlayer[player]
 	if purpose == "photo" then
 		if not BOBBA.perms.has(player, "bobba.camera.use") then return false, "you may not buy photos" end
-		if not BOBBA.wallet.pay(key, price()) then return false, "you don't have enough to buy the photo" end
+		if not BOBBA.wallet.pay(key, price(), "photo") then return false, "you don't have enough to buy the photo" end
 		local id = store(key, u and u.room and u.room.id or 0, "photo", bytes)
-		BOBBA.inventory.give(key, PH.KIND, 1, tostring(id))
+		BOBBA.inventory.give(key, PH.KIND, 1, tostring(id), "photo")
 		P().send("camera.purchased", { id = id }, player)
 		return true
 	end

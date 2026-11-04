@@ -171,7 +171,7 @@ function GR.create(key, data)
 		if not info or info.owner ~= tostring(key) then return false, "the group's room must be one of yours" end
 	end
 	local price = GR.price()
-	if price > 0 and not BOBBA.wallet.pay(key, { credits = price }) then return false, "you need " .. price .. " credits to make a group" end
+	if price > 0 and not BOBBA.wallet.pay(key, { credits = price }, "group") then return false, "you need " .. price .. " credits to make a group" end
 	local now = P().time()
 	S().query("INSERT INTO bobbahotel_groups (name, description, color, owner, room, open, created) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		{ name, cleanText(data.description, 255), cleanColor(data.color), tostring(key), room, data.open == false and 0 or 1, now })

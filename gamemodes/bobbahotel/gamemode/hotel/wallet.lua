@@ -113,26 +113,37 @@ function W.send(key)
 	if player then BOBBA.platform.send("user.purse", W.purse(key), player) end
 end
 
--- adds (or with a minus, takes) an amount; false when there isn't enough
-function W.add(key, currency, amount)
+-- the economy's log (economy.lua)
+local function log(...) if BOBBA.economy then BOBBA.economy.log(...) end end
+
+-- adds (or with a minus, takes) an amount; false when there isn't enough. why (and other: whom it
+-- came from or went to) go in the economy's log
+function W.add(key, currency, amount, why, other)
 	if not W.CURRENCIES[currency] then return false end
 	amount = math.floor(tonumber(amount) or 0)
+	if amount ~= amount or amount == math.huge or amount == -math.huge then return false end
 	local w = W.get(key)
 	if w[currency] + amount < 0 then return false end
 	BOBBA.store.query("UPDATE bobbahotel_wallets SET " .. currency .. " = " .. currency .. " + ? WHERE key = ?", { amount, tostring(key) })
+	log(key, currency, amount, why or "other", nil, other)
 	W.send(key)
 	BOBBA.events.emit("walletChanged", key, currency, amount)
 	return true
 end
 
--- pays a price { credits = n, duckets = n, diamonds = n } (all of it or none)
-function W.pay(key, price)
+-- pays a price { credits = n, duckets = n, diamonds = n } (all of it or none); why, item (what for)
+-- and other go in the economy's log
+function W.pay(key, price, why, item, other)
 	local w = W.get(key)
 	for c, n in pairs(price) do
-		if not W.CURRENCIES[c] or (w[c] or 0) < n then return false end
+		n = tonumber(n)
+		if not W.CURRENCIES[c] or not n or n < 0 or n ~= n or (w[c] or 0) < n then return false end
 	end
 	for c, n in pairs(price) do
-		if n ~= 0 then BOBBA.store.query("UPDATE bobbahotel_wallets SET " .. c .. " = " .. c .. " - ? WHERE key = ?", { n, tostring(key) }) end
+		if n ~= 0 then
+			BOBBA.store.query("UPDATE bobbahotel_wallets SET " .. c .. " = " .. c .. " - ? WHERE key = ?", { n, tostring(key) })
+			log(key, c, -n, why or "other", item, other)
+		end
 	end
 	W.send(key)
 	return true
@@ -140,13 +151,14 @@ end
 
 -- more days of a club, "hc" (the default) or "vip" (from now, or from when it ends if it still runs;
 -- a minus takes days off)
-function W.addClub(key, days, kind)
+function W.addClub(key, days, kind, why)
 	local w = W.get(key)
 	local now = BOBBA.platform.time()
 	local column = kind == "vip" and "vip_until" or "club_until"
 	local current = kind == "vip" and w.vipUntil or w.clubUntil
 	local untilT = math.max(current, now) + math.floor(days * 86400)
 	BOBBA.store.query("UPDATE bobbahotel_wallets SET " .. column .. " = ? WHERE key = ?", { untilT, tostring(key) })
+	log(key, kind == "vip" and "vip" or "hc", days, why or "other")
 	W.send(key)
 	BOBBA.events.emit("clubChanged", key)
 end

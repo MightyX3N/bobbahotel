@@ -1,7 +1,8 @@
 -- The hotel's Manage screen (client; hotel/manage.lua is the server's side): for its owner and admins,
 -- from the start screen (client/picker.lua), the hotel's page and the desktop app's start screen.
--- Three parts: the look (name, what it's about, the UI it starts in, its colour, its page, its news),
--- the addons (on or off from the next start; their settings) and the hotel's own settings.
+-- Four parts: the look (name, what it's about, the UI it starts in, its colour, its page, its news),
+-- the addons (on or off from the next start; their settings), the hotel's own settings, and the
+-- money log (hotel/economy.lua: who got or lost money, club days or furni, why, with whom).
 -- Drawn with the phone's kit, full screen, 1280 x 760 points scaled to the screen.
 
 BOBBA.manageScreen = BOBBA.manageScreen or {}
@@ -21,6 +22,22 @@ P.receive("manage.state", function(_, data) MS.state = data MS.gotAt = SysTime()
 P.receive("manage.error", function(_, data)
 	MS.error = { text = (tostring(data.message or ""):gsub("^%l", string.upper)), at = SysTime() }
 end)
+-- the money log: a page of lines (more: older ones to ask for)
+MS.log = MS.log or { who = "", rows = {}, more = false }
+P.receive("manage.log", function(_, data)
+	local L = MS.log
+	if (tonumber(data.before) or 0) > 0 and L.who == (data.who or "") then
+		for _, r in ipairs(data.rows or {}) do L.rows[#L.rows + 1] = r end
+	else
+		L.rows = data.rows or {}
+	end
+	L.who, L.more, L.missing, L.loading = data.who or "", data.more, data.missing, false
+end)
+function MS.askLog(who, before)
+	MS.log.loading = true
+	P.send("manage.log", { who = who or "", before = before })
+end
+
 P.receive("manage.saved", function(_, data) MS.saved = { key = data.key, at = SysTime() } end)
 P.receive("manage.restarting", function()
 	MS.restarting = SysTime()
@@ -266,6 +283,49 @@ local function settingsView(d, x, y, w, st)
 	return yy - y
 end
 
+-- --- the money log -------------------------------------------------------------------------------------
+local WHAT = { credits = "credits", duckets = "duckets", diamonds = "diamonds", hc = "days of club", vip = "days of VIP" }
+local function logView(d, x, y, w)
+	local L = MS.log
+	local yy = y
+	para(d, T("bobba.manage.lognote", "Every time someone gets or loses money, club days or furni: buying, gifts, trades, staff giving. Being paid for being online isn't in it."), x, yy, w, 13, C.ink2)
+	yy = yy + 40
+	local e = d:input("log:who", x, yy, w - 230, 44, { placeholder = T("bobba.manage.logwho", "Someone's name (empty: everyone)"), max = 40, bg = C.white,
+		onEnter = function(t) MS.askLog(t) end })
+	d:button(x + w - 220, yy, 105, 44, T("bobba.manage.logshow", "Show"), "primary", function() MS.askLog(e:GetValue()) end)
+	d:button(x + w - 105, yy, 105, 44, T("bobba.manage.logall", "Everyone"), "light", function() e:SetText("") MS.askLog("") end)
+	yy = yy + 60
+	if L.missing then
+		d:text(T("bobba.manage.lognoone", "No one's called that."), 14, x + 4, yy, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
+		return yy + 30 - y
+	end
+	if #L.rows == 0 then
+		d:text(L.loading and T("bobba.manage.loading", "Loading...") or T("bobba.manage.lognothing", "Nothing yet."), 14, x + 4, yy, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
+		return yy + 30 - y
+	end
+	card(d, x, yy, w, #L.rows * 48 + 12)
+	local ry = yy + 6
+	for i, r in ipairs(L.rows) do
+		if i > 1 then d:rect(x + 20, ry, w - 40, 1, C.mist) end
+		d:text(os.date("%d %b %H:%M", r.at or 0), 12, x + 20, ry + 24, C.slate, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 600)
+		d:textFit(r.name or r.key or "?", 14, 180, x + 130, ry + 24, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
+		local n = tonumber(r.amount) or 0
+		local amt = (n > 0 and "+" or "") .. n .. " " .. (r.what == "furni" and (BOBBA.shop and BOBBA.shop.furniName and BOBBA.shop.furniName(r.item or "") or r.item or "furni") or (WHAT[r.what] or r.what))
+		d:textFit(amt, 14, w * 0.36, x + 330, ry + 24, n >= 0 and C.green or C.red, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
+		local why = tostring(r.why or ""):gsub("^%l", string.upper) .. (r.otherName and (" · " .. T("bobba.manage.logwith", "with %name%", { name = r.otherName })) or "")
+		d:textFit(why, 13, w - 330 - w * 0.36 - 40, x + w - 20, ry + 24, C.ink2, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, 600)
+		ry = ry + 48
+	end
+	yy = yy + #L.rows * 48 + 24
+	if L.more then
+		d:button(x + w / 2 - 80, yy, 160, 40, T("bobba.manage.logolder", "Older"), "light", function()
+			MS.askLog(L.who, L.rows[#L.rows].id)
+		end)
+		yy = yy + 52
+	end
+	return yy - y
+end
+
 -- --- the screen -----------------------------------------------------------------------------------------
 local function draw(d, W, H)
 	d:rect(0, 0, W, H, C.paper)
@@ -276,7 +336,7 @@ local function draw(d, W, H)
 	d:round(12, 24, 18, 36, 36, acc)
 	d:glyph(G.settings, 31, 25, 22, C.navy, 2)
 	local name = st and st.look and st.look.name or BOBBA.hotelName or "Bobba Hotel"
-	d:textFit(T("bobba.manage.title", "Manage %hotel%", { hotel = name }), 20, W - 560, 74, 36, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
+	d:textFit(T("bobba.manage.title", "Manage %hotel%", { hotel = name }), 20, W / 2 - 248 - 90, 74, 36, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
 	d:button(W - 24 - 110, 16, 110, 40, T("bobba.manage.done", "Done"), "paper", function() MS.close() end)
 	if not st then
 		d:text(T("bobba.manage.loading", "Loading..."), 16, W / 2, H / 2, C.ink2, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 600)
@@ -288,11 +348,15 @@ local function draw(d, W, H)
 	end
 	-- the tabs
 	local tabs = { { id = "look", label = T("bobba.manage.tab.look", "Look") }, { id = "addons", label = T("bobba.manage.tab.addons", "Addons") },
-		{ id = "settings", label = T("bobba.manage.tab.settings", "Settings") } }
-	local tx = W / 2 - 180
+		{ id = "settings", label = T("bobba.manage.tab.settings", "Settings") }, { id = "log", label = T("bobba.manage.tab.log", "Money log") } }
+	local tx = W / 2 - #tabs * 62 + 4
 	for _, t in ipairs(tabs) do
 		local on = MS.tab == t.id
-		local hov = d:click(tx, 18, 116, 36, function() MS.tab = t.id if t.id == "settings" then MS.section = MS.section or "core" end end)
+		local hov = d:click(tx, 18, 116, 36, function()
+			MS.tab = t.id
+			if t.id == "settings" then MS.section = MS.section or "core" end
+			if t.id == "log" then MS.askLog(MS.log.who) end
+		end)
 		d:pill(tx, 18, 116, 36, on and C.paper or (hov and C.navy3 or C.navy2))
 		d:text(t.label, 14, tx + 58, 36, on and C.navy or C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 700)
 		tx = tx + 124
@@ -324,6 +388,7 @@ local function draw(d, W, H)
 			local h
 			if MS.tab == "addons" then h = addonsView(d, cx, top + 24, cw, st)
 			elseif MS.tab == "settings" then h = settingsView(d, cx, top + 24, cw, st)
+			elseif MS.tab == "log" then h = logView(d, cx, top + 24, cw)
 			else h = lookView(d, cx, top + 24, cw, st) end
 			MS.contentH = h + 60
 		end)

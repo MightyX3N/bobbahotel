@@ -100,13 +100,27 @@ concommand.Add("bobba_give", function(ply, _, args)
 		return
 	end
 	if what == "club" or what == "hc" or what == "vip" then
-		BOBBA.wallet.addClub(key, amount, what == "vip" and "vip" or "hc")
-	elseif not BOBBA.wallet.add(key, what, amount) then
+		BOBBA.wallet.addClub(key, amount, what == "vip" and "vip" or "hc", "staff")
+	elseif not BOBBA.wallet.add(key, what, amount, "staff", IsValid(ply) and BOBBA.platform.playerKey(ply) or "console") then
 		reply(ply, "couldn't: " .. what .. " isn't credits, duckets or diamonds, or they don't have that much")
 		return
 	end
 	local p = BOBBA.wallet.purse(key)
 	reply(ply, string.format("%s now has %d credits, %d duckets, %d diamonds, club level %d (%d days)", key, p.credits, p.duckets, p.diamonds, p.clubLevel, p.clubDays))
+end)
+
+-- bobba_economy [player name or steamid64] [n]: the economy's log, newest first (who got or lost money,
+-- club days or furni, why, with whom: hotel/economy.lua). For staff with bobba.staff.currency.
+concommand.Add("bobba_economy", function(ply, _, args)
+	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.staff.currency") then reply(ply, "that's for staff") return end
+	local key
+	if args[1] and args[1] ~= "" and args[1] ~= "all" then
+		key = BOBBA.economy.findKey(args[1])
+		if not key then reply(ply, "no one called " .. args[1]) return end
+	end
+	local rows = BOBBA.economy.list(key, nil, tonumber(args[2]) or 30)
+	if #rows == 0 then reply(ply, "nothing logged") return end
+	for i = #rows, 1, -1 do reply(ply, BOBBA.economy.describe(rows[i])) end
 end)
 
 -- bobba_wallet_setting <name> [value]: the hotel's money settings (wallet.start.credits,

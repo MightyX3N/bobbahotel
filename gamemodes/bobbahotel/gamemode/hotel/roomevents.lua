@@ -53,7 +53,7 @@ function EV.create(key, data)
 	if #name < 3 then return false, "an event's name needs 3 letters" end
 	local hours = math.Clamp and math.Clamp(math.floor(tonumber(data.hours) or 1), 1, EV.maxHours()) or math.max(1, math.min(EV.maxHours(), math.floor(tonumber(data.hours) or 1)))
 	local price = EV.price()
-	if price > 0 and not BOBBA.wallet.pay(key, { credits = price }) then return false, "you need " .. price .. " credits for an event" end
+	if price > 0 and not BOBBA.wallet.pay(key, { credits = price }, "room event") then return false, "you need " .. price .. " credits for an event" end
 	local now = P().time()
 	S().query("INSERT OR REPLACE INTO bobbahotel_room_events (room, owner, name, description, starts, ends) VALUES (?, ?, ?, ?, ?, ?)",
 		{ room, tostring(key), name, tostring(data.description or ""):gsub("[%z\1-\9\11-\31]", ""):sub(1, 200), now, now + hours * 3600 })

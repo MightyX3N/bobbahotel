@@ -47,7 +47,7 @@ end
 local function finish(player, key, rewarded)
 	BOBBA.store.query("UPDATE bobbahotel_tutorial SET done = 1 WHERE key = ?", { tostring(key) })
 	local reward = rewarded and TU.reward() or 0
-	if reward > 0 then BOBBA.wallet.add(key, "credits", reward) end
+	if reward > 0 then BOBBA.wallet.add(key, "credits", reward, "tutorial") end
 	if player then P().send("tutorial.done", { reward = reward }, player) end
 end
 

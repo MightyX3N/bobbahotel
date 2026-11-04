@@ -31,11 +31,22 @@ function store.row(sqlText, params)
 	return store.query(sqlText, params)[1]
 end
 
--- Runs fn() inside one transaction: all of it is saved, or (if fn errors) none of it.
+-- Runs fn() inside one transaction: all of it is saved, or (if fn errors) none of it. One inside
+-- another is part of the outer one (SQLite has no transaction in a transaction).
+store.depth = store.depth or 0
 function store.transaction(fn)
 	local d = db()
+	if store.depth > 0 then
+		store.depth = store.depth + 1
+		local ok, err = pcall(fn)
+		store.depth = store.depth - 1
+		if not ok then error(err, 2) end
+		return true
+	end
 	d.query("BEGIN")
+	store.depth = 1
 	local ok, err = pcall(fn)
+	store.depth = 0
 	if ok then
 		d.query("COMMIT")
 		return true

@@ -97,6 +97,8 @@ M.settings("core", "The hotel", {
 	n("wallet.pay.credits", "Credits each time", 25, 0, 100000, nil, "Money"),
 	n("wallet.pay.duckets", "Duckets each time", 50, 0, 100000, nil, "Money"),
 	n("wallet.pay.diamonds", "Diamonds each time", 2, 0, 100000, nil, "Money"),
+	b("trading.enabled", "Trading", true, "Players swap furni in rooms that allow it", "Money"),
+	n("economy.keep.days", "Keep the money log (days)", 90, 0, 3650, "0: for ever", "Money"),
 	n("catalog.price", "Furni price (credits)", 5, 0, 100000, "What each furni in the shop costs", "Shops"),
 	b("catalog.seasons", "Seasonal furni only in season", true, "Christmas furni at Christmas, and so on", "Shops"),
 	{ key = "club.mode", name = "Clubs", type = "choice", default = "hc", choices = { { "hc", "Habbo Club" }, { "vip", "VIP" }, { "both", "Both" } }, group = "Shops" },

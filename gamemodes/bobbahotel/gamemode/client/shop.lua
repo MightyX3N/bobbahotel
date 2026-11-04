@@ -169,6 +169,7 @@ end
 
 -- (for the phone's apps: client/apps_*.lua)
 SHOP.groups, SHOP.groupName, SHOP.furniName, SHOP.amount, SHOP.paintOf = groups, groupName, furniName, amount, paintOf
+SHOP.furniIcon, SHOP.countBadge, SHOP.columns, SHOP.searchButton = furniIcon, countBadge, columns, searchButton
 
 P.receive("inventory.items", function(_, list)
 	INV.items = list or {}

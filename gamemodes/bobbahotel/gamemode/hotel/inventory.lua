@@ -23,8 +23,8 @@ local function playerFor(key)
 end
 
 -- new furni for someone: n of a kind (data: what they keep, e.g. a trophy's engraving); returns
--- the new rows
-function INV.give(key, kind, n, data)
+-- the new rows. why (and other: whom from) go in the economy's log
+function INV.give(key, kind, n, data, why, other)
 	local added = {}
 	BOBBA.store.transaction(function()
 		for _ = 1, math.max(1, math.floor(n or 1)) do
@@ -34,6 +34,7 @@ function INV.give(key, kind, n, data)
 				data = (data and data ~= "") and data or nil }
 		end
 	end)
+	if BOBBA.economy then BOBBA.economy.log(key, "furni", #added, why or "other", kind, other) end
 	local player = playerFor(key)
 	if player then BOBBA.platform.send("inventory.added", added, player) end
 	return added
@@ -72,6 +73,8 @@ function INV.start()
 		local key = P.playerKey(player)
 		local row = BOBBA.store.row("SELECT * FROM bobbahotel_items WHERE id = ? AND room = 0 AND owner = ?", { tonumber(data.id) or -1, key })
 		if not row then P.send("room.error", { message = "that isn't in your inventory" }, player) return end
+		-- (in a trade: not until it's over)
+		if BOBBA.trading and BOBBA.trading.isLocked(row.id) then P.send("room.error", { message = "that's in a trade" }, player) return end
 		BOBBA.items.resolve(row.kind, function(def, why)
 			if not def then P.send("room.error", { message = tostring(why) }, player) return end
 			-- a wallpaper, floor or landscape goes onto the room and is used up (Arcturus RoomPlaceItemEvent)

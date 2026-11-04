@@ -206,24 +206,30 @@ function CAT.buy(player, pageId, offerId, amount, extra)
 	if amount < 1 or amount > CAT.MAX_AMOUNT then return false, "you can buy 1 to " .. CAT.MAX_AMOUNT .. " at a time" end
 	local price = {}
 	for c, n in pairs(offer.price or {}) do price[c] = n * amount end
-	if not BOBBA.wallet.pay(key, price) then return false, "you don't have enough to buy that" end
-	if offer.club then
-		BOBBA.wallet.addClub(key, offer.club, offer.tier)
-	else
-		if offer.pair then
-			-- a pair that are each other's partner (teleports)
-			for _ = 1, amount do
-				local two = BOBBA.inventory.give(key, offer.kind, 2)
-				BOBBA.items.link(two[1].id, two[2].id)
-			end
-		elseif offer.trophy then
-			-- a trophy is engraved with who bought it, when, and their words (Arcturus: name TAB date TAB text)
-			BOBBA.inventory.give(key, offer.kind, 1, CAT.engraving(player, extra))
+	-- (paid and given together: if giving fails, nothing's paid)
+	local paid = false
+	BOBBA.store.transaction(function()
+		if not BOBBA.wallet.pay(key, price, "catalog", offer.kind or (offer.club and (offer.tier or "hc"))) then return end
+		paid = true
+		if offer.club then
+			BOBBA.wallet.addClub(key, offer.club, offer.tier, "catalog")
 		else
-			-- (with its data: a wallpaper's id; count: how many come in one, a pad of stickies)
-			BOBBA.inventory.give(key, offer.kind, amount * (offer.count or 1), offer.data)
+			if offer.pair then
+				-- a pair that are each other's partner (teleports)
+				for _ = 1, amount do
+					local two = BOBBA.inventory.give(key, offer.kind, 2, nil, "catalog")
+					BOBBA.items.link(two[1].id, two[2].id)
+				end
+			elseif offer.trophy then
+				-- a trophy is engraved with who bought it, when, and their words (Arcturus: name TAB date TAB text)
+				BOBBA.inventory.give(key, offer.kind, 1, CAT.engraving(player, extra), "catalog")
+			else
+				-- (with its data: a wallpaper's id; count: how many come in one, a pad of stickies)
+				BOBBA.inventory.give(key, offer.kind, amount * (offer.count or 1), offer.data, "catalog")
+			end
 		end
-	end
+	end)
+	if not paid then return false, "you don't have enough to buy that" end
 	BOBBA.events.emit("catalogBought", key, offer, amount)
 	return true
 end
