@@ -496,10 +496,22 @@ function S.stopFree(u)
 	if u then u.freeMoving = false u.freeStopAt = SysTime() end
 	S.free = nil
 end
+-- going through a teleport: no moving until it has let you out (the server says: room.busy)
+P.receive("room.busy", function(_, data)
+	S.busy = data.on and SysTime() or nil
+	if data.on and S.free then
+		local u = R.units and R.you and R.units[R.you]
+		S.free = nil
+		if u then u.freePos, u.freeMoving = nil, nil end
+	end
+end)
+
 function S.moveFrame(dt)
 	local u = R.units and R.you and R.units[R.you]
 	local sx, sy, via
-	if S.allowed() and u then sx, sy, via = S.vector() end
+	-- (busy: going through a teleport; at most 8 s, in case the word that it's over got lost)
+	if S.busy and SysTime() - S.busy > 8 then S.busy = nil end
+	if S.allowed() and u and not S.busy then sx, sy, via = S.vector() end
 	if not sx then
 		S.stopFree(u)
 		-- (the server didn't say where it eased to: drawn on its tile again)

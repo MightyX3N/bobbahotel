@@ -526,6 +526,7 @@ end
 local function useOneWay(r, it, player)
 	local u = BOBBA.live.byPlayer[player]
 	if not u or u.room ~= r or it.passing then return false end
+	if u.px then BOBBA.live.freeStop(u) u.useOnArrive = it.id return true end
 	local fx, fy, bx, by = oneWayTiles(it)
 	if u.x ~= fx or u.y ~= fy or (u.path and #u.path > 0) then
 		if not BOBBA.live.walk(player, fx, fy) then return false, "you can't get to it" end
@@ -762,11 +763,19 @@ local function stepTo(r, u, x, y)
 	u.path = { t }
 end
 
+-- going through a teleport: the player's game doesn't move them meanwhile (free movement: steering.lua)
+local function setTeleporting(u, on)
+	u.teleporting = on or nil
+	if u.player then BOBBA.platform.send("room.busy", { on = on == true }, u.player) end
+end
+
 function items.useTeleport(r, it, player)
 	local T = items.TELEPORT
 	local after = BOBBA.platform.after
 	local u = BOBBA.live.byPlayer[player]
 	if not u or u.room ~= r or it.passing or it.busy then return false end
+	-- (moving freely: stopped first, then in from the tile in front: items.arrived)
+	if u.px then BOBBA.live.freeStop(u) u.useOnArrive = it.id return true end
 	local fx, fy = ahead(it.x, it.y, it.dir)
 	if u.x ~= fx or u.y ~= fy or (u.path and #u.path > 0) then
 		if not BOBBA.live.walk(player, fx, fy) then return false, "you can't get to it" end
@@ -776,9 +785,9 @@ function items.useTeleport(r, it, player)
 	-- in: it opens, you step in, it shuts and flashes
 	it.busy = true
 	passIn(r, it, u)
+	setTeleporting(u, true)
 	setTeleState(r, it, T.open)
 	stepTo(r, u, it.x, it.y)
-	u.teleporting = true
 	after(T.step * 2, function()
 		setTeleState(r, it, T.flash)
 		after(T.step * 2, function()
@@ -791,7 +800,7 @@ function items.useTeleport(r, it, player)
 				setTeleState(r, it, T.open)
 				stepTo(r, u, fx, fy)
 				after(T.step * 2, function()
-					u.teleporting = nil
+					setTeleporting(u, false)
 					it.busy = nil
 					passOut(r, it)
 					setTeleState(r, it, T.closed)
@@ -805,7 +814,7 @@ function items.useTeleport(r, it, player)
 			local px, py, pz, pdir = tonumber(row.x), tonumber(row.y), tonumber(row.z), tonumber(row.dir) or 0
 			local function arrive(r2, u2)
 				local p = r2.items[pid]
-				if not p then u2.teleporting = nil return end
+				if not p then setTeleporting(u2, false) return end
 				p.busy = true
 				passIn(r2, p, u2)
 				setTeleState(r2, p, T.flash)
@@ -814,7 +823,7 @@ function items.useTeleport(r, it, player)
 					local ox, oy = ahead(p.x, p.y, p.dir)
 					stepTo(r2, u2, ox, oy)
 					after(T.step * 2, function()
-						u2.teleporting = nil
+						setTeleporting(u2, false)
 						p.busy = nil
 						passOut(r2, p)
 						setTeleState(r2, p, T.closed)
@@ -832,7 +841,7 @@ function items.useTeleport(r, it, player)
 				local ok = BOBBA.live.enter(player, roomId, { x = px, y = py, z = pz, dir = pdir })
 				local u2 = BOBBA.live.byPlayer[player]
 				if not ok or not u2 then return end
-				u2.teleporting = true
+				setTeleporting(u2, true)
 				-- (its furni may still be being looked up: wait for the partner a little)
 				local tries = 0
 				local function wait()
@@ -941,12 +950,9 @@ function items.arrived(r, u)
 	u.useOnArrive, u.useTag = nil, nil
 	local it = id and r.items[id]
 	if not it or not u.player then return end
-	if it.def.teleport then
-		local fx, fy = ahead(it.x, it.y, it.dir)
-		if u.x == fx and u.y == fy then items.use(r, u.player, id) end
-	elseif it.def.oneWay then
-		local fx, fy = oneWayTiles(it)
-		if u.x == fx and u.y == fy then items.use(r, u.player, id) end
+	if it.def.teleport or it.def.oneWay then
+		-- (in front of it: in; not (stopped elsewhere after moving freely): there first)
+		items.use(r, u.player, id)
 	elseif nextTo(it, u.x, u.y) then
 		items.use(r, u.player, id, tag)
 	end

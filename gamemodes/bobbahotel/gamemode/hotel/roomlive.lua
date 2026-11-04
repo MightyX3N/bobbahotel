@@ -347,6 +347,8 @@ function live.interact(player, id, tag)
 	end
 	if not near then return false, "too far away" end
 	if it.def.present then return BOBBA.gifts.open(r, player, it.id) end
+	-- (a teleport, a one-way gate, a gate: used, never walked onto)
+	if it.def.teleport or it.def.oneWay or it.def.gate then return I.use(r, player, it.id, tag) end
 	if not it.def.wall and (it.def.sit or it.def.lay or it.def.walk) then
 		-- (moving freely over it: stopping there sits down)
 		if on then

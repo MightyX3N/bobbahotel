@@ -156,6 +156,22 @@ T["not into a teleport, a one-way gate or a shut gate (only by using them); an o
 	eq(at(u), "6,7", "an open gate")
 end
 
+T["a teleport while moving freely: stopped, in from the front; the player's game is told it's busy"] = function()
+	local mia, _, r, u = start()
+	BOBBA.items.define("tele", { width = 1, length = 1, height = 2, states = 3, category = "teleport", directions = { 0, 2, 4, 6 } })
+	P.now = P.now + 5
+	local tele = place(r, mia, "tele", 7, 6, 6)
+	move(mia, 6.1, 6, 2)
+	assert(BOBBA.live.interact(mia, tele.id))
+	eq(u.px, nil, "stopped")
+	fast(20)
+	local busy = P.inbox(mia, "room.busy")
+	eq(#busy, 2, "told when it starts and ends")
+	eq(tostring(busy[1].on) .. " " .. tostring(busy[2].on), "true false")
+	eq(u.teleporting, nil, "out again (it has no partner)")
+	eq(at(u), "6,6", "back out in front of it")
+end
+
 T["the room's movement: clicking only refuses free movement, free movement only refuses clicks"] = function()
 	local mia, bo, r, u = start()
 	P.now = P.now + 5
