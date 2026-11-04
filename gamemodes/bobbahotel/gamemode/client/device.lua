@@ -659,7 +659,12 @@ function PD:input(id, x, y, w, h, opts)
 	e:SetPos(X, Y)
 	e:SetSize(self:X(x + w - padX) - X, self:Y(y + h - (opts.multiline and 8 or 2)) - Y)
 	if not e:IsVisible() then e:SetVisible(true) end
-	self:click(x, y, w, h, function() DV.keysAt = SysTime() e:RequestFocus() end)
+	self:click(x, y, w, h, function()
+		DV.keysAt = SysTime()
+		if BOBBA.steering and BOBBA.steering.inputClicked then BOBBA.steering.inputClicked(e) end
+		e:RequestFocus()
+	end)
+	if e:HasFocus() and BOBBA.steering and BOBBA.steering.inputClicked and BOBBA.steering.clickedInput ~= e then BOBBA.steering.inputClicked(e) end
 	return e
 end
 
@@ -2271,7 +2276,9 @@ hook.Add("Think", "bobba.device", function()
 	local ST = BOBBA.steering
 	local key = ST and ST.key and ST.key("phone")
 	if key and key > 0 then
-		local down = input.IsKeyDown(key)
+		-- (typing: the key is a letter)
+		local down = input.IsKeyDown(key) and not (ST.typingNow and ST.typingNow())
+			and not (IsValid(focus) and focus.GetCaretPos and (focus:GetValue() or "") ~= "")
 		if down and not DV.keyWas then DV.toggle() end
 		DV.keyWas = down
 	end

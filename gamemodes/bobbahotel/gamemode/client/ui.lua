@@ -515,7 +515,11 @@ function D:input(id, x, y, w, h, opts)
 	e:SetSize(math.floor((x + w - 7) * s + 0.5) - X, math.floor((y + h - (opts.multiline and 4 or 1)) * s + 0.5) - Y)
 	if not e:IsVisible() then e:SetVisible(true) end
 	-- (a click on the box puts the caret in it)
-	self:click(x, y, w, h, function() e:RequestFocus() end)
+	self:click(x, y, w, h, function()
+		if BOBBA.steering and BOBBA.steering.inputClicked then BOBBA.steering.inputClicked(e) end
+		e:RequestFocus()
+	end)
+	if e:HasFocus() and BOBBA.steering and BOBBA.steering.inputClicked and BOBBA.steering.clickedInput ~= e then BOBBA.steering.inputClicked(e) end
 	return e
 end
 

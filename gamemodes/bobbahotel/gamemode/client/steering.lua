@@ -131,6 +131,8 @@ function S.keyTyped(entry, code)
 	end
 	-- (setting 2: the box has the keyboard only while chatting, so no steering from it)
 	if m == 2 then return false end
+	-- (the chat was clicked: its keys are typed, nothing steers)
+	if S.chatClicked then return false end
 	-- (the arrow keys move the caret once something is typed)
 	local dir = empty and S.allowed() and steersFor(code, true)
 	if dir then
@@ -198,6 +200,7 @@ function S.openChat(key)
 end
 function S.closeChat()
 	S.chatOpen = false
+	S.chatClicked = false
 	local f = R.chatState and R.chatState.input
 	if IsValid(f) and IsValid(f.entry) then f.entry:KillFocus() end
 end
@@ -218,14 +221,64 @@ function S.setPad(x, y)
 	if math.abs(x) > 0.4 or math.abs(y) > 0.4 then S.setDevice("pad") end
 end
 
--- --- the direction now ------------------------------------------------------------------------------
+-- --- typing: free movement is off ------------------------------------------------------------------
+-- While a text box is being typed in, the keys are the text box's and nothing else's: no moving, no
+-- use / next keys. Any text box but the chat's, from the click on it for as long as it has the
+-- keyboard; the chat's once it's been clicked (until something else is clicked: then it's Habbo's
+-- chat again, where the keys steer while nothing is typed).
+local function chatEntry()
+	local f = R.chatState and R.chatState.input
+	return IsValid(f) and f.entry or nil
+end
+local function isTextBox(p) return IsValid(p) and p.GetCaretPos ~= nil end
+
+-- a text box (not the chat's) was clicked: it's being typed in
+function S.inputClicked(p)
+	S.clickedInput, S.clickedAt = p, SysTime()
+	S.held = {}
+	-- (it gets the keyboard: whatever it's in takes keys - the phone only does while one of its boxes
+	-- is typed in - and the box is focused, also when the click landed on its text)
+	if not IsValid(p) or p:HasFocus() then return end
+	if BOBBA.device then BOBBA.device.keysAt = SysTime() end
+	local a = p:GetParent()
+	while IsValid(a) do
+		if a.SetKeyboardInputEnabled and a.bobbaKeys == false then a.bobbaKeys = true a:SetKeyboardInputEnabled(true) end
+		a = a:GetParent()
+	end
+	timer.Simple(0, function() if IsValid(p) and p:IsVisible() and not p:HasFocus() then p:RequestFocus() end end)
+end
+
+-- is a text box other than the chat's being typed in?
+function S.otherInput()
+	local ce = chatEntry()
+	local f = vgui.GetKeyboardFocus and vgui.GetKeyboardFocus()
+	if isTextBox(f) and f ~= ce then return true end
+	local c = S.clickedInput
+	if isTextBox(c) and c ~= ce and c:IsVisible() then
+		if c:HasFocus() then return true end
+		-- (just clicked: the keyboard may come a moment later)
+		if SysTime() - (S.clickedAt or 0) < 0.3 then return true end
+	end
+	return false
+end
+
+-- is anything being typed in (another text box, or the chat after a click on it)?
+function S.typingNow()
+	if S.otherInput() then return true end
+	local ce = chatEntry()
+	return S.chatClicked == true and ce ~= nil and ce:HasFocus()
+end
+
+-- (the old name: the keys themselves only count when no text box has the keyboard)
 local function typingSomewhere()
 	local f = vgui.GetKeyboardFocus and vgui.GetKeyboardFocus()
-	return IsValid(f) and f.GetCaretPos ~= nil
+	return isTextBox(f) or S.otherInput()
 end
 
 -- where the keys or the stick point on the screen (x right, y down; length 1), or nil
 function S.vector()
+	-- (typing: no moving at all)
+	if S.typingNow() then S.held = {} return nil end
 	local dirs = {}
 	for _, d in pairs(S.held) do dirs[d] = true end
 	-- (nothing typing: the keys themselves; e.g. setting 2, or while a furni is placed)
@@ -519,8 +572,14 @@ hook.Add("Think", "bobba.steering", function()
 			end
 		end
 	end
+	-- (typing somewhere: nothing held; the chat clicked stays so only while it has the keyboard)
+	if S.otherInput() then S.held = {} end
+	if S.chatClicked and entry and not entry:HasFocus() and not S.otherInput() then
+		-- (the chat let go by itself, e.g. a window closed: it's Habbo's chat again)
+		if SysTime() - (S.chatClickAt or 0) > 0.5 then S.chatClicked = false end
+	end
 	-- (no text box has the keyboard: the use and next keys; E uses too with setting 2)
-	if V.mode == "room" and not typingSomewhere() and not S.capture then
+	if V.mode == "room" and not typingSomewhere() and not S.typingNow() and not S.capture then
 		if edge("use", input.IsKeyDown(S.key("use")) or (m == 2 and input.IsKeyDown(KEY_E))) then S.interact() end
 		if edge("next", input.IsKeyDown(S.key("next"))) then S.next() end
 	end
@@ -610,8 +669,13 @@ end
 -- (a click on the chat box: setting 2 opens the chat then)
 hook.Add("VGUIMousePressed", "bobba.steering.chat", function(panel)
 	local f = R.chatState and R.chatState.input
-	if not IsValid(f) or not IsValid(panel) then return end
-	if panel == f or panel == f.entry then S.chatClickAt = SysTime() S.away = false return end
+	if not IsValid(panel) then return end
+	-- (a text box clicked: typed in, no moving)
+	if isTextBox(panel) and not (IsValid(f) and panel == f.entry) then S.inputClicked(panel) end
+	if not IsValid(f) then return end
+	if panel == f or panel == f.entry then S.chatClickAt = SysTime() S.away = false S.chatClicked = true S.held = {} return end
+	-- (anything else clicked: the chat isn't being typed in any more)
+	S.chatClicked = false
 	-- (a click anywhere else in a room: the chat lets go of the keyboard, so the keys steer again;
 	-- what's typed stays)
 	if V.mode ~= "room" then return end

@@ -663,6 +663,9 @@ hook.Add("Think", "bobba.room.keys", function()
 	if down and not rWasDown and (R.turnedAt or 0) < SysTime() - 0.2 then
 		local f = vgui.GetKeyboardFocus and vgui.GetKeyboardFocus()
 		local typing = IsValid(f) and f.GetCaretPos ~= nil and (f:GetValue() or "") ~= ""
+		-- (any text box being typed in: an "r" is a letter)
+		local ST = BOBBA.steering
+		if ST and ST.typingNow and ST.typingNow() then typing = true end
 		if not typing then R.pressR() end
 	end
 	rWasDown = down

@@ -556,7 +556,7 @@ local function createInput()
 			return true
 		end
 		-- turning the furni being placed (when there's nothing typed)
-		if code == KEY_R and (self:GetValue() or "") == "" and (R.turnedAt or 0) < SysTime() - 0.2 and R.pressR and R.pressR() then
+		if code == KEY_R and (self:GetValue() or "") == "" and not (BOBBA.steering and BOBBA.steering.chatClicked) and (R.turnedAt or 0) < SysTime() - 0.2 and R.pressR and R.pressR() then
 			-- (and the "r" isn't typed)
 			self.dropNextR = true
 			return true
@@ -647,7 +647,9 @@ hook.Add("Think", "bobba.chat", function()
 	local focus = vgui.GetKeyboardFocus()
 	-- (with "WASD, Enter to chat" only while the chat is open: steering.lua)
 	local wanted = not BOBBA.steering or BOBBA.steering.chatWanted()
-	if wanted and not gui.IsGameUIVisible() and not gui.IsConsoleVisible() and (focus == nil or focus == f or focus == V.panel) then
+	-- (never from another text box being typed in)
+	local other = BOBBA.steering and BOBBA.steering.otherInput and BOBBA.steering.otherInput()
+	if wanted and not other and not gui.IsGameUIVisible() and not gui.IsConsoleVisible() and (focus == nil or focus == f or focus == V.panel) then
 		f.entry:RequestFocus()
 	end
 end)
