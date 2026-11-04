@@ -160,4 +160,16 @@ T["plane colours: style colour times Nitro's shade"] = function()
 	eq(BOBBA.registry.register("plane_style", "t_bad2", { kind = "wall", color = { r = 300, g = 1, b = 1 } }), false, "bad colour")
 end
 
+T["walls stand the same height above a room's highest floor; the door is the layout's (none in a public room)"] = function()
+	BOBBA.live = BOBBA.live or {}
+	local live = BOBBA.live
+	eq(live.wallHeightOf({ wall_height = -1, layout = "model_a" }), 0.375, "a flat room: the hotel's default")
+	eq(live.wallHeightOf({ wall_height = -1, layout = "model_r" }), 2.375, "floors up to 4: 2 more (walls 3.6 + 2 x this)")
+	eq(live.wallHeightOf({ wall_height = 1.5, layout = "model_r" }), 1.5, "a room's own setting stays")
+	local r = BOBBA.rooms.geometry("model_r")
+	eq(r.door.x .. "," .. r.door.y .. " " .. r.door.dir, "10.5,4 90", "model_r's door")
+	local park = BOBBA.rooms.geometry("park_b")
+	eq(park.door.x, -1, "a public room: no door cut into a wall")
+end
+
 return T

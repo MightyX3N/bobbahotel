@@ -118,9 +118,25 @@ function live.defaultWallHeight()
 end
 
 -- what a room's walls are built with: its own setting, or the hotel's default
+-- (the hotel's default is a little taller than Nitro's automatic walls, which are as high as the room's
+-- highest floor plus 3.6: so it's that much above the highest floor, not a height from the ground,
+-- or a room with raised floors gets walls lower than the people standing there)
+function live.floorTop(layoutId)
+	local layout = BOBBA.registry.get("layout", layoutId or "")
+	if not layout then return 0 end
+	local top = 0
+	for c in layout.heightmap:gmatch("[^xX\r]") do
+		local h = tonumber(c, 36)
+		if h and h > top then top = h end
+	end
+	return top
+end
 function live.wallHeightOf(info)
 	if info.wall_height and info.wall_height ~= -1 then return info.wall_height end
-	return live.defaultWallHeight()
+	local d = live.defaultWallHeight()
+	if d == -1 then return -1 end
+	-- (Nitro: walls 3.6 + 2 x this high; automatic ones 3.6 + the highest floor)
+	return live.validWallHeight(d + live.floorTop(info.layout) / 2) or d
 end
 
 function live.setDefaultWallHeight(v)

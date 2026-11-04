@@ -38,7 +38,7 @@ function R.show()
 	local function thick(v) return ({ [-2] = 0.25, [-1] = 0.5, [1] = 2 })[tonumber(v) or 0] or 1 end
 	V.hideWalls = a.hideWall and true or false
 	-- (the room's name is shown by the room tools, hud.lua)
-	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight, wallThickness = thick(a.wallThickness), floorThickness = thick(a.floorThickness) }))
+	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight, wallThickness = thick(a.wallThickness), floorThickness = thick(a.floorThickness), door = c.door }))
 end
 
 local position

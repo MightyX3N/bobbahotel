@@ -54,6 +54,13 @@ local cache = {}
 function rooms.geometry(layoutId, opts)
 	local layout = BOBBA.registry.get("layout", layoutId)
 	if not layout then return nil, "unknown layout " .. tostring(layoutId) end
+	opts = opts or {}
+	if not opts.door then
+		local o = {}
+		for k, v in pairs(opts) do o[k] = v end
+		o.door = layout.door
+		opts = o
+	end
 	local room = rooms.geometryFor(layout.heightmap, opts)
 	room.layout = layoutId
 	return room
@@ -64,10 +71,13 @@ function rooms.geometryFor(heightmap, opts)
 	opts = opts or {}
 	-- numbers only: Nitro's code compares with numbers (text "-1" would count as a fixed height)
 	local wh, ft, wt = tonumber(opts.wallHeight) or -1, tonumber(opts.floorThickness) or 1, tonumber(opts.wallThickness) or 1
-	local key = wh .. "|" .. ft .. "|" .. wt .. "|" .. heightmap
+	-- the door tile, as Habbo's server tells Nitro (RoomEntryTile): without it Nitro guesses one from the
+	-- heightmap, and in a public room (whose door isn't in a wall) it cut a door into some other wall
+	local dx, dy = -1, -1
+	if opts.door and tonumber(opts.door.x) and tonumber(opts.door.y) then dx, dy = tonumber(opts.door.x), tonumber(opts.door.y) end
+	local key = wh .. "|" .. ft .. "|" .. wt .. "|" .. dx .. "," .. dy .. "|" .. heightmap
 	if not cache[key] then
-		-- Arcturus sends no separate door tile, so Nitro finds the door from the heightmap (-1, -1)
-		local room = BOBBA.nitro.build(heightmap, wh, true, -1, -1, ft, wt)
+		local room = BOBBA.nitro.build(heightmap, wh, true, dx, dy, ft, wt)
 		room.views = {}
 		cache[key] = room
 	end
