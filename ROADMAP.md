@@ -160,6 +160,10 @@ listen server); joining someone's server goes straight to its page.
         worked out on waking (club days ending, events finishing, timers that ran out), not by a
         clock. In Garry's Mod (which already hibernates an empty server) the hotel's own timers stop
         too; the desktop app's and the custom server's server sleep on the network
+      - **small, always-on machines**: a mini PC, a NAS or a Raspberry Pi as the hotel's home. Asleep
+        while empty, a hotel costs almost nothing to leave running. The custom server is plain LuaJIT and
+        SQLite, so it also runs on ARM (Raspberry Pi, most NAS boxes) and in a Docker container (what NAS
+        apps use); a Garry's Mod server needs an x86 machine. A Docker image next to the Pterodactyl egg
     - **Website**: the in-game one is done (the hotel's page after checking in, Lua, news from the
       website.news setting). Later, a web one for outside the game (a companion program next to a GMod
       server): front page, news, players online, Enter hotel, Steam / Discord login (no passwords), profiles
