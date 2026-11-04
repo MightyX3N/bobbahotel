@@ -471,22 +471,36 @@ function live.slide(r, u, x, y, z, moved)
 	PF.removeUnit(r.grid, u.x, u.y)
 	PF.addUnit(r.grid, x, y)
 	u.x, u.y, u.z = x, y, z
+	u.nextStep = BOBBA.platform.clock() + live.STEP_TIME
 	u.to = { x = x, y = y, z = z }
 	local s = snapshot(u)
 	s.x, s.y, s.z = from.x, from.y, from.z
 	moved[#moved + 1] = s
 end
 
+-- Each unit walks on its own clock: a step every STEP_TIME, and someone standing still starts at
+-- once (Habbo runs everyone on one half-second beat, so a click or a key waited up to half a second
+-- before anything moved). The room's own beat (rollers) stays every STEP_TIME.
+live.TICK = 0.05
 function live.tick()
+	local now = BOBBA.platform.clock()
 	for _, r in pairs(live.rooms) do
 		local moved = {}
 		for _, id in ipairs(r.order) do
 			local u = r.units[id]
-			if u then step(r, u, moved) end
+			if u and now >= (u.nextStep or 0) - 1e-6 then
+				local x, y = u.x, u.y
+				step(r, u, moved)
+				-- (a step taken: the next one when this one has been walked)
+				if u.x ~= x or u.y ~= y then u.nextStep = now + live.STEP_TIME end
+			end
 		end
-		-- rollers move what's on them every 4 steps (Arcturus: the room's roller speed, 2 s)
-		r.rollerCycle = ((r.rollerCycle or 0) + 1) % live.ROLLER_EVERY
-		if r.rollerCycle == 0 then BOBBA.items.rollers(r, moved) end
+		-- rollers move what's on them every 4 beats (Arcturus: the room's roller speed, 2 s)
+		if now >= (r.nextBeat or 0) - 1e-6 then
+			r.nextBeat = now + live.STEP_TIME
+			r.rollerCycle = ((r.rollerCycle or 0) + 1) % live.ROLLER_EVERY
+			if r.rollerCycle == 0 then BOBBA.items.rollers(r, moved) end
+		end
 		if #moved > 0 then broadcast(r, "room.units", moved) end
 	end
 end
@@ -555,5 +569,5 @@ function live.start()
 	P.receive("room.interact", function(player, data)
 		live.interact(player, data.id, type(data.tag) == "string" and data.tag or nil)
 	end)
-	P.every("rooms.tick", live.STEP_TIME, live.tick)
+	P.every("rooms.tick", live.TICK, live.tick)
 end

@@ -164,4 +164,25 @@ T["interact: only next to it; switches a lamp, opens a gift, sits"] = function()
 	eq(opened[#opened].kind, "lamp", "the gift opened")
 end
 
+T["standing still, a step starts at once; then one every half second"] = function()
+	local mia, _, _, u = start()
+	P.now = P.now + 5
+	local function fast() P.now = P.now + 0.05 P.runTimers() end
+	P.fromPlayer(mia, "room.steer", { dx = 1, dy = 0 })
+	fast()
+	eq(at(u), "7,6", "the first step straight away, not on the next half-second beat")
+	for _ = 1, 8 do fast() end
+	eq(at(u), "7,6", "the step is still being walked")
+	fast() fast()
+	eq(at(u), "8,6", "the next one after half a second")
+	P.fromPlayer(mia, "room.steer", { dx = 0, dy = 0 })
+	for _ = 1, 20 do fast() end
+	eq(at(u), "8,6")
+	-- a click from standing still starts at once too
+	P.now = P.now + 1
+	P.fromPlayer(mia, "room.walk", { x = 8, y = 9 })
+	fast()
+	eq(at(u), "8,7")
+end
+
 return T
