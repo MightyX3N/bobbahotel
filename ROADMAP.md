@@ -79,6 +79,16 @@ borderless full screen, its own icon.
         child-safety cases the alert says to keep the evidence and report to the police
     - "download my data" and "delete my account" for players
 13. **Custom server, web client, release**.
+    - **Web client** on GitHub Pages, like the desktop app: the same gamemode code in the browser
+      (the desktop client built for the web with love.js; what it does through LuaJIT's FFI gets
+      browser versions), one address for every hotel with the hotel list
+      - touch for phones and tablets: tap to walk and select, long-press for the right-click menu,
+        drag to move the room, pinch to zoom, bigger hit areas, a small-screen layout
+      - browsers only speak WebSockets: the custom server, or a bridge next to a GMod server (the
+        egg can start it); secure WebSockets need a certificate (playit, a proxy, the panel)
+      - check early whether browsers may download Habbo's files directly (CORS); if not, the
+        hotel passes them through or caches them
+      - profile on a mid-range phone
     - **Hosting**:
       - a Pterodactyl egg (GMod first, the custom server later); panel variables for the hotel's
         name, owner and staff Steam IDs, public or friends, max players, start credits, Discord, the
