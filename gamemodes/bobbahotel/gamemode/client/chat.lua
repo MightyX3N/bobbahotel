@@ -40,6 +40,20 @@ C.AREA = 0.40             -- the top 40% of the screen (chat.viewer.height.perce
 C.HEAD_HEIGHT = 100
 C.HEAD_GAP = 4
 C.MAX_WIDTH = 350         -- a normal bubble's widest (RoomChatSettings.CHAT_BUBBLE_WIDTH_NORMAL)
+-- the room's chat settings (its settings' chat tab; nitro-react's useChatWidget / ChatWidgetMessageView):
+-- bubble width 0 wide (2000), 1 normal (350), 2 thin (240); scroll speed 0 fast (3 s), 1 normal (6 s),
+-- 2 slow (12 s); mode 0 free flow (a new bubble pushes up the ones it covers), 1 line by line (every
+-- bubble moves up to make room for a new one)
+C.WIDTHS = { [0] = 2000, [1] = 350, [2] = 240 }
+C.SPEEDS = { [0] = 3, [1] = 6, [2] = 12 }
+function C.settings()
+	local a = R.current and R.current.access or {}
+	return tonumber(a.chatMode) or 0, tonumber(a.chatWeight) or 1, tonumber(a.chatSpeed) or 1
+end
+function C.maxWidth()
+	local _, weight = C.settings()
+	return math.min(C.WIDTHS[weight] or 350, math.floor(ScrW() / (S or 1)) - 20)
+end
 -- nitro-react's ChatWidgetView.scss: .chat-bubble { font-size: 14px; min-height: 26px; border-image
 -- outset 2px at the top }, .chat-content { margin-left: 27px; padding: 5px 6px 5px 4px; line-height: 1 },
 -- the name's margin-right .25rem, .pointer { bottom: -5px }, .user-image: the head at half size,
@@ -232,7 +246,7 @@ local function addBubble(u, text, kind, style)
 	local skin = R.chatSkin and R.chatSkin(style or 0) or nil
 	local anonymous = skin and skin.anonymous
 	local m = C.PAD
-	local lines, textW = wrap((not anonymous) and (u.name or "?") or nil, text, kind, (C.MAX_WIDTH - m[1] - m[3]) * S)
+	local lines, textW = wrap((not anonymous) and (u.name or "?") or nil, text, kind, (C.maxWidth() - m[1] - m[3]) * S)
 	local w = (m[1] + m[3]) * S + textW
 	local h = math.max(C.MIN_H * S, (m[2] + m[4]) * S + #lines * LINE_H)
 	local sx = ScrW() / 2
@@ -254,9 +268,21 @@ local function addBubble(u, text, kind, style)
 	}
 	C.nextId = C.nextId + 1
 	C.bubbles[#C.bubbles + 1] = b
-	-- ChatWidgetView.makeRoom (free flow): push up whatever the new one covers
-	b.skipMovement = true
-	C.pushUp(b, 0, { [b] = true })
+	-- ChatWidgetView.makeRoom
+	local mode = C.settings()
+	if mode == 1 then
+		-- line by line: every bubble starts on the chat area's bottom line (not over a head), and
+		-- everything else moves up to make room for it
+		b.top = math.floor(ScrH() * C.AREA) - h
+		local amount = h - (math.floor(ScrH() * C.AREA) - (b.top + b.height))
+		if amount > 0 then
+			for _, o in ipairs(C.bubbles) do if o ~= b then o.top = o.top - amount end end
+		end
+	else
+		-- free flow: push up whatever the new one covers
+		b.skipMovement = true
+		C.pushUp(b, 0, { [b] = true })
+	end
 	C.removeHidden()
 end
 
@@ -405,8 +431,10 @@ function C.draw()
 	if V.mode ~= "room" then return end
 	local now = SysTime()
 	C.lastScroll = C.lastScroll or now
-	while now - C.lastScroll >= C.SCROLL_EVERY do
-		C.lastScroll = C.lastScroll + C.SCROLL_EVERY
+	local _, _, speed = C.settings()
+	local every = C.SPEEDS[speed] or C.SCROLL_EVERY
+	while now - C.lastScroll >= every do
+		C.lastScroll = C.lastScroll + every
 		moveAllUp(C.SCROLL_BY)
 	end
 	-- the room dragged sideways: the bubbles go with it (nitro-react RoomDragEvent)

@@ -52,17 +52,48 @@ T["at most 100 characters, control characters out, nothing empty"] = function()
 	eq(BOBBA.chat.clean(string.rep("æ", 120)), string.rep("æ", 100), "whole characters")
 end
 
-T["flooding: too many in a row and you have to wait"] = function()
+T["flooding (Arcturus): a count of messages that drops by one a second; past the room's limit, muted longer each time"] = function()
 	local mia, bo = start()
+	-- (the room's chat protection is loose by default: more than 5)
 	for i = 1, 6 do P.fromPlayer(mia, "room.chat", { text = "spam " .. i }) end
-	eq(#P.inbox(bo, "room.chat"), 4, "four get through")
-	assert(last(mia, "room.chat.flood"), "told to wait")
-	P.now = P.now + 5
+	eq(#P.inbox(bo, "room.chat"), 5, "five get through")
+	eq(last(mia, "room.chat.flood").seconds, 60, "the first time: a minute")
+	P.now = P.now + 30
 	P.fromPlayer(mia, "room.chat", { text = "still waiting" })
-	eq(#P.inbox(bo, "room.chat"), 4)
-	P.now = P.now + 10
+	eq(#P.inbox(bo, "room.chat"), 5)
+	P.now = P.now + 31
 	P.fromPlayer(mia, "room.chat", { text = "back" })
 	eq(last(bo, "room.chat").text, "back")
+	-- one a second is never flooding
+	for i = 1, 10 do P.now = P.now + 1 P.fromPlayer(mia, "room.chat", { text = "calm " .. i }) end
+	eq(last(bo, "room.chat").text, "calm 10")
+	-- strict: more than 3; the second time 150 s
+	BOBBA.store.query("UPDATE bobbahotel_rooms SET chat_protection = 0")
+	BOBBA.live.byPlayer[mia].room.info.chat_protection = 0
+	P.now = P.now + 10
+	for i = 1, 4 do P.fromPlayer(mia, "room.chat", { text = "fast " .. i }) end
+	eq(last(bo, "room.chat").text, "fast 3", "strict: three")
+	eq(last(mia, "room.chat.flood").seconds, 150, "the second time")
+end
+
+T["hearing distance: talk reaches those near enough; shouts, yourself and those with rights always"] = function()
+	local mia, bo, cy = start()
+	local r = BOBBA.live.byPlayer[mia].room
+	r.info.chat_distance = 2
+	local function put(p, x, y)
+		local u = BOBBA.live.byPlayer[p]
+		BOBBA.pathfinder.removeUnit(r.grid, u.x, u.y)
+		u.x, u.y = x, y
+		BOBBA.pathfinder.addUnit(r.grid, x, y)
+	end
+	put(mia, 5, 5) put(bo, 6, 6) put(cy, 9, 9)
+	P.fromPlayer(mia, "room.chat", { text = "near" })
+	eq(last(bo, "room.chat").text, "near", "Bo, a tile and a half away")
+	eq(last(cy, "room.chat"), nil, "Cy, too far")
+	eq(last(mia, "room.chat").text, "near", "Mia herself")
+	P.now = P.now + 5
+	P.fromPlayer(mia, "room.chat", { text = "LOUD", kind = "shout" })
+	eq(last(cy, "room.chat").text, "LOUD", "a shout reaches everyone")
 end
 
 return T

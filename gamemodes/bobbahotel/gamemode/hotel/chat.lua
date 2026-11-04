@@ -9,10 +9,14 @@ BOBBA.chat = BOBBA.chat or {}
 local chat = BOBBA.chat
 
 chat.MAX_LENGTH = 100
--- flood control: more than FLOOD_COUNT messages within FLOOD_SECONDS and you wait FLOOD_WAIT
-chat.FLOOD_COUNT = 4
-chat.FLOOD_SECONDS = 3
-chat.FLOOD_WAIT = 10
+-- flood control (Arcturus Room.talk): each message adds 1 to a count that goes down by 1 a second;
+-- past the room's limit (its chat protection: 0 strict 3, 1 normal 4, 2 loose 5) you're muted for
+-- FLOOD_BASE + FLOOD_BASE x mutes so far squared (60 s, then 150, 300, ...). Those with rights in the
+-- room aren't (Arcturus's flood.with.rights off). The count and the mutes are the player's, in every room.
+chat.FLOOD_LIMITS = { [0] = 3, [1] = 4, [2] = 5 }
+chat.FLOOD_BASE = 30
+chat.flood = chat.flood or {}
+BOBBA.perms.define("bobba.staff.noflood", { default = "admin", description = "Never muted for flooding the chat" })
 
 local KINDS = { talk = true, shout = true, whisper = true }
 
@@ -31,6 +35,17 @@ function chat.clean(text)
 	return table.concat(out)
 end
 
+-- (Arcturus: within the room's hearing distance, in tiles, of whoever talks; yourself, and those with
+-- rights, always hear it; a shout reaches everyone)
+local function hears(r, u, o)
+	if o == u then return true end
+	if o.player and BOBBA.access and BOBBA.access.hasRights(o.player, r.info) then return true end
+	local d = math.abs(tonumber(r.info.chat_distance) or 50)
+	local ax, ay = u.px or u.x, u.py or u.y
+	local bx, by = o.px or o.x, o.py or o.y
+	return math.sqrt((ax - bx) ^ 2 + (ay - by) ^ 2) <= d
+end
+
 local function recipients(r, u, kind, toName)
 	local list = {}
 	if kind == "whisper" then
@@ -46,7 +61,7 @@ local function recipients(r, u, kind, toName)
 	end
 	for _, uid in ipairs(r.order) do
 		local o = r.units[uid]
-		if o.player then list[#list + 1] = o.player end
+		if o.player and (kind == "shout" or hears(r, u, o)) then list[#list + 1] = o.player end
 	end
 	return list
 end
@@ -59,17 +74,26 @@ function chat.say(u, text, kind, toName, style)
 	if text == "" then return false, "nothing to say" end
 	local P = BOBBA.platform
 	local now = P.clock()
-	if u.floodUntil and now < u.floodUntil then return false, "flood" end
-	u.chatTimes = u.chatTimes or {}
-	local recent = {}
-	for _, t in ipairs(u.chatTimes) do if now - t < chat.FLOOD_SECONDS then recent[#recent + 1] = t end end
-	recent[#recent + 1] = now
-	u.chatTimes = recent
-	if #recent > chat.FLOOD_COUNT then
-		u.floodUntil = now + chat.FLOOD_WAIT
-		u.chatTimes = {}
-		if u.player then P.send("room.chat.flood", { seconds = chat.FLOOD_WAIT }, u.player) end
+	local f = chat.flood[u.key or u] or { count = 0, at = now, mutes = 0, untilT = 0 }
+	chat.flood[u.key or u] = f
+	if now < f.untilT then
+		if u.player then P.send("room.chat.flood", { seconds = math.ceil(f.untilT - now) }, u.player) end
 		return false, "flood"
+	end
+	local exempt = u.player and (BOBBA.perms.has(u.player, "bobba.staff.noflood") or (BOBBA.access and BOBBA.access.hasRights(u.player, u.room.info)))
+	if not exempt then
+		-- (down by one a second)
+		local gone = math.floor(now - f.at)
+		if gone > 0 then f.count = math.max(0, f.count - gone) f.at = f.at + gone end
+		f.count = f.count + 1
+		local limit = chat.FLOOD_LIMITS[math.floor(tonumber(u.room.info.chat_protection) or 2)] or 5
+		if f.count > limit then
+			f.mutes = f.mutes + 1
+			local seconds = chat.FLOOD_BASE + chat.FLOOD_BASE * f.mutes * f.mutes
+			f.untilT, f.count = now + seconds, 0
+			if u.player then P.send("room.chat.flood", { seconds = seconds }, u.player) end
+			return false, "flood"
+		end
 	end
 	local list, why = recipients(u.room, u, kind, toName)
 	if not list then return false, why end
