@@ -115,7 +115,7 @@ function HUD.chatInput(screenW, screenH, textW)
 	for _, it in ipairs(leftItems()) do x = x + it.w + 8 end
 	local inner = math.max(173, textW or 0)
 	local w = 2 + 10 + inner + 10 + 17 + 10 + 2
-	local rightW = 32 + (screenW >= 992 and (8 + FRIEND_BUTTON_W * 2 + (FRIEND_ITEM_W + 6) * FRIENDS_SHOWN) or 0)
+	local rightW = 32 + ((BOBBA.habboSocial and BOBBA.habboSocial.iconState and BOBBA.habboSocial.iconState()) and 40 or 0) + (screenW >= 992 and (8 + FRIEND_BUTTON_W * 2 + (FRIEND_ITEM_W + 6) * FRIENDS_SHOWN) or 0)
 	local maxW = screenW - 16 - rightW - 8 - x
 	return x, screenH - HUD.TOOLBAR_H + 4 + (47 - 40) / 2, math.max(60, math.min(w, maxW)), 40
 end
@@ -178,37 +178,83 @@ local function drawToolbar(w, d)
 		end
 		x = x + it.w + 8
 	end
-	-- right: friends, then the friend bar (lg screens and up)
+	-- right: friends (with the requests' count), the messenger (chats open: lit when one's unread), then
+	-- the friend bar (lg screens and up): friends online, three at a time
+	local HSo = BOBBA.habboSocial
+	local SOc = BOBBA.social
 	local rx = W - 16
 	if W >= 992 then
 		local barW = FRIEND_BUTTON_W * 2 + (FRIEND_ITEM_W + 6) * FRIENDS_SHOWN
 		rx = rx - barW
 		local by = 4 + (47 - 31) / 2
 		local bx = rx
-		-- the arrows (btn-black, disabled: 65% see-through) and three "Find new friends"
+		local online = HSo and HSo.onlineFriends and (HSo.onlineFriends()) or {}
+		HUD.barOffset = math.Clamp(HUD.barOffset or 0, 0, math.max(0, #online - FRIENDS_SHOWN))
+		local canLeft, canRight = HUD.barOffset > 0, HUD.barOffset + FRIENDS_SHOWN < #online
+		-- the arrows (btn-black, disabled: 65% see-through)
 		for side = 0, 1 do
 			local ax = side == 0 and bx or (bx + barW - FRIEND_BUTTON_W)
-			d:box(ax, by + 0.5, FRIEND_BUTTON_W, 30, 1, 4, Color(0, 0, 0, 166), Color(0, 0, 0, 166))
-			chevron(d, ax + FRIEND_BUTTON_W / 2, by + 0.5 + 15, side == 0, 166)
+			local enabled = side == 0 and canLeft or (side == 1 and canRight)
+			if enabled then d:click(ax, by, FRIEND_BUTTON_W, 31, function() HUD.barOffset = HUD.barOffset + (side == 0 and -1 or 1) end) end
+			local a = enabled and 255 or 166
+			d:box(ax, by + 0.5, FRIEND_BUTTON_W, 30, 1, 4, Color(0, 0, 0, a), Color(0, 0, 0, a))
+			chevron(d, ax + FRIEND_BUTTON_W / 2, by + 0.5 + 15, side == 0, a)
 		end
 		local ix = bx + FRIEND_BUTTON_W + 3
-		for _ = 1, FRIENDS_SHOWN do
-			local hover = d:click(ix, by, FRIEND_ITEM_W, 31, function() act("findFriends") end)
-			local c = hover and Color(26, 97, 127) or U.C.primary
-			d:round(4, ix, by + 1, FRIEND_ITEM_W, 31, Color(0, 0, 0, 26))
-			d:box(ix, by, FRIEND_ITEM_W, 31, 1, 4, c, c)
-			d:rect(ix + 1, by + 1, FRIEND_ITEM_W - 2, 2, Color(255, 255, 255, 38))
-			d:rect(ix + 1, by + 31 - 3, FRIEND_ITEM_W - 2, 2, Color(0, 0, 0, 26))
-			d:icon("friend-search", ix + 6, by - 2)
-			local t = U.fit(d, U.text("friend.bar.find.title", "Find new friends"), HUD.FONT, 78)
-			d:text(t, HUD.FONT, ix + 39, by + 15.5, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		for i = 1, FRIENDS_SHOWN do
+			local f = online[HUD.barOffset + i]
+			if f then
+				-- (FriendBarItemView: btn-success, the head over its left; clicked: chat, visit and profile in it)
+				local active = HUD.barActive == f.key
+				d:click(ix, by, FRIEND_ITEM_W, 31, function() HUD.barActive = (HUD.barActive ~= f.key) and f.key or nil end)
+				local c = active and Color(0, 108, 9) or U.C.success
+				d:round(4, ix, by + 1, FRIEND_ITEM_W, 31, Color(0, 0, 0, 26))
+				d:box(ix, by, FRIEND_ITEM_W, 31, 1, 4, Color(0, 100, 9), c)
+				d:rect(ix + 1, by + 1, FRIEND_ITEM_W - 2, 2, Color(255, 255, 255, 38))
+				if HSo and HSo.head then HSo.head(d, f.figure, f.gender, ix + 1, by - 10, 38, 2) end
+				if active then
+					local ay = by + 5
+					local x1 = ix + 42
+					d:click(x1, ay, 20, 21, function() HUD.barActive = nil if HSo then HSo.openChat(f.key) end end)
+					d:icon("friendbar-chat", x1, ay, 20, 21)
+					if f.room then
+						d:click(x1 + 28, ay, 21, 21, function() HUD.barActive = nil P.send("friends.follow", { key = f.key }) end)
+						d:icon("friendbar-visit", x1 + 28, ay, 21, 21)
+					end
+					d:click(x1 + 56, ay, 21, 21, function() HUD.barActive = nil if HSo then HSo.openProfile(f.key) end end)
+					if not d:icon("friends-profile", x1 + 60, ay + 5, 13, 11) then d:fa("user", x1 + 60, ay + 3, 14, WHITE) end
+				else
+					local t = U.fit(d, f.name or "", HUD.FONT, FRIEND_ITEM_W - 44)
+					d:text(t, HUD.FONT, ix + 39, by + 15.5, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				end
+			else
+				local hover = d:click(ix, by, FRIEND_ITEM_W, 31, function() act("findFriends") end)
+				local c = hover and Color(26, 97, 127) or U.C.primary
+				d:round(4, ix, by + 1, FRIEND_ITEM_W, 31, Color(0, 0, 0, 26))
+				d:box(ix, by, FRIEND_ITEM_W, 31, 1, 4, c, c)
+				d:rect(ix + 1, by + 1, FRIEND_ITEM_W - 2, 2, Color(255, 255, 255, 38))
+				d:rect(ix + 1, by + 31 - 3, FRIEND_ITEM_W - 2, 2, Color(0, 0, 0, 26))
+				d:icon("friend-search", ix + 6, by - 2)
+				local t = U.fit(d, U.text("friend.bar.find.title", "Find new friends"), HUD.FONT, 78)
+				d:text(t, HUD.FONT, ix + 39, by + 15.5, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			end
 			ix = ix + FRIEND_ITEM_W + 6
 		end
 		rx = rx - 8
 	end
 	local fy = 4 + (47 - 33) / 2
+	local state = HSo and HSo.iconState and HSo.iconState()
+	if state then
+		local hv = d:click(rx - 32, fy, 32, 33, function() act("messenger") end)
+		-- (unread: Nitro's is-unseen blink, every other half second)
+		local unseen = state == "unread" and (SysTime() % 1) < 0.5
+		d:icon(unseen and "message-unseen" or "message", rx - 32, fy, 32, 33, { shadow = hv })
+		rx = rx - 32 - 8
+	end
 	local hover = d:click(rx - 32, fy, 32, 33, function() act("friends") end)
 	d:icon("friendall", rx - 32, fy, 32, 33, { shadow = hover })
+	local nreq = SOc and SOc.requests and #SOc.requests or 0
+	if nreq > 0 then U.countBadge(d, nreq, rx, fy + 2) end
 end
 
 -- --- the "me" menu ----------------------------------------------------------------------------------

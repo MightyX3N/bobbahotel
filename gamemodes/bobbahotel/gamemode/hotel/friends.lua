@@ -5,6 +5,8 @@
 -- Messages from players: friends.get {}   friends.request { name }   friends.accept { key }
 --                        friends.decline { key }   friends.remove { key }   friends.follow { key }
 --                        messenger.send { to, text }   messenger.history { with }   messenger.read { with }
+--                        friends.relationship { key, rel (0 none, 1 heart, 2 smile, 3 bobba) }
+--                        friends.invite { keys, text }   (to come to your room: Habbo's room invite)
 -- Messages to players:   friends.list { friends = { { key, name, online, room, roomName, figure, gender,
 --                          unread, last = { text, at, mine } } }, requests = { { key, name, figure, gender, at } },
 --                          sent = { { key, name } } }
@@ -12,6 +14,7 @@
 --                        friends.error { message }
 --                        messenger.message { with, id, mine, text, at, name }
 --                        messenger.history { with, messages = { { id, mine, text, at } } }
+--                        messenger.invite { with, name, text, at, room, roomName }
 
 BOBBA.friends = BOBBA.friends or {}
 local F = BOBBA.friends
@@ -78,14 +81,14 @@ function F.listFor(key)
 	for _, r in ipairs(S().query("SELECT sender, COUNT(*) AS n FROM bobbahotel_messages WHERE target = ? AND seen = 0 GROUP BY sender", { key })) do
 		unread[r.sender] = tonumber(r.n) or 0
 	end
-	for _, r in ipairs(S().query("SELECT f.b AS key, u.name AS name FROM bobbahotel_friends f LEFT JOIN bobbahotel_users u ON u.key = f.b WHERE f.a = ?", { key })) do
+	for _, r in ipairs(S().query("SELECT f.b AS key, f.rel AS rel, u.name AS name FROM bobbahotel_friends f LEFT JOIN bobbahotel_users u ON u.key = f.b WHERE f.a = ?", { key })) do
 		local room, roomName = whereIs(r.key)
 		local figure, gender = BOBBA.looks.get(r.key)
 		local last = S().row("SELECT sender, text, at FROM bobbahotel_messages WHERE (sender = ? AND target = ?) OR (sender = ? AND target = ?) ORDER BY id DESC LIMIT 1",
 			{ key, r.key, r.key, key })
 		friends[#friends + 1] = {
 			key = r.key, name = r.name or r.key, online = F.online[r.key] ~= nil, room = room, roomName = roomName,
-			figure = figure, gender = gender, unread = unread[r.key] or 0,
+			figure = figure, gender = gender, unread = unread[r.key] or 0, rel = tonumber(r.rel) or 0,
 			last = last and { text = last.text, at = tonumber(last.at), mine = last.sender == key } or nil,
 		}
 	end
@@ -297,6 +300,31 @@ function F.start()
 		if not F.areFriends(key, with) then return end
 		F.markRead(key, with)
 		p.send("messenger.history", { with = with, messages = F.history(key, with) }, player)
+	end)
+	-- how you see a friend: a heart, a smile, a bobba (or none); it shows on your profile
+	p.receive("friends.relationship", function(player, data)
+		local key = p.playerKey(player)
+		local rel = math.floor(tonumber(data.rel) or 0)
+		if rel < 0 or rel > 3 then return end
+		S().query("UPDATE bobbahotel_friends SET rel = ? WHERE a = ? AND b = ?", { rel, key, tostring(data.key or "") })
+		F.sendList(key)
+	end)
+	-- asking friends to come to your room (Habbo's room invite): to those online now, not kept
+	p.receive("friends.invite", function(player, data)
+		local key = p.playerKey(player)
+		local text = tostring(data.text or ""):gsub("[%z\1-\9\11-\31]", ""):sub(1, 255)
+		if text == "" or type(data.keys) ~= "table" then return end
+		local room, roomName = whereIs(key)
+		local n = 0
+		for _, k in ipairs(data.keys) do
+			k = tostring(k)
+			n = n + 1
+			if n > 50 then break end
+			local other = F.online[k]
+			if other and F.areFriends(key, k) then
+				p.send("messenger.invite", { with = key, name = p.playerName(player), text = text, at = p.time(), room = room, roomName = roomName }, other)
+			end
+		end
 	end)
 	p.receive("messenger.read", function(player, data)
 		F.markRead(p.playerKey(player), tostring(data.with or ""))

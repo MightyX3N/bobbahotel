@@ -16,7 +16,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "13"
+H.CHAT_INDEX_VERSION = "14"
 
 -- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
 -- icons ("_off" is how Habbo shows one that isn't chosen)
@@ -57,7 +57,11 @@ for _, n in ipairs({ "bottom_bar_logo", "bottom_bar_home", "bottom_bar_navigator
 	"floor_editor_tile_entry_large", "enterdirection_ghost_avatar", "enterdirection_left", "enterdirection_right",
 	"floor_plan_editor_logo", "floor_plan_editor_button",
 	-- the signs (the avatar menu)
-	"sign_icon_heart", "sign_icon_skull", "sign_icon_13", "sign_icon_14", "sign_icon_15", "sign_icon_16", "sign_icon_17" }) do
+	"sign_icon_heart", "sign_icon_skull", "sign_icon_13", "sign_icon_14", "sign_icon_15", "sign_icon_16", "sign_icon_17",
+	-- the friend list, the messenger, profiles and groups
+	"messenger_profile_icon", "messenger_visit_icon", "help_accept_icon", "help_decline_icon", "relationship_status_none",
+	"remove_friend_png", "extended_profile_rooms", "newnavigator_icon_group_owner", "newnavigator_icon_group_admin",
+	"messenger_minimize_button" }) do
 	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
 end
 -- ... the camera

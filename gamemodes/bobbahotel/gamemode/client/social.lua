@@ -91,7 +91,8 @@ P.receive("messenger.message", function(_, data)
 			else f.unread = (f.unread or 0) + 1 end
 		end
 	end
-	if not data.mine and SO.open.thread ~= data.with then
+	-- (the classic look: the messenger's toolbar icon lights up instead: client/habbo_social.lua)
+	if not data.mine and SO.open.thread ~= data.with and not (SO.classicMessage and SO.classicMessage(data)) then
 		notify({ app = "messages", title = data.name or (f and f.name) or "", text = data.text,
 			click = function() if BOBBA.device and BOBBA.device.openThread then BOBBA.device.openThread(data.with) end end })
 	end
@@ -137,6 +138,8 @@ P.receive("groups.message", function(_, data)
 	end
 	if mine then return end
 	for _, g in ipairs(SO.groups) do if g.id == data.group then g.unread = (g.unread or 0) + 1 end end
+	-- (the classic look: in the messenger: client/habbo_social.lua)
+	if SO.classicGroupMessage and SO.classicGroupMessage(data) then return end
 	local info = SO.groupInfo[data.group]
 	if info then for _, c in ipairs(info.channels or {}) do if c.id == data.channel then c.unread = (c.unread or 0) + 1 end end end
 	local gname = ""

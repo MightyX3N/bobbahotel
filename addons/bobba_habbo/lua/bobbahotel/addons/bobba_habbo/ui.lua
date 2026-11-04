@@ -50,6 +50,10 @@ H.UI_ICONS = {
 	["fp-entry"] = "floor_editor_tile_entry_large",
 	["sign-heart"] = "sign_icon_heart", ["sign-skull"] = "sign_icon_skull", ["sign-exclamation"] = "sign_icon_13", ["sign-soccer"] = "sign_icon_14",
 	["sign-smile"] = "sign_icon_15", ["sign-red"] = "sign_icon_16", ["sign-yellow"] = "sign_icon_17",
+	["friends-profile"] = "messenger_profile_icon", ["friends-visit"] = "messenger_visit_icon", ["friends-accept"] = "help_accept_icon",
+	["friends-deny"] = "help_decline_icon", ["friends-none"] = "relationship_status_none", ["friends-remove"] = "remove_friend_png",
+	["friends-chat"] = "friend_bar_friendlist_chat", ["profile-rooms"] = "extended_profile_rooms", ["group-owner"] = "newnavigator_icon_group_owner",
+	["group-admin"] = "newnavigator_icon_group_admin",
 	["stickie"] = "stickie_blanco", ["stickie-close"] = "stickie_close", ["stickie-trash"] = "stickie_remove", ["dimmer-banner"] = "dimmer_info",
 }
 

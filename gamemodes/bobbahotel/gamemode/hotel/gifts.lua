@@ -31,7 +31,9 @@ function G.migrate()
 end
 
 function G.remember(key, name)
-	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_users (key, name, seen) VALUES (?, ?, ?)", { tostring(key), tostring(name), BOBBA.platform.time() })
+	-- (kept as it is otherwise: since when, the motto)
+	BOBBA.store.query("INSERT OR IGNORE INTO bobbahotel_users (key, name, seen) VALUES (?, ?, ?)", { tostring(key), tostring(name), BOBBA.platform.time() })
+	BOBBA.store.query("UPDATE bobbahotel_users SET name = ?, seen = ? WHERE key = ?", { tostring(name), BOBBA.platform.time(), tostring(key) })
 end
 
 -- someone by name (any case): key, name

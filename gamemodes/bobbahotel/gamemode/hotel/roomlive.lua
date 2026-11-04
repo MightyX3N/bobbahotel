@@ -209,7 +209,7 @@ end
 local function snapshot(u)
 	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to, posture = u.posture, height = u.height,
 		figure = u.figure, gender = u.gender, dance = (u.dance or 0) > 0 and u.dance or nil, idle = u.idle or nil,
-		floorSit = u.cmdSit or nil, effect = (u.effect or 0) > 0 and u.effect or nil }
+		floorSit = u.cmdSit or nil, effect = (u.effect or 0) > 0 and u.effect or nil, motto = (u.motto or "") ~= "" and u.motto or nil }
 end
 live.snapshot = snapshot
 
@@ -313,6 +313,7 @@ function live.enter(player, id, at, opts)
 	}
 	if at then u.x, u.y, u.z, u.dir = at.x, at.y, at.z or u.z, at.dir or u.dir end
 	u.figure, u.gender = BOBBA.looks.get(u.key)
+	u.motto = BOBBA.profiles and BOBBA.profiles.motto(u.key) or ""
 	live.nextUnit = live.nextUnit + 1
 	r.units[u.id] = u
 	r.order[#r.order + 1] = u.id
@@ -676,6 +677,7 @@ function live.start()
 	BOBBA.roomEvents.start()
 	BOBBA.videos.start()
 	BOBBA.manage.start()
+	BOBBA.profiles.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

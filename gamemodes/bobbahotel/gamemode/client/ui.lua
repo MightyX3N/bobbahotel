@@ -485,7 +485,8 @@ function D:input(id, x, y, w, h, opts)
 					surface.DrawRect(2 + (t == "" and 0 or tw), math.floor(ph * 0.2), 1, math.ceil(ph * 0.6))
 				end
 			else
-				self2:DrawTextEntryText(Color(0, 0, 0), Color(143, 185, 202), Color(0, 0, 0))
+				local fg = self2.bobbaFg or Color(0, 0, 0)
+				self2:DrawTextEntryText(fg, Color(143, 185, 202), fg)
 			end
 			if (self2:GetValue() or "") == "" and self2.bobbaPlaceholder then
 				local multi = self2.bobbaMultiline
@@ -497,11 +498,12 @@ function D:input(id, x, y, w, h, opts)
 	end
 	e.bobbaEnter, e.bobbaChange, e.bobbaPlaceholder = opts.onEnter, opts.onChange, opts.placeholder
 	e.bobbaPassword = opts.password or nil
+	e.bobbaFg = opts.fg
 	-- (opts.onBlur(text): when the box lets go of the keyboard, like a browser's blur)
 	local hasFocus = e:HasFocus()
 	if e.bobbaHadFocus and not hasFocus and opts.onBlur then opts.onBlur(e:GetValue() or "") end
 	e.bobbaHadFocus = hasFocus
-	e.bobbaFont = U.font(12.6)
+	e.bobbaFont = U.font(opts.size or 12.6)
 	e.bobbaSeen = true
 	local focus = e:HasFocus()
 	-- the box (focus: Bootstrap's light blue border)

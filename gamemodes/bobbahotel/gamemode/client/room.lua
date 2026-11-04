@@ -58,6 +58,7 @@ local function setUnit(s)
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
 	u.dance, u.idle, u.floorSit, u.effect = tonumber(s.dance) or 0, s.idle and true or false, s.floorSit and true or false, tonumber(s.effect) or 0
+	u.motto = s.motto or ""
 	u.started = SysTime()
 	-- (easing onto a tile's middle after moving freely is shorter than a step: hotel/roomlive.lua)
 	u.dur = tonumber(s.dur)

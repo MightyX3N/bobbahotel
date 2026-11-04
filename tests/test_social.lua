@@ -153,4 +153,40 @@ T["room events: an owner's room is in the navigator's events while it's on"] = f
 	eq(#last(bo, "events.list").events, 0)
 end
 
+T["profiles: motto (in the room too), relationships, groups; searching people"] = function()
+	local mia, bo, ida = start()
+	P.fromPlayer(mia, "friends.request", { name = "Bo" })
+	P.fromPlayer(bo, "friends.accept", { key = mia.key })
+	-- a motto, cut to 38 letters, and seen in the room
+	P.fromPlayer(mia, "user.motto", { text = string.rep("a", 50) })
+	eq(#BOBBA.profiles.motto(mia.key), 38)
+	-- Mia loves Bo
+	P.fromPlayer(mia, "friends.relationship", { key = bo.key, rel = 1 })
+	eq(friendNamed(last(mia, "friends.list"), "Bo").rel, 1)
+	P.fromPlayer(ida, "user.profile", { key = mia.key })
+	local pr = last(ida, "user.profile")
+	eq(pr.name, "Mia")
+	eq(pr.friends, 1)
+	eq(pr.relationships.heart.name, "Bo")
+	eq(pr.isFriend, false)
+	eq(pr.me, false)
+	assert(pr.since > 0, "since when")
+	P.fromPlayer(mia, "user.profile", { name = "mia" })
+	eq(last(mia, "user.profile").me, true)
+	-- searching: Bo is Mia's friend, Ida isn't
+	P.fromPlayer(mia, "users.search", { query = "o" })
+	local res = last(mia, "users.results")
+	eq(#res.friends, 1)
+	eq(res.friends[1].name, "Bo")
+	P.now = P.now + 1
+	P.fromPlayer(mia, "users.search", { query = "i" })
+	res = last(mia, "users.results")
+	eq(#res.friends, 0)
+	eq(res.others[1].name, "Ida")
+	-- a room invite reaches friends only
+	P.fromPlayer(mia, "friends.invite", { keys = { bo.key, ida.key }, text = "come see" })
+	eq(last(bo, "messenger.invite").text, "come see")
+	eq(last(ida, "messenger.invite"), nil)
+end
+
 return T

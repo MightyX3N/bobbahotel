@@ -139,6 +139,8 @@ function GR.info(id, key)
 		roomName = info and info.name or nil, owner = g.owner, ownerName = BOBBA.friends.nameOf(g.owner), open = g.open,
 		members = #members, online = on, rank = rank, channels = rank and chans or {},
 		requested = S().row("SELECT 1 AS x FROM bobbahotel_group_requests WHERE grp = ? AND key = ?", { g.id, tostring(key) }) ~= nil,
+		created = tonumber(g.created) or 0,
+		pending = (rank and rank >= 1) and tonumber((S().row("SELECT COUNT(*) AS n FROM bobbahotel_group_requests WHERE grp = ?", { g.id }) or {}).n) or 0,
 	}
 end
 

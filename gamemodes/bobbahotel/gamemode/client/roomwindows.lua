@@ -881,6 +881,9 @@ local function drawStand(w, d)
 	local W, H = d.width, d.height
 	d:darkBox(0, 0, W, H, 4)
 	local x, y = 8, 8
+	-- (the profile: the icon or the name)
+	local HSo = BOBBA.habboSocial
+	if u.key and HSo and HSo.openProfile then d:click(x, y, W - 16 - 18, 21.6, function() HSo.openProfile(u.key) end) end
 	d:icon("friends-profile", x, y + 5, 13, 11)
 	d:text(d:fit(u.name or "", 12.6, W - 16 - 13 - 4 - 18), 12.6, x + 13 + 4, y + 10.8, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	d:click(W - 8 - 14.4, y + 3.6, 14.4, 14.4, function() RW.menu = nil R.selectedUnit = nil end)
@@ -901,8 +904,15 @@ local function drawStand(w, d)
 	y = y + 130 + 4
 	d:rect(x, y, W - 16, 1, Color(255, 255, 255, 26))
 	y = y + 1 + 4
-	-- the motto (none yet)
+	-- the motto: yours to change (a click: a small window to write it in), others' to read
 	d:round(4, x, y, W - 16, 26, Color(52, 58, 64))
+	if u.id == R.you then
+		local hov = d:click(x, y, W - 16, 26, function() RW.editMotto(u) end)
+		local t = (u.motto or "") ~= "" and u.motto or U.text("infostand.motto.change", "Click to change your motto...")
+		d:text(d:fit(t, 12, W - 32), 12, x + 8, y + 13, (u.motto or "") ~= "" and WHITE or Color(255, 255, 255, hov and 200 or 130), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	else
+		d:text(d:fit(u.motto or "", 12, W - 32), 12, x + 8, y + 13, WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	end
 end
 U.hud("avatar-stand", function(sw, sh)
 	local u = target()
@@ -910,6 +920,24 @@ U.hud("avatar-stand", function(sw, sh)
 	local w, h = standSize()
 	return sw - 10 - w, sh - 65 - h, w, h
 end, drawStand)
+
+-- writing your motto (38 letters, as Habbo's)
+function RW.editMotto(u)
+	U.window("motto", 250, 120, function(w, d)
+		d:slimCard(U.text("infostand.motto.change", "Change your motto"))
+		local function save()
+			local e = w.inputs and w.inputs.motto
+			local t = IsValid(e) and e:GetValue() or ""
+			u.motto = t
+			P.send("user.motto", { text = t })
+			w:close()
+		end
+		local e = d:input("motto", 9, 39, d.width - 18, 28, { max = 38, value = u.motto or "", onEnter = save })
+		if not w.focused then w.focused = true e:RequestFocus() end
+		d:btn(d.width - 9 - 90, 75, 90, 28, U.C.success, save)
+		d:text(U.text("generic.save", "Save"), 12.6, d.width - 9 - 45, 89, WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end)
+end
 
 -- clicking an avatar opens its menu (room.lua says which); clicking elsewhere closes it
 function RW.selectUnit(id)
