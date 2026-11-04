@@ -1,5 +1,7 @@
--- Steering your avatar with keys or a controller, and the interact button (client). The server walks
--- you tile after tile while a direction is held (hotel/roomlive.lua: room.steer, room.interact).
+-- Moving your avatar freely with keys or a controller, and the interact button (client). Your own
+-- avatar moves here at once, in exactly the way pushed (a stick: any angle; keys: 8 ways), keeping off
+-- walls and furni; the server is told where it is (room.move) and checks it (hotel/roomlive.lua).
+-- Let go, and it eases onto the middle of its tile. Clicking still walks Habbo's way, tile by tile.
 --
 -- Keys (Settings, "Movement keys"; bobba_setting_movekeys):
 --   0  the arrow keys; typing goes into the chat as in Habbo (the default)
@@ -11,7 +13,7 @@
 -- sit, lie down, switch, open a gift, an avatar's menu; another (Tab) picks the next thing. With more
 -- than one thing near, a list over your avatar shows them. The keys and the controller's buttons are
 -- chosen in Settings > Keys and controller (S.KEYS, S.PAD; bobba_key_* / bobba_pad_*).
--- A controller (the desktop app; GMod through Steam Input) steers with BOBBA.steering.setPad(x, y).
+-- A controller (the desktop app; GMod through Steam Input) moves it with BOBBA.steering.setPad(x, y).
 
 BOBBA.steering = BOBBA.steering or {}
 local S = BOBBA.steering
@@ -207,22 +209,13 @@ function S.setPad(x, y)
 end
 
 -- --- the direction now ------------------------------------------------------------------------------
-local function sign(v) if v > 0.25 then return 1 elseif v < -0.25 then return -1 end return 0 end
-
--- a direction on the screen (sx right, sy down) as a step on the tiles
-function S.toTiles(sx, sy)
-	if S.axesVar:GetInt() == 1 then return sign(sx), sign(sy) end
-	-- (a tile right is right-down on the screen, a tile down is left-down)
-	return sign((sx + sy) / 2), sign((sy - sx) / 2)
-end
-
 local function typingSomewhere()
 	local f = vgui.GetKeyboardFocus and vgui.GetKeyboardFocus()
 	return IsValid(f) and f.GetCaretPos ~= nil
 end
 
-function S.direction()
-	local sx, sy = 0, 0
+-- where the keys or the stick point on the screen (x right, y down; length 1), or nil
+function S.vector()
 	local dirs = {}
 	for _, d in pairs(S.held) do dirs[d] = true end
 	-- (nothing typing: the keys themselves; e.g. setting 2, or while a furni is placed)
@@ -232,49 +225,116 @@ function S.direction()
 			for code, d in pairs(WASD) do if input.IsKeyDown(code) then dirs[d] = true end end
 		end
 	end
+	local sx, sy = 0, 0
 	if dirs.up then sy = sy - 1 end
 	if dirs.down then sy = sy + 1 end
 	if dirs.left then sx = sx - 1 end
 	if dirs.right then sx = sx + 1 end
-	if sx == 0 and sy == 0 and S.pad then
+	if sx ~= 0 or sy ~= 0 then
+		local l = math.sqrt(sx * sx + sy * sy)
+		return sx / l, sy / l, "keys"
+	end
+	-- the stick: any angle (it starts once pushed a third of the way, stops nearly back in the middle)
+	if S.pad then
 		local px, py = S.pad[1], S.pad[2]
-		-- (the stick must be pushed well out to start or change a way, and it stops only when it's
-		-- nearly back in the middle: springing back, a stick passes odd angles near the middle)
 		local m = math.sqrt(px * px + py * py)
-		local was0 = S.padSector
-		if (was0 == nil and m > 0.5) or (was0 ~= nil and m > 0.3) then
-			if was0 ~= nil and m < 0.6 then
-				local c, sn = math.cos(was0 * math.pi / 4), math.sin(was0 * math.pi / 4)
-				sx = c > 0.5 and 1 or (c < -0.5 and -1 or 0)
-				sy = sn > 0.5 and 1 or (sn < -0.5 and -1 or 0)
-				return S.toTiles(sx, sy)
+		if m > (S.padMoving and 0.25 or 0.35) then
+			S.padMoving = true
+			return px / m, py / m, "pad"
+		end
+		S.padMoving = false
+	end
+	return nil
+end
+
+-- a direction on the screen as one along the floor (tile units, length 1). As isometric games do:
+-- up is straight up the screen, and a diagonal (up-right, ...) goes along the floor's edges (which
+-- are flatter than 45 degrees on the screen); in between, in between.
+function S.toTiles(sx, sy)
+	local x, y
+	if S.axesVar:GetInt() == 1 then
+		x, y = sx, sy
+	else
+		x, y = (sx + sy) / 2, (sy - sx) / 2
+	end
+	local l = math.sqrt(x * x + y * y)
+	if l < 1e-6 then return 0, 0 end
+	return x / l, y / l
+end
+
+-- the nearest of the avatar's 8 directions to a way along the floor (0 = y - 1, 2 = x + 1, ...)
+local DIRS = { ["0,-1"] = 0, ["1,-1"] = 1, ["1,0"] = 2, ["1,1"] = 3, ["0,1"] = 4, ["-1,1"] = 5, ["-1,0"] = 6, ["-1,-1"] = 7 }
+function S.dirFor(x, y)
+	local k = math.floor(math.atan2(y, x) / (math.pi / 4) + 0.5)
+	local c, sn = math.cos(k * math.pi / 4), math.sin(k * math.pi / 4)
+	local dx = c > 0.5 and 1 or (c < -0.5 and -1 or 0)
+	local dy = sn > 0.5 and 1 or (sn < -0.5 and -1 or 0)
+	return DIRS[dx .. "," .. dy]
+end
+
+-- --- the floor, as far as this game knows it (the server has the last word: hotel/roomlive.lua) --------
+S.SPEED = 2        -- tiles a second (Habbo's walk: a tile in half a second)
+S.RADIUS = 0.2     -- how near a wall or furni its middle may come
+S.SEND_EVERY = 1 / 15
+local floor = { rows = nil, heightmap = nil, blocked = {}, at = 0 }
+local function tileHeight(x, y)
+	local row = floor.rows and floor.rows[y + 1]
+	local c = row and row:sub(x + 1, x + 1) or ""
+	if c == "" or c == "x" or c == "X" then return nil end
+	return tonumber(c, 36)
+end
+local function refreshFloor()
+	local c = R.current
+	if not c then floor.rows = nil return end
+	if floor.heightmap ~= c.heightmap then
+		floor.heightmap = c.heightmap
+		floor.rows = {}
+		for row in (tostring(c.heightmap or "") .. "\r"):gmatch("(.-)\r") do floor.rows[#floor.rows + 1] = row end
+	end
+	if SysTime() - floor.at < 0.25 then return end
+	floor.at = SysTime()
+	local blocked = {}
+	for _, it in pairs(R.items or {}) do
+		local fi = R.furniInfo and R.furniInfo(it.kind)
+		if fi and not fi.wall and not it.wall then
+			local open = fi.walk or fi.sit or fi.lay or (fi.category == "gate" and tonumber(it.state) == 1)
+			if not open then
+				local w, l = fi.width or 1, fi.length or 1
+				if it.dir == 2 or it.dir == 6 then w, l = l, w end
+				for i = 0, w - 1 do for j = 0, l - 1 do blocked[(it.x + i) .. "," .. (it.y + j)] = true end end
 			end
-			-- (eight ways, by the stick's angle; the way it's going is kept until the stick is clearly
-			-- in another one, so a stick between two doesn't flick back and forth)
-			local a = math.atan2(py, px)
-			local k = math.floor(a / (math.pi / 4) + 0.5) % 8
-			local was = S.padSector
-			if was and was ~= k then
-				local d = math.abs(((a - was * math.pi / 4) + math.pi) % (2 * math.pi) - math.pi)
-				if d < math.rad(30) then k = was end
-			end
-			S.padSector = k
-			local c, sn = math.cos(k * math.pi / 4), math.sin(k * math.pi / 4)
-			sx = c > 0.5 and 1 or (c < -0.5 and -1 or 0)
-			sy = sn > 0.5 and 1 or (sn < -0.5 and -1 or 0)
-		else
-			S.padSector = nil
 		end
 	end
-	if sx == 0 and sy == 0 then return 0, 0 end
-	return S.toTiles(sx, sy)
+	floor.blocked = blocked
+end
+local function round(v) return math.floor(v + 0.5) end
+local function tileOk(x, y, fromH)
+	local h = tileHeight(x, y)
+	if not h then return false end
+	if floor.blocked[x .. "," .. y] then return false end
+	local d = R.current and R.current.door
+	if d and d.x == x and d.y == y then return false end
+	if fromH and h - fromH > 1.1 then return false end
+	return true
+end
+-- may its middle be at x, y (coming from the tile it's on)?
+function S.spotOk(x, y, fromX, fromY)
+	local fh = tileHeight(fromX, fromY)
+	local tx, ty = round(x), round(y)
+	if (tx ~= fromX or ty ~= fromY) and not tileOk(tx, ty, fh) then return false end
+	local Rr = S.RADIUS
+	for _, c in ipairs({ { -Rr, -Rr }, { Rr, -Rr }, { -Rr, Rr }, { Rr, Rr } }) do
+		local cx, cy = round(x + c[1]), round(y + c[2])
+		if (cx ~= tx or cy ~= ty) and (cx ~= fromX or cy ~= fromY) and not tileOk(cx, cy, fh) then return false end
+	end
+	return true
 end
 
 -- --- what the interact button uses ------------------------------------------------------------------
 local function me()
 	local u = R.units and R.you and R.units[R.you]
 	if not u then return nil end
-	local t = u.to or u.from
+	local t = u.freePos or u.to or u.from
 	return u, math.floor(t.x + 0.5), math.floor(t.y + 0.5)
 end
 
@@ -372,7 +432,6 @@ function S.interact(device)
 end
 
 -- --- each frame: tell the server the direction; the highlight -------------------------------------
-local sent = { 0, 0 }
 hook.Add("Think", "bobba.steering", function()
 	-- (setting 1: typing ends when the box is empty again)
 	local f = R.chatState and R.chatState.input
@@ -422,28 +481,81 @@ hook.Add("Think", "bobba.steering", function()
 		if edge("next", input.IsKeyDown(S.key("next"))) then S.next() end
 	end
 	expireHeld()
-	local dx, dy = 0, 0
-	if S.allowed() then dx, dy = S.direction() end
-	-- (one way to another: only once it's held a moment, so pressing two keys a little apart or a
-	-- stick passing between two ways doesn't send a way it didn't mean; starting and stopping at once)
-	if (dx ~= sent[1] or dy ~= sent[2]) and (dx ~= 0 or dy ~= 0) and (sent[1] ~= 0 or sent[2] ~= 0) then
-		if not S.pendingDir or S.pendingDir[1] ~= dx or S.pendingDir[2] ~= dy then
-			S.pendingDir = { dx, dy, SysTime() }
-		end
-		if SysTime() - S.pendingDir[3] < 0.06 then dx, dy = sent[1], sent[2] end
-	else
-		S.pendingDir = nil
+	S.moveFrame(math.min(RealFrameTime(), 0.1))
+end)
+
+-- --- moving your own avatar: at once, here; the server is told where it is ---------------------------
+-- S.free: { x, y, z } while moving (the avatar is drawn there: room.lua's position)
+function S.stopFree(u)
+	if not S.free then return end
+	P.send("room.move", { x = S.free.x, y = S.free.y, dir = u and u.dir or nil, stop = true })
+	if u then u.freeMoving = false u.freeStopAt = SysTime() end
+	S.free = nil
+end
+function S.moveFrame(dt)
+	local u = R.units and R.you and R.units[R.you]
+	local sx, sy, via
+	if S.allowed() and u then sx, sy, via = S.vector() end
+	if not sx then
+		S.stopFree(u)
+		-- (the server didn't say where it eased to: drawn on its tile again)
+		if u and u.freePos and not u.freeMoving and SysTime() - (u.freeStopAt or 0) > 1 then u.freePos = nil end
+		return
 	end
-	if dx ~= sent[1] or dy ~= sent[2] then
-		sent = { dx, dy }
-		if R.current then P.send("room.steer", { dx = dx, dy = dy }) end
-		if dx ~= 0 or dy ~= 0 then
-			-- (by the stick, or by keys)
-			local stick = S.pad and (math.abs(S.pad[1]) > 0.4 or math.abs(S.pad[2]) > 0.4)
-			if not stick then S.setDevice("keys") end
-			S.cycle = 0
+	if via == "keys" then S.setDevice("keys") end
+	S.cycle = 0
+	refreshFloor()
+	local vx, vy = S.toTiles(sx, sy)
+	if not S.free then
+		-- (on the door: one step into the room first, straight, as Habbo walks out of a door)
+		local t = u.to or u.from
+		local d = R.current and R.current.door
+		local onDoor = d and round(t.x) == d.x and round(t.y) == d.y
+		-- (and until that step off it is walked)
+		local leaving = d and u.to and round(u.from.x) == d.x and round(u.from.y) == d.y and SysTime() - u.started < (u.dur or 0.5)
+		if leaving then return end
+		if onDoor then
+			if not u.to and SysTime() - (S.doorStepAt or 0) > 0.6 then
+				S.doorStepAt = SysTime()
+				local fx, fy = d.x, d.y
+				local dd = d.dir or 2
+				if dd == 2 then fx = fx + 1 elseif dd == 4 then fy = fy + 1 elseif dd == 6 then fx = fx - 1 elseif dd == 0 then fy = fy - 1 end
+				P.send("room.walk", { x = fx, y = fy })
+			end
+			return
 		end
+		-- from where it's drawn now (walking a step, sitting: from its tile)
+		local x, y, z = R.unitPosition(u)
+		if u.posture == "sit" or u.posture == "lay" then x, y = (u.to or u.from).x, (u.to or u.from).y end
+		S.free = { x = x, y = y, z = (u.to or u.from).z or 0 }
+		S.sentAt = 0
 	end
+	local f = S.free
+	local tx, ty = round(f.x), round(f.y)
+	local step = S.SPEED * dt
+	local nx, ny = f.x + vx * step, f.y + vy * step
+	-- into a wall or furni: along it
+	if not S.spotOk(nx, ny, tx, ty) then
+		if math.abs(vx) > 0.05 and S.spotOk(f.x + vx * step, f.y, tx, ty) then nx, ny = f.x + vx * step, f.y
+		elseif math.abs(vy) > 0.05 and S.spotOk(f.x, f.y + vy * step, tx, ty) then nx, ny = f.x, f.y + vy * step
+		else nx, ny = f.x, f.y end
+	end
+	f.x, f.y = nx, ny
+	f.z = tileHeight(round(nx), round(ny)) or f.z
+	u.dir = S.dirFor(vx, vy) or u.dir
+	u.posture, u.height = nil, nil
+	u.freePos, u.freeMoving = f, true
+	if SysTime() - (S.sentAt or 0) >= S.SEND_EVERY then
+		S.sentAt = SysTime()
+		P.send("room.move", { x = f.x, y = f.y, dir = u.dir })
+	end
+end
+
+-- the server didn't take a move (too fast, into something): back to where it says
+P.receive("room.unit.pos", function(_, data)
+	if S.free then S.free.x, S.free.y, S.free.z = data.x, data.y, data.z or S.free.z end
+	local u = R.units and R.you and R.units[R.you]
+	if u and u.freePos and not S.free then u.freePos = nil end
 end)
 
 -- the highlight: shown while steering is in use (or a controller is there), around what the
@@ -547,10 +659,12 @@ end
 local debugVar = CreateClientConVar("bobba_steer_debug", "0", false, false, "Show the stick's values and the walking direction")
 hook.Add("DrawOverlay", "bobba.steering.debug", function()
 	if not debugVar:GetBool() then return end
-	local dx, dy = S.direction()
+	local sx, sy = S.vector()
+	local vx, vy = 0, 0
+	if sx then vx, vy = S.toTiles(sx, sy) end
 	local lines = {
 		string.format("stick %s", S.pad and string.format("%.2f, %.2f", S.pad[1], S.pad[2]) or "none"),
-		string.format("sector %s   tiles %d, %d   sent %d, %d", tostring(S.padSector), dx, dy, sent[1], sent[2]),
+		string.format("screen %s   floor %.2f, %.2f   at %s", sx and string.format("%.2f, %.2f", sx, sy) or "-", vx, vy, S.free and string.format("%.2f, %.2f", S.free.x, S.free.y) or "-"),
 		string.format("device %s   directions %s   keys %d", S.device, S.axesVar:GetInt() == 1 and "room" or "screen", S.mode()),
 	}
 	for i, l in ipairs(lines) do draw.SimpleTextOutlined(l, "DermaDefault", 60, 60 + i * 16, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black) end
@@ -559,6 +673,6 @@ end)
 -- a new room: nothing held
 BOBBA.events.on("roomShown", "bobba.steering", function()
 	S.held = {}
-	sent = { 0, 0 }
+	S.free = nil
 	S.cycle = 0
 end)

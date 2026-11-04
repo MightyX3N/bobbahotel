@@ -48,7 +48,7 @@ local function setUnit(s)
 	-- a step turned halfway (steering): from where it's drawn now, so it never jumps back or ahead
 	-- (the server's idea of "now" is a little earlier or later than what's on this screen)
 	local from = { x = s.x, y = s.y, z = s.z }
-	if s.dur and u.from and u.to and position then
+	if s.dur and u.from and (u.to or u.freePos) and position then
 		local x, y, z = position(u)
 		local lift = (u.posture == "sit" or u.posture == "lay") and (u.height or 0) or 0
 		from = { x = x, y = y, z = z - lift }
@@ -58,8 +58,9 @@ local function setUnit(s)
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
 	u.started = SysTime()
-	-- (a step turned halfway by steering is shorter: hotel/roomlive.lua live.redirect)
+	-- (easing onto a tile's middle after moving freely is shorter than a step: hotel/roomlive.lua)
 	u.dur = tonumber(s.dur)
+	if s.dur then u.freePos, u.freeMoving = nil, nil end
 	return u
 end
 
@@ -182,10 +183,18 @@ P.receive("room.units", function(_, list)
 	for _, s in ipairs(list) do setUnit(s) end
 end)
 
--- turning while walking (steering a new way near the end of a step): the step goes on
-P.receive("room.unit.turn", function(_, data)
+-- someone else moving freely: gliding from where they're drawn to where they are now (a new one
+-- comes about every 1/15 s, so they never quite catch up: smooth)
+P.receive("room.unit.move", function(_, data)
 	local u = R.units[data.id]
-	if u then u.dir = data.dir end
+	if not u then return end
+	local x, y, z = position(u)
+	u.from = { x = x, y = y, z = z }
+	u.to = { x = data.x, y = data.y, z = data.z or z }
+	u.started, u.dur = SysTime(), 0.1
+	u.dir = data.dir or u.dir
+	u.posture, u.height = nil, nil
+	u.freeAt = SysTime()
 end)
 
 P.receive("room.unit.remove", function(_, data)
@@ -215,6 +224,8 @@ end)
 -- seat or bed it is drawn at the seat's height (Nitro adds the sit/lay height to where it is).
 local STEP = 0.5
 function position(u)
+	-- (your own avatar moving freely: where this game has it: steering.lua)
+	if u.freePos then return u.freePos.x, u.freePos.y, u.freePos.z end
 	local lift = (u.posture == "sit" or u.posture == "lay") and (u.height or 0) or 0
 	if not u.to then return u.from.x, u.from.y, u.from.z + lift end
 	local f = math.min((SysTime() - u.started) / (u.dur or STEP), 1)
@@ -241,6 +252,7 @@ R.unitPosition = position
 
 -- a unit is walking while it is on its way to the next tile
 local function posture(u)
+	if u.freeMoving or (u.freeAt and SysTime() - u.freeAt < 0.2) then return "mv" end
 	if u.to and (SysTime() - u.started) < (u.dur or STEP) + 0.1 then return "mv" end
 	return u.posture or "std"
 end

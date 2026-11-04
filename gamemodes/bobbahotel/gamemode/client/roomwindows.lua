@@ -224,9 +224,9 @@ local STATE_NUM = { open = 0, doorbell = 1, password = 2, invisible = 3 }
 -- the room's movement setting (hotel/roomlive.lua): 0 both, 1 clicking only, 2 steering only
 function RW.MOVEMENT_OPTIONS()
 	return {
-		{ 0, T("bobba.roomsettings.movement.both", "Clicking and steering") },
+		{ 0, T("bobba.roomsettings.movement.both", "Clicking and free movement") },
 		{ 1, T("bobba.roomsettings.movement.click", "Clicking only") },
-		{ 2, T("bobba.roomsettings.movement.steer", "Steering only (keys, controller)") },
+		{ 2, T("bobba.roomsettings.movement.free", "Free movement only (keys, controller)") },
 	}
 end
 
@@ -280,7 +280,7 @@ local function tabBasic(w, d, x, y, cw)
 		{ 2, T("navigator.roomsettings.trade_allowed", "Everyone can trade") },
 	}, s.trade, function(v) save({ trade = v }) end) end
 	y = y + 28.9 + 8
-	-- moving: clicking, steering with keys or a controller, or both (steering.lua)
+	-- moving: clicking, free movement with keys or a controller, or both (steering.lua)
 	label(d, T("bobba.roomsettings.movement", "Movement"), x, y + 4)
 	local mvy = y
 	selects[#selects + 1] = function() d:select("movement", cx, mvy, ccw, 28.9, RW.MOVEMENT_OPTIONS(), s.movement or 0, function(v) save({ movement = v }) end) end

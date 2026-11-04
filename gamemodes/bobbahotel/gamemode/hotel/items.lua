@@ -908,6 +908,8 @@ function items.rollers(r, moved)
 				if topThere and not topThere.def.roller and not topThere.def.stack then landZ = nil end
 			end
 			local u = unitAt(r, roller.x, roller.y)
+			-- (someone moving freely over it isn't carried)
+			if u and u.px then u = nil end
 			local someoneThere = unitAt(r, fx, fy)
 			if #riders > 0 and landZ and not someoneThere and front.state ~= PF.BLOCKED and (front.allowStack or frontRoller) then
 				local slid = {}

@@ -18,16 +18,18 @@ Nothing here is a promise of when; it keeps the plans in one place.
    - the navigator's "i" popover; report, word filter
    - a short tutorial after the starter room: walk, open the gift, place it, say hi (a small reward)
 
-**Steering** is done: walking with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
-empty / WASD with Enter to chat; directions as on the screen or along the room), tile after tile while
-held, sliding along walls; the interact button (Space, or E with WASD) with a highlight, Tab for the next
-thing (with more than one thing near, a list over your avatar shows them); the keys and the
-controller's buttons can be changed (Settings > Keys and controller); a notification when a controller
-connects or disconnects; the room's movement setting (clicking and steering / clicking only / steering only) shown in the
-room info; controllers in the desktop app (stick or d-pad walks, A interacts, LB next, RB turns, the right
-stick is the pointer with X / B as the mouse buttons, Y holds the menu wheel, Back the quick-message
-wheel, Start the chat with the Steam Deck's keyboard). GMod players use a controller through Steam
-Input. The wired parts for movement come with wired (part 11).
+**Free movement** is done: with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
+empty / WASD with Enter to chat; directions as on the screen or along the room) or a controller's stick
+(any angle) the avatar moves freely, at once on your own screen (the server checks every move: walking
+speed, only over tiles one can walk on, a fifth of a tile off walls and furni, not out of the door);
+everything else (wired, rollers, gates, the room's grid) goes by the tile under its middle; let go and
+it eases onto that tile's middle (and sits there on a seat). Others see it glide. Clicking walks
+Habbo's way as before. The interact button (Space, or E with WASD) uses what's next to you, with a
+highlight and a list when there's more than one; the keys and the controller's buttons can be changed
+(Settings > Keys and controller); a notification when a controller connects; the room's movement
+setting (clicking and free movement / clicking only / free movement only) shown in the room info. The
+desktop app reads controllers (stick or d-pad, A use, LB next, RB turn, right stick pointer with X / B,
+Y menu wheel, Back quick messages, Start chat); in GMod a controller works through Steam Input.
 
 The desktop app (Love2D, runs the gamemode without GMod) is working: launcher, hosting a hotel,
 borderless full screen, its own icon.
@@ -50,14 +52,12 @@ borderless full screen, its own icon.
 9. **Groups**.
 10. **Rewards**: achievements, badges, daily quests, an advent calendar and seasonal events.
 11. **Minigames and wired**.
-    - games made for direct steering (WASD / stick): laser tag (shoot along the tile line you
+    - games made for free movement (WASD / stick): laser tag (shoot the way you
       face, walls and furni block it, a hit stuns and scores, teams by colour), built from wired
       parts (a laser gun effect, a "hit by laser" trigger, team scores) so owners design their own
       arenas; the server decides hits. Banzai, Freeze and snowball fights play better this way too.
-    - wired for movement: switch steering or click-walking off (for a user, everyone, or users on
-      tiles, optionally for a while) and back; conditions "is steering" / "is click-walking"
-    - free movement (between tiles) only inside minigames that want it (a snowball fight, racing),
-      never in the normal hotel
+    - wired for movement: switch free movement or click-walking off (for a user, everyone, or users
+      on tiles, optionally for a while) and back; conditions "is moving freely" / "is click-walking"
     - **Voice chat** (GMod first): heard in your room only, quieter with distance on the tiles
       (each player's game sets each speaker's volume).
       - each player chooses open mic or push-to-talk (the gamemode switches the microphone itself)
