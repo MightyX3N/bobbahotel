@@ -34,6 +34,7 @@ return {
 	"hotel/friends.lua",
 	"hotel/groups.lua",
 	"hotel/roomevents.lua",
+	"hotel/videos.lua",
 	"hotel/chat.lua",
 	"hotel/looks.lua",
 	"hotel/figureeditor.lua",

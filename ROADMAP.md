@@ -33,6 +33,18 @@ Y menu wheel, Back quick messages, Start chat); in GMod a controller works throu
 The desktop app (Love2D, runs the gamemode without GMod) is working: launcher, hosting a hotel,
 borderless full screen, its own icon.
 
+**The phone and tablet** are the default UI (a pack can choose another: the Habbo pack keeps Nitro's;
+`bobba_ui phone` / `habbo` or Settings picks for yourself): a phone (F2, or the button in the corner)
+and a tablet with a lock screen, a home screen you arrange (apps, widgets, pages, the dock; saved per
+hotel), the shade with quick tiles, notifications. Apps: Rooms, Bag, Wallet, Camera, Settings, three
+shops (Furni; Clothes and effects; Club), the floor plan (tablet), Messages (friends, requests,
+following), Groups (members, ranks, text and voice channels, a room per group), Calls (a dummy for now),
+Events (room events in the navigator too), Videos and the App Store (a hotel's app addons). An app
+without a tablet view shows as a phone on the tablet. After checking in, the hotel's own page (Lua:
+the pack's or an addon's; the Habbo pack has a Habbo-style one), then the room. The desktop app opens
+on a server picker; a hotel's Lua runs there sandboxed the way GMod limits it (no files outside data,
+no FFI, no running programs).
+
 ## Next
 
 4. **Avatar**: done so far: dances (Habbo Club's four too), wave, blow a kiss, laugh, idle (asleep
@@ -45,7 +57,8 @@ borderless full screen, its own icon.
    (shown there and in the navigator).
    - later: the camera's filters and frames (Nitro's editor), publishing photos to the website
 5. **Chat commands**.
-6. **Friends and messenger**: friend requests, the messenger, following friends.
+6. **Friends and messenger**: done in the phone's Messages (requests, the messenger, following);
+   still to do: Nitro's friends bar and messenger for the Habbo UI, and:
    - Steam friends who play the hotel are friends automatically; removing one removes them only in
      the hotel and puts them on a removed list so they aren't added again (unfriending is mutual);
      a note when a Steam friends list is private.
@@ -55,7 +68,7 @@ borderless full screen, its own icon.
      trade scams)
    - later: a marketplace like Habbo's
 8. **Pets and bots**.
-9. **Groups**.
+9. **Groups**: done in the phone (the server is shared); still to do: the Habbo UI's group windows.
 10. **Rewards**: achievements, badges, daily quests, an advent calendar and seasonal events.
 11. **Minigames and wired**.
     - games made for free movement (WASD / stick): laser tag (shoot the way you
@@ -133,8 +146,9 @@ borderless full screen, its own icon.
         and connects to wherever it really is
       - a public list of hotels for the launcher (optional, later)
       - load testing with fake players
-    - **Website (CMS)**, built in, on by default (a companion program next to a GMod server):
-      front page, news, players online, Enter hotel, Steam / Discord login (no passwords), profiles
+    - **Website**: the in-game one is done (the hotel's page after checking in, Lua, news from the
+      website.news setting). Later, a web one for outside the game (a companion program next to a GMod
+      server): front page, news, players online, Enter hotel, Steam / Discord login (no passwords), profiles
       (Habbo Home pages later), leaderboards, the staff page, an admin panel; themable
       - the owner can switch it off and use their own: an API (online, profiles, rooms, news, login
         tickets like Habbo's SSO) and "log in with your hotel" for other sites
@@ -163,6 +177,9 @@ borderless full screen, its own icon.
 
 - **Radios**: internet radio stations (a public directory, by country and genre), heard nearby
   with distance like voice.
+- **Videos**: started. Each room has a TV in the phone's Videos app (tablet): paste a YouTube link,
+  a shared queue, half the room votes to skip, the owner skips, removes or turns it off; it plays in
+  sync in GMod (the tablet, or a small player in the corner). Still to do for it:
 - **TVs and cinema screens**: one shared media player (a link or search, a queue, skip votes, kept in
   sync; each player's game plays it itself). Services the owner allows (YouTube, Twitch, ...), room
   owners narrow it, staff block videos or channels, YouTube's restricted mode, a log of what was

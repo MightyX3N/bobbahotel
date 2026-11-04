@@ -254,6 +254,8 @@ local function broadcast(r, name, data)
 	local list = players(r)
 	if #list > 0 then BOBBA.platform.send(name, data, list) end
 end
+live.broadcast = broadcast
+live.players = players
 
 function live.leave(player)
 	local u = live.byPlayer[player]
@@ -672,6 +674,7 @@ function live.start()
 	BOBBA.friends.start()
 	BOBBA.groups.start()
 	BOBBA.roomEvents.start()
+	BOBBA.videos.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}
