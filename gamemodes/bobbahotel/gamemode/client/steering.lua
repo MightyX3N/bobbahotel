@@ -182,7 +182,14 @@ function S.blockChar(entry, ch)
 end
 
 -- setting 2: the chat box only has the keyboard while it's open
-function S.chatWanted() return S.mode() ~= 2 or S.chatOpen end
+-- (settings 0 and 1: a click on the room while something's typed lets the chat go, S.away, until Enter or a
+-- click on it, so the keys steer again)
+function S.chatWanted()
+	local m = S.mode()
+	if m == 2 then return S.chatOpen end
+	if m <= 1 and S.away then return false end
+	return true
+end
 function S.openChat(key)
 	S.chatOpen = true
 	S.held = {}
@@ -199,6 +206,7 @@ end
 function S.placeholder()
 	local m = S.mode()
 	if m == 1 and S.typing then return BOBBA.ui.text("bobba.chatinput.typing", "Type your message...") end
+	if m <= 1 and S.away then return BOBBA.ui.text("bobba.chatinput.enter", "Press Enter to chat...") end
 	if m == 2 and not S.chatOpen then return BOBBA.ui.text("bobba.chatinput.enter", "Press Enter to chat...") end
 	return nil
 end
@@ -471,6 +479,7 @@ hook.Add("Think", "bobba.steering", function()
 	if m ~= S.lastMode then
 		S.lastMode = m
 		S.typing = false
+		S.away = false
 		if m == 2 then S.closeChat() else S.chatOpen = false end
 	end
 	-- (a key being chosen in Settings, while no text box has the keyboard)
@@ -488,6 +497,13 @@ hook.Add("Think", "bobba.steering", function()
 		S.was[name] = down
 		return e
 	end
+	-- setting 1, the chat let go (a click on the room): Enter or a click on it takes it back
+	if m <= 1 and S.away and V.mode == "room" then
+		if entry and entry:HasFocus() then
+			if SysTime() - (S.chatClickAt or 0) < 0.5 then S.away = false else entry:KillFocus() end
+		end
+		if S.away and not typingSomewhere() and not S.capture and edge("chat1", input.IsKeyDown(KEY_ENTER)) then S.away = false end
+	elseif m <= 1 then edge("chat1", input.IsKeyDown(KEY_ENTER)) end
 	-- setting 2: Enter or the chat key opens the chat; clicking it does too
 	if m == 2 and V.mode == "room" then
 		-- (the chat box got the keyboard: opened only by a click on it; GMod hands the keyboard to it by
@@ -594,7 +610,17 @@ end
 -- (a click on the chat box: setting 2 opens the chat then)
 hook.Add("VGUIMousePressed", "bobba.steering.chat", function(panel)
 	local f = R.chatState and R.chatState.input
-	if IsValid(f) and IsValid(panel) and (panel == f or panel == f.entry) then S.chatClickAt = SysTime() end
+	if not IsValid(f) or not IsValid(panel) then return end
+	if panel == f or panel == f.entry then S.chatClickAt = SysTime() S.away = false return end
+	-- (a click anywhere else in a room: the chat lets go of the keyboard, so the keys steer again;
+	-- what's typed stays)
+	if V.mode ~= "room" then return end
+	local m = S.mode()
+	if m == 2 and S.chatOpen then S.closeChat()
+	else
+		S.typing = false
+		if (f.entry:GetValue() or "") ~= "" then S.away = true f.entry:KillFocus() end
+	end
 end)
 
 -- the server didn't take a move (too fast, into something): back to where it says

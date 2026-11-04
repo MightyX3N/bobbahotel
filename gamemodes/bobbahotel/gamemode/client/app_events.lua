@@ -52,7 +52,7 @@ local function newView(ctx)
 	local y = top + 10
 	d:round(20, x, y, w, 60, C.navy)
 	d:text(T("bobba.phone.events.in", "IN"), 11, x + 16, y + 14, C.mist, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
-	d:text(d:fit(room.name or "", 16, w - 32, 800), 16, x + 16, y + 30, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+	d:textFit(room.name or "", 16, w - 32, x + 16, y + 30, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 	y = y + 76
 	d:text(T("bobba.phone.events.name", "What's on"), 13, x + 4, y + 8, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
 	local ne = d:input("evname", x, y + 20, w, 46, { max = 60, bg = C.white, placeholder = T("bobba.phone.events.namehint", "Quiz night, a party, a build-off…") })
@@ -114,9 +114,9 @@ local function eventsView(ctx)
 				d:round(24, ex, ey, cw, ch, bg)
 				d:clip(ex, ey, cw, ch, function() d:circle(ex + cw - 30, ey + 10, 70, alpha(C.white, 0.25)) end)
 				d:text(left(e):upper(), 11, ex + 18, ey + 16, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
-				d:text(d:fit(e.name or "", 20, cw - 36, 800), 20, ex + 18, ey + 34, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
-				d:text(d:fit((e.roomName or "") .. " · " .. (e.owner or ""), 13, cw - 36, 600), 13, ex + 18, ey + 62, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
-				if (e.description or "") ~= "" then d:text(d:fit(e.description, 13, cw - 36), 13, ex + 18, ey + 82, alpha(C.navy, 0.8)) end
+				d:textFit(e.name or "", 20, cw - 36, ex + 18, ey + 34, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+				d:textFit((e.roomName or "") .. " · " .. (e.owner or ""), 13, cw - 36, ex + 18, ey + 62, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
+				if (e.description or "") ~= "" then d:textFit(e.description, 13, cw - 36, ex + 18, ey + 82, alpha(C.navy, 0.8)) end
 				d:button(ex + 18, ey + ch - 50, 110, 36, T("bobba.phone.events.go", "Go"), "primary", function() go(e) end)
 				d:text(T("bobba.phone.widget.herecount", "%count% here", { count = e.users or 0 }), 13, ex + 140, ey + ch - 32, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
 				if e.mine then
@@ -148,7 +148,7 @@ DV.widget({ id = "events", name = T("bobba.phone.app.events", "Events"), size = 
 		for i, l in ipairs(d:wrap(e.name or "", 16, w - 28, 800)) do
 			if i <= 2 then d:text(l, 16, 16, 36 + (i - 1) * 21, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800) end
 		end
-		d:text(d:fit(e.roomName or "", 12, w - 28), 12, 16, h - 46, C.mist)
+		d:textFit(e.roomName or "", 12, w - 28, 16, h - 46, C.mist)
 		d:text(left(e), 12, 16, h - 28, C.mist)
 	end,
 	click = function() DV.openApp("events") end })

@@ -1,7 +1,7 @@
 -- Groups (server): Habbo's groups, with a Discord-like inside. A group has a name, a colour, a
 -- description, a room of its own, members (owner, admins, members) and channels: text channels with
 -- their messages (kept), and voice channels (a place to talk; the talking comes with voice chat).
--- Making one costs groups.price.credits (10). A group is open (anyone joins) or closed (asks first).
+-- Making one costs groups.price.credits (100); one can own groups.max.owned (5). A group is open (anyone joins) or closed (asks first).
 --
 -- Messages from players: groups.mine {}   groups.get { id }   groups.search { query }
 --                        groups.create { name, description, color, room }   groups.edit { id, name, description, color, room, open }
@@ -26,7 +26,7 @@ GR.RANK = { member = 0, admin = 1, owner = 2 }
 GR.COLORS = { "B98CFF", "FFD166", "FF9F5A", "3FC6A0", "6E8BFF", "F26B8A", "9DB4FF", "E8C26A", "C9D2E5" }
 GR.TEXT_MAX = 500
 GR.HISTORY = 80
-GR.MAX_OWNED = 10
+GR.MAX_OWNED = 5
 GR.MAX_CHANNELS = 20
 
 local function P() return BOBBA.platform end
@@ -60,7 +60,7 @@ function GR.migrate()
 	})
 end
 
-function GR.price() return math.max(0, tonumber(S().setting("groups.price.credits", "10")) or 10) end
+function GR.price() return math.max(0, tonumber(S().setting("groups.price.credits", "100")) or 100) end
 
 function GR.get(id)
 	local r = S().row("SELECT * FROM bobbahotel_groups WHERE id = ?", { tonumber(id) or -1 })

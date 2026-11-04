@@ -98,7 +98,7 @@ local function bagView(ctx)
 					d:text(t, 11, gx + cw - tw / 2 - 6, gy + 16, C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
 				end
 				if unseen then d:circle(gx + 12, gy + 12, 5, C.green) end
-				d:text(d:fit(SHOP.groupName(g), 12, cw, 600), 12, gx + cw / 2, gy + cw + 6, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 600)
+				d:textFit(SHOP.groupName(g), 12, cw, gx + cw / 2, gy + cw + 6, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 600)
 			end
 		end
 	end)

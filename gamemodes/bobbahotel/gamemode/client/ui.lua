@@ -460,7 +460,12 @@ function D:input(id, x, y, w, h, opts)
 		e.Paint = function(self2, pw, ph)
 			local font = self2.bobbaFont
 			if not font then return end
-			self2:SetFont(font)
+			if self2.bobbaFontSet ~= font then
+				self2.bobbaFontSet = font
+				self2:SetFont(font)
+				-- (GMod: the text box takes the font with SetFontInternal)
+				if self2.SetFontInternal then self2:SetFontInternal(font) end
+			end
 			if self2.bobbaPassword then
 				-- (input type="password": dots for what's typed, the caret after them)
 				local t = self2:GetValue() or ""

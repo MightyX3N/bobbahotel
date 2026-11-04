@@ -273,10 +273,10 @@ local function storeView(ctx)
 			local show = tab == "all" or (tab == "addons" and a.store) or (tab == "yours" and onHome)
 			if show then
 				DV.drawIcon(d, a, x, y + 8, 54, { noBadge = true })
-				d:text(d:fit(a.name or "", 15, w - 170, 800), 15, x + 68, y + 24, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
+				d:textFit(a.name or "", 15, w - 170, x + 68, y + 24, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
 				local what = a.description or (a.store and T("bobba.phone.store.addon", "From this hotel's addons") or T("bobba.phone.store.builtin", "Comes with the hotel"))
 				if a.tablet and not a.phone then what = what .. " · " .. T("bobba.phone.store.tablet", "Tablet") end
-				d:text(d:fit(what, 12, w - 170), 12, x + 68, y + 44, C.ink2)
+				d:textFit(what, 12, w - 170, x + 68, y + 44, C.ink2)
 				local label, primary, fn
 				if onHome then label, fn = T("bobba.phone.store.open", "Open"), function() DV.openApp(a.id) end
 				else label, primary, fn = T("bobba.phone.store.get", "Get"), true, function() DV.getApp(a.id) end end
@@ -302,9 +302,9 @@ DV.widget({ id = "room", name = T("bobba.phone.widget.room", "Where you are"), s
 		d:round(17, 18, 18, 52, 52, inR and DV.accent() or C.mist)
 		d:glyph(G.rooms, 30, 30, 28, C.navy, 2.2)
 		d:text(inR and T("bobba.phone.widget.youin", "YOU'RE IN") or T("bobba.phone.widget.hotelview", "HOTEL VIEW"), 12, 84, 22, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-		d:text(d:fit(inR and (c.name or "") or (BOBBA.hotelName or "Bobba Hotel"), 18, w - 100, 800), 18, 84, 40, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+		d:textFit(inR and (c.name or "") or (BOBBA.hotelName or "Bobba Hotel"), 18, w - 100, 84, 40, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 		local sub = inR and T("bobba.phone.widget.here", "%count% here · %owner%", { count = peopleHere(), owner = c.owner or "" }) or T("bobba.phone.widget.pick", "Pick a room to go to")
-		d:text(d:fit(sub, 13, w - 100), 13, 84, 64, C.ink2)
+		d:textFit(sub, 13, w - 100, 84, 64, C.ink2)
 		d:text(T("bobba.phone.widget.roomsbtn", "Rooms"), 13, 18, h - 26, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
 		d:glyph(G.chevron, 64, h - 34, 16, C.navy, 2.4)
 	end,
@@ -365,12 +365,16 @@ DV.tile({ id = "leave", name = T("bobba.phone.tile.leave", "Leave room"), glyph 
 U.hud("device.roomname", function(sw, sh)
 	if not DV.active() or not inRoom() or not R.current or DV.covering() then return nil end
 	local m = math.floor(math.min(sw, sh) * 0.025)
-	return m * 2, m, 330, 46
+	-- (as wide as the room's name and how many are here)
+	local pd = setmetatable({ surf = { clicks = {}, zones = {}, scrolls = {} }, s = U.scale(), ox = 0, oy = 0, a = 1 }, DV.PD)
+	local name = pd:fit(R.current.name or "", 15, 520, 700)
+	local sub = T("bobba.phone.widget.herecount", "%count% here", { count = peopleHere() })
+	return m * 2, m, math.ceil(16 + pd:textWidth(name, 15, 700) + 12 + pd:textWidth(sub, 13, 500) + 16), 46
 end, function(w, d)
 	local c = R.current
 	if not c then return end
 	local pd = setmetatable({ surf = { panel = w.panel, clicks = {}, zones = {}, scrolls = {} }, s = d.s, ox = 0, oy = 0, a = 1 }, DV.PD)
-	local name = pd:fit(c.name or "", 15, 200, 700)
+	local name = pd:fit(c.name or "", 15, 520, 700)
 	local nw = pd:textWidth(name, 15, 700)
 	local sub = T("bobba.phone.widget.herecount", "%count% here", { count = peopleHere() })
 	local sw2 = pd:textWidth(sub, 13, 500)

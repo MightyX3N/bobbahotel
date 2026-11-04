@@ -100,7 +100,7 @@ local function phonePaint(w, h)
 	d:round(26, x, y, cw, ch, hx("FFF9F0"))
 	local ink = hx("2A1206")
 	local name = BOBBA.hotelName or (BOBBA.website and BOBBA.website.data and BOBBA.website.data.name) or "the hotel"
-	d:text(d:fit(U.text("bobba.loading.checking", "Checking in to %hotel%", { hotel = name }), 18, cw - 52, 800), 18, x + 26, y + 24, ink, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+	d:textFit(U.text("bobba.loading.checking", "Checking in to %hotel%", { hotel = name }), 18, cw - 52, x + 26, y + 24, ink, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 	local pack = 0
 	local nChecks = #LD.order
 	if nChecks > 0 then

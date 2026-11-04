@@ -154,8 +154,8 @@ local function offerCard(d, o, x, y, w, h, on, dark)
 	d:round(16, x + 4, y + 4, w - 8, w - 8, dark and hex("2A2215") or C.paper)
 	if o.kind then d:clip(x + 6, y + 6, w - 12, w - 12, function() d:furni(o.kind, x + 4, y + 4, w - 8, w - 8, o.data) end) end
 	local fg = on and (dark and hex("14110B") or C.paper) or (dark and hex("F7EBD0") or C.navy)
-	d:text(d:fit(offerName(o), 12, w - 12, 700), 12, x + 8, y + w + 2, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-	d:text(d:fit(DV.priceText(o.price, 1), 11, w - 12), 11, x + 8, y + w + 19, alpha(fg, 0.7), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
+	d:textFit(offerName(o), 12, w - 12, x + 8, y + w + 2, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
+	d:textFit(DV.priceText(o.price, 1), 11, w - 12, x + 8, y + w + 19, alpha(fg, 0.7), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
 	if o.pair then
 		d:pill(x + w - 34, y + 8, 26, 18, C.navy)
 		d:text("×2", 10, x + w - 21, y + 17, C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
@@ -216,14 +216,14 @@ function DV.shopView(shop, opts)
 					local on = t.id == st.tab
 					local hov = d:click(16, yy, railW, 40, function() st.tab = t.id st.page = nil st.query = nil end)
 					if on then d:round(14, 16, yy, railW, 40, dark and hex("E8C26A") or C.navy) elseif hov then d:round(14, 16, yy, railW, 40, alpha(fg, 0.08)) end
-					d:text(d:fit(t.name or "", 15, railW - 24, on and 800 or 600), 15, 30, yy + 20, on and (dark and hex("14110B") or C.paper) or fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, on and 800 or 600)
+					d:textFit(t.name or "", 15, railW - 24, 30, yy + 20, on and (dark and hex("14110B") or C.paper) or fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, on and 800 or 600)
 					yy = yy + 44
 					if on and #pages > 1 then
 						for _, p in ipairs(pages) do
 							local pon = p.id == st.page and not searching
 							local ph2 = d:click(28, yy, railW - 12, 32, function() st.page = p.id st.offer = nil st.query = nil end)
 							if pon or ph2 then d:round(12, 28, yy, railW - 12, 32, alpha(fg, pon and 0.14 or 0.06)) end
-							d:text(d:fit(p.name or "", 13, railW - 36, pon and 700 or 500), 13, 40, yy + 16, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, pon and 700 or 500)
+							d:textFit(p.name or "", 13, railW - 36, 40, yy + 16, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, pon and 700 or 500)
 							yy = yy + 34
 						end
 						yy = yy + 6
@@ -348,7 +348,7 @@ local function clubBanner(d, x, y, w, st)
 	d:glyph(G.club, x + 26, y + 26, 18, DARK, 2.2)
 	d:text(member and T("bobba.phone.club.member", "You're in the club") or T("bobba.phone.club.only", "Only for club members"), 22, x + 18, y + 64, hex("F7EBD0"), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 	local subText = member and T("bobba.phone.club.left", "%time% left", { time = purse.clubText or "" }) or T("bobba.phone.club.perks", "Club furni, club clothes, extra dances and more.")
-	d:text(d:fit(subText, 13, w - 40), 13, x + 18, y + 96, hex("CDBB92"))
+	d:textFit(subText, 13, w - 40, x + 18, y + 96, hex("CDBB92"))
 	return h
 end
 

@@ -80,7 +80,7 @@ T["groups: made (paid), joined, a message in a channel reaches the members"] = f
 	local before = BOBBA.wallet.get(mia.key).credits
 	P.fromPlayer(mia, "groups.create", { name = "Builders", color = "b98cff", description = "We build" })
 	local id = last(mia, "groups.created").id
-	eq(BOBBA.wallet.get(mia.key).credits, before - 10)
+	eq(BOBBA.wallet.get(mia.key).credits, before - 100)
 	local info = last(mia, "groups.info")
 	eq(info.name, "Builders")
 	eq(info.rank, 2)

@@ -148,18 +148,26 @@ function P.renderPNG(x, y, w, h, draw, cb)
 		return
 	end
 	if not render or not render.Capture then cb(nil) return end
-	local rt = GetRenderTargetEx("bobba_picture_" .. w .. "x" .. h, w, h, RT_SIZE_LITERAL, MATERIAL_RT_DEPTH_NONE, 0, 0, IMAGE_FORMAT_RGB888)
+	-- (its own depth buffer, and no depth test while drawing: with the game's depth buffer left from the
+	-- 3D frame, see-through pictures (furni, avatars) failed it and only the walls and floor came out)
+	local rt = GetRenderTargetEx("bobba_photo_" .. w .. "x" .. h, w, h, RT_SIZE_LITERAL, MATERIAL_RT_DEPTH_SEPARATE, bit.bor(4, 8, 256), 0, IMAGE_FORMAT_RGBA8888)
 	local id = "bobba.picture." .. tostring(draw)
 	hook.Add("PostRender", id, function()
 		hook.Remove("PostRender", id)
 		render.PushRenderTarget(rt)
 		render.Clear(0, 0, 0, 255, true, true)
+		render.ClearDepth()
 		cam.Start2D()
+		cam.IgnoreZ(true)
+		render.SetStencilEnable(false)
+		render.OverrideAlphaWriteEnable(true, false)
 		local m = Matrix()
 		m:Translate(Vector(-x, -y, 0))
 		cam.PushModelMatrix(m)
 		local ok, err = pcall(draw)
 		cam.PopModelMatrix()
+		render.OverrideAlphaWriteEnable(false)
+		cam.IgnoreZ(false)
 		cam.End2D()
 		local data = ok and render.Capture({ format = "png", x = 0, y = 0, w = w, h = h, alpha = false }) or nil
 		render.PopRenderTarget()

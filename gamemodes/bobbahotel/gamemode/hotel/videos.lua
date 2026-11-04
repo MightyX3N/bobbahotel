@@ -3,6 +3,8 @@
 -- at the same place in it; a vote of half the room skips it; the room's owner (and those with rights)
 -- can skip or take one off at once, or turn the TV off for the room. The hotel can turn videos off
 -- (videos.enabled 0). How long a video is, and its title, its player tells (the first to play it).
+-- It plays on the room's TVs: furni a pack says have a screen (BOBBA.videos.screens[kind] = { [dir] =
+-- the screen's four corners in the furni's pixels }, shared); with TVs known, a room needs one.
 --
 -- Messages from players: videos.get {}   videos.add { url }   videos.skip {}   videos.remove { id }
 --                        videos.meta { id, title, duration }   videos.ended { id }   videos.room { on }
@@ -17,6 +19,14 @@ local live = BOBBA.live
 VI.MAX_QUEUE = 30
 VI.MAX_PER_PERSON = 3
 VI.rooms = VI.rooms or {} -- room id -> { queue, playing, votes, off }
+VI.screens = VI.screens or {}
+
+-- is there a TV in the room? (true when no pack says which furni are TVs)
+function VI.hasTV(r)
+	if not next(VI.screens) then return true end
+	for _, it in pairs(r.items or {}) do if it.kind and VI.screens[it.kind] then return true end end
+	return false
+end
 local nextId = 1
 
 local function P() return BOBBA.platform end
@@ -73,7 +83,7 @@ local function stateFor(r, player)
 	end
 	local queue = {}
 	for _, q in ipairs(t.queue) do queue[#queue + 1] = { id = q.id, service = q.service, video = q.video, title = q.title, by = q.by } end
-	return { on = VI.enabled() and not t.off, playing = playing, queue = queue, now = P().time(), watching = people(r), canManage = canManage(player, r) or nil }
+	return { on = VI.enabled() and not t.off, tv = VI.hasTV(r), playing = playing, queue = queue, now = P().time(), watching = people(r), canManage = canManage(player, r) or nil }
 end
 VI.stateFor = stateFor
 
@@ -98,6 +108,7 @@ function VI.add(player, url)
 	if not r then return false, "go into a room first" end
 	local t = tv(r)
 	if t.off then return false, "the room's TV is off" end
+	if not VI.hasTV(r) then return false, "this room has no TV: put a TV in it to watch together" end
 	local service, video = VI.parse(url)
 	if not service then return false, "that isn't a link the TV can play" end
 	if not VI.services()[service] then return false, "this hotel doesn't play " .. service end
@@ -229,5 +240,14 @@ function VI.start()
 		local t = VI.rooms[r.id]
 		if t and t.votes[u.key] then t.votes[u.key] = nil send(r) end
 	end)
+	-- a TV put in or taken out: whether the room has one changed (the last one gone: the TV stops)
+	local function tvChanged(r, it)
+		if not (it and it.kind and VI.screens[it.kind]) then return end
+		local t = tv(r)
+		if not VI.hasTV(r) then t.playing, t.queue, t.votes = nil, {}, {} end
+		send(r)
+	end
+	BOBBA.events.on("itemPlaced", "bobba.videos", tvChanged)
+	BOBBA.events.on("itemRemoved", "bobba.videos", tvChanged)
 	p.every("bobba.videos", 1, VI.tick)
 end

@@ -568,7 +568,11 @@ local function createInput()
 	entry.Paint = function(self, w, h)
 		local phone = C.phoneLook()
 		local font = phone and C.phoneFont() or F.input
-		if self.bobbaFont ~= font then self:SetFont(font) self.bobbaFont = font end
+		if self.bobbaFont ~= font then
+			self:SetFont(font)
+			if self.SetFontInternal then self:SetFontInternal(font) end
+			self.bobbaFont = font
+		end
 		if C.floodUntil and SysTime() < C.floodUntil then
 			-- (Text variant="danger")
 			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), font, 0, h / 2, Color(220, 53, 69), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

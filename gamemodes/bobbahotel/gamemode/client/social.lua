@@ -21,6 +21,8 @@ SO.open = SO.open or {}           -- what's being looked at: { thread = key } / 
 
 -- a notification (the phone's, or the classic look's bubble)
 local function notify(n)
+	-- (the server's words start small: "you need ..." reads as "You need ...")
+	if type(n.text) == "string" then n.text = n.text:gsub("^%l", string.upper) end
 	local DV = BOBBA.device
 	if DV and DV.active and DV.active() then return DV.notify(n) end
 	U.notify(n.title, n.text)
@@ -110,6 +112,7 @@ P.receive("groups.results", function(_, data) SO.results = data end)
 P.receive("groups.created", function(_, data) SO.justMade = data.id BOBBA.events.emit("groupCreated", data.id) end)
 P.receive("groups.deleted", function(_, data) SO.groupInfo[data.id] = nil end)
 P.receive("groups.error", function(_, data)
+	SO.groupErrorAt = SysTime()
 	SO.lastError = { text = tostring(data.message), at = SysTime() }
 	notify({ app = "groups", title = T("bobba.phone.couldnt", "Couldn't do that"), text = tostring(data.message) })
 end)

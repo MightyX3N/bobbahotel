@@ -261,6 +261,17 @@ function PD:textWidth(t, size, weight)
 end
 PD.fit = U.D.fit
 PD.wrap = U.D.wrap
+-- a text in a width: smaller (down to four fifths of its size) before it's cut with "…"
+function PD:textFit(t, size, maxW, x, y, c, ax, ay, weight)
+	t = tostring(t or "")
+	local s = size
+	local w = self:textWidth(t, s, weight)
+	if w > maxW then
+		s = math.max(size * 0.8, math.floor(size * maxW / w * 2) / 2)
+		if self:textWidth(t, s, weight) > maxW then t = self:fit(t, s, maxW, weight) end
+	end
+	self:text(t, s, x, y, c, ax, ay, weight)
+end
 
 function PD:circle(cx, cy, r, c)
 	local s = self.s
@@ -322,7 +333,8 @@ end
 function PD:glyph(path, x, y, size, c, stroke, fill)
 	if not path or path == "" then return end
 	local k = size / 24
-	local w = (stroke or 2) * k
+	-- (strokes a little thinner than the paths say: lighter lines, as iOS's and Android's icons)
+	local w = (stroke or 2) * k * 0.72
 	for _, sub in ipairs(DV.parsePath(path)) do
 		if fill then
 			local pts = {}
@@ -473,7 +485,15 @@ function DV.face(d, figure, gender, name, x, y, size, bg)
 	local n = 0
 	for i = 1, #(name or "") do n = n + (name or ""):byte(i) end
 	d:round(size * 0.32, x, y, size, size, bg or FACE_COLORS[n % #FACE_COLORS + 1])
-	if figure and figure ~= "" then
+	local AE = BOBBA.avatarEditor
+	if figure and figure ~= "" and AE and AE.drawHead then
+		-- (the pack's head picture, fitted into the square)
+		d:clip(x, y, size, size, function()
+			if not AE.drawHead(figure, gender, 2, (x + d.ox) * d.s, (y + d.oy) * d.s, size * d.s) then
+				d:text((name or "?"):sub(1, 1):upper(), size * 0.42, x + size / 2, y + size / 2, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
+			end
+		end)
+	elseif figure and figure ~= "" then
 		local k = size / 34
 		d:clip(x, y, size, size, function() d:avatar(figure, gender, 2, x + size / 2, y - 14 * k, k) end)
 	else
@@ -587,7 +607,13 @@ function PD:input(id, x, y, w, h, opts)
 		e.OnGetFocus = function() DV.keysAt = SysTime() end
 		e.Paint = function(self2, pw, ph)
 			if not self2.bobbaFont then return end
-			self2:SetFont(self2.bobbaFont)
+			-- (GMod's DTextEntry:SetFont only remembers the name; the text box itself takes it with
+			-- SetFontInternal, else it keeps Derma's small default font)
+			if self2.bobbaFontSet ~= self2.bobbaFont then
+				self2.bobbaFontSet = self2.bobbaFont
+				self2:SetFont(self2.bobbaFont)
+				if self2.SetFontInternal then self2:SetFontInternal(self2.bobbaFont) end
+			end
 			local fg = self2.bobbaFg or C.navy
 			self2:DrawTextEntryText(fg, Color(110, 139, 255), fg)
 			if (self2:GetValue() or "") == "" and self2.bobbaPlaceholder then
@@ -1206,7 +1232,7 @@ function Ctx:header(title, opts)
 		d:text(title or "", 30, 20, y + 6, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 		if opts.small then d:text(opts.small, 13, 20, y - 10, alpha(fg, 0.7), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700) end
 	else
-		d:text(d:fit(title or "", 18, self.w - x - 70, 800), 18, x, y + 20, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
+		d:textFit(title or "", 18, self.w - x - 70, x, y + 20, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
 	end
 	local rx = self.w - 16
 	for i = #(opts.right or {}), 1, -1 do
@@ -1247,10 +1273,10 @@ function Ctx:rows(x, y, w, rows, opts)
 			tx = tx + 42
 		end
 		if r.sub then
-			d:text(d:fit(r.title, 15, w - (tx - x) - 90, 700), 15, tx, ry + rh / 2 - 9, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
-			d:text(d:fit(r.sub, 12.5, w - (tx - x) - 90), 12.5, tx, ry + rh / 2 + 10, alpha(fg, 0.6), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			d:textFit(r.title, 15, w - (tx - x) - 90, tx, ry + rh / 2 - 9, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
+			d:textFit(r.sub, 12.5, w - (tx - x) - 90, tx, ry + rh / 2 + 10, alpha(fg, 0.6), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		else
-			d:text(d:fit(r.title, 15, w - (tx - x) - 90, 600), 15, tx, ry + rh / 2, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 600)
+			d:textFit(r.title, 15, w - (tx - x) - 90, tx, ry + rh / 2, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 600)
 		end
 		local rx = x + w - 16
 		if r.right == "toggle" then
@@ -1481,7 +1507,7 @@ local function drawHomeItem(d, kind, it, x, y, w, h, key, from, index)
 	if hov and not DV.edit and d.surf.press then d:fade(0.75, function() DV.drawIcon(d, app, ix, iy, S.icon) end)
 	else DV.drawIcon(d, app, ix, iy, S.icon, { noBadge = DV.edit }) end
 	if from ~= "dock" then
-		d:text(d:fit(app.name or "", 12, w - 4, 600), 12, x + w / 2, iy + S.icon + 7, C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 600)
+		d:textFit(app.name or "", 12, w - 4, x + w / 2, iy + S.icon + 7, C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 600)
 	end
 	if DV.edit and app.removable ~= false then
 		local hb = d:click(ix - 10, iy - 10, 26, 26, function() DV.removeApp(app.id) end)
@@ -1751,9 +1777,9 @@ local function drawShade(d, W, H, kind)
 			d:round(22, x, ty, tw, 64, on and (hov and C.white or C.paper) or (hov and alpha(C.navy3, 0.8) or C.navy3))
 			local fg = on and C.navy or C.paper
 			d:glyph(tl.glyph, x + 14, ty + 21, 22, fg, 2)
-			d:text(d:fit(tl.name or "", 14, tw - 60, 700), 14, x + 46, ty + 22, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
+			d:textFit(tl.name or "", 14, tw - 60, x + 46, ty + 22, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
 			local stt = tl.state and tl.state() or ""
-			d:text(d:fit(stt, 12, tw - 60), 12, x + 46, ty + 42, alpha(fg, 0.8), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			d:textFit(stt, 12, tw - 60, x + 46, ty + 42, alpha(fg, 0.8), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 		-- the volume (the furni's)
 		local vy = y + 16 + rowsN * 74 + 10
@@ -1816,8 +1842,8 @@ function DV.drawNote(d, n, x, y, w, bright)
 	local title = (n.title or (app and app.name) or "")
 	local meta = " · " .. ((app and app.name) or U.text("bobba.phone.hotel", "Hotel")) .. " · " .. DV.ago(n.at)
 	local tw = d:textWidth(title, 13, 700)
-	d:text(d:fit(title, 13, w - 80, 700), 13, tx, y + 12, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-	d:text(d:fit(meta, 13, math.max(0, w - 80 - tw)), 13, tx + tw, y + 12, alpha(fg, 0.6), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 500)
+	d:textFit(title, 13, w - 80, tx, y + 12, fg, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
+	d:textFit(meta, 13, math.max(0, w - 80 - tw), tx + tw, y + 12, alpha(fg, 0.6), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 500)
 	local ly = y + 12 + 18
 	for _, l in ipairs(d:wrap(n.text or "", 14, w - 28 - 52)) do
 		d:text(l, 14, tx, ly, alpha(fg, 0.9), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
@@ -1875,8 +1901,8 @@ local function drawLock(d, W, H, kind)
 				d:round(22, cx - nw / 2, y, nw, nh, alpha(C.paper, 0.14))
 				local app = n.app and DV.apps[n.app]
 				if app then DV.drawIcon(d, app, cx - nw / 2 + 12, y + 13, 38, { noBadge = true }) else d:round(12, cx - nw / 2 + 12, y + 13, 38, 38, n.color or C.blue) end
-				d:text(d:fit((n.title or "") .. " · " .. DV.ago(n.at), 13, nw - 70, 700), 13, cx - nw / 2 + 62, y + 14, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-				d:text(d:fit(n.text or "", 14, nw - 70), 14, cx - nw / 2 + 62, y + 34, C.line)
+				d:textFit((n.title or "") .. " · " .. DV.ago(n.at), 13, nw - 70, cx - nw / 2 + 62, y + 14, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
+				d:textFit(n.text or "", 14, nw - 70, cx - nw / 2 + 62, y + 34, C.line)
 				y = y + nh
 			end
 			y = y + 30

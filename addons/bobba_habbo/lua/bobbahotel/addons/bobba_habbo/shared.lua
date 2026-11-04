@@ -45,6 +45,26 @@ lib("roomcontent.lua")
 lib("chatstyles.lua")
 lib("figuredata.lua")
 
+-- Habbo's TVs: where each one's screen is (its four corners in the furni's pixels from where it
+-- stands, by direction; "any" when it looks the same every way). The room's videos play there.
+BOBBA.videos = BOBBA.videos or {}
+BOBBA.videos.screens = BOBBA.videos.screens or {}
+do
+	local SC = BOBBA.videos.screens
+	SC.yttv1 = { [2] = { { -49, -30 }, { 4, -56 }, { 4, -14 }, { -49, 12 } }, [4] = { { -4, -56 }, { 49, -29 }, { 49, 13 }, { -4, -14 } } }
+	SC.yttv2 = { [2] = { { -55, -25 }, { 35, -70 }, { 35, 3 }, { -55, 49 } }, [4] = { { -35, -70 }, { 55, -24 }, { 55, 49 }, { -35, 4 } } }
+	SC["yttv2b"] = SC.yttv2
+	SC.yttv3 = { any = { { -65, -87 }, { 65, -87 }, { 65, 9 }, { -65, 9 } } }
+	SC.tv_flat = { [2] = { { -47, -24 }, { 20, -58 }, { 20, -12 }, { -47, 22 } } }
+	SC.hc_tv = { [2] = { { -34, -64 }, { 12, -86 }, { 12, -56 }, { -34, -33 } }, [4] = { { -12, -86 }, { 34, -63 }, { 34, -32 }, { -12, -56 } } }
+	SC.nft_hc_tv = SC.hc_tv
+	SC.red_tv = { [2] = { { -3, -12 }, { 25, -26 }, { 25, -2 }, { -3, 12 } }, [4] = { { -25, -26 }, { 3, -12 }, { 3, 13 }, { -25, -1 } } }
+	SC.wood_tv = { any = { { -4, -46 }, { 22, -33 }, { 22, -9 }, { -4, -21 } } }
+	SC.tv_luxus = { any = { { -2, -55 }, { 49, -30 }, { 49, 3 }, { -2, -22 } } }
+	SC.modern_c17_tv = { any = { { -33, -40 }, { 16, -65 }, { 16, -24 }, { -33, 1 } } }
+	SC.lodge_tv = { any = { { 1, -28 }, { 25, -40 }, { 25, -18 }, { 1, -6 } } }
+end
+
 -- the rooms new players pick from (Habbo's six classic ones)
 P.runAddonFile("bobba_habbo", "starterrooms.lua")
 
@@ -56,6 +76,8 @@ if SERVER then
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/chat.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/editor.lua")
 	AddCSLuaFile("bobbahotel/addons/bobba_habbo/ui.lua")
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/hotelview.lua")
+	AddCSLuaFile("bobbahotel/addons/bobba_habbo/website.lua")
 end
 
 -- Looks are checked against Habbo's figuredata, the way Arcturus does (server; lib/figuredata.lua).
@@ -122,12 +144,18 @@ H.CATALOG_SKIP_LINES = { horse = true, nests = true, pet_food = true, pet_access
 H.CATALOG_RARE_LINES = { rare = true, bonusrare = true, nft = true, nftmint = true, collectibles = true, pixel_collectible = true,
 	gacha = true }
 H.CATALOG_PAGE_SIZE = 150
+-- Habbo Club's furni (its lines, and furni called hc_ / hcc_ / hc2_ ...): on the club's tab, for members
+H.CATALOG_CLUB_LINES = { habbo_club_gifts = true, old_hc_gifts = true, club_shop = true }
+function H.catalogClub(class, f)
+	return H.CATALOG_CLUB_LINES[f.line] or class:find("^hcc?%d*_") ~= nil
+end
 H.STICKIES_PER_PAD = 20
 
 -- lines over the years: what they're called together (the rest are their own name, made readable)
 H.CATALOG_FAMILY_NAMES = { xmas = "Christmas", habboween = "Habboween", easter = "Easter", valentine = "Valentine's",
 	newyear = "New Year", garden = "Garden", nft = "NFT", buildersclub = "Builders Club", habbopalooza = "Habbopalooza",
-	university = "University", summer = "Summer", cyberpunk = "Cyberpunk", cny = "Lunar New Year", st_patricks = "St. Patrick's Day" }
+	university = "University", summer = "Summer", cyberpunk = "Cyberpunk", cny = "Lunar New Year", st_patricks = "St. Patrick's Day",
+	habbo_club_gifts = "Club gifts", old_hc_gifts = "Classic club", club_shop = "Club shop" }
 
 -- seasonal lines (by their family's name): only sold in their season (the hotel's catalogue.lua says
 -- when each is, and whether that's switched on)
@@ -167,6 +195,7 @@ function H.catalogPages(fd, price, extra)
 	local trophies = {}
 	-- rares and limited editions: on a staff-only tab, free (staff give them)
 	local rareLines = {}
+	local clubLines = {}
 	for class, f in pairs(fd.byClass) do
 		if f.special == 1 and H.catalogRare(class, f) and f.name ~= "" and not f.name:find(" name$") then
 			local list = rareLines[f.line]
@@ -181,10 +210,13 @@ function H.catalogPages(fd, price, extra)
 			and f.name ~= "" and not f.name:find(" name$")
 			-- (random teleports and step-on switches look like teleports but work differently: later)
 			and not (f.category == "teleport" and (class:find("rnd") or class:find("random") or class:find("change_state"))) then
-			local list = lines[f.line]
-			if not list then list = {} lines[f.line] = list end
+			local club = H.catalogClub(class, f)
+			local into = club and clubLines or lines
+			local list = into[f.line]
+			if not list then list = {} into[f.line] = list end
 			-- (teleports are sold in linked pairs, like Habbo's)
-			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, pair = f.category == "teleport" or nil }
+			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, pair = f.category == "teleport" or nil,
+				clubLevel = club and 1 or nil }
 		end
 	end
 	-- a page for a line (cut into parts when it's big)
@@ -301,6 +333,12 @@ function H.catalogPages(fd, price, extra)
 			end
 		end
 		if #tab.children > 0 then out[#out + 1] = tab end
+	end
+	-- Habbo Club's furni: a page under the club's tab (the hotel's catalogue puts it there)
+	local clubTop = group(clubLines)
+	if #clubTop > 0 then
+		table.sort(clubTop, function(a, b) return a.name:lower() < b.name:lower() end)
+		out[#out + 1] = { name = "Club furni", shop = "club", club = true, children = clubTop, iconKind = clubTop[1].iconKind }
 	end
 	local rareTop = group(rareLines)
 	table.sort(rareTop, function(a, b) return a.name:lower() < b.name:lower() end)

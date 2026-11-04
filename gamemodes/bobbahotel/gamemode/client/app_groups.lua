@@ -229,8 +229,8 @@ local function findView(ctx)
 				if ry + rowH > y and ry < H then
 					d:round(18, x, ry + 4, 52, 52, colorOf(g))
 					d:text((g.name or "?"):sub(1, 1):upper(), 22, x + 26, ry + 30, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
-					d:text(d:fit(g.name or "", 15, w - 190, 800), 15, x + 66, ry + 12, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
-					d:text(d:fit(T("bobba.phone.groups.count", "%n% members", { n = g.members }) .. ((g.description or "") ~= "" and (" · " .. g.description) or ""), 12, w - 190), 12, x + 66, ry + 34, C.ink2)
+					d:textFit(g.name or "", 15, w - 190, x + 66, ry + 12, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+					d:textFit(T("bobba.phone.groups.count", "%n% members", { n = g.members }) .. ((g.description or "") ~= "" and (" · " .. g.description) or ""), 12, w - 190, x + 66, ry + 34, C.ink2)
 					local inIt = false
 					for _, m in ipairs(SO.groups) do if m.id == g.id then inIt = true end end
 					if inIt then
@@ -268,13 +268,25 @@ local function findView(ctx)
 		st.useRoom = st.useRoom == nil and true or st.useRoom
 		y = ctx:rows(x, y, w, { { title = T("bobba.phone.groups.roomis", "Its room: %room%", { room = mineRoom.name or "" }), right = "toggle", on = st.useRoom, click = function() st.useRoom = not st.useRoom end } }) + 14
 	end
-	local price = SO.groupPrice or 10
+	local price = SO.groupPrice or 100
 	local name = ne:GetValue() or ""
 	local ok = #name:gsub("%s", "") >= 3
-	d:button(x, y, w, 50, T("bobba.phone.groups.make", "Make the group · %price%", { price = DV.priceText({ credits = price }) }), ok and "primary" or "light", function()
+	-- (made: back, with the new group open; while the server's making it, the button waits)
+	if st.made and SO.justMade then
+		st.made = nil
+		ne:SetText("") de:SetText("")
+		ctx:pop()
+		return
+	end
+	if st.made and (SO.groupErrorAt or 0) > st.made then st.made = nil end
+	if st.made and SysTime() - st.made > 8 then st.made = nil end
+	local waiting = st.made ~= nil
+	d:button(x, y, w, 50, waiting and T("bobba.phone.groups.making", "Making it...") or T("bobba.phone.groups.make", "Make the group · %price%", { price = DV.priceText({ credits = price }) }), (ok and not waiting) and "primary" or "light", function()
+		if st.made then return end
+		SO.justMade = nil
 		P.send("groups.create", { name = name, description = de:GetValue() or "", color = st.color, room = (mineRoom and st.useRoom) and mineRoom.id or 0 })
 		st.made = SysTime()
-	end, not ok)
+	end, not ok or waiting)
 end
 
 -- --- the app ----------------------------------------------------------------------------------------
@@ -343,7 +355,7 @@ local function groupsView(ctx)
 	d:round(16, x + 16, yy + 66, 48, 48, colorOf(g))
 	d:text((g.name or "?"):sub(1, 1):upper(), 20, x + 40, yy + 90, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
 	yy = yy + 126
-	d:text(d:fit(g.name or "", 20, w, 800), 20, x, yy, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+	d:textFit(g.name or "", 20, w, x, yy, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 	local sub = T("bobba.phone.groups.counts", "%n% members · %on% online", { n = g.members or 0, on = g.online or 0 })
 	if g.roomName then sub = sub .. " · " .. T("bobba.phone.groups.roomline", "Group room: %room%", { room = g.roomName }) end
 	local subLines = d:wrap(sub, 12, w)
@@ -389,7 +401,7 @@ local function groupsView(ctx)
 					if kind == "text" then d:text("#", 18, x + 10, cy + 21, C.slate, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
 					else d:glyph(G.volume, x + 6, cy + 11, 20, C.green, 2.2) end
 					local unread = (c.unread or 0) > 0
-					d:text(d:fit(c.name, 15, w - 80, unread and 800 or 600), 15, x + 34, cy + 21, unread and C.paper or C.mist, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, unread and 800 or 600)
+					d:textFit(c.name, 15, w - 80, x + 34, cy + 21, unread and C.paper or C.mist, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, unread and 800 or 600)
 					if unread then
 						local t = tostring(c.unread)
 						local bw = math.max(20, d:textWidth(t, 11, 800) + 10)

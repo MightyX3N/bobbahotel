@@ -113,7 +113,11 @@ local function build(cb)
 			end
 			clubPages[#clubPages + 1] = page
 		end
-		pages[#pages + 1] = { name = CAT.CLUB_NAMES[kinds[1]], children = clubPages, shop = "club" }
+		-- (the addon's club pages, its club furni, go under it too)
+		for i = #pages, 1, -1 do
+			if pages[i].club then table.insert(clubPages, table.remove(pages, i)) end
+		end
+		pages[#pages + 1] = { name = CAT.CLUB_NAMES[kinds[1]] or "Club", children = clubPages, shop = "club" }
 		number(pages)
 		tree = pages
 		local list = building
@@ -149,7 +153,7 @@ local function pageMessage(p)
 	local offers = {}
 	for _, o in ipairs(p.offers or {}) do
 		offers[#offers + 1] = { id = o.id, kind = o.kind, name = o.name, price = o.price, club = o.club, tier = o.tier, pair = o.pair, trophy = o.trophy,
-			data = o.data, count = o.count }
+			data = o.data, count = o.count, clubLevel = o.clubLevel }
 	end
 	return { id = p.id, name = p.name, layout = p.layout or "default_3x3", clubKind = p.clubKind, offers = offers }
 end
@@ -165,7 +169,7 @@ function CAT.search(query, staff)
 		local p = pagesById[id]
 		for _, o in ipairs((staff or (not p.staff and CAT.inSeason(p.season))) and p.offers or {}) do
 			if o.kind and #offers < CAT.SEARCH_MAX and ((o.name or ""):lower():find(query, 1, true) or o.kind:lower():find(query, 1, true)) then
-				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price, pair = o.pair, trophy = o.trophy, data = o.data, count = o.count }
+				offers[#offers + 1] = { id = o.id, page = p.id, kind = o.kind, name = o.name, price = o.price, pair = o.pair, trophy = o.trophy, data = o.data, count = o.count, clubLevel = o.clubLevel }
 				if not seen[p.id] then seen[p.id] = true pages[#pages + 1] = p.id end
 			end
 		end
@@ -197,6 +201,8 @@ function CAT.buy(player, pageId, offerId, amount, extra)
 	if not page then return false, offer end
 	amount = math.floor(tonumber(amount) or 1)
 	if offer.club or offer.trophy then amount = 1 end
+	-- (club furni: for members, as Habbo's)
+	if offer.clubLevel and BOBBA.wallet.clubLevel(key) < offer.clubLevel then return false, "only club members can buy that" end
 	if amount < 1 or amount > CAT.MAX_AMOUNT then return false, "you can buy 1 to " .. CAT.MAX_AMOUNT .. " at a time" end
 	local price = {}
 	for c, n in pairs(offer.price or {}) do price[c] = n * amount end

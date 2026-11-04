@@ -397,9 +397,17 @@ local function furniSprites(it, list, now)
 	if it.kind == "photo" and BOBBA.camera and BOBBA.camera.photoSprite then drawer = BOBBA.camera.photoSprite end
 	local ok, sprites = pcall(drawer, it, { sx = sx, sy = sy, k = k, now = now, alpha = it.ghost and 0.5 or 1 })
 	if not ok then ErrorNoHalt("[Bobba] furni drawer: " .. tostring(sprites) .. "\n") R.furniDrawer = nil return end
+	local front
 	for i, s in ipairs(sprites or {}) do
 		-- Nitro: the object's screen depth + the sprite's own (and a tiny bit per sprite, in order)
-		list[#list + 1] = { z = (depth or 0) + (s.depth or 0) + 3.7e-11 * i, draw = s.draw, item = (not it.ghost) and it or nil, sprite = s }
+		local z = (depth or 0) + (s.depth or 0) + 3.7e-11 * i
+		list[#list + 1] = { z = z, draw = s.draw, item = (not it.ghost) and it or nil, sprite = s }
+		if not front or z < front then front = z end
+	end
+	-- something drawn over the furni (a TV's picture: client/app_videos.lua), just in front of it
+	if R.furniOverlay and front and not it.ghost then
+		local draw = R.furniOverlay(it, sx, sy, k)
+		if draw then list[#list + 1] = { z = front - 1e-9, draw = draw } end
 	end
 end
 

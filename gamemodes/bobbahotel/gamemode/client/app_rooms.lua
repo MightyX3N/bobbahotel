@@ -91,7 +91,7 @@ local function roomsView(ctx)
 		local c = R.current
 		d:round(20, x, y, w, 60, C.navy)
 		d:text(T("bobba.phone.widget.youin", "YOU'RE IN"), 11, x + 16, y + 12, C.mist, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-		d:text(d:fit(c.name or "", 15, w - 150, 800), 15, x + 16, y + 28, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+		d:textFit(c.name or "", 15, w - 150, x + 16, y + 28, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 		d:button(x + w - 120, y + 13, 108, 34, T("bobba.phone.rooms.leave", "Leave"), "paper", function()
 			DV.home()
 			local HUD = BOBBA.hud
@@ -130,11 +130,11 @@ local function roomsView(ctx)
 					local tx = rx + 8 + ph + 12
 					local lk = lockGlyph(room)
 					local nameW = colW - (tx - rx) - 70 - (lk and 22 or 0)
-					d:text(d:fit(room.name or "", 15, nameW, 800), 15, tx, ry + (rowH - 8) / 2 - 10, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
+					d:textFit(room.name or "", 15, nameW, tx, ry + (rowH - 8) / 2 - 10, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 800)
 					if lk then d:glyph(lk, tx + math.min(nameW, d:textWidth(d:fit(room.name or "", 15, nameW, 800), 15, 800)) + 6, ry + (rowH - 8) / 2 - 18, 16, C.ink2, 2.2) end
 					local sub = room.owner or ""
 					if room.description and room.description ~= "" and tablet then sub = sub .. " · " .. room.description end
-					d:text(d:fit(sub, 13, colW - (tx - rx) - 70), 13, tx, ry + (rowH - 8) / 2 + 11, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					d:textFit(sub, 13, colW - (tx - rx) - 70, tx, ry + (rowH - 8) / 2 + 11, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 					-- how many are in it
 					local cnt = tostring(room.users or 0)
 					local cw = d:textWidth(cnt, 13, 800) + 34

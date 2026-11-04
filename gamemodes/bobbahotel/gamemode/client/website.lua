@@ -57,7 +57,7 @@ local function newsCards(d, x, y, w, data)
 		d:round(26, cx, y, cw, 200, C.paper)
 		d:round(26, cx, y, cw, 100, DV.hex(it.color or "FFD166"), true, true, false, false)
 		d:text(it.date or "", 12, cx + 18, y + 114, C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-		d:text(d:fit(it.title or "", 16, cw - 36, 800), 16, cx + 18, y + (it.date and 132 or 116), C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+		d:textFit(it.title or "", 16, cw - 36, cx + 18, y + (it.date and 132 or 116), C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 		for j, l in ipairs(d:wrap(it.text or "", 13, cw - 36)) do
 			if j <= 2 then d:text(l, 13, cx + 18, y + (it.date and 156 or 142) + (j - 1) * 18, C.ink2) end
 		end
@@ -98,7 +98,7 @@ local function defaultPage(d, WW, HH, s)
 	for _, f in ipairs(SO and SO.friends or {}) do if f.online then friendsOn[#friendsOn + 1] = f end end
 	local unread = SO and SO.unreadMessages() or 0
 	d:text(T("bobba.website.welcomeback", "Welcome back"), 15, pad + 48, y + 48, C.mist, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 600)
-	d:text(d:fit(me(), 50, hw * 0.55, 800), 50, pad + 48, y + 66, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+	d:textFit(me(), 50, hw * 0.55, pad + 48, y + 66, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 	local line
 	if #friendsOn > 0 then line = T("bobba.website.friendsin", "%n% friends are here.", { n = #friendsOn }) else line = T("bobba.website.nofriends", "The hotel's waiting for you.") end
 	if unread > 0 then line = line .. " " .. T("bobba.website.unread", "You have %n% new messages.", { n = unread }) end
@@ -133,8 +133,8 @@ local function defaultPage(d, WW, HH, s)
 		if i > 3 then break end
 		local ry = y + 52 + (i - 1) * 54
 		DV.face(d, f.figure, f.gender, f.name, fx + 20, ry, 40)
-		d:text(d:fit(f.name or "", 15, colW - 150, 700), 15, fx + 72, ry + 2, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-		d:text(d:fit(f.roomName or T("bobba.website.hotelview", "Hotel view"), 13, colW - 150), 13, fx + 72, ry + 22, C.mist)
+		d:textFit(f.name or "", 15, colW - 150, fx + 72, ry + 2, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
+		d:textFit(f.roomName or T("bobba.website.hotelview", "Hotel view"), 13, colW - 150, fx + 72, ry + 22, C.mist)
 		if f.room then
 			local hov = d:click(fx + colW - 80, ry + 6, 64, 28, function() site.enter(function() P.send("friends.follow", { key = f.key }) end) end)
 			d:text(T("bobba.website.follow", "Follow"), 13, fx + colW - 20, ry + 20, hov and C.paper or C.mist, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, 800)

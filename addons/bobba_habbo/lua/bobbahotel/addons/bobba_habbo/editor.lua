@@ -161,6 +161,16 @@ AE.drawPart = function(category, item, figure, cx, cy, s)
 	return true
 end
 
+-- just the head (Habbo's head pictures: faces in lists), fitted into a size x size square at x, y
+AE.drawHead = function(figure, gender, direction, x, y, size)
+	if not figure or figure == "" then figure = H.DEFAULT_FIGURE end
+	local e = avatarPicture(figure, gender, direction or 2, true)
+	if not e or e.w <= 0 or e.h <= 0 then return false end
+	local k = math.min(size * 0.86 / e.w, size * 0.86 / e.h)
+	drawPicture(e, math.floor(x + (size - e.w * k) / 2 + 0.5), math.floor(y + (size - e.h * k) / 2 + size * 0.05 + 0.5), k)
+	return true
+end
+
 local previewUnit = { id = "editor-preview" }
 AE.drawPreview = function(figure, gender, direction, cx, top, k, effect)
 	-- (someone without a look yet is drawn in the default one, as in the room)

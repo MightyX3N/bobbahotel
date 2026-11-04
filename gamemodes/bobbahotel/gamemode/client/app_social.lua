@@ -89,8 +89,8 @@ threadView = function(ctx)
 	d:click(48, y, W - 150, 52, function() ctx:push(profileView, { key = key }) end)
 	DV.face(d, f.figure, f.gender, f.name, 48, y + 6, 40)
 	onlineDot(d, 48, y + 6, 40, f.online, Color(236, 239, 246))
-	d:text(d:fit(f.name or "", 16, W - 200, 800), 16, 98, y + 16, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
-	d:text(d:fit(status(f), 12, W - 200), 12, 98, y + 36, C.ink2)
+	d:textFit(f.name or "", 16, W - 200, 98, y + 16, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+	d:textFit(status(f), 12, W - 200, 98, y + 36, C.ink2)
 	-- (going to their room; calling them)
 	if f.room then
 		local hv = d:click(W - 104, y + 6, 40, 40, function() DV.home() DV.show(false) P.send("friends.follow", { key = key }) end)
@@ -248,7 +248,7 @@ local function messagesView(ctx)
 				if st.tab == "requests" then
 					d:round(20, x, ry, w, rowH - 8, C.white)
 					DV.face(d, f.figure, f.gender, f.name, x + 10, ry + 10, 46)
-					d:text(d:fit(f.name or "", 15, w - 260, 800), 15, x + 68, ry + 20, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
+					d:textFit(f.name or "", 15, w - 260, x + 68, ry + 20, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 800)
 					d:text(T("bobba.phone.friends.wants", "wants to be your friend"), 12, x + 68, ry + 40, C.ink2)
 					d:button(x + w - 186, ry + 15, 88, 36, T("bobba.phone.friends.accept", "Accept"), "primary", function() P.send("friends.accept", { key = f.key }) end)
 					d.bgUnder = C.white
@@ -262,11 +262,11 @@ local function messagesView(ctx)
 					DV.face(d, f.figure, f.gender, f.name, x + 8, ry + 8, 50)
 					onlineDot(d, x + 8, ry + 8, 50, f.online, hov and C.line or C.paper)
 					local unread = (f.unread or 0) > 0
-					d:text(d:fit(f.name or "", 16, w - 150, unread and 800 or 700), 16, x + 72, ry + 16, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, unread and 800 or 700)
+					d:textFit(f.name or "", 16, w - 150, x + 72, ry + 16, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, unread and 800 or 700)
 					local sub
 					if st.tab == "chats" and f.last then sub = (f.last.mine and (T("bobba.phone.messages.you", "You") .. ": ") or "") .. f.last.text
 					else sub = status(f) end
-					d:text(d:fit(sub, 13, w - 130), 13, x + 72, ry + 38, unread and C.navy or C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, unread and 700 or 500)
+					d:textFit(sub, 13, w - 130, x + 72, ry + 38, unread and C.navy or C.ink2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, unread and 700 or 500)
 					if st.tab == "chats" and f.last then d:text(clock(f.last.at), 12, x + w - 12, ry + 18, C.ink2, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP, 600) end
 					if unread then
 						local t = tostring(f.unread)
@@ -352,7 +352,7 @@ local function callScreen(ctx)
 		local bg = b[6] and C.red or (b[4] and C.paper or alpha(C.paper, hov and 0.26 or 0.16))
 		d:circle(cx, y + 36, 36, disabled and alpha(C.paper, 0.06) or bg)
 		d:glyph(b[2], cx - 14, y + 22, 28, b[4] and C.navy or (disabled and alpha(C.paper, 0.4) or C.white), 2)
-		d:text(d:fit(b[1], 12, bw - 8, 600), 12, cx, y + 84, disabled and alpha(C.paper, 0.4) or C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 600)
+		d:textFit(b[1], 12, bw - 8, cx, y + 84, disabled and alpha(C.paper, 0.4) or C.paper, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 600)
 	end
 end
 
@@ -386,8 +386,8 @@ local function callsView(ctx)
 			if ry + rowH > y and ry < H then
 				DV.face(d, f.figure, f.gender, f.name, x + 4, ry + 8, 46)
 				onlineDot(d, x + 4, ry + 8, 46, f.online)
-				d:text(d:fit(f.name or "", 16, w - 150, 700), 16, x + 64, ry + 14, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
-				d:text(d:fit(status(f), 12, w - 150), 12, x + 64, ry + 36, C.ink2)
+				d:textFit(f.name or "", 16, w - 150, x + 64, ry + 14, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 700)
+				d:textFit(status(f), 12, w - 150, x + 64, ry + 36, C.ink2)
 				local hv = d:click(x + w - 50, ry + 10, 44, 44, function() DV.startCall(f) end)
 				d:circle(x + w - 28, ry + 32, 22, hv and C.green or hex("CDEBE2"))
 				d:glyph(G.calls, x + w - 39, ry + 21, 22, hex("123B33"), 2.2)
