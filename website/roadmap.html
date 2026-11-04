@@ -199,7 +199,12 @@ listen server); joining someone's server goes straight to its page.</p>
 <li><strong>small, always-on machines</strong>: a mini PC, a NAS or a Raspberry Pi as the hotel's home. Asleep
     while empty, a hotel costs almost nothing to leave running. The custom server is plain LuaJIT and
     SQLite, so it also runs on ARM (Raspberry Pi, most NAS boxes) and in a Docker container (what NAS
-    apps use); a Garry's Mod server needs an x86 machine. A Docker image next to the Pterodactyl egg</li>
+    apps use); a Garry's Mod server needs an x86 machine (fine: most will host with the custom server)</li>
+<li><strong>easy on a NAS people already have</strong>: a Docker image, plus one-click entries where NAS owners
+    look - Unraid's Community Applications, TrueNAS apps, Synology's Container Manager (a guide),
+    CasaOS and Umbrel app stores, a docker-compose file. Settings as the container's variables
+    (hotel name, owner's Steam ID, port), the hotel's database on a NAS share (in their backups),
+    the Manage screen for the rest. It uses what the box has: a high-end NAS can hold a big hotel</li>
 <li><strong>Website</strong>: the in-game one is done (the hotel's page after checking in, Lua, news from the
   website.news setting). Later, a web one for outside the game (a companion program next to a GMod
   server): front page, news, players online, Enter hotel, Steam / Discord login (no passwords), profiles
