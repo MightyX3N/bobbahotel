@@ -45,6 +45,8 @@ H.UI_ICONS = {
 	["fp-set"] = "floor_plan_editor_add_tile", ["fp-unset"] = "floor_plan_editor_remove_tile", ["fp-up"] = "floor_plan_editor_raise_tile",
 	["fp-down"] = "floor_plan_editor_sink_tile", ["fp-door"] = "floor_plan_editor_enter_tile", ["fp-tile"] = "floor_editor_tile_base_large",
 	["fp-entry"] = "floor_editor_tile_entry_large",
+	["sign-heart"] = "sign_icon_heart", ["sign-skull"] = "sign_icon_skull", ["sign-exclamation"] = "sign_icon_13", ["sign-soccer"] = "sign_icon_14",
+	["sign-smile"] = "sign_icon_15", ["sign-red"] = "sign_icon_16", ["sign-yellow"] = "sign_icon_17",
 	["stickie"] = "stickie_blanco", ["stickie-close"] = "stickie_close", ["stickie-trash"] = "stickie_remove", ["dimmer-banner"] = "dimmer_info",
 }
 

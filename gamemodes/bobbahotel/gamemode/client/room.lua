@@ -57,6 +57,7 @@ local function setUnit(s)
 	u.from = from
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
+	u.dance, u.idle, u.floorSit, u.effect = tonumber(s.dance) or 0, s.idle and true or false, s.floorSit and true or false, tonumber(s.effect) or 0
 	u.started = SysTime()
 	-- (easing onto a tile's middle after moving freely is shorter than a step: hotel/roomlive.lua)
 	u.dur = tonumber(s.dur)
@@ -202,6 +203,46 @@ P.receive("room.unit.move", function(_, data)
 	u.freeAt = SysTime()
 end)
 
+-- dancing, waving and the other expressions, signs, asleep (hotel/actions.lua); how long an expression
+-- and a sign show (Nitro's AvatarAction.getExpressionTimeout, AvatarLogic: a sign 5 seconds)
+R.EXPRESSION_TIME = { [1] = 5, [2] = 1.4, [3] = 2, [4] = 2, [6] = 0.7, [7] = 2, [8] = 1.5, [9] = 1.5, [10] = 1.5 }
+P.receive("room.unit.dance", function(_, data)
+	local u = R.units[data.id]
+	if u then u.dance = tonumber(data.dance) or 0 end
+end)
+P.receive("room.unit.expression", function(_, data)
+	local u = R.units[data.id]
+	if not u then return end
+	u.expression = tonumber(data.expression) or 0
+	u.expressionUntil = SysTime() + (R.EXPRESSION_TIME[u.expression] or 0)
+end)
+P.receive("room.unit.sign", function(_, data)
+	local u = R.units[data.id]
+	if not u then return end
+	u.sign = tonumber(data.sign) or -1
+	u.signUntil = SysTime() + 5
+end)
+P.receive("room.unit.effect", function(_, data)
+	local u = R.units[data.id]
+	if u then u.effect = tonumber(data.effect) or 0 end
+end)
+P.receive("room.unit.idle", function(_, data)
+	local u = R.units[data.id]
+	if u then u.idle = data.idle and true or false end
+end)
+-- what the avatar is doing now, for the figure drawer
+-- (blinking now and then, as Nitro's AvatarLogic: every 4.5 to 5.5 seconds, for 50 to 250 ms)
+function R.unitActions(u)
+	local now = SysTime()
+	if not u.blinkAt then u.blinkAt = now + 4.5 + math.random() end
+	if now >= u.blinkAt then
+		u.blinkUntil = now + 0.05 + math.random() * 0.2
+		u.blinkAt = now + 4.5 + math.random()
+	end
+	local blink = (u.blinkUntil or 0) > now
+	return (u.dance or 0), ((u.expressionUntil or 0) > now) and u.expression or 0, ((u.signUntil or 0) > now) and u.sign or -1, (u.idle or blink) and true or false
+end
+
 P.receive("room.unit.remove", function(_, data)
 	R.units[data.id] = nil
 end)
@@ -268,7 +309,9 @@ local function drawUnit(u)
 	local sx, sy, k = V.project(x, y, z)
 	if not sx then return end
 	if R.figureDrawer then
-		local ok, drew = pcall(R.figureDrawer, u, { x = x, y = y, z = z, sx = sx, sy = sy, k = k, dir = u.dir or 2, posture = posture(u), now = SysTime(), talk = (u.talkUntil or 0) > SysTime() })
+		local dance, expression, sign, sleep = R.unitActions(u)
+		local ok, drew = pcall(R.figureDrawer, u, { x = x, y = y, z = z, sx = sx, sy = sy, k = k, dir = u.dir or 2, posture = posture(u), now = SysTime(), talk = (u.talkUntil or 0) > SysTime(),
+			dance = dance, expression = expression, sign = sign, sleep = sleep, effect = u.effect or 0 })
 		if ok and drew then return end
 		if not ok then ErrorNoHalt("[Bobba] figure drawer: " .. tostring(drew) .. "\n") R.figureDrawer = nil end
 	end

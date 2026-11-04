@@ -85,13 +85,20 @@ end
 concommand.Add("bobba_give", function(ply, _, args)
 	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.staff.currency") then reply(ply, "that's for staff") return end
 	local who, what, amount = args[1], args[2], tonumber(args[3])
-	if not who or not what or not amount then reply(ply, "bobba_give <player|steamid64> <credits|duckets|diamonds|hc|vip> <amount>") return end
+	if not who or not what or not amount then reply(ply, "bobba_give <player|steamid64> <credits|duckets|diamonds|hc|vip> <amount>, or <player> effect <id> [days]") return end
 	local key
 	for _, p in ipairs(player.GetAll()) do
 		if p:SteamID64() == who or string.find(string.lower(p:Nick()), string.lower(who), 1, true) then key = BOBBA.platform.playerKey(p) break end
 	end
 	key = key or (who:match("^%d+$") and who)
 	if not key then reply(ply, "no one called " .. who) return end
+	if what == "effect" then
+		-- bobba_give <player> effect <id> [days]: an avatar effect (0 days: for ever)
+		local days = tonumber(args[4])
+		local ok, why = BOBBA.effects.give(key, amount, days and math.floor(days * 86400) or nil)
+		reply(ply, ok and ("gave effect " .. amount) or ("couldn't: " .. tostring(why)))
+		return
+	end
 	if what == "club" or what == "hc" or what == "vip" then
 		BOBBA.wallet.addClub(key, amount, what == "vip" and "vip" or "hc")
 	elseif not BOBBA.wallet.add(key, what, amount) then

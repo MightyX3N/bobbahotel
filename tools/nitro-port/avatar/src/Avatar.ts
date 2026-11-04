@@ -84,11 +84,31 @@ class AssetManager
     }
 }
 
-// effects come later: none is ever ready
-const NO_EFFECTS = {
-    isAvatarEffectReady: (_id: number): boolean => false,
-    downloadAvatarEffect: (_id: number, _listener: any): void => {}
-};
+// Nitro's EffectAssetDownloadManager, as much as AvatarImage uses: whether an effect's libraries are
+// loaded, and asking for them (the game downloads them; done(), the image is told to redraw)
+export interface EffectSource
+{
+    ready: (this: void, id: number) => boolean;
+    load: (this: void, id: number, done: (this: void) => void) => void;
+}
+class EffectManager
+{
+    private _source: EffectSource;
+    constructor(source: EffectSource) { this._source = source; }
+    public isAvatarEffectReady(id: number): boolean
+    {
+        if(this._source === null || this._source === undefined) return false;
+        return this._source.ready(id);
+    }
+    public downloadAvatarEffect(id: number, listener: any): void
+    {
+        if(this._source === null || this._source === undefined) return;
+        this._source.load(id, () =>
+        {
+            if(listener !== null && listener !== undefined && !listener.disposed) listener.resetEffect(id);
+        });
+    }
+}
 
 export interface AvatarData
 {
@@ -105,9 +125,11 @@ export class Renderer
     public structure: AvatarStructure;
     public assets: AssetManager;
     public aliases: AssetAliasCollection;
+    public effects: EffectManager;
 
-    constructor(data: AvatarData, source: AssetSource)
+    constructor(data: AvatarData, source: AssetSource, effects: EffectSource = null)
     {
+        this.effects = new EffectManager(effects);
         this.structure = new AvatarStructure(null);
         this.assets = new AssetManager(source);
         // as AvatarRenderManager: geometry, part sets, actions, animations, figure data
@@ -137,7 +159,17 @@ export class Renderer
 
     public createImage(figure: string, scale: string): AvatarImage
     {
-        return new AvatarImage(this.structure, this.aliases, new AvatarFigureContainer(figure), scale, NO_EFFECTS, null);
+        return new AvatarImage(this.structure, this.aliases, new AvatarFigureContainer(figure), scale, this.effects, null);
+    }
+
+    // an effect library's animation (EffectAssetDownloadManager.onLibraryLoaded: registerAnimation);
+    // its pictures come through the AssetSource like the clothes'
+    public registerEffectAnimation(doc: Convert.XmlNode): boolean
+    {
+        const data = Convert.effectAnimation(doc);
+        if(data === null) return false;
+        this.structure.registerAnimation(Convert.jsArrays(data));
+        return true;
     }
 
     // the libraries (figuremap names come from these) a figure needs: [ [type, id], ... ]
@@ -157,9 +189,9 @@ export class Renderer
     }
 }
 
-export function createRenderer(data: AvatarData, source: AssetSource): Renderer
+export function createRenderer(data: AvatarData, source: AssetSource, effects: EffectSource = null): Renderer
 {
-    return new Renderer(data, source);
+    return new Renderer(data, source, effects);
 }
 
 // What the room tells an avatar (AvatarVisualization's model values)
@@ -269,4 +301,46 @@ export function partColor(avatar: AvatarImage, partType: string): number
     const color: any = avatar.getPartColor(partType);
     if(color === null || color === undefined) return 0xFFFFFF;
     return color.rgb;
+}
+
+// The effect's own pictures, as AvatarVisualization.updateSprites places them around the avatar
+// (a spotlight, a hoverboard, butterflies): each picture's name, its offset (dx, dy, before the
+// picture's own offset), in front of the avatar or behind it (dz), whether it stays at the floor's
+// height (staticY) and its ink (33: added light). avatarDx / avatarDy: how far the avatar itself is
+// moved (on a hoverboard it floats).
+export function effectSprites(avatar: AvatarImage): any
+{
+    const sprites: any[] = [];
+    const out: any = { avatarDx: 0, avatarDy: 0, sprites: sprites };
+    const list = avatar.getSprites();
+    if(list === null || list === undefined) return out;
+    const direction = avatar.getDirection();
+    for(const sd of list)
+    {
+        const layer = avatar.getLayerData(sd);
+        let ox = sd.getDirectionOffsetX(direction);
+        let oy = sd.getDirectionOffsetY(direction);
+        if(sd.id === 'avatar')
+        {
+            if(layer !== null && layer !== undefined) { ox += layer.dx; oy += layer.dy; }
+            out.avatarDx = ox;
+            out.avatarDy = oy;
+            continue;
+        }
+        const oz = sd.getDirectionOffsetZ(direction);
+        let frameNumber = 0;
+        let dd = 0;
+        if(sd.hasDirections) dd = direction;
+        if(layer !== null && layer !== undefined)
+        {
+            frameNumber = layer.animationFrame;
+            ox += layer.dx;
+            oy += layer.dy;
+            dd += layer.dd;
+        }
+        if(dd < 0) dd += 8;
+        else if(dd > 7) dd -= 8;
+        sprites.push({ name: avatar.getScale() + '_' + sd.member + '_' + dd + '_' + frameNumber, dx: ox, dy: oy, dz: oz, staticY: sd.hasStaticY, ink: sd.ink });
+    }
+    return out;
 }

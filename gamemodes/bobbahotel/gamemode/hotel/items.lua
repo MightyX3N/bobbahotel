@@ -968,6 +968,8 @@ function items.settle(r, u)
 	local t = PF.tile(r.grid, u.x, u.y)
 	local topItem = items.topAt(r, u.x, u.y)
 	if topItem and topItem.def.lay then
+		u.cmdSit = nil
+		if (u.dance or 0) > 0 and BOBBA.actions then BOBBA.actions.dance(u, 0) end
 		u.posture, u.height = "lay", topItem.def.height
 		u.dir = topItem.dir % 4
 		local x, y = u.x, u.y
@@ -979,9 +981,16 @@ function items.settle(r, u)
 		end
 		u.z = topItem.z
 	elseif chair and t and t.state == PF.SIT then
+		u.cmdSit = nil
+		-- (sitting down stops a dance: Arcturus)
+		if (u.dance or 0) > 0 and BOBBA.actions then BOBBA.actions.dance(u, 0) end
 		u.posture, u.height = "sit", chair.def.height
 		u.z = chair.z
 		u.dir = chair.dir
+	elseif u.cmdSit then
+		-- (sat down on the floor: stays so until walking or standing up; actions.lua)
+		u.posture, u.height = "sit", BOBBA.actions.FLOOR_SIT
+		u.z = items.standZ(r, u.x, u.y)
 	else
 		u.posture, u.height = nil, nil
 		u.z = items.standZ(r, u.x, u.y)

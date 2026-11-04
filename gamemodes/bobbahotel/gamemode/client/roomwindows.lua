@@ -710,7 +710,44 @@ local function menuItems()
 	local id = u.id
 	local close = function() RW.menu = nil end
 	if u.id == R.you then
-		item(T("widget.memenu.myclothes", "My clothes"), function() close() if BOBBA.avatarEditor then BOBBA.avatarEditor.open() end end)
+		-- AvatarInfoWidgetOwnAvatarView: clothes, dances, expressions, signs
+		local level = (HUD.purse and HUD.purse.clubLevel) or 0
+		local club, vip = level >= 1, level >= 2
+		local dancing = (u.dance or 0) > 0
+		local function send(name, data) return function() P.send(name, data) close() end end
+		if m == "normal" then
+			item(T("widget.memenu.myclothes", "My clothes"), function() close() if BOBBA.avatarEditor then BOBBA.avatarEditor.open() end end)
+			if club then item(T("widget.memenu.dance", "Dance"), function() RW.menu.mode = "dances" end, "right")
+			elseif dancing then item(T("widget.memenu.dance.stop", "Stop dancing"), send("room.dance", { style = 0 }))
+			else item(T("widget.memenu.dance", "Dance"), send("room.dance", { style = 1 })) end
+			item(T("infostand.link.expressions", "Expressions"), function() RW.menu.mode = "expressions" end, "right")
+			item(T("infostand.show.signs", "Signs"), function() RW.menu.mode = "signs" end, "right")
+		elseif m == "dances" then
+			if dancing then item(T("widget.memenu.dance.stop", "Stop dancing"), send("room.dance", { style = 0 })) end
+			for i = 1, 4 do item(T("widget.memenu.dance" .. i, "Dance " .. i), send("room.dance", { style = i })) end
+			item(T("generic.back", "Back"), function() RW.menu.mode = "normal" end, "left")
+		elseif m == "expressions" then
+			local lying = u.posture == "lay"
+			if (u.posture or "std") == "std" then item(T("widget.memenu.sit", "Sit"), send("room.posture", { sit = true })) end
+			if u.floorSit then item(T("widget.memenu.stand", "Stand"), send("room.posture", { sit = false })) end
+			if not lying then
+				item(T("widget.memenu.wave", "Wave"), send("room.expression", { id = 1 }))
+				items[#items + 1] = { text = T("widget.memenu.blow", "Blow a kiss"), fn = send("room.expression", { id = 2 }), disabled = not vip, hc = not vip }
+				items[#items + 1] = { text = T("widget.memenu.laugh", "Laugh"), fn = send("room.expression", { id = 3 }), disabled = not vip, hc = not vip }
+			end
+			item(T("widget.memenu.idle", "Idle"), send("room.expression", { id = 5 }))
+			item(T("generic.back", "Back"), function() RW.menu.mode = "normal" end, "left")
+		elseif m == "signs" then
+			-- (Nitro's grid: three a row)
+			local rows = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }, { 10, 11, 12 }, { 0, 13, 15 }, { 14, 17, 16 } }
+			local icons = { [11] = "sign-heart", [12] = "sign-skull", [13] = "sign-exclamation", [14] = "sign-soccer", [15] = "sign-smile", [16] = "sign-red", [17] = "sign-yellow" }
+			for _, row in ipairs(rows) do
+				local cells = {}
+				for _, n in ipairs(row) do cells[#cells + 1] = { text = tostring(n), icon = icons[n], fn = send("room.sign", { id = n }) } end
+				items[#items + 1] = { cells = cells }
+			end
+			item(T("generic.back", "Back"), function() RW.menu.mode = "normal" end, "left")
+		end
 		return items
 	end
 	local p = powers(u)
@@ -772,12 +809,31 @@ local function drawMenu(w, d)
 	d:text(d:fit(u.name or "", 16, iw - 8), 16, W / 2, y + 12.5, WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	y = y + 25 + 2
 	if not RW.collapsed then
-		for i, it in ipairs(menuItems()) do
-			local hover = d:click(x, y, iw, 24, it.fn)
+		local function cell(cx2, cw2, it)
+			local hover = (not it.disabled) and d:click(cx2, y, cw2, 24, it.fn) or false
 			-- two halves: #131e25 over #0d171d (hover #21516e / #1e465e)
-			d:rect(x, y, iw, 12, hover and Color(33, 81, 110) or Color(19, 30, 37))
-			d:rect(x, y + 12, iw, 12, hover and Color(30, 70, 94) or Color(13, 23, 29))
-			d:text(d:fit(it.text, 12.6, iw - 28), 12.6, W / 2, y + 12, WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			d:rect(cx2, y, cw2, 12, hover and Color(33, 81, 110) or Color(19, 30, 37))
+			d:rect(cx2, y + 12, cw2, 12, hover and Color(30, 70, 94) or Color(13, 23, 29))
+			local a = it.disabled and 128 or 255
+			if it.icon and d:icon(it.icon, cx2, y, cw2, 24, { alpha = a }) then return end
+			local tx2 = cx2 + cw2 / 2
+			if it.hc then
+				-- (Habbo Club's: the HC coin before it)
+				local tw = d:textWidth(it.text, 12.6)
+				d:icon("currency-hc", tx2 - tw / 2 - 10, y + 4, 16, 16, { alpha = a })
+				tx2 = tx2 + 9
+			end
+			d:text(d:fit(it.text, 12.6, it.chevron and cw2 - 28 or cw2 - 6), 12.6, tx2, y + 12, Color(255, 255, 255, a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		end
+		for i, it in ipairs(menuItems()) do
+			if it.cells then
+				-- (menu-list-split-3: a row of three, 2 apart)
+				local n = #it.cells
+				local cw2 = (iw - (n - 1) * 2) / n
+				for j, c in ipairs(it.cells) do cell(x + (j - 1) * (cw2 + 2), cw2, c) end
+			else
+				cell(x, iw, it)
+			end
 			if it.chevron == "right" then d:fa("chevron-right", x + iw - 8 - 9, y + 5.7, 12.6, WHITE) end
 			if it.chevron == "left" then d:fa("chevron-left", x + 8, y + 5.7, 12.6, WHITE) end
 			y = y + 26
@@ -850,4 +906,7 @@ end, drawStand)
 -- clicking an avatar opens its menu (room.lua says which); clicking elsewhere closes it
 function RW.selectUnit(id)
 	if id then RW.menu = { unit = id, mode = "normal" } else RW.menu = nil end
+	-- (your own while dancing, in Habbo Club: straight to the dances, as Nitro does)
+	local u = id and R.units and R.units[id]
+	if u and id == R.you and (u.dance or 0) > 0 and ((HUD.purse and HUD.purse.clubLevel) or 0) >= 1 then RW.menu.mode = "dances" end
 end

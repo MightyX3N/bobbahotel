@@ -208,7 +208,8 @@ end
 
 local function snapshot(u)
 	return { id = u.id, name = u.name, key = u.key, x = u.x, y = u.y, z = u.z, dir = u.dir, to = u.to, posture = u.posture, height = u.height,
-		figure = u.figure, gender = u.gender }
+		figure = u.figure, gender = u.gender, dance = (u.dance or 0) > 0 and u.dance or nil, idle = u.idle or nil,
+		floorSit = u.cmdSit or nil, effect = (u.effect or 0) > 0 and u.effect or nil }
 end
 live.snapshot = snapshot
 
@@ -527,7 +528,7 @@ function live.move(player, x, y, dir, stop)
 	if d > 0 and not live.freeWayOk(r, px, py, x, y) then return refuse() end
 	-- moving: no walk to a clicked tile any more, standing up from a seat
 	u.path, u.goal, u.useOnArrive = nil, nil, nil
-	u.posture, u.height = nil, nil
+	u.posture, u.height, u.cmdSit = nil, nil, nil
 	u.px, u.py, u.freeAt = x, y, now
 	dir = math.floor(tonumber(dir) or u.dir)
 	if dir >= 0 and dir <= 7 then u.dir = dir end
@@ -597,7 +598,7 @@ local function step(r, u, moved)
 	local from = { x = u.x, y = u.y, z = u.z }
 	-- Arcturus: on a seat or bed at its own height, on other furni on top of it
 	u.x, u.y, u.z = nextTile.x, nextTile.y, BOBBA.items.standZ(r, nextTile.x, nextTile.y)
-	u.posture, u.height = nil, nil
+	u.posture, u.height, u.cmdSit = nil, nil, nil
 	u.to = { x = u.x, y = u.y, z = u.z }
 	local s = snapshot(u)
 	s.x, s.y, s.z = from.x, from.y, from.z
@@ -664,6 +665,8 @@ function live.start()
 	BOBBA.access.start()
 	BOBBA.starter.start()
 	BOBBA.floorplan.start()
+	BOBBA.actions.start()
+	BOBBA.effects.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

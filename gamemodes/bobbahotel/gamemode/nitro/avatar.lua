@@ -1175,7 +1175,7 @@ AvatarAction.POSTURE_STAND = "std"
 AvatarAction.POSTURE_SWIM = "swim"
 AvatarAction.POSTURE_WALK = "mv"
 AvatarAction.SIGN = "sign"
-AvatarAction.SLEEP = "sleep"
+AvatarAction.SLEEP = "Sleep"
 AvatarAction.SNOWWAR_DIE_BACK = "swdieback"
 AvatarAction.SNOWWAR_DIE_FRONT = "swdiefront"
 AvatarAction.SNOWWAR_PICK = "swpick"
@@ -9163,6 +9163,259 @@ function ____exports.animations(doc)
     end
     return out
 end
+local function effectFrames(nodes)
+    local out = {}
+    for ____, f in ipairs(nodes) do
+        local frame = {}
+        if has(f, "repeats") then
+            frame.repeats = int(f, "repeats")
+        end
+        local function parts(name)
+            local list = {}
+            for ____, p in ipairs(kids(f, name)) do
+                local part = {}
+                if has(p, "id") then
+                    part.id = str(p, "id")
+                end
+                if has(p, "frame") then
+                    part.frame = int(p, "frame")
+                end
+                if has(p, "base") then
+                    part.base = str(p, "base")
+                end
+                if has(p, "action") then
+                    part.action = str(p, "action")
+                end
+                if has(p, "dx") then
+                    part.dx = int(p, "dx")
+                end
+                if has(p, "dy") then
+                    part.dy = int(p, "dy")
+                end
+                if has(p, "dz") then
+                    part.dz = int(p, "dz")
+                end
+                if has(p, "dd") then
+                    part.dd = int(p, "dd")
+                end
+                local items = kids(p, "item")
+                if #items > 0 then
+                    part.items = {}
+                    for ____, i in ipairs(items) do
+                        local item = {}
+                        if has(i, "id") then
+                            item.id = str(i, "id")
+                        end
+                        if has(i, "base") then
+                            item.base = str(i, "base")
+                        end
+                        push(part.items, item)
+                    end
+                end
+                push(list, part)
+            end
+            return list
+        end
+        local fxs = parts("fx")
+        if #fxs > 0 then
+            frame.fxs = fxs
+        end
+        local bodyparts = parts("bodypart")
+        if #bodyparts > 0 then
+            frame.bodyparts = bodyparts
+        end
+        push(out, frame)
+    end
+    return out
+end
+function ____exports.effectAnimation(doc)
+    local ____temp_0
+    if doc.name == "animation" then
+        ____temp_0 = doc
+    else
+        ____temp_0 = find(doc, "animation")
+    end
+    local a = ____temp_0
+    if a == nil then
+        return nil
+    end
+    local anim = {}
+    if has(a, "name") then
+        anim.name = str(a, "name")
+    end
+    if has(a, "desc") then
+        anim.desc = str(a, "desc")
+    end
+    if has(a, "resetOnToggle") then
+        anim.resetOnToggle = str(a, "resetOnToggle") == "true"
+    end
+    local directions = kids(a, "direction")
+    if #directions > 0 then
+        anim.directions = {}
+        for ____, d in ipairs(directions) do
+            local dir = {}
+            if has(d, "offset") then
+                dir.offset = int(d, "offset")
+            end
+            push(anim.directions, dir)
+        end
+    end
+    local function simple(name, field, read)
+        local nodes = kids(a, name)
+        if #nodes == 0 then
+            return
+        end
+        anim[field] = {}
+        for ____, n in ipairs(nodes) do
+            push(
+                anim[field],
+                read(n)
+            )
+        end
+    end
+    simple(
+        "shadow",
+        "shadows",
+        function(n)
+            local o = {}
+            if has(n, "id") then
+                o.id = str(n, "id")
+            end
+            return o
+        end
+    )
+    simple(
+        "add",
+        "adds",
+        function(n)
+            local o = {}
+            if has(n, "id") then
+                o.id = str(n, "id")
+            end
+            if has(n, "align") then
+                o.align = str(n, "align")
+            end
+            if has(n, "blend") then
+                o.blend = str(n, "blend")
+            end
+            if has(n, "ink") then
+                o.ink = int(n, "ink")
+            end
+            if has(n, "base") then
+                o.base = str(n, "base")
+            end
+            return o
+        end
+    )
+    simple(
+        "remove",
+        "removes",
+        function(n)
+            local o = {}
+            if has(n, "id") then
+                o.id = str(n, "id")
+            end
+            return o
+        end
+    )
+    simple(
+        "sprite",
+        "sprites",
+        function(n)
+            local o = {}
+            if has(n, "id") then
+                o.id = str(n, "id")
+            end
+            if has(n, "directions") then
+                o.directions = int(n, "directions")
+            end
+            if has(n, "member") then
+                o.member = str(n, "member")
+            end
+            if has(n, "ink") then
+                o.ink = int(n, "ink")
+            end
+            if has(n, "staticY") then
+                o.staticY = int(n, "staticY")
+            end
+            local dl = kids(n, "direction")
+            if #dl > 0 then
+                o.directionList = {}
+                for ____, d in ipairs(dl) do
+                    local dir = {}
+                    if has(d, "id") then
+                        dir.id = int(d, "id")
+                    end
+                    if has(d, "dx") then
+                        dir.dx = int(d, "dx")
+                    end
+                    if has(d, "dy") then
+                        dir.dy = int(d, "dy")
+                    end
+                    if has(d, "dz") then
+                        dir.dz = int(d, "dz")
+                    end
+                    push(o.directionList, dir)
+                end
+            end
+            return o
+        end
+    )
+    local frames = effectFrames(kids(a, "frame"))
+    if #frames > 0 then
+        anim.frames = frames
+    end
+    simple(
+        "avatar",
+        "avatars",
+        function(n)
+            local o = {}
+            if has(n, "background") then
+                o.background = str(n, "background")
+            end
+            if has(n, "foreground") then
+                o.foreground = str(n, "foreground")
+            end
+            if has(n, "ink") then
+                o.ink = int(n, "ink")
+            end
+            return o
+        end
+    )
+    simple(
+        "override",
+        "overrides",
+        function(n)
+            local o = {}
+            if has(n, "name") then
+                o.name = str(n, "name")
+            end
+            if has(n, "override") then
+                o.override = str(n, "override")
+            end
+            local fr = effectFrames(kids(n, "frame"))
+            if #fr > 0 then
+                o.frames = fr
+            end
+            return o
+        end
+    )
+    local out = {}
+    local ____temp_2
+    if anim.desc ~= nil then
+        ____temp_2 = anim.desc
+    else
+        local ____temp_1
+        if anim.name ~= nil then
+            ____temp_1 = anim.name
+        else
+            ____temp_1 = "animation"
+        end
+        ____temp_2 = ____temp_1
+    end
+    out[____temp_2] = anim
+    return out
+end
 function ____exports.actions(doc, offsetDocs)
     local root = find(doc, "actions")
     local out = {actions = {}, actionOffsets = {}}
@@ -9238,7 +9491,7 @@ function ____exports.actions(doc, offsetDocs)
         do
             local offsets = find(offsetDocs[state], "offsets")
             if offsets == nil then
-                goto __continue100
+                goto __continue167
             end
             local o = {action = state, offsets = {}}
             for ____, e in ipairs(kids(offsets, "offset")) do
@@ -9255,7 +9508,7 @@ function ____exports.actions(doc, offsetDocs)
             end
             push(out.actionOffsets, o)
         end
-        ::__continue100::
+        ::__continue167::
     end
     return out
 end
@@ -9271,24 +9524,24 @@ function ____exports.figureData(doc)
             colors = {}
         }
         for ____, c in ipairs(kids(p, "color")) do
-            local ____push_6 = push
-            local ____palette_colors_5 = palette.colors
-            local ____int_result_1 = int(c, "id")
-            local ____int_result_2 = int(c, "index")
-            local ____int_result_3 = int(c, "club")
-            local ____temp_4 = int(c, "selectable") == 1
-            local ____temp_0
+            local ____push_9 = push
+            local ____palette_colors_8 = palette.colors
+            local ____int_result_4 = int(c, "id")
+            local ____int_result_5 = int(c, "index")
+            local ____int_result_6 = int(c, "club")
+            local ____temp_7 = int(c, "selectable") == 1
+            local ____temp_3
             if c.text ~= nil then
-                ____temp_0 = c.text
+                ____temp_3 = c.text
             else
-                ____temp_0 = ""
+                ____temp_3 = ""
             end
-            ____push_6(____palette_colors_5, {
-                id = ____int_result_1,
-                index = ____int_result_2,
-                club = ____int_result_3,
-                selectable = ____temp_4,
-                hexCode = ____temp_0
+            ____push_9(____palette_colors_8, {
+                id = ____int_result_4,
+                index = ____int_result_5,
+                club = ____int_result_6,
+                selectable = ____temp_7,
+                hexCode = ____temp_3
             })
         end
         push(out.palettes, palette)
@@ -9297,21 +9550,21 @@ function ____exports.figureData(doc)
         kid(root, "sets"),
         "settype"
     )) do
-        local ____has_result_7
+        local ____has_result_10
         if has(st, "type") then
-            ____has_result_7 = str(st, "type")
+            ____has_result_10 = str(st, "type")
         else
-            ____has_result_7 = ""
+            ____has_result_10 = ""
         end
-        local ____has_result_8
+        local ____has_result_11
         if has(st, "paletteid") then
-            ____has_result_8 = int(st, "paletteid")
+            ____has_result_11 = int(st, "paletteid")
         else
-            ____has_result_8 = 1
+            ____has_result_11 = 1
         end
         local setType = {
-            type = ____has_result_7,
-            paletteId = ____has_result_8,
+            type = ____has_result_10,
+            paletteId = ____has_result_11,
             mandatory_f_0 = int(st, "mand_f_0") == 1,
             mandatory_f_1 = int(st, "mand_f_1") == 1,
             mandatory_m_0 = int(st, "mand_m_0") == 1,
@@ -9319,16 +9572,16 @@ function ____exports.figureData(doc)
             sets = {}
         }
         for ____, s in ipairs(kids(st, "set")) do
-            local ____int_result_10 = int(s, "id")
-            local ____has_result_9
+            local ____int_result_13 = int(s, "id")
+            local ____has_result_12
             if has(s, "gender") then
-                ____has_result_9 = str(s, "gender")
+                ____has_result_12 = str(s, "gender")
             else
-                ____has_result_9 = ""
+                ____has_result_12 = ""
             end
             local set = {
-                id = ____int_result_10,
-                gender = ____has_result_9,
+                id = ____int_result_13,
+                gender = ____has_result_12,
                 club = int(s, "club"),
                 colorable = int(s, "colorable") == 1,
                 selectable = int(s, "selectable") == 1,
@@ -9337,20 +9590,20 @@ function ____exports.figureData(doc)
                 parts = {}
             }
             for ____, p in ipairs(kids(s, "part")) do
-                local ____push_14 = push
-                local ____set_parts_13 = set.parts
-                local ____int_result_12 = int(p, "id")
-                local ____has_result_11
+                local ____push_17 = push
+                local ____set_parts_16 = set.parts
+                local ____int_result_15 = int(p, "id")
+                local ____has_result_14
                 if has(p, "type") then
-                    ____has_result_11 = str(p, "type")
+                    ____has_result_14 = str(p, "type")
                 else
-                    ____has_result_11 = ""
+                    ____has_result_14 = ""
                 end
-                ____push_14(
-                    ____set_parts_13,
+                ____push_17(
+                    ____set_parts_16,
                     {
-                        id = ____int_result_12,
-                        type = ____has_result_11,
+                        id = ____int_result_15,
+                        type = ____has_result_14,
                         colorable = int(p, "colorable") == 1,
                         index = int(p, "index"),
                         colorindex = int(p, "colorindex")
@@ -9361,15 +9614,15 @@ function ____exports.figureData(doc)
             if hidden ~= nil then
                 set.hiddenLayers = {}
                 for ____, l in ipairs(kids(hidden, "layer")) do
-                    local ____push_17 = push
-                    local ____set_hiddenLayers_16 = set.hiddenLayers
-                    local ____has_result_15
+                    local ____push_20 = push
+                    local ____set_hiddenLayers_19 = set.hiddenLayers
+                    local ____has_result_18
                     if has(l, "parttype") then
-                        ____has_result_15 = str(l, "parttype")
+                        ____has_result_18 = str(l, "parttype")
                     else
-                        ____has_result_15 = ""
+                        ____has_result_18 = ""
                     end
-                    ____push_17(____set_hiddenLayers_16, {partType = ____has_result_15})
+                    ____push_20(____set_hiddenLayers_19, {partType = ____has_result_18})
                 end
             end
             push(setType.sets, set)
@@ -9473,15 +9726,35 @@ end
 function AssetManager.prototype.getCollection(self, _name)
     return nil
 end
-local NO_EFFECTS = {
-    isAvatarEffectReady = function(_id) return false end,
-    downloadAvatarEffect = function(_id, _listener)
+local EffectManager = __TS__Class()
+EffectManager.name = "EffectManager"
+function EffectManager.prototype.____constructor(self, source)
+    self._source = source
+end
+function EffectManager.prototype.isAvatarEffectReady(self, id)
+    if self._source == nil or self._source == nil then
+        return false
     end
-}
+    return self._source.ready(id)
+end
+function EffectManager.prototype.downloadAvatarEffect(self, id, listener)
+    if self._source == nil or self._source == nil then
+        return
+    end
+    self._source.load(
+        id,
+        function()
+            if listener ~= nil and listener ~= nil and not listener.disposed then
+                listener:resetEffect(id)
+            end
+        end
+    )
+end
 ____exports.Renderer = __TS__Class()
 local Renderer = ____exports.Renderer
 Renderer.name = "Renderer"
-function Renderer.prototype.____constructor(self, data, source)
+function Renderer.prototype.____constructor(self, data, source, effects)
+    self.effects = __TS__New(EffectManager, effects)
     self.structure = __TS__New(AvatarStructure, nil)
     self.assets = __TS__New(AssetManager, source)
     self.structure:initGeometry(Convert.jsArrays(Convert.geometry(data.geometry)))
@@ -9515,9 +9788,17 @@ function Renderer.prototype.createImage(self, figure, scale)
         self.aliases,
         __TS__New(AvatarFigureContainer, figure),
         scale,
-        NO_EFFECTS,
+        self.effects,
         nil
     )
+end
+function Renderer.prototype.registerEffectAnimation(self, doc)
+    local data = Convert.effectAnimation(doc)
+    if data == nil then
+        return false
+    end
+    self.structure:registerAnimation(Convert.jsArrays(data))
+    return true
 end
 function Renderer.prototype.figureParts(self, figure)
     local out = {}
@@ -9526,22 +9807,22 @@ function Renderer.prototype.figureParts(self, figure)
         do
             local setType = self.structure.figureData:getSetType(____type)
             if not setType then
-                goto __continue18
+                goto __continue25
             end
             local partSet = setType:getPartSet(container:getPartSetId(____type))
             if not partSet then
-                goto __continue18
+                goto __continue25
             end
             for ____, part in __TS__Iterator(partSet.parts) do
                 out[#out + 1] = {part.type, part.id}
             end
         end
-        ::__continue18::
+        ::__continue25::
     end
     return out
 end
-function ____exports.createRenderer(data, source)
-    return __TS__New(____exports.Renderer, data, source)
+function ____exports.createRenderer(data, source, effects)
+    return __TS__New(____exports.Renderer, data, source, effects)
 end
 function ____exports.setState(avatar, s)
     avatar:setDirectionAngle(AvatarSetType.FULL, s.direction * 45)
@@ -9660,6 +9941,58 @@ function ____exports.partColor(avatar, partType)
         return 16777215
     end
     return color.rgb
+end
+function ____exports.effectSprites(avatar)
+    local sprites = {}
+    local out = {avatarDx = 0, avatarDy = 0, sprites = sprites}
+    local list = avatar:getSprites()
+    if list == nil or list == nil then
+        return out
+    end
+    local direction = avatar:getDirection()
+    for ____, sd in ipairs(list) do
+        do
+            local layer = avatar:getLayerData(sd)
+            local ox = sd:getDirectionOffsetX(direction)
+            local oy = sd:getDirectionOffsetY(direction)
+            if sd.id == "avatar" then
+                if layer ~= nil and layer ~= nil then
+                    ox = ox + layer.dx
+                    oy = oy + layer.dy
+                end
+                out.avatarDx = ox
+                out.avatarDy = oy
+                goto __continue60
+            end
+            local oz = sd:getDirectionOffsetZ(direction)
+            local frameNumber = 0
+            local dd = 0
+            if sd.hasDirections then
+                dd = direction
+            end
+            if layer ~= nil and layer ~= nil then
+                frameNumber = layer.animationFrame
+                ox = ox + layer.dx
+                oy = oy + layer.dy
+                dd = dd + layer.dd
+            end
+            if dd < 0 then
+                dd = dd + 8
+            elseif dd > 7 then
+                dd = dd - 8
+            end
+            sprites[#sprites + 1] = {
+                name = (((((avatar:getScale() .. "_") .. sd.member) .. "_") .. tostring(dd)) .. "_") .. tostring(frameNumber),
+                dx = ox,
+                dy = oy,
+                dz = oz,
+                staticY = sd.hasStaticY,
+                ink = sd.ink
+            }
+        end
+        ::__continue60::
+    end
+    return out
 end
 return ____exports
  end,

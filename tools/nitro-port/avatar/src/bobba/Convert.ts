@@ -212,6 +212,141 @@ export function animations(doc: XmlNode): any[]
 
 // --- HabboAvatarActions (+ the lay and swim offsets) ------------------------------------------------
 
+// --- an effect library's animation (Dance1, Spotlight, ...): nitro-converter's AnimationMapper --------------
+
+function effectFrames(nodes: XmlNode[]): any[]
+{
+    const out: any[] = [];
+    for(const f of nodes)
+    {
+        const frame: any = {};
+        if(has(f, 'repeats')) frame.repeats = int(f, 'repeats');
+        const parts = (name: string): any[] =>
+        {
+            const list: any[] = [];
+            for(const p of kids(f, name))
+            {
+                const part: any = {};
+                if(has(p, 'id')) part.id = str(p, 'id');
+                if(has(p, 'frame')) part.frame = int(p, 'frame');
+                if(has(p, 'base')) part.base = str(p, 'base');
+                if(has(p, 'action')) part.action = str(p, 'action');
+                if(has(p, 'dx')) part.dx = int(p, 'dx');
+                if(has(p, 'dy')) part.dy = int(p, 'dy');
+                if(has(p, 'dz')) part.dz = int(p, 'dz');
+                if(has(p, 'dd')) part.dd = int(p, 'dd');
+                const items = kids(p, 'item');
+                if(items.length > 0)
+                {
+                    part.items = [];
+                    for(const i of items)
+                    {
+                        const item: any = {};
+                        if(has(i, 'id')) item.id = str(i, 'id');
+                        if(has(i, 'base')) item.base = str(i, 'base');
+                        push(part.items, item);
+                    }
+                }
+                push(list, part);
+            }
+            return list;
+        };
+        const fxs = parts('fx');
+        if(fxs.length > 0) frame.fxs = fxs;
+        const bodyparts = parts('bodypart');
+        if(bodyparts.length > 0) frame.bodyparts = bodyparts;
+        push(out, frame);
+    }
+    return out;
+}
+
+// { [desc]: animation }, as the converter writes it into the library's JSON (animations)
+export function effectAnimation(doc: XmlNode): any
+{
+    const a = (doc.name === 'animation') ? doc : find(doc, 'animation');
+    if(a === null) return null;
+    const anim: any = {};
+    if(has(a, 'name')) anim.name = str(a, 'name');
+    if(has(a, 'desc')) anim.desc = str(a, 'desc');
+    if(has(a, 'resetOnToggle')) anim.resetOnToggle = (str(a, 'resetOnToggle') === 'true');
+    const directions = kids(a, 'direction');
+    if(directions.length > 0)
+    {
+        anim.directions = [];
+        for(const d of directions)
+        {
+            const dir: any = {};
+            if(has(d, 'offset')) dir.offset = int(d, 'offset');
+            push(anim.directions, dir);
+        }
+    }
+    const simple = (name: string, field: string, read: (n: XmlNode) => any): void =>
+    {
+        const nodes = kids(a, name);
+        if(nodes.length === 0) return;
+        anim[field] = [];
+        for(const n of nodes) push(anim[field], read(n));
+    };
+    simple('shadow', 'shadows', (n) => { const o: any = {}; if(has(n, 'id')) o.id = str(n, 'id'); return o; });
+    simple('add', 'adds', (n) =>
+    {
+        const o: any = {};
+        if(has(n, 'id')) o.id = str(n, 'id');
+        if(has(n, 'align')) o.align = str(n, 'align');
+        if(has(n, 'blend')) o.blend = str(n, 'blend');
+        if(has(n, 'ink')) o.ink = int(n, 'ink');
+        if(has(n, 'base')) o.base = str(n, 'base');
+        return o;
+    });
+    simple('remove', 'removes', (n) => { const o: any = {}; if(has(n, 'id')) o.id = str(n, 'id'); return o; });
+    simple('sprite', 'sprites', (n) =>
+    {
+        const o: any = {};
+        if(has(n, 'id')) o.id = str(n, 'id');
+        if(has(n, 'directions')) o.directions = int(n, 'directions');
+        if(has(n, 'member')) o.member = str(n, 'member');
+        if(has(n, 'ink')) o.ink = int(n, 'ink');
+        if(has(n, 'staticY')) o.staticY = int(n, 'staticY');
+        const dl = kids(n, 'direction');
+        if(dl.length > 0)
+        {
+            o.directionList = [];
+            for(const d of dl)
+            {
+                const dir: any = {};
+                if(has(d, 'id')) dir.id = int(d, 'id');
+                if(has(d, 'dx')) dir.dx = int(d, 'dx');
+                if(has(d, 'dy')) dir.dy = int(d, 'dy');
+                if(has(d, 'dz')) dir.dz = int(d, 'dz');
+                push(o.directionList, dir);
+            }
+        }
+        return o;
+    });
+    const frames = effectFrames(kids(a, 'frame'));
+    if(frames.length > 0) anim.frames = frames;
+    simple('avatar', 'avatars', (n) =>
+    {
+        const o: any = {};
+        if(has(n, 'background')) o.background = str(n, 'background');
+        if(has(n, 'foreground')) o.foreground = str(n, 'foreground');
+        if(has(n, 'ink')) o.ink = int(n, 'ink');
+        return o;
+    });
+    simple('override', 'overrides', (n) =>
+    {
+        const o: any = {};
+        if(has(n, 'name')) o.name = str(n, 'name');
+        if(has(n, 'override')) o.override = str(n, 'override');
+        const fr = effectFrames(kids(n, 'frame'));
+        if(fr.length > 0) o.frames = fr;
+        return o;
+    });
+    const out: any = {};
+    out[anim.desc !== undefined ? anim.desc : (anim.name !== undefined ? anim.name : 'animation')] = anim;
+    return out;
+}
+
 export function actions(doc: XmlNode, offsetDocs: { [state: string]: XmlNode }): any
 {
     const root = find(doc, 'actions');

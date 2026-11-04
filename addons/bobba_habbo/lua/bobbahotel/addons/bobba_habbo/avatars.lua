@@ -41,7 +41,7 @@ local function renderer(cb)
 				figureData = { x("figure") },
 			}
 			H.figureIndex(data) -- figuremap too, while we're at it
-			local ok, r = pcall(NA.createRenderer, trees, { get = function(name) return AV.assets[name] end })
+			local ok, r = pcall(NA.createRenderer, trees, { get = function(name) return AV.assets[name] end }, AV.effectSource)
 			-- the big figuredata a piece at a time
 			if ok then
 				ok, r = pcall(function()
@@ -61,6 +61,8 @@ local function renderer(cb)
 			end
 			AV.renderer = r
 			for _, w in ipairs(waiting) do w(r) end
+			-- Nitro's mandatory effect libraries (the dances) and the hand items (signs, drinks)
+			AV.loadMandatory()
 		end)
 	end)
 end
@@ -71,7 +73,8 @@ local function addLibrary(lib)
 	local manifest = lib.xml[name .. "_manifest"] or lib.xml.manifest
 	if not manifest then return end
 	local X = H.xml
-	for _, a in ipairs(X.all(X.parse(manifest, H.yield), "asset")) do
+	local tree = X.parse(manifest, H.yield)
+	for _, a in ipairs(X.all(tree, "asset")) do
 		local img = lib.images[name .. "_" .. a.attrs.name]
 		local offset
 		for _, p in ipairs(X.children(a, "param")) do
@@ -86,6 +89,105 @@ local function addLibrary(lib)
 			}
 		end
 	end
+	-- another name for a picture (the effects use these for directions that look the same); mirrored
+	-- ones are left out
+	for _, a in ipairs(X.all(tree, "alias")) do
+		local n, link = a.attrs.name, a.attrs.link
+		if n and link and not AV.assets[n] and AV.assets[link] and (a.attrs.fliph or "0") == "0" and (a.attrs.flipv or "0") == "0" then
+			AV.assets[n] = AV.assets[link]
+		end
+	end
+end
+
+-- --- effects (Nitro's EffectAssetDownloadManager): the dances and the avatar effects -------------------
+-- effectmap.xml says which library each effect is in ("dance.1" -> Dance1, "1" -> Spotlight, ...);
+-- a library brings pictures (like clothes) and an animation the renderer is told about.
+AV.effectLibs = AV.effectLibs or {}   -- lib name -> true when loaded, or a list of callbacks while loading
+local effectMap
+local function effectLibraries(id)
+	if not effectMap then
+		effectMap = {}
+		local data = H.avatarDataCache and H.avatarDataCache() or nil
+		local text = data and data.effectmap or ""
+		for attrs in text:gmatch("<effect%s([^>]-)/?>") do
+			local eid, lib = attrs:match('id="([^"]+)"'), attrs:match('lib="([^"]+)"')
+			if eid and lib then
+				effectMap[eid] = effectMap[eid] or {}
+				table.insert(effectMap[eid], lib)
+			end
+		end
+	end
+	return effectMap[tostring(id)] or {}
+end
+AV.effectLibraries = effectLibraries
+
+local function loadEffectLibrary(name, cb)
+	local st = AV.effectLibs[name]
+	if st == true then cb(true) return end
+	if type(st) == "table" then st[#st + 1] = cb return end
+	AV.effectLibs[name] = { cb }
+	local function finish(ok)
+		local list = AV.effectLibs[name]
+		AV.effectLibs[name] = ok and true or nil
+		if type(list) == "table" then for _, f in ipairs(list) do f(ok) end end
+	end
+	H.config(function(cfg, err)
+		if not cfg then finish(false) return end
+		H.library("effect/" .. name, cfg.clientUrl .. name .. ".swf", function(lib, e)
+			if not lib then print("[Bobba] effect " .. name .. ": " .. tostring(e)) finish(false) return end
+			H.work(function()
+				addLibrary(lib)
+				for _, xmlText in pairs(lib.xml) do
+					if xmlText:find("<animation", 1, true) then
+						local ok, why = pcall(function() AV.renderer:registerEffectAnimation(H.xml.parse(xmlText, H.yield)) end)
+						if not ok then print("[Bobba] effect " .. name .. ": " .. tostring(why)) end
+					end
+				end
+				H.warm(lib)
+				finish(true)
+			end)
+		end)
+	end)
+end
+
+-- (what the renderer asks: ready, and load then tell it)
+AV.effectSource = {
+	ready = function(id)
+		for _, lib in ipairs(effectLibraries(id)) do if AV.effectLibs[lib] ~= true then return false end end
+		return #effectLibraries(id) > 0
+	end,
+	load = function(id, done)
+		local libs = effectLibraries(id)
+		local left = #libs
+		for _, lib in ipairs(libs) do
+			loadEffectLibrary(lib, function(ok)
+				left = left - 1
+				if left == 0 and ok then
+					done()
+					-- (drawn again with it)
+					for _, e in pairs(AV.images) do e.frame = nil e.forced = FRAME_EVERY end
+				end
+			end)
+		end
+	end,
+}
+
+-- the dances (loaded at the start, as Nitro's avatar.mandatory.effect.libraries) and the hand items
+-- (hh_human_item: signs, cups, ...); when they're here every avatar is put together again
+function AV.loadMandatory()
+	local function again() for _, e in pairs(AV.images) do e.state = nil end end
+	for i = 1, 4 do AV.effectSource.load("dance." .. i, again) end
+	H.config(function(cfg)
+		if not cfg then return end
+		H.library("figure/hh_human_item", cfg.clientUrl .. "hh_human_item.swf", function(lib)
+			if not lib then return end
+			H.work(function()
+				addLibrary(lib)
+				H.warm(lib)
+				again()
+			end)
+		end, { canWait = true })
+	end)
 end
 
 -- a figure is ready when every library it needs is loaded
@@ -128,7 +230,8 @@ local function imageFor(u, figure)
 end
 
 local function stateKey(info)
-	return info.dir .. ":" .. info.posture .. ":" .. (info.talk and "t" or "")
+	return info.dir .. ":" .. info.posture .. ":" .. (info.talk and "t" or "") .. ":" .. (info.dance or 0) .. ":" .. (info.expression or 0)
+		.. ":" .. (info.sign or -1) .. ":" .. (info.sleep and "z" or "") .. ":" .. (info.effect or 0)
 end
 
 -- one picture: (px, py) its top-left corner in avatar pixels from the avatar's corner (bx, by) on
@@ -160,8 +263,8 @@ local function draw(u, info)
 		e.state = key
 		NA.setState(e.image, {
 			direction = info.dir, headDirection = info.dir, posture = info.posture, postureParameter = "",
-			gesture = 0, dance = 0, sign = -1, carryObject = 0, useObject = 0,
-			talk = info.talk and true or false, sleep = false, blink = false, expression = 0, effect = 0,
+			gesture = 0, dance = info.dance or 0, sign = info.sign or -1, carryObject = 0, useObject = 0,
+			talk = info.talk and true or false, sleep = info.sleep and true or false, blink = false, expression = info.expression or 0, effect = info.effect or 0,
 		})
 		e.frame = nil
 		e.forced = FRAME_EVERY
@@ -179,7 +282,11 @@ local function draw(u, info)
 			end
 		end
 	end
-	e.frame = e.frame or NA.frame(e.image)
+	if not e.frame then
+		e.frame = NA.frame(e.image)
+		-- (an effect's own pictures: AvatarVisualization's extra sprites)
+		e.fx = ((info.effect or 0) > 0) and NA.effectSprites(e.image) or nil
+	end
 	local f = e.frame
 	if f.width == 0 then return false end
 	local k = info.k
@@ -190,8 +297,28 @@ local function draw(u, info)
 	-- AvatarVisualization: the avatar picture's corner relative to the spot it stands on
 	local ox = ((-ROOM_SCALE / 2) + cx) - ((f.width - ROOM_SCALE) / 2)
 	local oy = ((-f.height + (ROOM_SCALE / 4)) + cy) + postureOffset
+	-- (an effect may move the whole avatar: a hoverboard lifts it)
+	local fx = e.fx
+	if fx then ox, oy = ox + (fx.avatarDx or 0), oy + (fx.avatarDy or 0) end
 	-- the avatar's corner on screen, on a whole pixel
 	local bx, by = math.floor(info.sx + 0.5), math.floor(info.sy + 0.5)
+	-- the effect's pictures, behind the avatar (dz <= 0) or in front (dz > 0)
+	local function effectLayer(front)
+		if not fx then return end
+		local sx0, sy0 = math.floor(info.sx + 0.5), math.floor(info.sy + 0.5)
+		for _, sp in ipairs(fx.sprites) do
+			if (sp.dz > 0) == front then
+				local a = AV.assets[sp.name]
+				if a then
+					local px = -a.offsetX - ROOM_SCALE / 2 + sp.dx
+					local py = -a.offsetY + sp.dy + (sp.staticY and 0 or postureOffset)
+					if sp.ink == 33 then render.OverrideBlend(true, BLEND_SRC_ALPHA, BLEND_ONE, BLENDFUNC_ADD) end
+					sprite(sp.name, sx0, sy0, px, py, k, false, 0xFFFFFF)
+					if sp.ink == 33 then render.OverrideBlend(false) end
+				end
+			end
+		end
+	end
 	-- pixel art: no blurring between pixels when it is scaled up or down
 	render.PushFilterMag(TEXFILTER.POINT)
 	render.PushFilterMin(TEXFILTER.POINT)
@@ -199,9 +326,11 @@ local function draw(u, info)
 	if info.posture == "mv" or info.posture == "std" then
 		sprite("h_std_sd_1_0_0", bx, by, -17, -7, k, false, 0xFFFFFF, 50)
 	end
+	effectLayer(false)
 	for _, s in ipairs(f.sprites) do
 		sprite(s.name, bx, by, ox + s.x, oy + s.y, k, s.flipH, s.color)
 	end
+	effectLayer(true)
 	render.PopFilterMin()
 	render.PopFilterMag()
 	return true

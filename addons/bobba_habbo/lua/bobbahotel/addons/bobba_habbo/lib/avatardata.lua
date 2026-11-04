@@ -136,6 +136,7 @@ function H.figureDataXml(cb)
 end
 
 local avatarCache
+function H.avatarDataCache() return avatarCache end
 function H.avatarData(cb)
 	if avatarCache then cb(avatarCache) return end
 	H.config(function(cfg, err)

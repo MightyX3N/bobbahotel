@@ -161,11 +161,19 @@ AE.drawPart = function(category, item, figure, cx, cy, s)
 	return true
 end
 
-AE.drawPreview = function(figure, gender, direction, cx, top, k)
+local previewUnit = { id = "editor-preview" }
+AE.drawPreview = function(figure, gender, direction, cx, top, k, effect)
 	-- (someone without a look yet is drawn in the default one, as in the room)
 	if not figure or figure == "" then figure = H.DEFAULT_FIGURE end
 	local e = avatarPicture(figure, gender, direction, false)
 	if not e then return false end
+	-- with an effect: drawn the way the room draws people (animated, the effect's pictures too), its
+	-- feet where the still picture's are
+	if (effect or 0) > 0 and BOBBA.room.figureDrawer then
+		previewUnit.figure, previewUnit.gender = figure, gender
+		return BOBBA.room.figureDrawer(previewUnit, { x = 0, y = 0, z = 0, sx = cx, sy = top + (e.ch - 16) * k, k = k, dir = direction,
+			posture = "std", now = SysTime(), talk = false, effect = effect })
+	end
 	-- the canvas in the middle at cx, its top at top
 	local x, y = math.floor(cx - e.cw * k / 2 + 0.5), math.floor(top + 0.5)
 	render.PushFilterMag(TEXFILTER.POINT)

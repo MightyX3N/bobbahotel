@@ -35,7 +35,11 @@ borderless full screen, its own icon.
 
 ## Next
 
-4. **Avatar**: the rest of the clothes editor, effects, dances, signs.
+4. **Avatar**: done so far: dances (Habbo Club's four too), wave, blow a kiss, laugh, idle (asleep
+   after two minutes of nothing, eyes closed; avatars blink), signs, sitting on the floor, avatar
+   effects (owned with a time and a count, worn from the avatar editor's Effects tab, drawn with
+   Habbo's effect pictures: hoverboards, spotlights, sparkles ...), the wardrobe (ten saved looks).
+   Effects are given with `bobba_give <player> effect <id> [days]` until the catalogue sells them.
    - the camera: photos, photos as wall furni, room thumbnails for the navigator
 5. **Chat commands**.
 6. **Friends and messenger**: friend requests, the messenger, following friends.
