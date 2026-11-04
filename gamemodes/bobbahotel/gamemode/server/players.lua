@@ -133,3 +133,32 @@ concommand.Add("bobba_wallet_setting", function(ply, _, args)
 	end
 	reply(ply, args[1] .. " = " .. tostring(BOBBA.store.setting(args[1], "")))
 end)
+
+-- bobba_reset_player [player name or steamid64] [all|look]: starts a player over as a new player
+-- (rooms, inventory, money, look, everything: hotel/reset.lua), or only their look. Without a name:
+-- yourself. For staff with bobba.staff.reset.
+concommand.Add("bobba_reset_player", function(ply, _, args)
+	if IsValid(ply) and not BOBBA.perms.has(ply, "bobba.staff.reset") then reply(ply, "that's for staff") return end
+	local who, what = args[1], args[2] or "all"
+	if who == "all" or who == "look" then who, what = nil, who end
+	local key
+	if not who then
+		if not IsValid(ply) then reply(ply, "bobba_reset_player <player|steamid64> [all|look]") return end
+		key = BOBBA.platform.playerKey(ply)
+	else
+		for _, p in ipairs(player.GetAll()) do
+			if p:SteamID64() == who or string.find(string.lower(p:Nick()), string.lower(who), 1, true) then key = BOBBA.platform.playerKey(p) break end
+		end
+		key = key or (who:match("^%d+$") and who)
+	end
+	if not key then reply(ply, "no one called " .. tostring(who)) return end
+	if what == "look" then
+		BOBBA.reset.look(key)
+		reply(ply, key .. ": back to the default look")
+	elseif what == "all" then
+		BOBBA.reset.player(key)
+		reply(ply, key .. ": started over as a new player")
+	else
+		reply(ply, "bobba_reset_player [player|steamid64] [all|look]")
+	end
+end)
