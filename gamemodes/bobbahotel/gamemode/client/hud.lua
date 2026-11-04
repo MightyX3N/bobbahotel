@@ -105,6 +105,12 @@ HUD.meOpen = false
 -- as what's typed (at least 173: a browser's 20-character input in Ubuntu Condensed) up to the
 -- right side's things
 function HUD.chatInput(screenW, screenH, textW)
+	-- (the phone's look: a pill at the bottom left, 52 high)
+	if U.style() ~= "habbo" then
+		local margin = math.floor(math.min(screenW, screenH) * 0.025)
+		local w = math.Clamp(math.max(360, (textW or 0) + 90), 360, math.max(360, screenW * 0.42))
+		return margin * 2, screenH - margin - 52, w, 52
+	end
 	local x = 16
 	for _, it in ipairs(leftItems()) do x = x + it.w + 8 end
 	local inner = math.max(173, textW or 0)
@@ -426,6 +432,12 @@ BOBBA.events.on("roomShown", "bobba.hud.roominfo", function() HUD.roomInfoShown 
 
 -- --- putting them on the screen ---------------------------------------------------------------------
 function HUD.update()
+	-- (the phone's look has none of these: client/device.lua)
+	if U.style() ~= "habbo" then
+		for _, id in ipairs({ "toolbar", "me", "purse", "roomtools" }) do U.hudRemove(id) end
+		HUD.meOpen = false
+		return
+	end
 	U.hud("toolbar", function(sw, sh)
 		if not inHotel() then return nil end
 		return 0, sh - HUD.TOOLBAR_H, sw, HUD.TOOLBAR_H
@@ -455,6 +467,7 @@ hook.Add("VGUIMousePressed", "bobba.hud.me", function(panel)
 end)
 
 HUD.update()
+BOBBA.events.on("uiStyleChanged", "bobba.hud", function() HUD.update() end)
 
 -- the buttons that already have something to open
 HUD.actions.avatarEditor = function() if BOBBA.avatarEditor and BOBBA.avatarEditor.open then BOBBA.avatarEditor.open() end end

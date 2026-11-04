@@ -481,6 +481,20 @@ local function createInput()
 	frame:SetKeyboardInputEnabled(true)
 	frame:SetMouseInputEnabled(true)
 	frame.Paint = function(self, w, h)
+		-- (the phone's look: a white pill, the send button at its end)
+		if C.phoneLook() then
+			draw.RoundedBox(math.floor(h / 2), 0, math.floor(3 * IS), w, h - math.floor(3 * IS), Color(0, 0, 0, 70))
+			draw.RoundedBox(math.floor(h / 2), 0, 0, w, h, Color(244, 246, 251))
+			local r = math.floor(20 * IS)
+			local cx, cy = w - math.floor(6 * IS) - r, h / 2
+			draw.RoundedBox(r, cx - r, cy - r, r * 2, r * 2, Color(15, 26, 46))
+			local DV = BOBBA.device
+			if DV and DV.PD then
+				local d = setmetatable({ surf = { panel = self, clicks = {}, zones = {}, scrolls = {} }, s = IS, ox = 0, oy = 0, a = 1 }, DV.PD)
+				d:glyph("M5 12h14M13 6l6 6-6 6", (cx - 9 * IS) / IS, (cy - 9 * IS) / IS, 18, Color(244, 246, 251), 2.4)
+			end
+			return
+		end
 		draw.RoundedBox(math.floor(8 * IS), 0, 0, w, h, Color(0, 0, 0, 255))
 		draw.RoundedBox(math.floor(6 * IS), math.floor(2 * IS), math.floor(2 * IS), w - math.floor(4 * IS), h - math.floor(4 * IS), Color(237, 237, 237, 255))
 		surface.SetDrawColor(255, 255, 255, 255)
@@ -497,6 +511,18 @@ local function createInput()
 			render.PopFilterMin()
 			render.PopFilterMag()
 		end
+	end
+	-- (the phone's send button)
+	frame.OnMousePressed = function(self, code)
+		if code ~= MOUSE_LEFT or not C.phoneLook() then return end
+		local mx = self:CursorPos()
+		if mx < self:GetWide() - math.floor(52 * IS) then self.entry:RequestFocus() return end
+		local e = self.entry
+		if not IsValid(e) or (e:GetValue() or "") == "" then return end
+		if C.floodUntil and SysTime() < C.floodUntil then return end
+		local keep = C.send(e:GetValue(), false)
+		e:SetText(keep)
+		e:SetCaretPos(#keep)
 	end
 	fonts()
 	local entry = vgui.Create("DTextEntry", frame)
@@ -540,15 +566,19 @@ local function createInput()
 		if BOBBA.steering then BOBBA.steering.keyReleased(code) end
 	end
 	entry.Paint = function(self, w, h)
+		local phone = C.phoneLook()
+		local font = phone and C.phoneFont() or F.input
+		if self.bobbaFont ~= font then self:SetFont(font) self.bobbaFont = font end
 		if C.floodUntil and SysTime() < C.floodUntil then
 			-- (Text variant="danger")
-			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), F.input, 0, h / 2, Color(220, 53, 69), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(string.format("Please wait %d seconds...", math.ceil(C.floodUntil - SysTime())), font, 0, h / 2, Color(220, 53, 69), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			return
 		end
 		self:DrawTextEntryText(Color(0, 0, 0), Color(80, 140, 230), Color(0, 0, 0))
 		if (self:GetValue() or "") == "" then
 			-- (the browser's placeholder grey)
-			draw.SimpleText((BOBBA.steering and BOBBA.steering.placeholder()) or self:GetPlaceholderText(), F.input, 2, h / 2, Color(117, 117, 117), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			local ph = (BOBBA.steering and BOBBA.steering.placeholder()) or (phone and BOBBA.ui.text("bobba.chat.say", "Say something...")) or self:GetPlaceholderText()
+			draw.SimpleText(ph, font, 2, h / 2, phone and Color(74, 88, 117) or Color(117, 117, 117), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 	end
 	frame.entry = entry
@@ -556,10 +586,16 @@ local function createInput()
 	return frame
 end
 
+-- the phone's look (client/device.lua): the input is a pill with its font
+function C.phoneLook() return BOBBA.ui and BOBBA.ui.style and BOBBA.ui.style() ~= "habbo" end
+function C.phoneFont() return BOBBA.device and BOBBA.device.font and BOBBA.device.font(15, 500, IS) or F.input end
+
 -- the input sits in the toolbar while a room is shown, and keeps the keyboard (so typing anywhere goes
 -- into it, like Habbo) unless something else wants it
 hook.Add("Think", "bobba.chat", function()
 	local show = V.mode == "room" and V.room ~= nil and not (BOBBA.loading and BOBBA.loading.active)
+	-- (the tablet over the room: the chat box makes way)
+	if show and BOBBA.device and BOBBA.device.covering and BOBBA.device.covering() then show = false end
 	if not show then
 		if IsValid(C.input) then C.input:SetVisible(false) end
 		return
@@ -570,8 +606,15 @@ hook.Add("Think", "bobba.chat", function()
 	local f = createInput()
 	f:SetVisible(true)
 	-- as wide as what's typed (the ::after copy of it plus two spaces)
-	surface.SetFont(F.input)
+	surface.SetFont(C.phoneLook() and C.phoneFont() or F.input)
 	local tw = surface.GetTextSize((f.entry:GetValue() or "") .. "  ") / IS
+	-- (the text's room in the box: the phone's pill or Nitro's box)
+	local phone = C.phoneLook()
+	if f.bobbaPhone ~= phone or f.bobbaIS ~= IS then
+		f.bobbaPhone, f.bobbaIS = phone, IS
+		if phone then f.entry:DockMargin(math.floor(22 * IS), math.floor(8 * IS), math.floor(56 * IS), math.floor(8 * IS))
+		else f.entry:DockMargin(math.floor(14 * IS), math.floor(10 * IS), math.floor((2 + 10 + 17 + 10) * IS), math.floor(10 * IS)) end
+	end
 	local x, y, w, h
 	if BOBBA.hud and BOBBA.hud.chatInput then
 		x, y, w, h = BOBBA.hud.chatInput(ScrW() / IS, ScrH() / IS, tw)

@@ -20,6 +20,23 @@ U.C = {
 	success = Color(0, 128, 11), closeTop = Color(245, 80, 65), closeBottom = Color(194, 48, 39), closeBorder = Color(146, 25, 17),
 }
 
+-- The hotel's look: "phone" (the default: a phone and a tablet, client/device.lua) or "habbo"
+-- (Nitro's toolbar and windows). A content pack chooses one (BOBBA.ui.packStyle, e.g. the Habbo pack);
+-- a player can choose for themselves (bobba_ui phone / habbo; empty: the pack's).
+local styleVar = CreateClientConVar("bobba_ui", "", true, false, "The hotel's look: phone or habbo (empty: what the content pack chooses)")
+function U.style()
+	local v = styleVar:GetString()
+	if v == "phone" or v == "habbo" then return v end
+	return U.packStyle or "phone"
+end
+U.styleVar = styleVar
+-- (BOBBA.events "uiStyleChanged" when it changes)
+hook.Add("Think", "bobba.ui.style", function()
+	local st = U.style()
+	if U.lastStyle and U.lastStyle ~= st then BOBBA.events.emit("uiStyleChanged", st) end
+	U.lastStyle = st
+end)
+
 -- The UI's size (toolbar, purse, windows, chat input): Habbo's pixels on a 1080 high screen, and
 -- that much bigger on a bigger one (1.33x on 1440, 2x on 4K), like a browser zoomed to fit.
 -- bobba_ui_scale <n> sets it yourself (0 = by the screen). Rooms and their chat bubbles have their
@@ -49,6 +66,7 @@ end
 -- --- drawing helpers, in CSS pixels from the window's corner ---------------------------------------
 local D = {}
 D.__index = D
+U.D = D
 
 local function px(d, v) return math.floor(v * d.s + 0.5) end
 

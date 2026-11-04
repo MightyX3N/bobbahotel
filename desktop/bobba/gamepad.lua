@@ -162,6 +162,7 @@ function Pad.update(dt, G)
 		if R and R.pressR then pcall(R.pressR) end
 	end
 	if pressed(btn("chat")) then Pad.chat() end
+	if pressed(btn("phone")) and BOBBA and BOBBA.device and BOBBA.device.toggle then pcall(BOBBA.device.toggle) end
 	-- the wheels: held open, chosen when let go
 	for _, w in ipairs({ { btn("menu"), "menu", menuItems }, { btn("say"), "say", sayItems } }) do
 		local press, release = pressed(w[1])

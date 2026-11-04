@@ -113,6 +113,14 @@ return function(G)
 	-- the file for a face name; bold: whether that file is bold already
 	local function fontFile(face, bold)
 		face = tostring(face or ""):lower()
+		-- the phone's font: its weights are families of their own (as Windows sees them)
+		local jakarta = { ["plus jakarta sans medium"] = "Medium", ["plus jakarta sans"] = bold and "Bold" or "Medium",
+			["plus jakarta sans bold"] = "Bold", ["plus jakarta sans extrabold"] = "ExtraBold" }
+		if jakarta[face] then
+			local w = jakarta[face]
+			local p = G.findPath("resource/fonts/PlusJakartaSans-" .. w .. ".ttf", "GAME")
+			if p then return p, w ~= "Medium", false, true end
+		end
 		if face == "ubuntu condensed" or face == "ubuntu-c" then
 			local p = G.findPath("resource/fonts/UbuntuCondensed-Regular.ttf", "GAME")
 			if p then return p, false end
@@ -134,7 +142,25 @@ return function(G)
 		return nil, false
 	end
 
-	local function makeFont(path, gsize, fromGame)
+	-- a font's whole height as Windows measures it (GMod's size is that): the OS/2 table's
+	-- usWinAscent + usWinDescent over the em (FreeType's own ascent/descent can be smaller)
+	local function winCell(bytes)
+		if type(bytes) ~= "string" or #bytes < 12 then return nil end
+		local function u16(o) return bytes:byte(o + 1) * 256 + bytes:byte(o + 2) end
+		local function u32(o) return u16(o) * 65536 + u16(o + 2) end
+		local n, head, os2 = u16(4), nil, nil
+		for i = 0, n - 1 do
+			local rec = 12 + i * 16
+			local tag = bytes:sub(rec + 1, rec + 4)
+			if tag == "head" then head = u32(rec + 8) elseif tag == "OS/2" then os2 = u32(rec + 8) end
+		end
+		if not head or not os2 then return nil end
+		local em = u16(head + 18)
+		if em == 0 then return nil end
+		return (u16(os2 + 74) + u16(os2 + 76)) / em, u16(os2 + 74) / em
+	end
+
+	local function makeFont(path, gsize, fromGame, useWin)
 		local data = path and (fromGame and nil or readFontFile(path))
 		if fromGame then
 			local ok, d = pcall(love.filesystem.newFileData, "fonts/UbuntuCondensed-Regular.ttf")
@@ -144,6 +170,7 @@ return function(G)
 		if not cellRatio[key] then
 			local ok, probe = pcall(function() return data and lg.newFont(data, 100) or lg.newFont(100) end)
 			if ok then cellRatio[key] = (probe:getAscent() - probe:getDescent()) / 100 else cellRatio[key] = 1.2 end
+			if useWin and path then cellRatio[key] = (winCell(FS.read(path))) or cellRatio[key] end
 		end
 		local em = math.max(1, math.floor(gsize / cellRatio[key] + 0.5))
 		local ok, f = pcall(function()
@@ -159,9 +186,9 @@ return function(G)
 		data = data or {}
 		local weight = data.weight or 500
 		local wantBold = weight >= 600
-		local path, isBold, fromGame = fontFile(data.font, wantBold)
+		local path, isBold, fromGame, useWin = fontFile(data.font, wantBold)
 		local size = math.max(4, math.floor(tonumber(data.size) or 13))
-		local f = makeFont(path, size, fromGame)
+		local f = makeFont(path, size, fromGame, useWin)
 		f:setFilter("linear", "linear")
 		fonts[name] = {
 			font = f,
@@ -171,6 +198,15 @@ return function(G)
 			outline = data.outline and true or false,
 			size = size,
 		}
+		-- (Windows' measure: the whole height is the size, the letters as far down as its ascent)
+		if useWin and path then
+			local cell, asc = winCell(FS.read(path))
+			if cell then
+				local em = size / cell
+				fonts[name].h = size
+				fonts[name].dy = math.floor(asc * em - f:getAscent() + 0.5)
+			end
+		end
 	end
 	local defaultFont
 	local function fontOf(name)
@@ -191,7 +227,7 @@ return function(G)
 	local function textSize(text, fname)
 		local f = fontOf(fname)
 		text = tostring(text or "")
-		local h = f.font:getHeight()
+		local h = f.h or f.font:getHeight()
 		if not text:find("\n", 1, true) then
 			if text == "" then return 0, h end
 			return f.font:getWidth(text) + f.bold, h
@@ -219,6 +255,7 @@ return function(G)
 			lg.pop()
 			return
 		end
+		y = y + (f.dy or 0)
 		lg.print(text, x, y)
 		for i = 1, f.bold do lg.print(text, x + i, y) end
 	end
@@ -505,14 +542,14 @@ return function(G)
 	draw.DrawText = function(text, font, x, y, c, xa)
 		text = tostring(text or "")
 		local f = fontOf(font)
-		local lh = f.font:getHeight()
+		local lh = f.h or f.font:getHeight()
 		local i = 0
 		for line in (text .. "\n"):gmatch("(.-)\n") do
 			draw.SimpleText(line, font, x, y + i * lh, c, xa, TEXT_ALIGN_TOP)
 			i = i + 1
 		end
 	end
-	draw.GetFontHeight = function(font) return fontOf(font).font:getHeight() end
+	draw.GetFontHeight = function(font) local f = fontOf(font) return f.h or f.font:getHeight() end
 	draw.WordBox = function(b, x, y, text, font, bc, tc)
 		local w, h = textSize(text, font)
 		draw.RoundedBox(4, x, y, w + b * 2, h + b * 2, bc)

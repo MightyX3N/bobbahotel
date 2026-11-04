@@ -8,6 +8,9 @@ local P = BOBBA.platform
 -- (addons load before the gamemode's client files: the table is started here if it isn't there yet)
 BOBBA.ui = BOBBA.ui or { windows = {} }
 local U = BOBBA.ui
+-- the Habbo pack's look: Nitro's toolbar and windows (not the phone; a player can still pick it:
+-- bobba_ui phone)
+U.packStyle = "habbo"
 
 -- nitro-react's name -> the picture in HabboAir.swf
 H.UI_ICONS = {

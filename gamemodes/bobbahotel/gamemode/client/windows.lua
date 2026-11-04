@@ -178,6 +178,7 @@ local SET = {
 		{ cv("volume_trax", "100"), "widget.memenu.settings.volume.trax", "Trax" },
 	},
 }
+HUD.settings = SET
 
 local function speaker(d, x, y, waves, c)
 	-- FaVolumeDown / Up / Mute, 14.4 wide: the speaker, then the waves

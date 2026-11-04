@@ -29,6 +29,7 @@ S.KEYS = {
 	{ id = "use", default = KEY_SPACE, label = { "bobba.controls.use", "Use what's next to you" } },
 	{ id = "next", default = KEY_TAB, label = { "bobba.controls.next", "Pick the next thing" } },
 	{ id = "chat", default = KEY_T, label = { "bobba.controls.chat", "Open the chat (WASD, Enter to chat)" } },
+	{ id = "phone", default = KEY_F1, label = { "bobba.controls.phone", "Take out / put away the phone" } },
 }
 S.PAD = {
 	{ id = "use", default = "a", label = { "bobba.controls.use", "Use what's next to you" } },
@@ -39,6 +40,7 @@ S.PAD = {
 	{ id = "menu", default = "y", label = { "bobba.controls.menu", "Menu wheel (hold)" } },
 	{ id = "say", default = "back", label = { "bobba.controls.say", "Quick messages (hold)" } },
 	{ id = "chat", default = "start", label = { "bobba.controls.padchat", "Chat" } },
+	{ id = "phone", default = "leftstick", label = { "bobba.controls.phone", "Take out / put away the phone" } },
 }
 for _, k in ipairs(S.KEYS) do k.var = CreateClientConVar("bobba_key_" .. k.id, tostring(k.default), true, false) end
 for _, k in ipairs(S.PAD) do k.var = CreateClientConVar("bobba_pad_" .. k.id, k.default, true, false) end
