@@ -250,16 +250,60 @@ local function drawSettings(w, d)
 		}, ST.axesVar:GetInt() == 1 and 1 or 0, function(v) RunConsoleCommand("bobba_setting_moveaxes", tostring(v)) end)
 		y = y + 30
 		local m = ST.mode()
-		local hint = m == 0 and U.text("bobba.settings.movement.hint0", "Space uses what's next to you, Tab picks the next thing.")
-			or m == 1 and U.text("bobba.settings.movement.hint1", "Press Enter first to start a message with w, a, s or d. Space uses what's next to you.")
-			or U.text("bobba.settings.movement.hint2", "E uses what's next to you, Tab picks the next thing.")
-		for _, l in ipairs(d:wrap(hint, 12.6, d.width - 18)) do
+		local hint = m == 1 and U.text("bobba.settings.movement.hint1", "Press Enter first to start a message with w, a, s or d.")
+			or m == 2 and U.text("bobba.settings.movement.hint2", "E also uses what's next to you.") or nil
+		for _, l in ipairs(hint and d:wrap(hint, 12.6, d.width - 18) or {}) do
 			d:text(l, 12.6, 9, y + 8, Color(108, 117, 125), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			y = y + 17
 		end
-		y = y + 6
+		y = y + 4
+		d:btn(9, y, d.width - 18, 26, U.C.primary, function() HUD.actions.controls() end)
+		d:text(U.text("bobba.controls.title", "Keys and controller"), 12.6, d.width / 2, y + 13, U.C.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		y = y + 26 + 8
 	end
 	w:setHeight(math.max(300, y))
 end
+
+-- --- keys and controller buttons (steering.lua): click one, then press the key or button --------------
+local function drawControls(w, d)
+	local ST = BOBBA.steering
+	d:slimCard(U.text("bobba.controls.title", "Keys and controller"))
+	local W = d.width
+	local y = 37
+	local muted = Color(108, 117, 125)
+	local function section(title, list, kind, nameOf)
+		d:text(title, 14.4, 9, y + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
+		local rt = U.text("bobba.controls.reset", "Reset")
+		local rw = d:textWidth(rt, 12.6)
+		d:click(W - 9 - rw, y, rw, 16, function() ST.resetBindings(kind) end)
+		d:text(rt, 12.6, W - 9, y + 8, U.C.primary, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		y = y + 22
+		for _, b in ipairs(list) do
+			d:text(U.text(b.label[1], b.label[2]), 12.6, 9, y + 12, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			local waiting = ST.capture and ST.capture.kind == kind and ST.capture.id == b.id
+			local label = waiting and U.text("bobba.controls.press", "Press...") or nameOf(b)
+			local bw = 104
+			d:click(W - 9 - bw, y, bw, 24, function()
+				if waiting then ST.capture = nil else ST.startCapture(kind, b.id) end
+			end)
+			d:box(W - 9 - bw, y, bw, 24, 1, 4, waiting and U.C.primary or U.C.inputBorder, waiting and Color(220, 240, 245) or U.C.white)
+			d:text(d:fit(label, 12.6, bw - 10), 12.6, W - 9 - bw / 2, y + 12, U.C.black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			y = y + 28
+		end
+	end
+	section(U.text("bobba.controls.keyboard", "Keyboard"), ST.KEYS, "key", function(b) return ST.keyName(b.var:GetInt()) end)
+	local note = U.text("bobba.controls.keyboard.note", "A letter key only works while the chat box is empty. Walking keys are chosen in Settings.")
+	for _, l in ipairs(d:wrap(note, 12.6, W - 18)) do d:text(l, 12.6, 9, y + 8, muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) y = y + 17 end
+	y = y + 10
+	section(U.text("bobba.controls.controller", "Controller"), ST.PAD, "pad", function(b) return ST.padName(b.var:GetString()) end)
+	local pnote = ST.padConnected and U.text("bobba.controls.controller.note", "The left stick or the d-pad walks, the right stick moves the pointer.")
+		or U.text("bobba.controls.controller.none", "No controller connected. In GMod a controller works through Steam Input (as keys).")
+	for _, l in ipairs(d:wrap(pnote, 12.6, W - 18)) do d:text(l, 12.6, 9, y + 8, muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) y = y + 17 end
+	w:setHeight(y + 8)
+end
+HUD.actions.controls = function() U.toggle("controls", function()
+	local w = U.window("controls", 320, 500, drawControls)
+	w.onClose = function() if BOBBA.steering then BOBBA.steering.capture = nil end end
+end) end
 
 HUD.actions.settings = function() U.toggle("settings", function() U.window("settings", 250, 300, drawSettings) end) end

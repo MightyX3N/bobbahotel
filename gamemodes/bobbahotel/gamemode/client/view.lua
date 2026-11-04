@@ -418,6 +418,8 @@ function PANEL:Paint(w, h)
 	-- (what the interact button would use: steering.lua)
 	if V.drawOverlay then V.drawOverlay() end
 	if V.drawUnits then V.drawUnits("front") end
+	-- (over everyone: the list of things the interact button can use)
+	if V.drawOverlayTop then V.drawOverlayTop() end
 	if V.label then
 		draw.SimpleText(V.label, "BobbaViewLabel", 12, 12, color_white)
 	end

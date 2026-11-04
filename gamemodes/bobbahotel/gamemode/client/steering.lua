@@ -7,8 +7,10 @@
 --      the chat's. To start a message with w, a, s or d, press Enter first.
 --   2  WASD and the arrow keys always; Enter (or T) opens the chat, Enter sends and closes it
 -- Directions (bobba_setting_moveaxes): 0 as on the screen (up is up), 1 along the room's sides.
--- Interact: Space while the chat box is empty (and E with setting 2) uses what's highlighted next to
--- you: sit, lie down, switch, open a gift, an avatar's menu; Tab picks the next thing.
+-- Interact: a key (Space unless changed; also E with setting 2) uses what's highlighted next to you:
+-- sit, lie down, switch, open a gift, an avatar's menu; another (Tab) picks the next thing. With more
+-- than one thing near, a list over your avatar shows them. The keys and the controller's buttons are
+-- chosen in Settings > Keys and controller (S.KEYS, S.PAD; bobba_key_* / bobba_pad_*).
 -- A controller (the desktop app; GMod through Steam Input) steers with BOBBA.steering.setPad(x, y).
 
 BOBBA.steering = BOBBA.steering or {}
@@ -20,6 +22,62 @@ local V = BOBBA.view
 S.keysVar = CreateClientConVar("bobba_setting_movekeys", "0", true, false, "Movement keys: 0 arrows, 1 WASD while the chat is empty, 2 WASD (Enter to chat)")
 S.axesVar = CreateClientConVar("bobba_setting_moveaxes", "0", true, false, "Movement directions: 0 as on the screen, 1 along the room's sides")
 
+-- the keys and controller buttons for each action (chosen in Settings; the defaults here)
+S.KEYS = {
+	{ id = "use", default = KEY_SPACE, label = { "bobba.controls.use", "Use what's next to you" } },
+	{ id = "next", default = KEY_TAB, label = { "bobba.controls.next", "Pick the next thing" } },
+	{ id = "chat", default = KEY_T, label = { "bobba.controls.chat", "Open the chat (WASD, Enter to chat)" } },
+}
+S.PAD = {
+	{ id = "use", default = "a", label = { "bobba.controls.use", "Use what's next to you" } },
+	{ id = "next", default = "leftshoulder", label = { "bobba.controls.next", "Pick the next thing" } },
+	{ id = "rotate", default = "rightshoulder", label = { "bobba.controls.rotate", "Turn furni" } },
+	{ id = "click", default = "x", label = { "bobba.controls.click", "Click" } },
+	{ id = "rightclick", default = "b", label = { "bobba.controls.rightclick", "Right-click" } },
+	{ id = "menu", default = "y", label = { "bobba.controls.menu", "Menu wheel (hold)" } },
+	{ id = "say", default = "back", label = { "bobba.controls.say", "Quick messages (hold)" } },
+	{ id = "chat", default = "start", label = { "bobba.controls.padchat", "Chat" } },
+}
+for _, k in ipairs(S.KEYS) do k.var = CreateClientConVar("bobba_key_" .. k.id, tostring(k.default), true, false) end
+for _, k in ipairs(S.PAD) do k.var = CreateClientConVar("bobba_pad_" .. k.id, k.default, true, false) end
+function S.key(id)
+	for _, k in ipairs(S.KEYS) do if k.id == id then return k.var:GetInt() end end
+end
+function S.padButton(id)
+	for _, k in ipairs(S.PAD) do if k.id == id then return k.var:GetString() end end
+end
+
+-- a binding being chosen: { kind = "key" / "pad", id } (the next key or button pressed is it)
+function S.startCapture(kind, id) S.capture = { kind = kind, id = id, at = SysTime() } end
+-- sets it; another action that had that key gets this one's old key (no two on one key)
+function S.bind(kind, id, value)
+	local list = kind == "key" and S.KEYS or S.PAD
+	local this
+	for _, k in ipairs(list) do if k.id == id then this = k end end
+	if not this then return end
+	local old = this.var:GetString()
+	for _, k in ipairs(list) do
+		if k ~= this and k.var:GetString() == tostring(value) then RunConsoleCommand(k.var:GetName(), old) end
+	end
+	RunConsoleCommand(this.var:GetName(), tostring(value))
+	S.capture = nil
+end
+function S.resetBindings(kind)
+	for _, k in ipairs(kind == "key" and S.KEYS or S.PAD) do RunConsoleCommand(k.var:GetName(), tostring(k.default)) end
+end
+
+-- names to show
+local PAD_NAMES = { a = "A", b = "B", x = "X", y = "Y", leftshoulder = "LB", rightshoulder = "RB", back = "View / Back",
+	start = "Menu / Start", leftstick = "Left stick", rightstick = "Right stick", guide = "Guide", dpup = "D-pad up",
+	dpdown = "D-pad down", dpleft = "D-pad left", dpright = "D-pad right", triggerleft = "LT", triggerright = "RT" }
+function S.padName(b) return PAD_NAMES[b] or tostring(b) end
+function S.keyName(code)
+	local n = input.GetKeyName and input.GetKeyName(code) or nil
+	if not n or n == "" then return "?" end
+	n = tostring(n):gsub("_", " ")
+	return n:sub(1, 1):upper() .. n:sub(2):lower()
+end
+
 S.held = S.held or {}   -- from the chat box's key events: code -> direction
 S.typing = S.typing or false -- (setting 1: Enter pressed on an empty box, letters are the chat's)
 S.chatOpen = S.chatOpen or false -- (setting 2: the chat box has the keyboard)
@@ -28,7 +86,6 @@ S.lastUsed = S.lastUsed or 0
 
 local ARROWS = { [KEY_UP] = "up", [KEY_DOWN] = "down", [KEY_LEFT] = "left", [KEY_RIGHT] = "right" }
 local WASD = { [KEY_W] = "up", [KEY_S] = "down", [KEY_A] = "left", [KEY_D] = "right" }
-local LETTERS = { w = true, a = true, s = true, d = true, W = true, A = true, S = true, D = true }
 
 function S.mode() return math.Clamp(S.keysVar:GetInt(), 0, 2) end
 
@@ -51,6 +108,12 @@ end
 function S.keyTyped(entry, code)
 	local empty = (entry:GetValue() or "") == ""
 	local m = S.mode()
+	-- (a key being chosen in Settings)
+	if S.capture and S.capture.kind == "key" then
+		S.bind("key", S.capture.id, code)
+		entry.steerDrop = SysTime() + 0.15
+		return true
+	end
 	if (code == KEY_ENTER or code == KEY_PAD_ENTER) and empty then
 		if m == 1 and not S.typing then S.typing = true return true end
 		if m == 2 then S.closeChat() return true end
@@ -66,12 +129,13 @@ function S.keyTyped(entry, code)
 		S.lastUsed = SysTime()
 		return true
 	end
-	if empty and not S.typing and code == KEY_SPACE then
-		entry.steerDrop = true
+	if empty and not S.typing and code == S.key("use") then
+		entry.steerDrop = SysTime() + 0.15
 		S.interact()
 		return true
 	end
-	if empty and code == KEY_TAB then
+	if empty and not S.typing and code == S.key("next") then
+		entry.steerDrop = SysTime() + 0.15
 		S.next()
 		return true
 	end
@@ -99,8 +163,9 @@ function S.blockChar(entry, ch)
 		if SysTime() < sw.untilT and ch:lower() == sw.ch then return true end
 	end
 	if entry.steerDrop then
-		entry.steerDrop = false
-		if LETTERS[ch] or ch == " " then return true end
+		local drop = entry.steerDrop
+		entry.steerDrop = nil
+		if SysTime() < drop then return true end
 	end
 	return false
 end
@@ -294,28 +359,36 @@ hook.Add("Think", "bobba.steering", function()
 		S.typing = false
 		if m == 2 then S.closeChat() else S.chatOpen = false end
 	end
-	-- setting 2: Enter or T opens the chat; clicking it does too
+	-- (a key being chosen in Settings, while no text box has the keyboard)
+	if S.capture and S.capture.kind == "key" and not typingSomewhere() then
+		S.capDown = S.capDown or {}
+		for code = 1, 160 do
+			local d = input.IsKeyDown(code)
+			if d and not S.capDown[code] and SysTime() - S.capture.at > 0.2 then S.bind("key", S.capture.id, code) break end
+			S.capDown[code] = d
+		end
+	end
+	local function edge(name, down)
+		S.was = S.was or {}
+		local e = down and not S.was[name]
+		S.was[name] = down
+		return e
+	end
+	-- setting 2: Enter or the chat key opens the chat; clicking it does too
 	if m == 2 and V.mode == "room" then
 		if entry and entry:HasFocus() then S.chatOpen = true end
-		if not S.chatOpen and not typingSomewhere() then
-			local t = input.IsKeyDown(KEY_T)
-			local down = input.IsKeyDown(KEY_ENTER) or t
-			if down and not S.openWasDown then S.openChat(t and "t" or nil) end
-			S.openWasDown = down
+		if not S.chatOpen and not typingSomewhere() and not S.capture then
+			local ck = input.IsKeyDown(S.key("chat"))
+			if edge("chat", input.IsKeyDown(KEY_ENTER) or ck) then
+				local n = S.keyName(S.key("chat")):lower()
+				S.openChat(ck and #n == 1 and n or nil)
+			end
 		end
-		-- E (and Space) interacts, Tab picks the next thing
-		if not typingSomewhere() then
-			local e = input.IsKeyDown(KEY_E) or input.IsKeyDown(KEY_SPACE)
-			if e and not S.eWasDown then S.interact() end
-			S.eWasDown = e
-			local tab = input.IsKeyDown(KEY_TAB)
-			if tab and not S.tabWasDown then S.next() end
-			S.tabWasDown = tab
-		end
-	elseif not typingSomewhere() and V.mode == "room" then
-		local sp = input.IsKeyDown(KEY_SPACE)
-		if sp and not S.eWasDown then S.interact() end
-		S.eWasDown = sp
+	end
+	-- (no text box has the keyboard: the use and next keys; E uses too with setting 2)
+	if V.mode == "room" and not typingSomewhere() and not S.capture then
+		if edge("use", input.IsKeyDown(S.key("use")) or (m == 2 and input.IsKeyDown(KEY_E))) then S.interact() end
+		if edge("next", input.IsKeyDown(S.key("next"))) then S.next() end
 	end
 	expireHeld()
 	local dx, dy = 0, 0
@@ -361,6 +434,59 @@ function V.drawOverlay()
 			tileOutline(tile.x, tile.y, tile.z, c)
 		end
 	end
+end
+
+-- the list over your avatar when more than one thing is near: their names, the one the use key
+-- would use marked, and which keys use and pick (the controller's when it was used last)
+local function nameOf(t)
+	if t.kind == "unit" then
+		local o = R.units and R.units[t.id]
+		return o and o.name or "?"
+	end
+	local fi = R.furniInfo and R.furniInfo(t.item.kind)
+	return (fi and fi.name and fi.name ~= "") and fi.name or t.item.kind
+end
+S.LIST_MAX = 6
+function V.drawOverlayTop()
+	if not (S.padConnected or SysTime() - (S.lastUsed or 0) < S.HIGHLIGHT_SECONDS) then return end
+	local list = S.candidates()
+	if #list < 2 then return end
+	local u = R.units and R.you and R.units[R.you]
+	if not u then return end
+	local x, y, z = R.unitPosition(u)
+	local sx, sy, k = V.project(x, y, z)
+	if not sx then return end
+	local U = BOBBA.ui
+	local sc = U.scale()
+	local font, bold = U.font(12.6), U.font(12.6, true)
+	local cur = (S.cycle % #list) + 1
+	local pad = S.padConnected and (SysTime() - (S.padUsed or 0) < 30)
+	local useK = pad and S.padName(S.padButton("use")) or S.keyName(S.key("use"))
+	local nextK = pad and S.padName(S.padButton("next")) or S.keyName(S.key("next"))
+	local hint = string.format("%s: %s   %s: %s", useK, U.text("bobba.controls.short.use", "use"), nextK, U.text("bobba.controls.short.next", "next"))
+	local rows = {}
+	local first = math.max(1, math.min(cur - 2, #list - S.LIST_MAX + 1))
+	for i = first, math.min(#list, first + S.LIST_MAX - 1) do rows[#rows + 1] = { i = i, text = nameOf(list[i]) } end
+	surface.SetFont(bold)
+	local w = surface.GetTextSize(hint)
+	for _, r in ipairs(rows) do w = math.max(w, surface.GetTextSize(r.text) + 14 * sc) end
+	local rh = math.floor(17 * sc)
+	w = w + math.floor(16 * sc)
+	local h = #rows * rh + rh + math.floor(10 * sc)
+	local bx = math.floor(sx - w / 2)
+	local by = math.floor(sy - 120 * k - h)
+	draw.RoundedBox(math.floor(6 * sc), bx, by, w, h, Color(28, 28, 32, 235))
+	local ty = by + math.floor(5 * sc)
+	for _, r in ipairs(rows) do
+		local on = r.i == cur
+		if on then
+			draw.RoundedBox(math.floor(3 * sc), bx + math.floor(3 * sc), ty, w - math.floor(6 * sc), rh, Color(45, 171, 194, 220))
+			draw.SimpleText(">", bold, bx + math.floor(7 * sc), ty + rh / 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		end
+		draw.SimpleText(r.text, on and bold or font, bx + math.floor(18 * sc), ty + rh / 2, on and color_white or Color(220, 220, 220), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		ty = ty + rh
+	end
+	draw.SimpleText(hint, font, bx + w / 2, ty + rh / 2, Color(160, 160, 170), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 -- a new room: nothing held

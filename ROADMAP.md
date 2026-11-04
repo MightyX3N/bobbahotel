@@ -21,7 +21,9 @@ Nothing here is a promise of when; it keeps the plans in one place.
 **Steering** is done: walking with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
 empty / WASD with Enter to chat; directions as on the screen or along the room), tile after tile while
 held, sliding along walls; the interact button (Space, or E with WASD) with a highlight, Tab for the next
-thing; the room's movement setting (clicking and steering / clicking only / steering only) shown in the
+thing (with more than one thing near, a list over your avatar shows them); the keys and the
+controller's buttons can be changed (Settings > Keys and controller); a notification when a controller
+connects or disconnects; the room's movement setting (clicking and steering / clicking only / steering only) shown in the
 room info; controllers in the desktop app (stick or d-pad walks, A interacts, LB next, RB turns, the right
 stick is the pointer with X / B as the mouse buttons, Y holds the menu wheel, Back the quick-message
 wheel, Start the chat with the Steam Deck's keyboard). GMod players use a controller through Steam

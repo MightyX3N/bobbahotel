@@ -1,14 +1,11 @@
 -- A controller (Xbox, PlayStation, the Steam Deck's own) in the desktop app. The gamemode's
 -- steering (client/steering.lua) does the walking; this turns the controller into it and into the
--- mouse:
---   left stick / d-pad   walk (tile after tile while held)
---   A                    interact: sit, lie down, switch, open a gift, an avatar's menu
---   LB                   pick the next thing to interact with
---   RB                   turn the furni being placed (or the one selected)
---   right stick          move the mouse pointer;  X  click,  B  right-click
---   Y (hold)             the menu wheel: navigator, inventory, catalogue, ... (let go to choose)
---   Back / View (hold)   the quick-message wheel (let go to say it)
---   Start / Menu         chat: the chat box, and the Steam Deck's on-screen keyboard
+-- mouse. Walking is always the left stick or the d-pad, the pointer the right stick; the buttons are
+-- chosen in the game's Settings > Keys and controller (bobba_pad_*), by default:
+--   A use what's next to you   LB pick the next thing   RB turn furni   X click   B right-click
+--   Y (hold) the menu wheel    View / Back (hold) quick messages   Menu / Start the chat (and the
+--   Steam Deck's on-screen keyboard)
+-- Connecting or disconnecting a controller shows a notification.
 local Pad = {}
 
 Pad.DEAD = 0.25
@@ -83,23 +80,51 @@ function Pad.update(dt, G)
 	local S = BOBBA and BOBBA.steering
 	local js = Pad.find()
 	if S then S.padConnected = js ~= nil end
+	-- (connected or gone: a notification)
+	local name = js and (js.getName and js:getName() or "Controller") or nil
+	if name ~= Pad.lastName then
+		local U = BOBBA and BOBBA.ui
+		if U and U.notify then
+			local menu = S and S.padName(S.padButton("menu")) or "Y"
+			if name then pcall(U.notify, T("bobba.pad.connected", "Controller connected"), name .. ". " .. string.format(T("bobba.pad.connected.hint", "Hold %s for the menu."), menu))
+			elseif Pad.lastName then pcall(U.notify, T("bobba.pad.disconnected", "Controller disconnected"), Pad.lastName) end
+		end
+		Pad.lastName = name
+	end
 	if not js then
 		if S and S.pad then S.setPad(nil) end
 		down = {}
 		wheel = nil
 		return
 	end
+	local function isDown(b)
+		-- (the triggers are axes)
+		if b == "triggerleft" or b == "triggerright" then return js:getGamepadAxis(b) > 0.5 end
+		local ok, d = pcall(js.isGamepadDown, js, b)
+		return ok and d or false
+	end
 	local function pressed(b)
-		local now = js:isGamepadDown(b)
+		if not b then return false end
+		local now = isDown(b)
 		local was = down[b]
 		down[b] = now
 		return now and not was, (not now) and was, now
 	end
+	-- (a button being chosen in Settings: the next one pressed)
+	local BUTTONS = { "a", "b", "x", "y", "back", "start", "guide", "leftstick", "rightstick", "leftshoulder", "rightshoulder", "triggerleft", "triggerright" }
+	if S and S.capture and S.capture.kind == "pad" then
+		for _, b in ipairs(BUTTONS) do
+			if pressed(b) then S.bind("pad", S.capture.id, b) break end
+		end
+		return
+	end
+	local function btn(id) return S and S.padButton(id) or nil end
 	-- walking: the left stick, or the d-pad
 	local lx, ly = stick(js, "leftx", "lefty")
 	local dx = (js:isGamepadDown("dpright") and 1 or 0) - (js:isGamepadDown("dpleft") and 1 or 0)
 	local dy = (js:isGamepadDown("dpdown") and 1 or 0) - (js:isGamepadDown("dpup") and 1 or 0)
 	if dx ~= 0 or dy ~= 0 then lx, ly = dx, dy end
+	if S and (lx ~= 0 or ly ~= 0) then S.padUsed = love.timer.getTime() end
 	-- (with a wheel open the stick chooses in it instead)
 	if wheel then
 		if lx * lx + ly * ly > 0.5 * 0.5 then
@@ -122,23 +147,22 @@ function Pad.update(dt, G)
 		G.mouseMoved(nx, ny)
 	end
 	local mx, my = love.mouse.getPosition()
-	-- X: the left mouse button (held while held: dragging works); B: the right one
-	local xDown, xUp = pressed("x")
-	if xDown then G.mousePressed(mx, my, 1) clickHeld = true end
-	if xUp and clickHeld then G.mouseReleased(mx, my, 1) clickHeld = false end
-	local bDown, bUp = pressed("b")
-	if bDown then G.mousePressed(mx, my, 2) end
-	if bUp then G.mouseReleased(mx, my, 2) end
-	-- A: interact; LB: the next thing; RB: turn
-	if pressed("a") and S and not wheel then S.interact() end
-	if pressed("leftshoulder") and S then S.next() end
-	if pressed("rightshoulder") then
+	-- the buttons (Settings > Keys and controller)
+	local cDown, cUp = pressed(btn("click"))
+	if cDown then G.mousePressed(mx, my, 1) clickHeld = true end
+	if cUp and clickHeld then G.mouseReleased(mx, my, 1) clickHeld = false end
+	local rDown, rUp = pressed(btn("rightclick"))
+	if rDown then G.mousePressed(mx, my, 2) end
+	if rUp then G.mouseReleased(mx, my, 2) end
+	if pressed(btn("use")) and S and not wheel then S.interact() S.padUsed = love.timer.getTime() end
+	if pressed(btn("next")) and S then S.next() S.padUsed = love.timer.getTime() end
+	if pressed(btn("rotate")) then
 		local R = BOBBA and BOBBA.room
 		if R and R.pressR then pcall(R.pressR) end
 	end
-	if pressed("start") then Pad.chat() end
+	if pressed(btn("chat")) then Pad.chat() end
 	-- the wheels: held open, chosen when let go
-	for _, w in ipairs({ { "y", "menu", menuItems }, { "back", "say", sayItems } }) do
+	for _, w in ipairs({ { btn("menu"), "menu", menuItems }, { btn("say"), "say", sayItems } }) do
 		local press, release = pressed(w[1])
 		if press and not wheel then wheel = { kind = w[2], button = w[1], items = w[3]() } end
 		if release and wheel and wheel.button == w[1] then

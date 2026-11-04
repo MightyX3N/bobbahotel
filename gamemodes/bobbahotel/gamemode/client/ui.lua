@@ -732,6 +732,50 @@ end
 
 
 
+-- --- notifications (nitro-react's NotificationBubbleView): a dark bubble at the top right under the
+-- purse, a title and a line, gone after a few seconds; newer ones under older ones.
+-- U.notify(title, message, seconds?)
+U.notes = U.notes or {}
+U.NOTE_W, U.NOTE_SECONDS = 260, 6
+local noteCount = 0
+function U.notify(title, message, seconds)
+	noteCount = noteCount + 1
+	local note = { id = "note" .. noteCount, title = title, message = message, untilT = SysTime() + (seconds or U.NOTE_SECONDS), h = 50 }
+	table.insert(U.notes, note)
+	U.hud(note.id, function(sw)
+		local y = 80
+		for _, n in ipairs(U.notes) do
+			if n == note then break end
+			y = y + n.h + 6
+		end
+		return sw - U.NOTE_W - 10, y, U.NOTE_W, note.h
+	end, function(w, d)
+		local left = note.untilT - SysTime()
+		local a = math.Clamp(left / 0.5, 0, 1)
+		d:round(8, 0, 0, U.NOTE_W, note.h, Color(28, 28, 32, math.floor(242 * a)))
+		local y = 8
+		if note.title and note.title ~= "" then
+			d:text(note.title, 14.4, 12, y, Color(255, 255, 255, math.floor(255 * a)), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, true)
+			y = y + 20
+		end
+		for _, l in ipairs(d:wrap(note.message or "", 12.6, U.NOTE_W - 24)) do
+			d:text(l, 12.6, 12, y, Color(210, 210, 215, math.floor(255 * a)), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			y = y + 17
+		end
+		note.h = y + 8
+		d:click(0, 0, U.NOTE_W, note.h, function() note.untilT = math.min(note.untilT, SysTime() + 0.3) end)
+	end)
+end
+hook.Add("Think", "bobba.ui.notes", function()
+	for i = #U.notes, 1, -1 do
+		local n = U.notes[i]
+		if SysTime() > n.untilT then
+			U.hudRemove(n.id)
+			table.remove(U.notes, i)
+		end
+	end
+end)
+
 -- --- alerts and confirms (nitro-react's NotificationDefaultAlertView / ...ConfirmView) ---------------
 -- primary-slim cards: an alert 350 wide with Close, a confirm 250 wide with Cancel and Confirm
 local alertCount = 0
