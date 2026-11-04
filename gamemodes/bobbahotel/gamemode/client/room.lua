@@ -190,7 +190,12 @@ P.receive("room.unit.move", function(_, data)
 	if not u then return end
 	local x, y, z = position(u)
 	u.from = { x = x, y = y, z = z }
-	u.to = { x = data.x, y = data.y, z = data.z or z }
+	-- (on the bare floor: its slope between tiles, so others go up and down stairs smoothly too)
+	local fz = BOBBA.steering and BOBBA.steering.floorZ and BOBBA.steering.floorZ(data.x, data.y)
+	local tz = data.z or z
+	local tile = BOBBA.steering and BOBBA.steering.floorZ and BOBBA.steering.floorZ(math.floor(data.x + 0.5), math.floor(data.y + 0.5))
+	if fz and tile and math.abs((data.z or tile) - tile) < 0.01 then tz = fz end
+	u.to = { x = data.x, y = data.y, z = tz }
 	u.started, u.dur = SysTime(), 0.1
 	u.dir = data.dir or u.dir
 	u.posture, u.height = nil, nil

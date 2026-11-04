@@ -321,6 +321,24 @@ local function tileOk(x, y, fromH)
 	if fromH and h - fromH > 1.1 then return false end
 	return true
 end
+-- the floor's height at a point, sloping between tiles one can step between (stairs: up and down
+-- the steps as walking does, not jumping at a tile's edge); a drop too high to step stays flat
+function S.floorZ(x, y)
+	refreshFloor()
+	local h0 = tileHeight(round(x), round(y))
+	if not h0 then return nil end
+	local x0, y0 = math.floor(x), math.floor(y)
+	local fx, fy = x - x0, y - y0
+	local function h(tx, ty)
+		local v = tileHeight(tx, ty)
+		if not v or math.abs(v - h0) > 1.1 or floor.blocked[tx .. "," .. ty] then return h0 end
+		return v
+	end
+	local a = h(x0, y0) + (h(x0 + 1, y0) - h(x0, y0)) * fx
+	local b = h(x0, y0 + 1) + (h(x0 + 1, y0 + 1) - h(x0, y0 + 1)) * fx
+	return a + (b - a) * fy
+end
+
 -- may its middle be at x, y (coming from the tile it's on)?
 function S.spotOk(x, y, fromX, fromY)
 	local fh = tileHeight(fromX, fromY)
@@ -470,7 +488,11 @@ hook.Add("Think", "bobba.steering", function()
 	end
 	-- setting 2: Enter or the chat key opens the chat; clicking it does too
 	if m == 2 and V.mode == "room" then
-		if entry and entry:HasFocus() then S.chatOpen = true end
+		-- (the chat box got the keyboard: opened only by a click on it; GMod hands the keyboard to it by
+		-- itself when another window closes, which mustn't open the chat)
+		if entry and entry:HasFocus() and not S.chatOpen then
+			if SysTime() - (S.chatClickAt or 0) < 0.5 then S.chatOpen = true else entry:KillFocus() end
+		end
 		if not S.chatOpen and not typingSomewhere() and not S.capture then
 			local ck = input.IsKeyDown(S.key("chat"))
 			if edge("chat", input.IsKeyDown(KEY_ENTER) or ck) then
@@ -557,7 +579,7 @@ function S.moveFrame(dt)
 		else nx, ny = f.x, f.y end
 	end
 	f.x, f.y = nx, ny
-	f.z = tileHeight(round(nx), round(ny)) or f.z
+	f.z = S.floorZ(nx, ny) or f.z
 	u.dir = S.dirFor(vx, vy) or u.dir
 	u.posture, u.height = nil, nil
 	u.freePos, u.freeMoving = f, true
@@ -566,6 +588,12 @@ function S.moveFrame(dt)
 		P.send("room.move", { x = f.x, y = f.y, dir = u.dir })
 	end
 end
+
+-- (a click on the chat box: setting 2 opens the chat then)
+hook.Add("VGUIMousePressed", "bobba.steering.chat", function(panel)
+	local f = R.chatState and R.chatState.input
+	if IsValid(f) and IsValid(panel) and (panel == f or panel == f.entry) then S.chatClickAt = SysTime() end
+end)
 
 -- the server didn't take a move (too fast, into something): back to where it says
 P.receive("room.unit.pos", function(_, data)
