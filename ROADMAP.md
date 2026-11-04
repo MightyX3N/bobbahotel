@@ -89,6 +89,13 @@ borderless full screen, its own icon.
       - check early whether browsers may download Habbo's files directly (CORS); if not, the
         hotel passes them through or caches them
       - profile on a mid-range phone
+      - a hotel's own website opens it straight into that hotel; the GitHub Pages one is for
+        players on several hotels (the hotel list, a login per hotel), on a tablet or any PC
+    - **Android and iOS apps** (far future): Love2D runs on both, so mostly the desktop client again
+      with the web client's touch; normal connections (no WebSocket bridge). Android first (an APK
+      to install directly, Google Play later); iOS needs a Mac and Apple's developer account, and
+      runs without LuaJIT's JIT (slower). The stores require a word filter, reporting, blocking
+      and quick handling of abuse in chat apps (part 12 first).
     - **Hosting**:
       - a Pterodactyl egg (GMod first, the custom server later); panel variables for the hotel's
         name, owner and staff Steam IDs, public or friends, max players, start credits, Discord, the
