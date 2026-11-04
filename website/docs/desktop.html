@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The desktop app - Bobba Hotel</title>
+<meta name="description" content="Bobba Hotel without Garry&#x27;s Mod - the same hotel, its own window.">
+<meta property="og:title" content="The desktop app - Bobba Hotel">
+<meta property="og:description" content="Bobba Hotel without Garry&#x27;s Mod - the same hotel, its own window.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="../index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="../docs/getting-started.html" class="on">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs"><a href="getting-started.html">Docs</a></div>
+	<h1>The desktop app</h1>
+	<p>Bobba Hotel without Garry&#x27;s Mod - the same hotel, its own window.</p>
+</div></div>
+<div class="wrap docs">
+	<aside class="side"><h4>Docs</h4>
+<a href="getting-started.html">Getting started</a>
+<a href="playing.html">Playing</a>
+<a href="hosting.html">Running a hotel</a>
+<a href="wired.html">Wired and scripts</a>
+<a href="addons.html">Making an addon</a>
+<a href="habbo-addon.html">The Habbo addon</a>
+<a href="desktop.html" class="on">The desktop app</a>
+	</aside>
+	<article class="prose">
+<h1 id="the-desktop-app">The desktop app<a class="anchor" href="#the-desktop-app" title="Permanent link">#</a></h1>
+<p>The desktop app runs Bobba Hotel without Garry's Mod: the same gamemode and addons, in a small program of its
+own (made with <a href="https://love2d.org">LÖVE</a>). It reads the hotel's Lua through a copy of the Garry's Mod
+functions the hotel uses, so the hotel doesn't know the difference - and nor do the players.</p>
+<blockquote>
+<p><strong>Test build.</strong> The desktop app comes with the first release; for now it's built from the repository's
+<code>desktop</code> folder.</p>
+</blockquote>
+<h2 id="using-it">Using it<a class="anchor" href="#using-it" title="Permanent link">#</a></h2>
+<ol>
+<li>Start <code>Bobba Hotel.exe</code>. The first time it asks for your <code>garrysmod</code> folder (it looks in your Steam
+   libraries itself): the gamemode, its addons and any Habbo files Garry's Mod already downloaded come from
+   there.</li>
+<li>The start screen lists your hotels. <strong>Host</strong> one on this computer (like Garry's Mod's singleplayer), or
+   check in.</li>
+<li>Owners and admins have <strong>Manage hotel</strong> right on the start screen.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1</td>
+<td>The console (what the hotel prints; commands like <code>bobba_give</code>, <code>bobba_status</code>)</td>
+</tr>
+<tr>
+<td>F2</td>
+<td>Takes out / puts away the phone</td>
+</tr>
+<tr>
+<td>F11</td>
+<td>Full screen (a borderless window the size of the screen)</td>
+</tr>
+<tr>
+<td><code>disconnect</code> (console)</td>
+<td>Back to the start screen</td>
+</tr>
+</tbody>
+</table></div>
+<p>Controllers work too: the stick or d-pad walks, A uses, LB picks the next thing, RB turns furni, the right
+stick moves a pointer (X clicks, B right-clicks), Y holds a menu wheel, Back quick messages, Start the chat.</p>
+<h2 id="where-things-are">Where things are<a class="anchor" href="#where-things-are" title="Permanent link">#</a></h2>
+<ul>
+<li>Your hotel (its database, your avatar's picture): <code>%APPDATA%\BobbaHotel\hotels\local</code></li>
+<li>The console's log: <code>garrysmod\data\bobba_temp\desktop_console.log</code></li>
+</ul>
+<h2 id="safe-by-design">Safe by design<a class="anchor" href="#safe-by-design" title="Permanent link">#</a></h2>
+<p>The hotel's Lua (the gamemode and every addon) runs with what Garry's Mod allows and no more: no running
+programs, no files outside <code>garrysmod/data</code> for writing, no FFI. An addon that works in Garry's Mod works
+here, and can't do anything there it couldn't do in Garry's Mod.</p>
+<div class="pager"><a href="habbo-addon.html"><small>Previous</small>The Habbo addon</a></div>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#using-it">Using it</a>
+<a href="#where-things-are">Where things are</a>
+<a href="#safe-by-design">Safe by design</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="../docs/getting-started.html">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

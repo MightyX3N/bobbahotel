@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap - Bobba Hotel</title>
+<meta name="description" content="What&#x27;s done in Bobba Hotel, what&#x27;s next, and the ideas for later.">
+<meta property="og:title" content="Roadmap - Bobba Hotel">
+<meta property="og:description" content="What&#x27;s done in Bobba Hotel, what&#x27;s next, and the ideas for later.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="docs/getting-started.html">Docs</a>
+			<a href="changelog.html">Changelog</a>
+			<a href="roadmap.html" class="on">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs">Roadmap</div>
+	<h1>What's coming</h1>
+	<p>What's done, what's next, and the ideas agreed for later. Nothing here is a promise of when; it keeps the plans in one place.</p>
+</div></div>
+<div class="wrap docs" style="grid-template-columns: minmax(0, 1fr) 220px">
+	<article class="prose">
+<p>What's done, what's next, and the ideas agreed for later, grouped under the part they belong to.
+Nothing here is a promise of when; it keeps the plans in one place.</p>
+<h2 id="done">Done<a class="anchor" href="#done" title="Permanent link">#</a></h2>
+<ol>
+<li><strong>The basics</strong>: rooms drawn the way Nitro draws them, avatars, walking, chat, the toolbar, the
+   catalogue, the inventory, wallet and club, gifts.</li>
+<li><strong>Wall furni</strong>: posters, stickies, mood lights, windows.</li>
+<li><strong>Rooms</strong> (mostly): the navigator, creating rooms, settings (access, rights, chat, moderation),
+   the doorbell and passwords, kick / ban / mute, favourites and home rooms, the hotel view, the
+   avatar menu and infostand, the chat settings, the navigator's room popover, the floor plan editor (Habbo Club, as in Habbo; the hotel can open it to
+   everyone), starter rooms (a new player picks one; packs register their own), then a short tutorial in it
+   (walk, open the gift, move or turn a furni, say something; 50 credits, tutorial.reward.credits).
+   Still open for rooms:
+   - the navigator's thumbnail view (a grid of the rooms' pictures)
+   - report, word filter</li>
+</ol>
+<p><strong>Free movement</strong> is done: with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
+empty / WASD with Enter to chat; directions as on the screen or along the room) or a controller's stick
+(any angle) the avatar moves freely, at once on your own screen (the server checks every move: walking
+speed, only over tiles one can walk on, a fifth of a tile off walls and furni, not out of the door);
+everything else (wired, rollers, gates, the room's grid) goes by the tile under its middle; let go and
+it eases onto that tile's middle (and sits there on a seat). Others see it glide. Clicking walks
+Habbo's way as before. The interact button (Space, or E with WASD) uses what's next to you, with a
+highlight and a list when there's more than one; the keys and the controller's buttons can be changed
+(Settings &gt; Keys and controller); a notification when a controller connects; the room's movement
+setting (clicking and free movement / clicking only / free movement only) shown in the room info. The
+desktop app reads controllers (stick or d-pad, A use, LB next, RB turn, right stick pointer with X / B,
+Y menu wheel, Back quick messages, Start chat); in GMod a controller works through Steam Input.</p>
+<p>The desktop app (Love2D, runs the gamemode without GMod) is working: launcher, hosting a hotel,
+borderless full screen, its own icon.</p>
+<p><strong>The phone and tablet</strong> are the default UI (a pack can choose another: the Habbo pack keeps Nitro's;
+<code>bobba_ui phone</code> / <code>habbo</code> or Settings picks for yourself): a phone (F2, or the button in the corner)
+and a tablet with a lock screen, a home screen you arrange (apps, widgets, pages, the dock; saved per
+hotel), the shade with quick tiles, notifications. Apps: Rooms, Bag, Wallet, Camera, Settings, three
+shops (Furni; Clothes and effects; Club), the floor plan (tablet), Messages (friends, requests,
+following), Groups (members, ranks, text and voice channels, a room per group), Calls (a dummy for now),
+Events (room events in the navigator too), Videos and the App Store (a hotel's app addons). An app
+without a tablet view shows as a phone on the tablet. After checking in, the hotel's own page (Lua:
+the pack's or an addon's; the Habbo pack has a Habbo-style one), then the room. The desktop app opens
+on a server picker; a hotel's Lua runs there sandboxed the way GMod limits it (no files outside data,
+no FFI, no running programs).</p>
+<p><strong>Managing the hotel</strong>: its owner and admins (bobba.admin.hotel) have a Manage screen - from the start
+screen, the hotel's page or the phone's Settings - for its addons (on or off from the next start, a
+restart button), their settings (an addon describes them in its addon.lua), the hotel's own settings
+(money, shops, groups, rooms...) and its look (name, about, news, the UI players start in, its colour,
+which page shows). Garry's Mod has the start screen too when you host the game (singleplayer or a
+listen server); joining someone's server goes straight to its page.</p>
+<h2 id="next">Next<a class="anchor" href="#next" title="Permanent link">#</a></h2>
+<ol start="4">
+<li><strong>Avatar</strong>: done so far: dances (Habbo Club's four too), wave, blow a kiss, laugh, idle (asleep
+   after two minutes of nothing, eyes closed; avatars blink), signs, sitting on the floor, avatar
+   effects (owned with a time and a count, worn from the avatar editor's Effects tab, drawn with
+   Habbo's effect pictures: hoverboards, spotlights, sparkles ...), the wardrobe (ten saved looks).
+   Effects are given with <code>bobba_give &lt;player&gt; effect &lt;id&gt; [days]</code> until the catalogue sells them.
+   The camera: Habbo's camera over the room (pictures of the room alone), a roll of five, buying a
+   shot as a photo to hang on a wall (camera.price.credits, 2), room thumbnails from the room info
+   (shown there and in the navigator).
+   - later: the camera's filters and frames (Nitro's editor), publishing photos to the website</li>
+<li><strong>Chat commands</strong>.</li>
+<li><strong>Friends and messenger</strong>: done in the phone's Messages (requests, the messenger, following);
+   still to do: Nitro's friends bar and messenger for the Habbo UI, and:
+   - Steam friends who play the hotel are friends automatically; removing one removes them only in
+     the hotel and puts them on a removed list so they aren't added again (unfriending is mutual);
+     a note when a Steam friends list is private.
+   - offline messages, "friend came online" notices</li>
+<li><strong>Trading</strong>, and the economy's safety:
+   - every credit, purchase, trade and gift logged; limits on suspicious patterns (duplication,
+     trade scams)
+   - later: a marketplace like Habbo's</li>
+<li><strong>Pets and bots</strong>.</li>
+<li><strong>Groups</strong>: done in the phone (the server is shared); still to do: the Habbo UI's group windows.</li>
+<li><strong>Rewards</strong>: achievements, badges, daily quests, an advent calendar and seasonal events.</li>
+<li><strong>Minigames and wired</strong>.<ul>
+<li>games made for free movement (WASD / stick): laser tag (shoot the way you
+  face, walls and furni block it, a hit stuns and scores, teams by colour), built from wired
+  parts (a laser gun effect, a "hit by laser" trigger, team scores) so owners design their own
+  arenas; the server decides hits. Banzai, Freeze and snowball fights play better this way too.</li>
+<li>wired for movement: switch free movement or click-walking off (for a user, everyone, or users
+  on tiles, optionally for a while) and back; conditions "is moving freely" / "is click-walking"</li>
+<li><strong>Voice chat</strong> (GMod first): heard in your room only, quieter with distance on the tiles
+  (each player's game sets each speaker's volume).</li>
+<li>each player chooses open mic or push-to-talk (the gamemode switches the microphone itself)</li>
+<li>room settings: off / player's choice / push-to-talk only / open mic forced; who may talk
+    (everyone, rights, the mic only)</li>
+<li>forced open mic needs consent: a window at the door ("Enter with microphone on" / Cancel),
+    asked every visit; switched on while people are inside, they get the same choice and nothing
+    changes for them until they answer; leaving puts the mic back to their own setting; the
+    change is written to the room's history</li>
+<li>icons for the room's voice setting in the navigator and the room info; your own mic state in
+    the room tools; a speaking icon over avatars</li>
+<li>the stage microphone furni: whoever uses it is heard by the whole room at full volume</li>
+<li>wired: voice off / voice volume (for users, or users on tiles: a quiet audience floor, a
+    normal stage) / only the mic heard / reset; triggers "starts / stops talking", condition "is
+    talking"; wired only ever lowers voices, never turns a microphone on, and a player's own mute
+    always wins</li>
+<li>moderation: room mutes apply to voice, per-person mute, a staff voice mute</li>
+<li>the hotel owner can switch voice off for the whole hotel</li>
+<li><strong>Text to speech</strong> (each player switches it on for themselves): messages in your room read
+  aloud, quieter with distance, a voice per avatar; a queue that skips when it falls behind;
+  reads the filtered text only, not commands; whoever is at the stage mic is read to everyone.
+  Providers: Windows' own speech in the desktop app, a URL the server owner sets on GMod, more
+  from packs.</li>
+</ul>
+</li>
+<li><strong>Staff and admin</strong>: the staff tools, reports, the word filter.<ul>
+<li><strong>Moderation helper</strong> (the owner tunes it or turns it off: Off / Light / Standard / Strict;
+  setting up a hotel asks "just friends or a public community?" to pick the start):</li>
+<li>rules, no AI: personal info (phone numbers, emails, addresses, other platforms) masked;
+    "add me on ...", "what's your number", "don't tell anyone", age questions flagged</li>
+<li>an AI (a provider the owner picks: a hosted service, or a model on their own machine) reads
+    only flagged conversations and tells staff why</li>
+<li>the AI never acts on its own; staff decide</li>
+<li>alerts by level: low (in the list), medium (a notice), critical (a pop-up for every staff
+    member until someone takes it, repeating and getting louder, a Discord ping; if no staff
+    are online it waits on top for the next one); others are told who took it</li>
+<li>"false alarm" button and a count of false versus real alerts, so the critical level stays
+    rare and trusted</li>
+<li>players are told chat is checked (not when it's off); logs kept for a limited time; for
+    child-safety cases the alert says to keep the evidence and report to the police</li>
+<li>"download my data" and "delete my account" for players</li>
+</ul>
+</li>
+<li><strong>Custom server, web client, release</strong>.<ul>
+<li><strong>Web client</strong> on GitHub Pages, like the desktop app: the same gamemode code in the browser
+  (the desktop client built for the web with love.js; what it does through LuaJIT's FFI gets
+  browser versions), one address for every hotel with the hotel list</li>
+<li>touch for phones and tablets: tap to walk and select, long-press for the right-click menu,
+    drag to move the room, pinch to zoom, bigger hit areas, a small-screen layout</li>
+<li>browsers only speak WebSockets: the custom server, or a bridge next to a GMod server (the
+    egg can start it); secure WebSockets need a certificate (playit, a proxy, the panel)</li>
+<li>check early whether browsers may download Habbo's files directly (CORS); if not, the
+    hotel passes them through or caches them</li>
+<li>profile on a mid-range phone</li>
+<li>a hotel's own website opens it straight into that hotel; the GitHub Pages one is for
+    players on several hotels (the hotel list, a login per hotel), on a tablet or any PC</li>
+<li><strong>Android and iOS apps</strong> (far future): Love2D runs on both, so mostly the desktop client again
+  with the web client's touch; normal connections (no WebSocket bridge). Android first (an APK
+  to install directly, Google Play later); iOS needs a Mac and Apple's developer account, and
+  runs without LuaJIT's JIT (slower). The stores require a word filter, reporting, blocking
+  and quick handling of abuse in chat apps (part 12 first).</li>
+<li><strong>Hosting</strong>:</li>
+<li>a Pterodactyl egg (GMod first, the custom server later); panel variables for the hotel's
+    name, owner and staff Steam IDs, public or friends, max players, start credits, Discord, the
+    content pack; a save on the panel's stop signal so backups are never half written</li>
+<li>multiple hotels are separate servers in the panel (no hotel manager of our own)</li>
+<li>optional playit.gg in the egg: a secret key variable, the agent tunnels the game port, the
+    hotel shows that address (the server then sees playit's address, not players' IPs: nothing
+    may rely on IPs)</li>
+<li>hotel addresses by name in our own clients: the client looks the hotel up on its domain
+    and connects to wherever it really is</li>
+<li>a public list of hotels for the launcher (optional, later)</li>
+<li>load testing with fake players</li>
+<li><strong>Website</strong>: the in-game one is done (the hotel's page after checking in, Lua, news from the
+  website.news setting). Later, a web one for outside the game (a companion program next to a GMod
+  server): front page, news, players online, Enter hotel, Steam / Discord login (no passwords), profiles
+  (Habbo Home pages later), leaderboards, the staff page, an admin panel; themable</li>
+<li>the owner can switch it off and use their own: an API (online, profiles, rooms, news, login
+    tickets like Habbo's SSO) and "log in with your hotel" for other sites</li>
+<li>safe from the start (forms, rate limits, the admin panel locked down); HTTPS behind the host's
+    proxy</li>
+<li><strong>WordPress plugin</strong>: blocks (online, status, news, leaderboards, staff, profile cards, Enter
+    hotel), log in with the hotel, hotel news from WordPress posts; thin (the API does the work),
+    its key can only read and make login tickets</li>
+<li><strong>Payments</strong> (an addon, off by default): real money for credits, club and so on through a
+  provider addon (e.g. Tebex, which handles VAT and refunds as the seller, or Stripe / PayPal).
+  A content pack can say it shouldn't be sold for money: the Habbo pack does, and switching
+  payments on with it warns the owner that a hotel selling Habbo's content may be taken down.
+  Purchase logs, refunds and chargebacks, limits for young players.</li>
+<li><strong>Discord</strong>:</li>
+<li>in the desktop app: Rich Presence (the hotel, the room or "hotel view", how long, how many),
+    a Join button (a small web page that opens a <code>bobbahotel://</code> link the app registers, or a
+    download link); players can switch it off or hide the room</li>
+<li>a bot addon (bobba_discord): staff logs, the hotel's status in one message it keeps
+    editing, chat of chosen rooms sent to Discord and Discord messages into the room (the
+    word filter, mutes and bans apply to them; no pings out of the hotel); the token stays in the
+    server's settings; Discord commands later</li>
+<li>translations by the community (Danish, Spanish, Portuguese, Dutch, ...)</li>
+<li>owner statistics: players over time, the economy</li>
+</ul>
+</li>
+</ol>
+<h2 id="media-rooms-after-the-basics">Media (rooms, after the basics)<a class="anchor" href="#media-rooms-after-the-basics" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>Radios</strong>: internet radio stations (a public directory, by country and genre), heard nearby
+  with distance like voice.</li>
+<li><strong>Videos</strong>: started. Each room has a TV in the phone's Videos app (tablet): paste a YouTube link,
+  a shared queue, half the room votes to skip, the owner skips, removes or turns it off; it plays in
+  sync in GMod (the tablet, or a small player in the corner). Still to do for it:</li>
+<li><strong>TVs and cinema screens</strong>: one shared media player (a link or search, a queue, skip votes, kept in
+  sync; each player's game plays it itself). Services the owner allows (YouTube, Twitch, ...), room
+  owners narrow it, staff block videos or channels, YouTube's restricted mode, a log of what was
+  played. No free browser and no DRM services (Netflix etc. can't play in GMod's browser).</li>
+<li><strong>Jellyfin (and Plex) addon</strong>: the host browses their library; a short-lived key per video, not
+  their own; prefers files that play without converting.</li>
+<li>The desktop app needs its own video player for this (radio is easier); the web client gets it
+  nearly free.</li>
+</ul>
+<h2 id="content-and-packs">Content and packs<a class="anchor" href="#content-and-packs" title="Permanent link">#</a></h2>
+<ul>
+<li>A furni creator: sprite sheets in, a furni pack out (sizes, directions, states, colours, sit height).</li>
+<li>Rooms as files and Workshop items: export a room (shape, look, furni) and import it anywhere; packs
+  of rooms such as Habbo's public rooms decorated as they were.</li>
+<li>Starter rooms: packs register their own; the Habbo pack has the six classic coloured rooms.</li>
+<li>A Builders Club style build mode.</li>
+</ul>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#done">Done</a>
+<a href="#next">Next</a>
+<a href="#media-rooms-after-the-basics">Media (rooms, after the basics)</a>
+<a href="#content-and-packs">Content and packs</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="docs/getting-started.html">Docs</a>
+			<a href="changelog.html">Changelog</a>
+			<a href="roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

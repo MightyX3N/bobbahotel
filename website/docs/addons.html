@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Making an addon - Bobba Hotel</title>
+<meta name="description" content="How hotel addons are laid out, and everything they can add - furni, settings, phone apps, pages, wired boxes, starter rooms, languages.">
+<meta property="og:title" content="Making an addon - Bobba Hotel">
+<meta property="og:description" content="How hotel addons are laid out, and everything they can add - furni, settings, phone apps, pages, wired boxes, starter rooms, languages.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="../index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="../docs/getting-started.html" class="on">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs"><a href="getting-started.html">Docs</a></div>
+	<h1>Making an addon</h1>
+	<p>How hotel addons are laid out, and everything they can add - furni, settings, phone apps, pages, wired boxes, starter rooms, languages.</p>
+</div></div>
+<div class="wrap docs">
+	<aside class="side"><h4>Docs</h4>
+<a href="getting-started.html">Getting started</a>
+<a href="playing.html">Playing</a>
+<a href="hosting.html">Running a hotel</a>
+<a href="wired.html">Wired and scripts</a>
+<a href="addons.html" class="on">Making an addon</a>
+<a href="habbo-addon.html">The Habbo addon</a>
+<a href="desktop.html">The desktop app</a>
+	</aside>
+	<article class="prose">
+<h1 id="making-an-addon">Making an addon<a class="anchor" href="#making-an-addon" title="Permanent link">#</a></h1>
+<p>Everything in the hotel is added the same way: Bobba Hotel's own content is just the first addon. An addon
+can add furni, clothes, room layouts, starter rooms, phone apps, the hotel's page, wired boxes, settings,
+languages - or change how anything works by listening to the hotel's events.</p>
+<h2 id="layout">Layout<a class="anchor" href="#layout" title="Permanent link">#</a></h2>
+<p>A Workshop addon (or a folder in <code>garrysmod/addons/</code>):</p>
+<div class="hl"><pre><span></span><code>lua/bobbahotel/addons/&lt;id&gt;/addon.lua    -- required: what it is (below)
+lua/bobbahotel/addons/&lt;id&gt;/shared.lua   -- runs on the server and on players' games
+lua/bobbahotel/addons/&lt;id&gt;/server.lua   -- server only
+lua/bobbahotel/addons/&lt;id&gt;/client.lua   -- players only
+</code></pre></div>
+
+<p><code>&lt;id&gt;</code> is lowercase letters, digits and <code>_ . -</code>, and must match the <code>id</code> in <code>addon.lua</code>. A working example
+is in the repository's <code>examples/bobba_example</code>.</p>
+<div class="hl"><pre><span></span><code><span class="c1">-- addon.lua</span>
+<span class="kr">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"My furni pack"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1.0"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">requires</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{},</span><span class="w">                     </span><span class="c1">-- addon ids that must load first</span>
+<span class="w">    </span><span class="nv">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Beach furni and a beach hut starter room"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">author</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"You"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">settings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w">                       </span><span class="c1">-- shown in the Manage screen (optional)</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nv">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack.price"</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Beach furni price"</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"number"</span><span class="p">,</span><span class="w"> </span><span class="nv">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="nv">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nv">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nv">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack.waves"</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Animated waves"</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bool"</span><span class="p">,</span><span class="w"> </span><span class="nv">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">          </span><span class="nv">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Turn off on slow servers"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nv">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack.theme"</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Theme"</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"choice"</span><span class="p">,</span><span class="w"> </span><span class="nv">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"day"</span><span class="p">,</span>
+<span class="w">          </span><span class="nv">choices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">"day"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Day"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">"night"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Night"</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nv">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack.motd"</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Beach sign"</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span><span class="w"> </span><span class="nv">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Welcome!"</span><span class="p">,</span><span class="w"> </span><span class="nv">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">40</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>If something it <code>requires</code> is missing or switched off, the addon is skipped and <code>bobba_status</code> says why.
+Owners switch addons on and off in the <a href="hosting.html#the-manage-screen">Manage screen</a>; a setting is read
+with <code>BOBBA.store.setting("mypack.price", "10")</code> (always text; <code>tonumber</code> it) and the event
+<code>settingChanged</code> says when one changes.</p>
+<p>Keep shared and server code to plain Lua where you can (no <code>!=</code>, <code>&amp;&amp;</code>, <code>//</code>, <code>continue</code>), so it also runs on
+the custom server and in the desktop app.</p>
+<h2 id="the-basics">The basics<a class="anchor" href="#the-basics" title="Permanent link">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Call</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BOBBA.registry.register(type, id, def, { replace = true }?)</code></td>
+<td>Add an entry: <code>furni</code>, <code>layout</code>, <code>starter_room</code>, <code>plane_style</code>, <code>language</code>, ... Another addon's entry is only replaced with <code>replace = true</code>.</td>
+</tr>
+<tr>
+<td><code>BOBBA.registry.get(type, id)</code>, <code>.list(type)</code>, <code>.unregister(type, id)</code></td>
+<td>Read or remove entries.</td>
+</tr>
+<tr>
+<td><code>BOBBA.events.on(event, yourId, fn)</code> / <code>.emit(event, ...)</code></td>
+<td>Listen for and announce events. Return <code>false</code> from a listener to say no where an event allows it.</td>
+</tr>
+<tr>
+<td><code>BOBBA.platform.send(name, table, player?)</code> / <code>.receive(name, fn)</code></td>
+<td>Messages between the server and players. Always check what a player sends you.</td>
+</tr>
+<tr>
+<td><code>BOBBA.store.migrate(id, { sql, ... })</code></td>
+<td>Server: create or change your tables, once. Start table names and migration ids with your addon id.</td>
+</tr>
+<tr>
+<td><code>BOBBA.store.query(sql, { values })</code>, <code>.row(...)</code>, <code>.transaction(fn)</code></td>
+<td>Server: SQL with <code>?</code> placeholders. Rows come back as text.</td>
+</tr>
+<tr>
+<td><code>BOBBA.store.setting(key, default)</code>, <code>.setSetting(key, value)</code></td>
+<td>The hotel's settings.</td>
+</tr>
+<tr>
+<td><code>BOBBA.perms.define(name, { default = "user" \| "admin" \| "superadmin", description })</code></td>
+<td>A permission (shown in ULX / SAM through CAMI). <code>BOBBA.perms.has(ply, name)</code> checks it.</td>
+</tr>
+<tr>
+<td><code>BOBBA.lang.add(code, { key = "text %name%" }, languageName)</code></td>
+<td>Texts, or a whole language. <code>BOBBA.ui.text(key, fallback, vars)</code> reads them.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="events">Events<a class="anchor" href="#events" title="Permanent link">#</a></h2>
+<p>Listen with <code>BOBBA.events.on("roomEntered", "mypack", function(room, unit) ... end)</code>. On the server:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Arguments</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>playerReady</code></td>
+<td>player</td>
+<td>A player's game is ready</td>
+</tr>
+<tr>
+<td><code>roomLoaded</code> / <code>roomUnloaded</code></td>
+<td>room</td>
+<td>A room starts / stops (nobody in it)</td>
+</tr>
+<tr>
+<td><code>roomCanEnter</code></td>
+<td>room, player</td>
+<td>Return <code>false</code> to keep them out</td>
+</tr>
+<tr>
+<td><code>roomEntered</code> / <code>roomLeft</code></td>
+<td>room, unit</td>
+<td>Someone comes in / leaves</td>
+</tr>
+<tr>
+<td><code>unitStepped</code></td>
+<td>room, unit</td>
+<td>Someone stood on a new tile</td>
+</tr>
+<tr>
+<td><code>roomChat</code></td>
+<td>room, unit, text, kind</td>
+<td>Someone talks; return <code>false</code> to stop it</td>
+</tr>
+<tr>
+<td><code>unitSign</code></td>
+<td>room, unit, sign</td>
+<td>Someone shows a sign</td>
+</tr>
+<tr>
+<td><code>itemPlaced</code> / <code>itemMoved</code> / <code>itemRemoved</code></td>
+<td>room, item, (player)</td>
+<td>Furni put down, moved, taken away</td>
+</tr>
+<tr>
+<td><code>itemUsed</code></td>
+<td>room, item, player</td>
+<td>Furni switched, rolled or opened</td>
+</tr>
+<tr>
+<td><code>roomCreated</code> / <code>roomDeleted</code> / <code>roomSettingsSaved</code></td>
+<td>room id</td>
+<td></td>
+</tr>
+<tr>
+<td><code>roomPainted</code></td>
+<td>room id, part, id</td>
+<td>New wallpaper, floor or landscape</td>
+</tr>
+<tr>
+<td><code>roomFloorPlanChanged</code></td>
+<td>room id</td>
+<td></td>
+</tr>
+<tr>
+<td><code>catalogBought</code></td>
+<td>key, offer, amount</td>
+<td>Something bought</td>
+</tr>
+<tr>
+<td><code>giftSent</code> / <code>giftOpened</code></td>
+<td>...</td>
+<td></td>
+</tr>
+<tr>
+<td><code>walletChanged</code> / <code>clubChanged</code></td>
+<td>key, ...</td>
+<td>Money or club changed</td>
+</tr>
+<tr>
+<td><code>tradeDone</code></td>
+<td>keyA, keyB, itemsA, itemsB</td>
+<td>A trade went through</td>
+</tr>
+<tr>
+<td><code>friendsMade</code> / <code>friendMessage</code> / <code>groupCreated</code></td>
+<td>...</td>
+<td></td>
+</tr>
+<tr>
+<td><code>lookChanged</code></td>
+<td>key, figure, gender</td>
+<td>New clothes</td>
+</tr>
+<tr>
+<td><code>starterRoomCreated</code></td>
+<td>key, room id, def</td>
+<td>A new player's room was made</td>
+</tr>
+<tr>
+<td><code>playerReset</code></td>
+<td>key</td>
+<td>A player was started over</td>
+</tr>
+<tr>
+<td><code>settingChanged</code></td>
+<td>key, value</td>
+<td>A hotel setting changed</td>
+</tr>
+<tr>
+<td><code>addonsLoaded</code></td>
+<td>order</td>
+<td>Every addon has loaded</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="furni">Furni<a class="anchor" href="#furni" title="Permanent link">#</a></h2>
+<p>A furni kind is defined on the server with its size and behaviour:</p>
+<div class="hl"><pre><span></span><code><span class="nv">BOBBA</span><span class="p">.</span><span class="py">items</span><span class="p">.</span><span class="nf">define</span><span class="p">(</span><span class="s2">"mypack_beach_chair"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nv">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nv">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">     </span><span class="c1">-- tiles and stacking height</span>
+<span class="w">    </span><span class="nv">sit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">                            </span><span class="c1">-- or lay = true, walk = true</span>
+<span class="w">    </span><span class="nv">directions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nv">states</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">                            </span><span class="c1">-- states it switches through when used</span>
+<span class="w">    </span><span class="nv">logic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"furniture_multistate"</span><span class="p">,</span><span class="w">        </span><span class="c1">-- Nitro's logic type (dice, gates, rollers, teleports, ...)</span>
+<span class="w">    </span><span class="nv">category</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"chair"</span><span class="p">,</span><span class="w">                    </span><span class="c1">-- "teleport", "gate", "roller", "present" change how it works</span>
+<span class="p">})</span>
+</code></pre></div>
+
+<p>A content pack that has <em>many</em> furni gives the hotel a lookup instead: <code>BOBBA.items.resolver = function(kind,
+cb) ... cb(def) end</code> (asked once per kind, may answer later), and on players' games draws them with
+<code>BOBBA.room.furniDrawer(item, info)</code>, names them with <code>BOBBA.room.furniInfo(kind)</code> and draws icons with
+<code>BOBBA.room.furniIcon(...)</code>. The Habbo addon is a complete example. The catalogue comes from
+<code>BOBBA.catalog.provider = function(cb) cb(pages) end</code>.</p>
+<h2 id="starter-rooms">Starter rooms<a class="anchor" href="#starter-rooms" title="Permanent link">#</a></h2>
+<p>New players pick one when they first come in, and get it decorated, owned by them, with a gift inside:</p>
+<div class="hl"><pre><span></span><code><span class="nv">BOBBA</span><span class="p">.</span><span class="py">registry</span><span class="p">.</span><span class="nf">register</span><span class="p">(</span><span class="s2">"starter_room"</span><span class="p">,</span><span class="w"> </span><span class="s2">"mypack_beach"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Beach hut"</span><span class="p">,</span><span class="w"> </span><span class="nv">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nv">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nv">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">240</span><span class="p">,</span><span class="w"> </span><span class="nv">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w"> </span><span class="p">},</span><span class="w">  </span><span class="c1">-- the picker's card</span>
+<span class="w">    </span><span class="nv">layout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"model_a"</span><span class="p">,</span><span class="w"> </span><span class="nv">wallpaper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"101"</span><span class="p">,</span><span class="w"> </span><span class="nv">floor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"202"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">furni</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nv">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack_table"</span><span class="p">,</span><span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="nv">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nv">dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nv">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack_window"</span><span class="p">,</span><span class="w"> </span><span class="nv">wall</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">":w=7,0 l=6,47 r"</span><span class="w"> </span><span class="p">},</span><span class="w">          </span><span class="c1">-- a wall furni: Habbo's wall location</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nv">gift</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nv">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack_lamp"</span><span class="p">,</span><span class="w"> </span><span class="nv">box</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"present_gen1"</span><span class="p">,</span><span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="nv">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="nv">message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Welcome!"</span><span class="w"> </span><span class="p">},</span>
+<span class="p">})</span>
+</code></pre></div>
+
+<h2 id="phone-apps">Phone apps<a class="anchor" href="#phone-apps" title="Permanent link">#</a></h2>
+<p>In the phone look, addons add apps (they show in the App Store):</p>
+<div class="hl"><pre><span></span><code><span class="c1">-- client.lua</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">device</span><span class="p">.</span><span class="nf">app</span><span class="p">({</span>
+<span class="w">    </span><span class="nv">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack_weather"</span><span class="p">,</span><span class="w"> </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Weather"</span><span class="p">,</span><span class="w"> </span><span class="nv">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">Color</span><span class="p">(</span><span class="mi">110</span><span class="p">,</span><span class="w"> </span><span class="mi">139</span><span class="p">,</span><span class="w"> </span><span class="mi">255</span><span class="p">),</span><span class="w"> </span><span class="nv">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">glyph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"M6 16a4 4 0 0 1 0-8 6 6 0 0 1 11.5 1.5A3.5 3.5 0 0 1 17 16z"</span><span class="p">,</span><span class="w">  </span><span class="c1">-- a 24 x 24 SVG path</span>
+<span class="w">    </span><span class="nv">phone</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">function</span><span class="p">(</span><span class="nv">ctx</span><span class="p">)</span>
+<span class="w">        </span><span class="kd">local</span><span class="w"> </span><span class="nv">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">ctx</span><span class="p">.</span><span class="py">d</span>
+<span class="w">        </span><span class="nv">d</span><span class="p">:</span><span class="nf">rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nv">ctx</span><span class="p">.</span><span class="py">w</span><span class="p">,</span><span class="w"> </span><span class="nv">ctx</span><span class="p">.</span><span class="py">h</span><span class="p">,</span><span class="w"> </span><span class="nv">BOBBA</span><span class="p">.</span><span class="py">device</span><span class="p">.</span><span class="py">C</span><span class="p">.</span><span class="py">paper</span><span class="p">)</span>
+<span class="w">        </span><span class="kd">local</span><span class="w"> </span><span class="nv">top</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">ctx</span><span class="p">.</span><span class="py">top</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">ctx</span><span class="p">:</span><span class="nf">header</span><span class="p">(</span><span class="s2">"Weather"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nv">big</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">})</span>
+<span class="w">        </span><span class="nv">d</span><span class="p">:</span><span class="nf">text</span><span class="p">(</span><span class="s2">"Sunny, 24°"</span><span class="p">,</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="nv">top</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="nv">BOBBA</span><span class="p">.</span><span class="py">device</span><span class="p">.</span><span class="py">C</span><span class="p">.</span><span class="py">navy</span><span class="p">)</span>
+<span class="w">    </span><span class="kr">end</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">device</span><span class="p">.</span><span class="nf">notify</span><span class="p">({</span><span class="w"> </span><span class="nv">app</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack_weather"</span><span class="p">,</span><span class="w"> </span><span class="nv">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Weather"</span><span class="p">,</span><span class="w"> </span><span class="nv">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Rain in the Lobby!"</span><span class="w"> </span><span class="p">})</span>
+</code></pre></div>
+
+<p>Apps can also add home screen widgets (<code>BOBBA.device.widget</code>) and quick tiles in the shade
+(<code>BOBBA.device.tile</code>).</p>
+<h2 id="the-hotels-page">The hotel's page<a class="anchor" href="#the-hotels-page" title="Permanent link">#</a></h2>
+<p>What players see after checking in is Lua too. Add your own, and the hotel's owner can pick it in the Manage
+screen:</p>
+<div class="hl"><pre><span></span><code><span class="c1">-- client.lua</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">website</span><span class="p">.</span><span class="nf">register</span><span class="p">(</span><span class="s2">"mypack_page"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Beach page"</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">draw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">function</span><span class="p">(</span><span class="nv">d</span><span class="p">,</span><span class="w"> </span><span class="nv">W</span><span class="p">,</span><span class="w"> </span><span class="nv">H</span><span class="p">,</span><span class="w"> </span><span class="nv">site</span><span class="p">)</span>
+<span class="w">        </span><span class="nv">d</span><span class="p">:</span><span class="nf">rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nv">W</span><span class="p">,</span><span class="w"> </span><span class="nv">H</span><span class="p">,</span><span class="w"> </span><span class="nf">Color</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="w"> </span><span class="mi">236</span><span class="p">,</span><span class="w"> </span><span class="mi">200</span><span class="p">))</span>
+<span class="w">        </span><span class="nv">d</span><span class="p">:</span><span class="nf">text</span><span class="p">(</span><span class="s2">"Welcome to "</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="p">(</span><span class="nv">site</span><span class="p">.</span><span class="py">data</span><span class="p">.</span><span class="py">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s2">"the hotel"</span><span class="p">),</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="nf">Color</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">))</span>
+<span class="w">        </span><span class="nv">d</span><span class="p">:</span><span class="nf">button</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">220</span><span class="p">,</span><span class="w"> </span><span class="mi">52</span><span class="p">,</span><span class="w"> </span><span class="s2">"Enter hotel"</span><span class="p">,</span><span class="w"> </span><span class="s2">"primary"</span><span class="p">,</span><span class="w"> </span><span class="nv">site</span><span class="p">.</span><span class="py">enter</span><span class="p">)</span>
+<span class="w">    </span><span class="kr">end</span><span class="p">,</span>
+<span class="p">})</span>
+</code></pre></div>
+
+<p><code>site.data</code> has the hotel's name, description, who's online, news, events, rooms and your credits.</p>
+<h2 id="wired-boxes">Wired boxes<a class="anchor" href="#wired-boxes" title="Permanent link">#</a></h2>
+<p>An addon can add its own wired triggers, effects and conditions (server):</p>
+<div class="hl"><pre><span></span><code><span class="nv">BOBBA</span><span class="p">.</span><span class="py">wired</span><span class="p">.</span><span class="nf">define</span><span class="p">(</span><span class="s2">"mypack_wave"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nv">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"effect"</span><span class="p">,</span><span class="w"> </span><span class="nv">furni</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nv">fields</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack.wave.text"</span><span class="p">,</span><span class="w"> </span><span class="nv">fallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Message:"</span><span class="p">,</span><span class="w"> </span><span class="nv">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">60</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nv">run</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kr">function</span><span class="p">(</span><span class="nv">room</span><span class="p">,</span><span class="w"> </span><span class="nv">box</span><span class="p">,</span><span class="w"> </span><span class="nv">cfg</span><span class="p">,</span><span class="w"> </span><span class="nv">ctx</span><span class="p">)</span>
+<span class="w">        </span><span class="kr">if</span><span class="w"> </span><span class="nv">ctx</span><span class="p">.</span><span class="py">unit</span><span class="w"> </span><span class="kr">then</span><span class="w"> </span><span class="nv">BOBBA</span><span class="p">.</span><span class="py">wired</span><span class="p">.</span><span class="nf">whisper</span><span class="p">(</span><span class="nv">ctx</span><span class="p">.</span><span class="py">unit</span><span class="p">,</span><span class="w"> </span><span class="nv">cfg</span><span class="p">.</span><span class="py">text</span><span class="p">)</span><span class="w"> </span><span class="kr">end</span>
+<span class="w">    </span><span class="kr">end</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="c1">-- and say which furni is that box</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">items</span><span class="p">.</span><span class="nf">define</span><span class="p">(</span><span class="s2">"mypack_wave_box"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nv">width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nv">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nv">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="nv">wired</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"mypack_wave"</span><span class="w"> </span><span class="p">})</span>
+</code></pre></div>
+
+<p>A trigger defines <code>matches(room, box, cfg, ctx)</code> and is fired with <code>BOBBA.wired.fire(room, "mypack_trigger",
+{ unit = ..., item = ... })</code>; a condition defines <code>test(room, box, cfg, ctx)</code>. Field types: <code>text</code>, <code>radio</code>,
+<code>slider</code>, <code>check</code>, <code>number</code>, <code>date</code>. The window is drawn from them on players' games - no client code needed.</p>
+<h2 id="messages">Messages<a class="anchor" href="#messages" title="Permanent link">#</a></h2>
+<div class="hl"><pre><span></span><code><span class="c1">-- server.lua</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">platform</span><span class="p">.</span><span class="nf">receive</span><span class="p">(</span><span class="s2">"mypack.ring"</span><span class="p">,</span><span class="w"> </span><span class="kr">function</span><span class="p">(</span><span class="nv">player</span><span class="p">,</span><span class="w"> </span><span class="nv">data</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">tonumber</span><span class="p">(</span><span class="nv">data</span><span class="p">.</span><span class="py">id</span><span class="p">)</span><span class="w">                       </span><span class="c1">-- check everything a player sends</span>
+<span class="w">    </span><span class="kr">if</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="nv">id</span><span class="w"> </span><span class="kr">then</span><span class="w"> </span><span class="kr">return</span><span class="w"> </span><span class="kr">end</span>
+<span class="w">    </span><span class="nv">BOBBA</span><span class="p">.</span><span class="py">platform</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="s2">"mypack.rang"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nv">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">id</span><span class="w"> </span><span class="p">})</span><span class="w">    </span><span class="c1">-- to everyone (or pass a player / list)</span>
+<span class="kr">end</span><span class="p">)</span>
+<span class="c1">-- client.lua</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">platform</span><span class="p">.</span><span class="nf">receive</span><span class="p">(</span><span class="s2">"mypack.rang"</span><span class="p">,</span><span class="w"> </span><span class="kr">function</span><span class="p">(</span><span class="nv">_</span><span class="p">,</span><span class="w"> </span><span class="nv">data</span><span class="p">)</span><span class="w"> </span><span class="nb">print</span><span class="p">(</span><span class="s2">"ring"</span><span class="p">,</span><span class="w"> </span><span class="nv">data</span><span class="p">.</span><span class="py">id</span><span class="p">)</span><span class="w"> </span><span class="kr">end</span><span class="p">)</span>
+<span class="nv">BOBBA</span><span class="p">.</span><span class="py">platform</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="s2">"mypack.ring"</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nv">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">})</span>
+</code></pre></div>
+
+<h2 id="good-to-know">Good to know<a class="anchor" href="#good-to-know" title="Permanent link">#</a></h2>
+<ul>
+<li>Name everything after your addon id: tables, settings, permissions, messages, registry ids.</li>
+<li>Never trust a player's message: check types, ranges and that they may do it.</li>
+<li>The Habbo addon shows how a big pack downloads, caches and draws content without stuttering: work is
+  split into jobs that give the frame back (<code>BOBBA.habbo.work</code>).</li>
+</ul>
+<div class="pager"><a href="wired.html"><small>Previous</small>Wired and scripts</a><a class="next" href="habbo-addon.html"><small>Next</small>The Habbo addon</a></div>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#layout">Layout</a>
+<a href="#the-basics">The basics</a>
+<a href="#events">Events</a>
+<a href="#furni">Furni</a>
+<a href="#starter-rooms">Starter rooms</a>
+<a href="#phone-apps">Phone apps</a>
+<a href="#the-hotels-page">The hotel's page</a>
+<a href="#wired-boxes">Wired boxes</a>
+<a href="#messages">Messages</a>
+<a href="#good-to-know">Good to know</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="../docs/getting-started.html">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

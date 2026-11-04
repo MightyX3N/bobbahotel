@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog - Bobba Hotel</title>
+<meta name="description" content="What&#x27;s new in Bobba Hotel, build by build.">
+<meta property="og:title" content="Changelog - Bobba Hotel">
+<meta property="og:description" content="What&#x27;s new in Bobba Hotel, build by build.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="docs/getting-started.html">Docs</a>
+			<a href="changelog.html" class="on">Changelog</a>
+			<a href="roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs">Changelog</div>
+	<h1>What's new</h1>
+	<p>Every development build so far, newest first. Bobba Hotel isn't released yet - these are the steps on the way.</p>
+</div></div>
+<div class="versions">
+<div class="version" id="v0.9">
+	<h2><span class="num">0.9</span>Wired</h2>
+	<div class="date">4 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>Wired</strong>: Habbo's triggers, effects, conditions and add-ons, run the way Habbo's server does: stacks on a
+  tile, conditions that all have to hold, effects with delays, <em>random</em> and <em>unseen</em> add-ons. Nitro's wired
+  windows, choosing furni by clicking them in the room (marked in blue). See <a href="docs/wired.html">Wired and scripts</a>.</li>
+<li><strong>Script boxes</strong>: Habbo's <em>Custom Wired</em> effect and condition run a short Lua script - move and switch
+  furni, whisper, teleport, count and remember, wait. Sandboxed (no money, files, network or server) and held
+  to step, memory and per-room limits, so an endless loop is stopped, not the hotel. Mistakes show in the box.</li>
+<li><strong>Teleports link one way</strong>: come unlinked, a <strong>Link</strong> window picks which of your teleports one takes you
+  to (any room, several to one); trading one away unlinks it.</li>
+<li><strong>Typing never moves you</strong>: clicking into any text box (or the chat) turns free movement off until you
+  click the room; R and the phone key are letters while you type.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.8">
+	<h2><span class="num">0.8</span>Running a hotel</h2>
+	<div class="date">4 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>The Manage screen</strong> for the hotel's owner and admins: its look (name, about, news, the UI players start
+  in, its colour, its page), its addons (on or off, restart) and their settings, the hotel's own settings,
+  and the <strong>money log</strong>.</li>
+<li><strong>The start screen in Garry's Mod</strong> when you host: pick a hotel, add servers.</li>
+<li><strong>Trading</strong>, Habbo's way: offer, accept, the countdown, confirm - checked again in one transaction at the
+  end. In the classic inventory and the phone's Bag.</li>
+<li><strong>The economy's log</strong>: every credit, club day and furni in or out, why and with whom (<code>bobba_economy</code>).
+  Buying pays and gives together or not at all.</li>
+<li><strong>The classic look's social windows</strong>: the friend list with relationships and search, room invites, the
+  messenger with groups' chats, the friend bar, profiles with mottos, and group windows (info, members,
+  making one, managing it).</li>
+</ul></div>
+</div>
+<div class="version" id="v0.7">
+	<h2><span class="num">0.7</span>The phone</h2>
+	<div class="date">4 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>The phone and tablet</strong>, Bobba Hotel's own look: a lock screen, a home screen you arrange (apps,
+  widgets, pages, the dock), the shade with quick tiles, notifications.</li>
+<li>Apps for everything: Rooms, Bag, Wallet, Camera, Settings, the Furni, Clothes and Club shops, the floor
+  plan, Messages, Groups (with text channels), Calls, Events, Videos and the App Store for addons' apps.</li>
+<li><strong>Checking in</strong>: a new start screen, the hotel's own page, and addons' Lua sandboxed in the desktop app.</li>
+<li><strong>Videos</strong>: a TV queue per room, played in sync on the room's TV furni, skip votes.</li>
+<li>Camera photos with furni and people in Garry's Mod; text that would run off the screen wraps.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.6">
+	<h2><span class="num">0.6</span>Moving freely</h2>
+	<div class="date">4 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>Steering</strong>: walk with the arrow keys, WASD or a controller; an interact button; keys and buttons you
+  can change.</li>
+<li><strong>Free movement</strong>: move at any angle and settle on the tile when you stop; smooth on stairs; others see
+  you glide. Rooms choose clicking, free movement or both. Walking starts at once.</li>
+<li><strong>The floor plan editor</strong>: tiles, heights, the door, wall height and thickness; import and export.</li>
+<li><strong>Avatar actions</strong>: dances, wave, kiss, laugh, signs, sitting on the floor, idle and blinking, effects,
+  the wardrobe.</li>
+<li><strong>The camera</strong>: a roll of five, photos for your walls, room thumbnails.</li>
+<li>A short <strong>tutorial</strong> for new players; <code>bobba_reset_player</code>.</li>
+<li>Rooms' chat settings work; the navigator's room info popover.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.5">
+	<h2><span class="num">0.5</span>Rooms</h2>
+	<div class="date">4 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>Room settings</strong> (all five tabs), rights, the doorbell and passwords, kick / ban / mute, deleting rooms,
+  favourites and the home room, categories and tags, the avatar menu and infostand, the hotel view.</li>
+<li><strong>Starter rooms</strong>: new players pick a decorated room of their own (packs add them), with a gift inside.</li>
+<li>Windows follow the game window's size.</li>
+<li>The <a href="roadmap.html">roadmap</a>.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.4">
+	<h2><span class="num">0.4</span>The desktop app</h2>
+	<div class="date">3 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>The desktop app</strong> (test build): the hotel without Garry's Mod, its server on a thread, a start page like
+  the old Habbo website, its own icon, borderless full screen.</li>
+<li>A leave button in the me menu.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.3">
+	<h2><span class="num">0.3</span>Habbo&#x27;s windows and the shop</h2>
+	<div class="date">3 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>Habbo's UI from nitro-react</strong>: the toolbar, the me menu, the purse, the room tools, the navigator with
+  real rooms, the inventory. Sized for your screen (<code>bobba_ui_scale</code>).</li>
+<li><strong>The catalogue</strong>, inventory, credits, duckets, diamonds and <strong>Habbo Club</strong> (HC, VIP or both); every floor
+  furni, seasonal furni in season, gifts, the staff rares tab.</li>
+<li><strong>Furni that do things</strong>: dice, bottles and wheels, gates, one-way gates, rollers, teleports, trophies,
+  the background toner; building tools (stacking helper, placing in a row).</li>
+<li><strong>Wall furni</strong>: posters, windows, shelves, wallpapers, floors, landscapes, stickies, the mood light.</li>
+<li>Habbo's sounds; R turns the furni being placed.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.2">
+	<h2><span class="num">0.2</span>Habbo&#x27;s content</h2>
+	<div class="date">3 November 2026</div>
+	<div class="prose"><ul>
+<li><strong>The Habbo addon</strong>: downloads and unpacks Habbo's files on each player's PC; nothing of Habbo's shipped.</li>
+<li><strong>Avatars</strong>, <strong>furniture</strong> (Nitro's visualizations in Lua: placing, sitting, lying), floors and
+  wallpapers.</li>
+<li><strong>Chat</strong> with Habbo's bubbles, Nitro's layout and word breaks.</li>
+<li><strong>The avatar editor</strong> with Habbo's clothes and icons; saving looks.</li>
+<li>No stutter while loading: work in jobs, quicker pictures, downloads fetched ahead; Nitro's font.</li>
+</ul></div>
+</div>
+<div class="version" id="v0.1">
+	<h2><span class="num">0.1</span>A new start</h2>
+	<div class="date">3 November 2026</div>
+	<div class="prose"><ul>
+<li>Bobba Hotel starts over as a <strong>Garry's Mod gamemode</strong>: the core, addons, permissions (CAMI / ULX / SAM),
+  saving, languages.</li>
+<li><strong>Rooms</strong> drawn the way Nitro draws them - geometry, camera and picking in Lua - with Habbo's colours, the
+  door hole and walls lined up with Habbo's.</li>
+<li>Rooms on the server: entering, walking with Habbo's pathfinder.</li>
+<li>Zoom with Ctrl + scroll, smooth, towards the mouse.</li>
+</ul></div>
+</div>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="docs/getting-started.html">Docs</a>
+			<a href="changelog.html">Changelog</a>
+			<a href="roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

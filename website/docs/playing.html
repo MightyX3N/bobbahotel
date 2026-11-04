@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playing - Bobba Hotel</title>
+<meta name="description" content="Rooms, walking, chat, furni, the shop, trading, friends, groups and everything else in the hotel.">
+<meta property="og:title" content="Playing - Bobba Hotel">
+<meta property="og:description" content="Rooms, walking, chat, furni, the shop, trading, friends, groups and everything else in the hotel.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="../index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="../docs/getting-started.html" class="on">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs"><a href="getting-started.html">Docs</a></div>
+	<h1>Playing</h1>
+	<p>Rooms, walking, chat, furni, the shop, trading, friends, groups and everything else in the hotel.</p>
+</div></div>
+<div class="wrap docs">
+	<aside class="side"><h4>Docs</h4>
+<a href="getting-started.html">Getting started</a>
+<a href="playing.html" class="on">Playing</a>
+<a href="hosting.html">Running a hotel</a>
+<a href="wired.html">Wired and scripts</a>
+<a href="addons.html">Making an addon</a>
+<a href="habbo-addon.html">The Habbo addon</a>
+<a href="desktop.html">The desktop app</a>
+	</aside>
+	<article class="prose">
+<h1 id="playing">Playing<a class="anchor" href="#playing" title="Permanent link">#</a></h1>
+<p>Everything here works in both looks - the classic Habbo windows and the phone. Where they differ, the
+phone's way is in brackets.</p>
+<h2 id="rooms">Rooms<a class="anchor" href="#rooms" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>The navigator</strong> (the rooms button, or the phone's Rooms app) lists the hotel's own rooms, everyone's
+  rooms (the busiest first), rooms with an event on, and your own and favourite rooms. Search by name,
+  <code>owner:</code>, <code>tag:</code> or anything.</li>
+<li><strong>Making a room</strong>: pick a layout (Habbo's, from the small starter room to huge halls; some are for Habbo
+  Club), a name and who may come in. You can own up to 25.</li>
+<li><strong>Room settings</strong> (the room info, the cog): name, description, category, tags, who can come in (open,
+  doorbell, password, invisible), how many, who can trade, pets, walking through others, wall and floor
+  thickness, chat settings (bubble width, speed, hearing distance, flood protection), who may kick, ban and
+  mute, the rights list and the ban list.</li>
+<li><strong>Rights</strong>: give someone rights from the avatar menu and they can move and place furni and use wired.</li>
+<li><strong>Your home room</strong>: the house icon in the room info. You come back there after checking in.</li>
+<li><strong>The floor plan editor</strong>: draw your own room shape and heights, the door and wall height (Habbo Club,
+  unless the hotel opens it to everyone).</li>
+</ul>
+<h2 id="moving-around">Moving around<a class="anchor" href="#moving-around" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>Click</strong> a tile to walk there, Habbo's way.</li>
+<li><strong>Free movement</strong>: the arrow keys (or WASD, or a controller's stick) move your avatar freely; let go and
+  you settle on the tile. Choose the keys in Settings: <em>arrow keys</em>, <em>WASD while the chat is empty</em>, or
+  <em>WASD with Enter to chat</em>. A room can allow clicking only, free movement only, or both.</li>
+<li><strong>Typing never moves you</strong>: click into any text box (or the chat) and your keys are only letters until
+  you click the room again.</li>
+<li><strong>The interact button</strong> (Space, or E with WASD; A on a controller) uses whatever is next to you; Tab picks
+  the next thing when there's more than one.</li>
+<li><strong>Zoom</strong>: Ctrl + scroll (or scroll alone, <code>bobba_zoom_with_ctrl 0</code>).</li>
+</ul>
+<h2 id="chat">Chat<a class="anchor" href="#chat" title="Permanent link">#</a></h2>
+<p>Talk, shout (Shift + Enter, or <code>:shout text</code>) and whisper (<code>:whisper name text</code>, or <em>Whisper</em> in the avatar
+menu). Bubbles look like Habbo's, with your chosen bubble style. The chat history is in the room tools.
+Rooms can set how far you're heard and how fast bubbles move.</p>
+<h2 id="your-avatar">Your avatar<a class="anchor" href="#your-avatar" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>Clothes</strong>: the avatar editor (click yourself, <em>My clothes</em>; the phone's Clothes app). Club clothes and
+  colours for members. Ten saved looks in the wardrobe.</li>
+<li><strong>Actions</strong>: dance (four more with Habbo Club), wave, blow a kiss, laugh, sit on the floor, signs. Idle for
+  two minutes and you fall asleep.</li>
+<li><strong>Effects</strong>: hoverboards, spotlights, sparkles and more, worn from the editor's Effects tab.</li>
+<li><strong>Your profile</strong>: click your name. Your motto (shown in the room), when you joined, your friends, groups
+  and relationships.</li>
+</ul>
+<h2 id="furni">Furni<a class="anchor" href="#furni" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>The shop</strong> (catalogue; the phone's Furni app): every floor and wall furni of the content pack, by line,
+  with a search. Seasonal furni only in their season. Buy several at once, or <strong>gift</strong> one to someone, with a
+  message and your face on the tag.</li>
+<li><strong>The inventory</strong> (the phone's Bag): your furni, newest first. <strong>Place in room</strong>, then click where; R turns
+  it; place several in a row.</li>
+<li>In the room: click a furni for its info - <strong>Use</strong>, <strong>Rotate</strong> (R), <strong>Move</strong> (drag), <strong>Pick up</strong>.</li>
+<li>What furni do: seats and beds, dice, bottles and wheels that roll, gates, one-way gates, rollers that carry
+  people and furni, trophies with an engraving, stickies, the mood light, the background toner, the stacking
+  helper, TVs that play videos, and <strong>teleports</strong>.</li>
+<li><strong>Teleports</strong> come unlinked. Click one of yours, <strong>Link</strong>, and pick which of your teleports it takes you
+  to - in any of your rooms. Several can lead to the same one. One with nowhere to go lets you back out.</li>
+</ul>
+<h2 id="money-and-habbo-club">Money and Habbo Club<a class="anchor" href="#money-and-habbo-club" title="Permanent link">#</a></h2>
+<p>Credits, duckets and diamonds. Everyone starts with some and is paid every so often while online; staff can
+give more. Furni costs credits; <strong>Habbo Club</strong> (or VIP) is bought with diamonds and gives club clothes,
+dances, room layouts and club furni. Nothing in the hotel is bought with real money.</p>
+<h2 id="trading">Trading<a class="anchor" href="#trading" title="Permanent link">#</a></h2>
+<p>Click someone, <strong>Trade</strong>. Both of you put furni in (up to nine kinds), both <strong>accept</strong>, a short countdown,
+both <strong>confirm</strong> - and the furni change hands. Any change takes back both accepts, and the server checks
+every furni again at the end. Rooms decide who may trade (no one, people with rights, everyone).</p>
+<h2 id="friends-messages-groups">Friends, messages, groups<a class="anchor" href="#friends-messages-groups" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>Friends</strong>: the friend list (the phone's Messages), requests, search by name, relationships (heart,
+  smile, bobba). The friend bar shows who's online, with chat, follow and profile.</li>
+<li><strong>The messenger</strong>: chats with friends and your groups, room invites.</li>
+<li><strong>Groups</strong>: make one (a name, colour, a room of its own), members and admins, text channels. Join open
+  groups, ask to join closed ones.</li>
+<li><strong>Events</strong>: put on an event in your room; it shows in the navigator's events.</li>
+</ul>
+<h2 id="camera-and-videos">Camera and videos<a class="anchor" href="#camera-and-videos" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>The camera</strong> (toolbar; the phone's Camera): a roll of five shots of the room. Buy one as a photo to hang
+  on a wall, or make it your room's picture in the navigator.</li>
+<li><strong>Videos</strong>: rooms have a TV queue (the tablet's Videos app): paste a YouTube link, everyone watches in
+  sync on the room's TV furni; half the room can vote to skip.</li>
+</ul>
+<h2 id="the-phone-and-tablet">The phone and tablet<a class="anchor" href="#the-phone-and-tablet" title="Permanent link">#</a></h2>
+<p>In the phone look, F2 (or the button in the corner) takes the phone out. It has a lock screen, a home screen
+you arrange (apps, widgets, pages, the dock), the shade with quick settings and notifications, and an App
+Store for addons' apps. Bigger apps open on the tablet.</p>
+<div class="pager"><a href="getting-started.html"><small>Previous</small>Getting started</a><a class="next" href="hosting.html"><small>Next</small>Running a hotel</a></div>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#rooms">Rooms</a>
+<a href="#moving-around">Moving around</a>
+<a href="#chat">Chat</a>
+<a href="#your-avatar">Your avatar</a>
+<a href="#furni">Furni</a>
+<a href="#money-and-habbo-club">Money and Habbo Club</a>
+<a href="#trading">Trading</a>
+<a href="#friends-messages-groups">Friends, messages, groups</a>
+<a href="#camera-and-videos">Camera and videos</a>
+<a href="#the-phone-and-tablet">The phone and tablet</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="../docs/getting-started.html">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

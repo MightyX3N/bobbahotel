@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Running a hotel - Bobba Hotel</title>
+<meta name="description" content="The Manage screen, the hotel&#x27;s settings, permissions, console commands and the money log.">
+<meta property="og:title" content="Running a hotel - Bobba Hotel">
+<meta property="og:description" content="The Manage screen, the hotel&#x27;s settings, permissions, console commands and the money log.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="../index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="../docs/getting-started.html" class="on">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs"><a href="getting-started.html">Docs</a></div>
+	<h1>Running a hotel</h1>
+	<p>The Manage screen, the hotel&#x27;s settings, permissions, console commands and the money log.</p>
+</div></div>
+<div class="wrap docs">
+	<aside class="side"><h4>Docs</h4>
+<a href="getting-started.html">Getting started</a>
+<a href="playing.html">Playing</a>
+<a href="hosting.html" class="on">Running a hotel</a>
+<a href="wired.html">Wired and scripts</a>
+<a href="addons.html">Making an addon</a>
+<a href="habbo-addon.html">The Habbo addon</a>
+<a href="desktop.html">The desktop app</a>
+	</aside>
+	<article class="prose">
+<h1 id="running-a-hotel">Running a hotel<a class="anchor" href="#running-a-hotel" title="Permanent link">#</a></h1>
+<p>Whoever hosts the hotel is its owner. Owners and admins manage it from the <strong>Manage screen</strong>; staff get
+their powers from <strong>permissions</strong>, which work with ULX, SAM or anything that speaks CAMI.</p>
+<h2 id="the-manage-screen">The Manage screen<a class="anchor" href="#the-manage-screen" title="Permanent link">#</a></h2>
+<p>Open it from the start screen, the hotel's page (<em>Manage hotel</em>, bottom left), the phone's Settings, the
+desktop app's start screen, or the console (<code>bobba_manage</code>). It needs the <code>bobba.admin.hotel</code> permission
+(admins by default). Four tabs:</p>
+<p><strong>Look</strong> - the hotel's name and what it's about (shown on its page and the start screen), the look players
+start in (the pack's choice, phone and tablet, or classic windows), the hotel's colour, which page shows
+after checking in, and the news on that page.</p>
+<p><strong>Addons</strong> - every hotel addon found, with what it does and whether it's running. Switch one on or off; it
+changes when the hotel starts again, and <strong>Restart now</strong> does that (in Garry's Mod: a map change, everyone
+comes back by themselves). Addons with settings have a <strong>Settings</strong> button.</p>
+<p><strong>Settings</strong> - the hotel's own settings and each addon's, checked as you change them (a number stays in its
+range, a choice is one of its choices) and saved at once.</p>
+<p><strong>Money log</strong> - every time someone gets or loses credits, duckets, diamonds, club days or furni: buying,
+gifts, trades, staff giving, the tutorial's reward, group and event costs. Search by name. (Being paid for
+being online isn't logged: it's the same for everyone.)</p>
+<h2 id="the-hotels-settings">The hotel's settings<a class="anchor" href="#the-hotels-settings" title="Permanent link">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Credits / duckets / diamonds to start with</td>
+<td>5000 / 0 / 0</td>
+<td>What a new player has</td>
+</tr>
+<tr>
+<td>Pay every (seconds)</td>
+<td>900</td>
+<td>Everyone online is paid this often</td>
+</tr>
+<tr>
+<td>Credits / duckets / diamonds each time</td>
+<td>25 / 50 / 2</td>
+<td>Each pay</td>
+</tr>
+<tr>
+<td>Trading</td>
+<td>on</td>
+<td>Players swap furni in rooms that allow it</td>
+</tr>
+<tr>
+<td>Keep the money log (days)</td>
+<td>90</td>
+<td>0 keeps it for ever</td>
+</tr>
+<tr>
+<td>Furni price (credits)</td>
+<td>5</td>
+<td>What each furni in the shop costs</td>
+</tr>
+<tr>
+<td>Seasonal furni only in season</td>
+<td>on</td>
+<td>Christmas furni at Christmas, and so on</td>
+</tr>
+<tr>
+<td>Clubs</td>
+<td>Habbo Club</td>
+<td>Habbo Club, VIP, or both (HC level 1, VIP everything)</td>
+</tr>
+<tr>
+<td>Club / VIP prices (diamonds)</td>
+<td>250 / 700, 400 / 1100</td>
+<td>One month and three months</td>
+</tr>
+<tr>
+<td>A photo (credits)</td>
+<td>2</td>
+<td>Buying a camera shot</td>
+</tr>
+<tr>
+<td>Making a group (credits)</td>
+<td>100</td>
+<td></td>
+</tr>
+<tr>
+<td>Groups one can own</td>
+<td>5</td>
+<td></td>
+</tr>
+<tr>
+<td>Most friends</td>
+<td>300</td>
+<td></td>
+</tr>
+<tr>
+<td>Putting on an event (credits)</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>Longest event (hours)</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr>
+<td>Tutorial reward (credits)</td>
+<td>50</td>
+<td>For finishing the first steps</td>
+</tr>
+<tr>
+<td>Videos</td>
+<td>on</td>
+<td>The rooms' TVs</td>
+</tr>
+<tr>
+<td>Video services</td>
+<td>youtube</td>
+<td>Which ones play</td>
+</tr>
+<tr>
+<td>Wired scripts</td>
+<td>on</td>
+<td>The script boxes (see <a href="wired.html">Wired</a>)</td>
+</tr>
+<tr>
+<td>Floor plans for club members only</td>
+<td>on</td>
+<td>The floor plan editor</td>
+</tr>
+<tr>
+<td>Asleep after (seconds)</td>
+<td>120</td>
+<td>Avatars that do nothing fall asleep</td>
+</tr>
+</tbody>
+</table></div>
+<p>The Habbo pack adds <strong>Club furni for members only</strong> (on).</p>
+<h2 id="permissions">Permissions<a class="anchor" href="#permissions" title="Permanent link">#</a></h2>
+<p>Defaults are by rank: <code>user</code> (everyone), <code>admin</code>, <code>superadmin</code>. With ULX or SAM they show up as permissions
+you can give to any group.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Default</th>
+<th>Lets you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bobba.room.create</code></td>
+<td>user</td>
+<td>Make rooms</td>
+</tr>
+<tr>
+<td><code>bobba.room.floorplan</code></td>
+<td>user</td>
+<td>Use the floor plan editor in your own rooms</td>
+</tr>
+<tr>
+<td><code>bobba.camera.use</code></td>
+<td>user</td>
+<td>Buy photos</td>
+</tr>
+<tr>
+<td><code>bobba.admin.hotel</code></td>
+<td>admin</td>
+<td>The Manage screen</td>
+</tr>
+<tr>
+<td><code>bobba.admin.settings</code></td>
+<td>superadmin</td>
+<td>Change settings from the console</td>
+</tr>
+<tr>
+<td><code>bobba.staff.anyroom</code></td>
+<td>admin</td>
+<td>Act as owner in every room</td>
+</tr>
+<tr>
+<td><code>bobba.staff.enteranyroom</code></td>
+<td>admin</td>
+<td>Go into any room (locked, password, banned, full)</td>
+</tr>
+<tr>
+<td><code>bobba.staff.unkickable</code></td>
+<td>admin</td>
+<td>Can't be kicked, banned or muted in rooms</td>
+</tr>
+<tr>
+<td><code>bobba.staff.kick</code></td>
+<td>admin</td>
+<td>Kick players out of any room</td>
+</tr>
+<tr>
+<td><code>bobba.staff.place</code></td>
+<td>admin</td>
+<td>Place furni straight from the catalogue</td>
+</tr>
+<tr>
+<td><code>bobba.staff.rares</code></td>
+<td>admin</td>
+<td>The catalogue's staff pages (rares, free)</td>
+</tr>
+<tr>
+<td><code>bobba.staff.deletefurni</code></td>
+<td>admin</td>
+<td>Delete furni for good</td>
+</tr>
+<tr>
+<td><code>bobba.staff.currency</code></td>
+<td>admin</td>
+<td>Give credits, duckets, diamonds and club; read the money log</td>
+</tr>
+<tr>
+<td><code>bobba.staff.reset</code></td>
+<td>admin</td>
+<td>Start players over</td>
+</tr>
+<tr>
+<td><code>bobba.staff.groups</code></td>
+<td>admin</td>
+<td>Delete any group</td>
+</tr>
+<tr>
+<td><code>bobba.staff.noflood</code></td>
+<td>admin</td>
+<td>Never muted for flooding the chat</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="console-commands">Console commands<a class="anchor" href="#console-commands" title="Permanent link">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bobba_status</code></td>
+<td>What's loaded: the hotel's addons, which were skipped and why</td>
+</tr>
+<tr>
+<td><code>bobba_manage</code></td>
+<td>Opens the Manage screen</td>
+</tr>
+<tr>
+<td><code>bobba_hotel_name &lt;name&gt;</code></td>
+<td>The hotel's name (Habbo's texts say it too)</td>
+</tr>
+<tr>
+<td><code>bobba_give &lt;player&gt; &lt;credits\|duckets\|diamonds\|hc\|vip&gt; &lt;amount&gt;</code></td>
+<td>Give (or with a minus, take) money or club days</td>
+</tr>
+<tr>
+<td><code>bobba_give &lt;player&gt; effect &lt;id&gt; [days]</code></td>
+<td>Give an avatar effect</td>
+</tr>
+<tr>
+<td><code>bobba_economy [player] [n]</code></td>
+<td>The money log's last lines, for everyone or one player</td>
+</tr>
+<tr>
+<td><code>bobba_wallet_setting [name] [value]</code></td>
+<td>Money and shop settings from the console</td>
+</tr>
+<tr>
+<td><code>bobba_reset_player [player] [all\|look]</code></td>
+<td>Start a player over as new, or only their look</td>
+</tr>
+<tr>
+<td><code>bobba_rooms</code> / <code>bobba_room &lt;id&gt;</code></td>
+<td>List every room / go into one</td>
+</tr>
+<tr>
+<td><code>bobba_room_create &lt;layout&gt; &lt;name&gt;</code></td>
+<td>Make a room and go in</td>
+</tr>
+<tr>
+<td><code>bobba_room_wallheight &lt;n&gt;</code></td>
+<td>The wall height of the room you're in (-1: the hotel's default)</td>
+</tr>
+<tr>
+<td><code>bobba_default_wallheight &lt;n&gt;</code></td>
+<td>The hotel's default wall height</td>
+</tr>
+<tr>
+<td><code>bobba_disabled_addons "a,b"</code></td>
+<td>Addons switched off (the Manage screen sets this for you)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Players' own settings: <code>bobba_ui</code> (phone / habbo), <code>bobba_ui_scale</code>, <code>bobba_zoom_with_ctrl</code>,
+<code>bobba_setting_movekeys</code> (0 arrows, 1 WASD while the chat is empty, 2 WASD with Enter to chat),
+<code>bobba_startscreen</code>, <code>bobba_videos_volume</code>.</p>
+<h2 id="where-things-are-kept">Where things are kept<a class="anchor" href="#where-things-are-kept" title="Permanent link">#</a></h2>
+<p>Everything is saved in Garry's Mod's own database (<code>garrysmod/sv.db</code>), in tables starting with
+<code>bobbahotel_</code>. Downloaded content (Habbo's files) is cached in <code>garrysmod/data/bobbahotel/</code>. Back up <code>sv.db</code>
+to back up the hotel.</p>
+<div class="pager"><a href="playing.html"><small>Previous</small>Playing</a><a class="next" href="wired.html"><small>Next</small>Wired and scripts</a></div>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#the-manage-screen">The Manage screen</a>
+<a href="#the-hotels-settings">The hotel's settings</a>
+<a href="#permissions">Permissions</a>
+<a href="#console-commands">Console commands</a>
+<a href="#where-things-are-kept">Where things are kept</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="../docs/getting-started.html">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

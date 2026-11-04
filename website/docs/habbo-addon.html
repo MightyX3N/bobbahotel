@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Habbo addon - Bobba Hotel</title>
+<meta name="description" content="How bobba_habbo gives the hotel Habbo&#x27;s furni, clothes and look - downloaded on each player&#x27;s PC, never shipped.">
+<meta property="og:title" content="The Habbo addon - Bobba Hotel">
+<meta property="og:description" content="How bobba_habbo gives the hotel Habbo&#x27;s furni, clothes and look - downloaded on each player&#x27;s PC, never shipped.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="../index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="../docs/getting-started.html" class="on">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs"><a href="getting-started.html">Docs</a></div>
+	<h1>The Habbo addon</h1>
+	<p>How bobba_habbo gives the hotel Habbo&#x27;s furni, clothes and look - downloaded on each player&#x27;s PC, never shipped.</p>
+</div></div>
+<div class="wrap docs">
+	<aside class="side"><h4>Docs</h4>
+<a href="getting-started.html">Getting started</a>
+<a href="playing.html">Playing</a>
+<a href="hosting.html">Running a hotel</a>
+<a href="wired.html">Wired and scripts</a>
+<a href="addons.html">Making an addon</a>
+<a href="habbo-addon.html" class="on">The Habbo addon</a>
+<a href="desktop.html">The desktop app</a>
+	</aside>
+	<article class="prose">
+<h1 id="the-habbo-addon">The Habbo addon<a class="anchor" href="#the-habbo-addon" title="Permanent link">#</a></h1>
+<p><code>bobba_habbo</code> is the content pack that makes Bobba Hotel look and feel like Habbo: Habbo's furni, clothes,
+rooms, chat bubbles, sounds, icons and windows. <strong>Nothing of Habbo's is in the addon.</strong> Each player's game
+downloads what it needs from Habbo's own servers, the way Habbo's own client does, and keeps it in a cache.</p>
+<p>It lives apart from the gamemode on purpose: a hotel can switch it off and use other content instead, and
+the gamemode never depends on it.</p>
+<h2 id="what-it-does-step-by-step">What it does, step by step<a class="anchor" href="#what-it-does-step-by-step" title="Permanent link">#</a></h2>
+<ol>
+<li><strong>Finds Habbo's files.</strong> It reads Habbo's public client settings (<code>external_variables</code>), which say where
+   the current furni, figure and text files are.</li>
+<li><strong>Reads Habbo's data</strong>: <code>furnidata</code> (every furni: name, size, whether you can sit, stand or lie on it),
+   <code>figuredata</code> (every piece of clothing and colour), and Habbo's texts (so windows say what Habbo says).</li>
+<li><strong>Downloads furni and clothes when they're first needed</strong> - a furni the first time someone sees it, not
+   all 13 000 at once. Files are Habbo's Flash files (SWF); the addon unpacks them in Lua into pictures and
+   their XML.</li>
+<li><strong>Draws them the way Nitro does.</strong> The gamemode has Nitro's furniture visualizations and avatar renderer
+   rewritten in Lua (layers, directions, animations, colours, shadows), and the addon feeds them Habbo's
+   pictures and XML.</li>
+<li><strong>Caches everything</strong> in <code>garrysmod/data/bobbahotel/habbo/</code> so the next start is instant.</li>
+</ol>
+<p>Unpacking happens in small jobs that give the frame back, so loading never stutters the room; pictures are
+written uncompressed (ten times quicker); six downloads run at once; and things you're about to need are
+fetched ahead.</p>
+<h2 id="what-it-adds-to-the-hotel">What it adds to the hotel<a class="anchor" href="#what-it-adds-to-the-hotel" title="Permanent link">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Part</th>
+<th>From Habbo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Furni</td>
+<td>Every floor and wall furni, with Habbo's behaviour (dice, gates, teleports, rollers, trophies, stickies, mood lights, TVs, wired boxes...)</td>
+</tr>
+<tr>
+<td>The catalogue</td>
+<td>Built from furnidata: every furni by its line, families over the years under one page (Habboween 2009 - 2026, Christmas, ...), seasonal pages only in season, Habbo Club furni on the club's tab, rares on a staff tab, posters, stickies, and the Spaces tab (wallpapers, floors, landscapes)</td>
+</tr>
+<tr>
+<td>Avatars</td>
+<td>Habbo's clothes, colours, effects and actions, checked against figuredata like Habbo's server does</td>
+</tr>
+<tr>
+<td>Rooms</td>
+<td>Habbo's room layouts, wallpapers, floors and landscapes; six classic starter rooms</td>
+</tr>
+<tr>
+<td>The look</td>
+<td>Nitro's windows (the classic UI) with Habbo's icons from Habbo's desktop client, the chat bubbles, sounds, the hotel view and a Habbo-style hotel page</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="settings">Settings<a class="anchor" href="#settings" title="Permanent link">#</a></h2>
+<ul>
+<li><strong>Club furni for members only</strong> (on): Habbo Club's furni can only be bought by members, as in Habbo.</li>
+</ul>
+<p>Shop prices, seasons and clubs are the hotel's own settings (see <a href="hosting.html">Running a hotel</a>).</p>
+<h2 id="if-habbo-cant-be-reached">If Habbo can't be reached<a class="anchor" href="#if-habbo-cant-be-reached" title="Permanent link">#</a></h2>
+<p>A furni that can't be downloaded isn't drawn (and the server leaves furni it can't identify out of the room
+until it can); avatars fall back to a stand-in figure. Everything already in the cache keeps working
+offline.</p>
+<h2 id="making-your-own-pack">Making your own pack<a class="anchor" href="#making-your-own-pack" title="Permanent link">#</a></h2>
+<p>The Habbo addon is the biggest example of what a content pack does: it answers the hotel's
+<code>BOBBA.items.resolver</code>, provides <code>BOBBA.room.furniDrawer</code> / <code>furniInfo</code> / <code>furniIcon</code>, the catalogue
+provider, starter rooms, plane styles and a hotel page. A pack with its own art does the same with its own
+pictures. See <a href="addons.html">Making an addon</a>.</p>
+<div class="pager"><a href="addons.html"><small>Previous</small>Making an addon</a><a class="next" href="desktop.html"><small>Next</small>The desktop app</a></div>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#what-it-does-step-by-step">What it does, step by step</a>
+<a href="#what-it-adds-to-the-hotel">What it adds to the hotel</a>
+<a href="#settings">Settings</a>
+<a href="#if-habbo-cant-be-reached">If Habbo can't be reached</a>
+<a href="#making-your-own-pack">Making your own pack</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="../docs/getting-started.html">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

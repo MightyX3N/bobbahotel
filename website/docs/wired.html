@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wired and scripts - Bobba Hotel</title>
+<meta name="description" content="Habbo&#x27;s wired, how stacks run, every box there is, and the script boxes&#x27; Lua.">
+<meta property="og:title" content="Wired and scripts - Bobba Hotel">
+<meta property="og:description" content="Habbo&#x27;s wired, how stacks run, every box there is, and the script boxes&#x27; Lua.">
+<meta property="og:image" content="https://playbobba.com/img/room.webp">
+<meta name="theme-color" content="#0f1a2e">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="bar">
+	<div class="wrap">
+		<a class="logo" href="../index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
+		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+		<nav class="nav">
+			<a href="../docs/getting-started.html" class="on">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a class="gh" href="https://github.com/MightyX3N/bobbahotel"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+		</nav>
+	</div>
+</header>
+<main>
+<div class="page-head"><div class="wrap">
+	<div class="crumbs"><a href="getting-started.html">Docs</a></div>
+	<h1>Wired and scripts</h1>
+	<p>Habbo&#x27;s wired, how stacks run, every box there is, and the script boxes&#x27; Lua.</p>
+</div></div>
+<div class="wrap docs">
+	<aside class="side"><h4>Docs</h4>
+<a href="getting-started.html">Getting started</a>
+<a href="playing.html">Playing</a>
+<a href="hosting.html">Running a hotel</a>
+<a href="wired.html" class="on">Wired and scripts</a>
+<a href="addons.html">Making an addon</a>
+<a href="habbo-addon.html">The Habbo addon</a>
+<a href="desktop.html">The desktop app</a>
+	</aside>
+	<article class="prose">
+<h1 id="wired-and-scripts">Wired and scripts<a class="anchor" href="#wired-and-scripts" title="Permanent link">#</a></h1>
+<p>Wired is Habbo's way of making rooms do things: furni boxes you stack on a tile. Bobba Hotel runs wired the
+way Habbo's server (Arcturus) does, and adds <strong>script boxes</strong> that run a short Lua script.</p>
+<h2 id="how-it-works">How it works<a class="anchor" href="#how-it-works" title="Permanent link">#</a></h2>
+<ul>
+<li>A <strong>trigger</strong> says when: someone says a word, walks onto a furni, a timer runs out...</li>
+<li><strong>Conditions</strong> on the same tile say <em>only if</em>: they all have to hold.</li>
+<li><strong>Effects</strong> on the same tile say what happens, each after its own <strong>delay</strong> (0 to 10 seconds).</li>
+<li><strong>Add-ons</strong>: <em>random</em> runs one of the stack's effects at random; <em>unseen</em> runs them one after another.</li>
+</ul>
+<p>Put the boxes on one tile, double-click each to set it up, and pick its furni by clicking them in the room
+while its window is open (they get a blue mark). Anyone with rights in the room can use wired.</p>
+<p>Wired can't slow the hotel down: a room runs at most 200 stacks a second, and stacks calling stacks stop
+after eight.</p>
+<h2 id="triggers">Triggers<a class="anchor" href="#triggers" title="Permanent link">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Box</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User says keyword</td>
+<td>Someone says something with these words in it (any user, or only the owner). Only they see what they said.</td>
+</tr>
+<tr>
+<td>User walks on / off furni</td>
+<td>Someone walks onto or off one of the chosen furni</td>
+</tr>
+<tr>
+<td>User enters room</td>
+<td>Someone comes in (anyone, or someone by name)</td>
+</tr>
+<tr>
+<td>Furni is used</td>
+<td>One of the chosen furni is switched, rolled or opened</td>
+</tr>
+<tr>
+<td>User clicks furni</td>
+<td>Someone clicks one of the chosen furni</td>
+</tr>
+<tr>
+<td>Repeat effect / Periodically long</td>
+<td>Every 0.5 - 30 seconds / every 5 - 600 seconds</td>
+</tr>
+<tr>
+<td>At set time / At time long</td>
+<td>Once, this long after the timers were reset</td>
+</tr>
+<tr>
+<td>Collision</td>
+<td>Furni moved by wired (chase) runs into someone</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="effects">Effects<a class="anchor" href="#effects" title="Permanent link">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Box</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toggle furni state</td>
+<td>Switches the chosen furni to their next state, as if used</td>
+</tr>
+<tr>
+<td>Toggle to random state</td>
+<td>A random state</td>
+</tr>
+<tr>
+<td>Reset timers</td>
+<td>Starts the room's timers again (timed triggers and conditions)</td>
+</tr>
+<tr>
+<td>Show message</td>
+<td>Whispers a message to whoever set it off</td>
+</tr>
+<tr>
+<td>Teleport to furni</td>
+<td>Puts whoever set it off onto one of the chosen furni</td>
+</tr>
+<tr>
+<td>Kick user</td>
+<td>Sends them out of the room (never the owner or staff)</td>
+</tr>
+<tr>
+<td>Mute user</td>
+<td>Mutes them in this room for 1 - 10 minutes</td>
+</tr>
+<tr>
+<td>Move and rotate furni</td>
+<td>Moves the chosen furni a tile (a way, or at random) and turns them</td>
+</tr>
+<tr>
+<td>Move furni to direction</td>
+<td>Keeps them moving a tile at a time; blocked, they turn back</td>
+</tr>
+<tr>
+<td>Match furni to position and state</td>
+<td>Puts the chosen furni back as they were when the box was saved</td>
+</tr>
+<tr>
+<td>Chase / flee</td>
+<td>Moves the chosen furni a tile towards or away from the nearest person</td>
+</tr>
+<tr>
+<td>Execute wired stacks</td>
+<td>Runs the stacks the chosen furni are on</td>
+</tr>
+<tr>
+<td><strong>Script (Custom wired effect)</strong></td>
+<td>Runs your Lua script (below)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="conditions">Conditions<a class="anchor" href="#conditions" title="Permanent link">#</a></h2>
+<p>Each also has a <em>NOT</em> version.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Box</th>
+<th>Only if</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Triggerer is on furni</td>
+<td>Whoever set it off is on one of the chosen furni</td>
+</tr>
+<tr>
+<td>Furni has users</td>
+<td>Someone is on each chosen furni</td>
+</tr>
+<tr>
+<td>Furni has furni on</td>
+<td>There's furni on top of any / all of the chosen furni</td>
+</tr>
+<tr>
+<td>Furni states and positions match</td>
+<td>The chosen furni are as they were when saved (state, direction, position)</td>
+</tr>
+<tr>
+<td>Furni matches</td>
+<td>The furni that set it off is one of the chosen (or the same kind)</td>
+</tr>
+<tr>
+<td>More / less than x seconds</td>
+<td>Since the timers were reset</td>
+</tr>
+<tr>
+<td>User count in room</td>
+<td>Between this many and that many people are in the room</td>
+</tr>
+<tr>
+<td>Group member</td>
+<td>Whoever set it off is in the room's group</td>
+</tr>
+<tr>
+<td>Wearing effect</td>
+<td>They have this avatar effect on</td>
+</tr>
+<tr>
+<td>Date and time</td>
+<td>Between two dates</td>
+</tr>
+<tr>
+<td><strong>Script (Custom wired condition)</strong></td>
+<td>Your Lua script returns true</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="script-boxes">Script boxes<a class="anchor" href="#script-boxes" title="Permanent link">#</a></h2>
+<p>The <em>Custom Wired</em> effect and condition run a short Lua script (up to 4000 letters) in place of fixed
+settings. The script only sees what's made for it - the room, its people and furni, who set it off, a little
+memory of its own - and can change the room the way wired can. It can't touch money or inventories, make
+furni, read files, use the network or reach anything of the server.</p>
+<div class="hl"><pre><span></span><code><span class="c1">-- an effect: count visitors on a plate, and light a lamp every tenth</span>
+<span class="nv">memory</span><span class="p">.</span><span class="py">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nv">memory</span><span class="p">.</span><span class="py">count</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="nf">say</span><span class="p">(</span><span class="s2">"You're visitor number "</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="nv">memory</span><span class="p">.</span><span class="py">count</span><span class="p">)</span>
+<span class="kr">if</span><span class="w"> </span><span class="nv">memory</span><span class="p">.</span><span class="py">count</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="kr">then</span>
+<span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">lamp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">room</span><span class="p">.</span><span class="nf">furni</span><span class="p">(</span><span class="s2">"lamp_basic"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="w">    </span><span class="kr">if</span><span class="w"> </span><span class="nv">lamp</span><span class="w"> </span><span class="kr">then</span><span class="w"> </span><span class="nv">lamp</span><span class="p">:</span><span class="nf">toggle</span><span class="p">()</span><span class="w"> </span><span class="kr">end</span>
+<span class="kr">end</span>
+</code></pre></div>
+
+<div class="hl"><pre><span></span><code><span class="c1">-- a condition: only the room's owner sets it off</span>
+<span class="kr">return</span><span class="w"> </span><span class="nv">user</span><span class="w"> </span><span class="o">~=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="nv">user</span><span class="p">.</span><span class="py">isOwner</span>
+</code></pre></div>
+
+<h3 id="what-a-script-sees">What a script sees<a class="anchor" href="#what-a-script-sees" title="Permanent link">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Name</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user</code></td>
+<td>Whoever set it off, or <code>nil</code> (a timer): <code>.name .x .y .dir .effect .isOwner</code>, <code>:whisper(text)</code>, <code>:teleport(x, y)</code>, <code>:teleportTo(furni)</code>, <code>:kick()</code></td>
+</tr>
+<tr>
+<td><code>trigger</code></td>
+<td><code>{ kind = "says" \| "walkson" \| ..., text = what was said, furni = the furni it was about }</code></td>
+</tr>
+<tr>
+<td><code>selected</code></td>
+<td>The furni chosen in the box's window, as a list</td>
+</tr>
+<tr>
+<td><code>room</code></td>
+<td><code>room.users()</code>, <code>room.furni([kind])</code>, <code>room.get(id)</code>, <code>room.count()</code>, <code>room.elapsed()</code>, <code>room.reset()</code>, <code>room.call(furni)</code> (runs that furni's stack), <code>room.id</code>, <code>room.name</code>, <code>room.owner</code></td>
+</tr>
+<tr>
+<td>a furni</td>
+<td><code>.id .kind .x .y .z .dir .state</code>, <code>:setState(n)</code>, <code>:toggle()</code>, <code>:move(x, y [, dir])</code>, <code>:turn(dir)</code>, <code>:usersOn()</code></td>
+</tr>
+<tr>
+<td><code>memory</code></td>
+<td>A table kept between runs while the room is loaded: words, numbers, true / false (200 of them)</td>
+</tr>
+<tr>
+<td><code>say(...)</code> / <code>print(...)</code></td>
+<td>Whisper to whoever set it off</td>
+</tr>
+<tr>
+<td><code>random(a, b)</code></td>
+<td>A whole number from a to b (<code>random()</code> 0 to 1)</td>
+</tr>
+<tr>
+<td><code>wait(seconds, fn)</code></td>
+<td>Runs fn later (at most 30 seconds, ten waiting at once)</td>
+</tr>
+<tr>
+<td>Lua</td>
+<td><code>string</code> (patterns on strings up to 10 000 letters), <code>math</code>, <code>table</code>, <code>pairs</code>, <code>ipairs</code>, <code>tostring</code>, <code>tonumber</code>, <code>type</code>, <code>pcall</code>, <code>os.time</code>, <code>os.date</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="limits">Limits<a class="anchor" href="#limits" title="Permanent link">#</a></h3>
+<p>A run may take at most 200 000 steps of Lua and 2 MB more memory; a room's scripts together 2 million steps
+a second. A script that goes over is stopped - an endless loop can't freeze the hotel - and its box shows why
+the next time it's opened (<em>Last problem: line 2: ...</em>), as do mistakes in the script. The owner can switch
+script boxes off for the whole hotel (Manage, Settings, <em>Wired scripts</em>).</p>
+<div class="pager"><a href="hosting.html"><small>Previous</small>Running a hotel</a><a class="next" href="addons.html"><small>Next</small>Making an addon</a></div>
+	</article>
+	<aside class="toc"><h4>On this page</h4>
+<a href="#how-it-works">How it works</a>
+<a href="#triggers">Triggers</a>
+<a href="#effects">Effects</a>
+<a href="#conditions">Conditions</a>
+<a href="#script-boxes">Script boxes</a>
+<a class="l3" href="#what-a-script-sees">What a script sees</a>
+<a class="l3" href="#limits">Limits</a>
+	</aside>
+</div>
+</main>
+<footer class="foot">
+	<div class="wrap">
+		<div>Bobba Hotel is free software (GPL-3.0), a fan project not affiliated with Habbo or Sulake.</div>
+		<div class="links">
+			<a href="../docs/getting-started.html">Docs</a>
+			<a href="../changelog.html">Changelog</a>
+			<a href="../roadmap.html">Roadmap</a>
+			<a href="https://github.com/MightyX3N/bobbahotel">GitHub</a>
+		</div>
+	</div>
+</footer>
+</body>
+</html>
