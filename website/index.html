@@ -21,6 +21,7 @@
 		<a class="logo" href="index.html"><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="#0f1a2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></span>Bobba Hotel</a>
 		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
 		<nav class="nav">
+			<a href="index.html#why">Why Bobba</a>
 			<a href="docs/getting-started.html">Docs</a>
 			<a href="changelog.html">Changelog</a>
 			<a href="roadmap.html">Roadmap</a>
@@ -79,7 +80,42 @@
 	</div>
 </section>
 
-<section class="block alt">
+<section class="block alt" id="why">
+	<div class="wrap">
+		<div class="center">
+			<div class="eyebrow">For retro owners</div>
+			<h2 class="big">Why run Bobba Hotel instead of a retro stack?</h2>
+			<p class="sub">Today's Habbo retros run an emulator (Arcturus, in Java), a MySQL database, a web client (Nitro) with converted assets, a CMS and a web server, each set up and kept running on its own. Bobba Hotel is one thing.</p>
+		</div>
+		<div class="compare-wrap">
+			<table class="compare">
+				<thead><tr><th></th><th>A typical retro today</th><th class="us">Bobba Hotel</th></tr></thead>
+				<tbody>
+					<tr><th>Setting it up</th><td>A Java emulator, MySQL, a web server with SSL and websockets, building the Nitro client, a CMS</td><td class="us">Copy one gamemode into Garry's Mod and start a game. Or open the desktop app.</td></tr>
+					<tr><th>Furni and clothes</th><td>Download Habbo's files, convert them all to Nitro's format, host them and keep them up to date</td><td class="us">Nothing to convert or host: each player's game fetches what it needs from Habbo and caches it</td></tr>
+					<tr><th>The database</th><td>A MySQL server to run, tune and back up</td><td class="us">Built in. Back up one file.</td></tr>
+					<tr><th>Hosting</th><td>A VPS with room for Java and MySQL, running all the time</td><td class="us">Your own PC (with friends), any Garry's Mod server, or the desktop app</td></tr>
+					<tr><th>Changing things</th><td>Java plugins compiled into the emulator, plus edits to the client's React code and a rebuild</td><td class="us">One Lua addon changes both sides, published on the Steam Workshop. Its settings show up in the Manage screen.</td></tr>
+					<tr><th>Updates</th><td>Pull, rebuild and redeploy each part by hand</td><td class="us">The Workshop updates the hotel and its addons</td></tr>
+					<tr><th>Running the hotel</th><td>The CMS's admin panel, the database and the emulator's commands</td><td class="us">The Manage screen in the hotel itself: the look, addons, every setting, the money log</td></tr>
+					<tr><th>Wired</th><td>Habbo's boxes (more as Java plugins)</td><td class="us">Habbo's boxes, plus script boxes that run sandboxed Lua, and addons can add boxes</td></tr>
+					<tr><th>Playing</th><td>Habbo's way: click to walk</td><td class="us">Click to walk, or move freely with WASD or a controller; the classic look or the phone</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="panel honest">
+			<h3>Where retros are still ahead</h3>
+			<ul>
+				<li><strong>The browser.</strong> Retro players need nothing but a web page; Bobba Hotel needs Garry's Mod or the desktop app. A web client is on the <a href="roadmap.html">roadmap</a>.</li>
+				<li><strong>Size.</strong> A retro emulator holds thousands of players at once; a Garry's Mod server holds up to 128. The custom server on the roadmap is for big hotels.</li>
+				<li><strong>Years of use.</strong> The retro stack has been run and fixed by many hotels for years. Bobba Hotel is still in development.</li>
+				<li><strong>Moving over.</strong> There's no importer for an existing Arcturus database yet. It's planned.</li>
+			</ul>
+		</div>
+	</div>
+</section>
+
+<section class="block">
 	<div class="wrap">
 		<div class="split">
 			<div>
@@ -100,7 +136,7 @@
 	</div>
 </section>
 
-<section class="block">
+<section class="block alt">
 	<div class="wrap">
 		<div class="split flip">
 			<div>
@@ -129,7 +165,7 @@
 	</div>
 </section>
 
-<section class="block alt">
+<section class="block">
 	<div class="wrap">
 		<div class="split">
 			<div>
@@ -157,7 +193,7 @@
 	</div>
 </section>
 
-<section class="block">
+<section class="block alt">
 	<div class="wrap">
 		<div class="center">
 			<div class="eyebrow">A look around</div>
@@ -174,7 +210,7 @@
 	</div>
 </section>
 
-<section class="block alt">
+<section class="block">
 	<div class="wrap">
 		<div class="center">
 			<div class="eyebrow">Moving fast</div>

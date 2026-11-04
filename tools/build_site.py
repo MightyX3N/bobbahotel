@@ -62,6 +62,7 @@ def page(title, body, root, active, description, extra_head=""):
 		<a class="logo" href="{root}index.html"><span class="key">{KEY_SVG}</span>Bobba Hotel</a>
 		<button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')">{MENU_SVG}</button>
 		<nav class="nav">
+			{nav("index.html#why", "Why Bobba", "why")}
 			{nav("docs/getting-started.html", "Docs", "docs")}
 			{nav("changelog.html", "Changelog", "changelog")}
 			{nav("roadmap.html", "Roadmap", "roadmap")}
