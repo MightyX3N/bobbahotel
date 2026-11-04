@@ -204,13 +204,13 @@ T["a new direction early in a step turns it at once; late in a step it's the nex
 	fast() fast() fast()
 	eq(at(u), "6,8", "then on down")
 	-- late in a step: turned to face the new way, the step finishes
-	for _ = 1, 8 do fast() end
+	for _ = 1, 5 do fast() end
 	P.sent = {}
 	P.fromPlayer(mia, "room.steer", { dx = -1, dy = 0 })
 	eq(at(u), "6,8", "the step goes on")
 	local t = P.inbox(mia, "room.unit.turn")
 	eq(t[#t].dir, 6, "facing left already")
-	fast() fast()
+	for _ = 1, 5 do fast() end
 	eq(at(u), "5,8", "then left")
 end
 

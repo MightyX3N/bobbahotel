@@ -238,7 +238,17 @@ function S.direction()
 	if dirs.right then sx = sx + 1 end
 	if sx == 0 and sy == 0 and S.pad then
 		local px, py = S.pad[1], S.pad[2]
-		if px * px + py * py > 0.4 * 0.4 then
+		-- (the stick must be pushed well out to start or change a way, and it stops only when it's
+		-- nearly back in the middle: springing back, a stick passes odd angles near the middle)
+		local m = math.sqrt(px * px + py * py)
+		local was0 = S.padSector
+		if (was0 == nil and m > 0.5) or (was0 ~= nil and m > 0.3) then
+			if was0 ~= nil and m < 0.6 then
+				local c, sn = math.cos(was0 * math.pi / 4), math.sin(was0 * math.pi / 4)
+				sx = c > 0.5 and 1 or (c < -0.5 and -1 or 0)
+				sy = sn > 0.5 and 1 or (sn < -0.5 and -1 or 0)
+				return S.toTiles(sx, sy)
+			end
 			-- (eight ways, by the stick's angle; the way it's going is kept until the stick is clearly
 			-- in another one, so a stick between two doesn't flick back and forth)
 			local a = math.atan2(py, px)
@@ -414,6 +424,16 @@ hook.Add("Think", "bobba.steering", function()
 	expireHeld()
 	local dx, dy = 0, 0
 	if S.allowed() then dx, dy = S.direction() end
+	-- (one way to another: only once it's held a moment, so pressing two keys a little apart or a
+	-- stick passing between two ways doesn't send a way it didn't mean; starting and stopping at once)
+	if (dx ~= sent[1] or dy ~= sent[2]) and (dx ~= 0 or dy ~= 0) and (sent[1] ~= 0 or sent[2] ~= 0) then
+		if not S.pendingDir or S.pendingDir[1] ~= dx or S.pendingDir[2] ~= dy then
+			S.pendingDir = { dx, dy, SysTime() }
+		end
+		if SysTime() - S.pendingDir[3] < 0.06 then dx, dy = sent[1], sent[2] end
+	else
+		S.pendingDir = nil
+	end
 	if dx ~= sent[1] or dy ~= sent[2] then
 		sent = { dx, dy }
 		if R.current then P.send("room.steer", { dx = dx, dy = dy }) end

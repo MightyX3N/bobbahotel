@@ -41,11 +41,20 @@ function R.show()
 	V.show(BOBBA.rooms.geometryFor(c.heightmap, { wallHeight = c.wallHeight, wallThickness = thick(a.wallThickness), floorThickness = thick(a.floorThickness) }))
 end
 
+local position
 local function setUnit(s)
 	local u = R.units[s.id] or { id = s.id }
 	R.units[s.id] = u
+	-- a step turned halfway (steering): from where it's drawn now, so it never jumps back or ahead
+	-- (the server's idea of "now" is a little earlier or later than what's on this screen)
+	local from = { x = s.x, y = s.y, z = s.z }
+	if s.dur and u.from and u.to and position then
+		local x, y, z = position(u)
+		local lift = (u.posture == "sit" or u.posture == "lay") and (u.height or 0) or 0
+		from = { x = x, y = y, z = z - lift }
+	end
 	u.name, u.dir, u.figure, u.gender, u.key = s.name, s.dir, s.figure, s.gender, s.key
-	u.from = { x = s.x, y = s.y, z = s.z }
+	u.from = from
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
 	u.started = SysTime()
@@ -205,7 +214,7 @@ end)
 -- where a unit is now: sliding from its tile to the next over one step (0.5 s), like Habbo. On a
 -- seat or bed it is drawn at the seat's height (Nitro adds the sit/lay height to where it is).
 local STEP = 0.5
-local function position(u)
+function position(u)
 	local lift = (u.posture == "sit" or u.posture == "lay") and (u.height or 0) or 0
 	if not u.to then return u.from.x, u.from.y, u.from.z + lift end
 	local f = math.min((SysTime() - u.started) / (u.dur or STEP), 1)

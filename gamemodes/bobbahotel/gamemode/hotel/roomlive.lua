@@ -414,7 +414,9 @@ end
 -- direction (back to it, if that's the way); later it turns to face the new way at once and goes
 -- there from the next tile. Not when the tile it was going to has furni (stepping on it may have done
 -- something already). true when the step was changed.
-live.REDIRECT_BEFORE = 0.6
+-- (later than a third of the way, going to the tile next to the one left would mean walking partly
+-- back the way it came: that looked like rubber banding)
+live.REDIRECT_BEFORE = 0.35
 function live.redirect(u)
 	local r = u.room
 	local now = BOBBA.platform.clock()
@@ -423,7 +425,8 @@ function live.redirect(u)
 	local f = (now - u.stepStart) / dur
 	if f >= 1 then return false end
 	local dir = DIRS[u.steer[1] .. "," .. u.steer[2]]
-	if f >= live.REDIRECT_BEFORE or BOBBA.items.topAt(r, u.x, u.y) then
+	-- (one change a step: a stick wobbling between two ways mustn't send the avatar back and forth)
+	if f >= live.REDIRECT_BEFORE or BOBBA.items.topAt(r, u.x, u.y) or u.redirectedStep == u.stepFrom then
 		-- (too late to change this step: facing the new way shows it's coming)
 		if dir and dir ~= u.dir then broadcast(r, "room.unit.turn", { id = u.id, dir = dir }) end
 		u.path, u.goal = nil, nil
@@ -462,6 +465,7 @@ function live.redirect(u)
 	local left = math.max(math.abs(tx - fx), math.abs(ty - fy))
 	local d2 = math.max(0.15, live.STEP_TIME * left)
 	u.visFrom, u.stepStart, u.stepDur = { x = fx, y = fy, z = fz }, now, d2
+	u.redirectedStep = u.stepFrom
 	u.nextStep = now + d2
 	local snap = snapshot(u)
 	snap.x, snap.y, snap.z, snap.dur = fx, fy, fz, d2
