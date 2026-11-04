@@ -49,6 +49,10 @@ borderless full screen, its own icon.
 9. **Groups**.
 10. **Rewards**: achievements, badges, daily quests, an advent calendar and seasonal events.
 11. **Minigames and wired**.
+    - games made for direct steering (WASD / stick): laser tag (shoot along the tile line you
+      face, walls and furni block it, a hit stuns and scores, teams by colour), built from wired
+      parts (a laser gun effect, a "hit by laser" trigger, team scores) so owners design their own
+      arenas; the server decides hits. Banzai, Freeze and snowball fights play better this way too.
     - free movement (between tiles) only inside minigames that want it (a snowball fight, racing),
       never in the normal hotel
     - **Voice chat** (GMod first): heard in your room only, quieter with distance on the tiles
