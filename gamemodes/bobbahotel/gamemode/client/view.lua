@@ -39,13 +39,21 @@ local function zoomInfo()
 	return { scale = V.SCALE, mult = V.zoomNow }
 end
 
+-- the screen's size: while the camera draws the room into its picture, the real screen's (GMod's
+-- ScrW/ScrH are the picture's size then, which put furni and people somewhere else)
+function V.screen()
+	if V.capturing and V.capSize then return V.capSize[1], V.capSize[2] end
+	return ScrW(), ScrH()
+end
+
 -- the room's origin on screen (pixel), so the room's middle is in the middle of the screen
 local function origin()
 	local z = zoomInfo()
 	local b = V.bounds[z.scale]
 	local cx = (b.minX + b.maxX) / 2 * z.mult
 	local cy = (b.minY + b.maxY) / 2 * z.mult
-	return math.floor(ScrW() / 2 - cx + V.panX), math.floor(ScrH() / 2 - cy + V.panY)
+	local sw, sh = V.screen()
+	return math.floor(sw / 2 - cx + V.panX), math.floor(sh / 2 - cy + V.panY)
 end
 
 local function boundsOf(view)
@@ -406,7 +414,8 @@ function V.drawScene(w, h)
 	end
 	local bg = V.background or BACKGROUND
 	surface.SetDrawColor(bg.r, bg.g, bg.b, 255)
-	surface.DrawRect(0, 0, w or ScrW(), h or ScrH())
+	local sw, sh = V.screen()
+	surface.DrawRect(0, 0, w or sw, h or sh)
 	drawPolys(V.backPolys)
 	drawPolys(V.polys)
 	if V.drawUnits and V.drawUnits("behind") then drawPolys(V.doorWallPolys) end

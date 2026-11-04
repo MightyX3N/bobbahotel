@@ -118,7 +118,7 @@ local function settingsView(ctx)
 		local lockOn = DV.lockVar:GetBool()
 		local tablet = DV.deviceVar:GetString() == "tablet"
 		y = ctx:rows(x, y, w, {
-			{ title = T("bobba.phone.settings.lock", "Lock screen"), sub = T("bobba.phone.settings.locksub", "The PIN types itself when you take it out"), right = "toggle", on = lockOn,
+			{ title = T("bobba.phone.settings.lock", "Lock screen"), sub = T("bobba.phone.settings.locksub", "A PIN types itself as it opens"), right = "toggle", on = lockOn,
 				color = C.slate, glyph = G.lock, click = function() RunConsoleCommand("bobba_phone_lock", lockOn and "0" or "1") end },
 			{ title = T("bobba.phone.settings.device", "Use a tablet"), sub = T("bobba.phone.settings.devicesub", "A big screen instead of the phone"), right = "toggle", on = tablet,
 				color = C.blue, glyph = G.tablet, click = function()

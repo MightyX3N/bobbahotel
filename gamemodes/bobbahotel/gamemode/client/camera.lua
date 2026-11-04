@@ -85,9 +85,12 @@ function CAM.drawPhoto(d, id, x, y, w, h)
 end
 
 -- --- taking pictures ---------------------------------------------------------------------------------------
--- The room under a square of the screen (screen pixels: its middle and size) as a PNG: cb(bytes)
-local function shoot(cx, cy, size, cb)
-	local x, y = math.floor(cx - size / 2), math.floor(cy - size / 2)
+-- The room under a square of the screen (its middle in screen pixels; size: the picture's pixels; s:
+-- the window's scale, the square on the screen being size * s) as a PNG: cb(bytes)
+local function shoot(cx, cy, size, s, cb)
+	s = s or 1
+	local x, y = math.floor(cx - size * s / 2), math.floor(cy - size * s / 2)
+	V.capSize = { ScrW(), ScrH() }
 	P.renderPNG(x, y, size, size, function()
 		V.capturing = true
 		local ok, err = pcall(V.drawScene)
@@ -98,7 +101,7 @@ local function shoot(cx, cy, size, cb)
 			if BOBBA.sounds and BOBBA.sounds.play then pcall(BOBBA.sounds.play, "camera_shutter") end
 		end
 		cb(bytes)
-	end)
+	end, 1 / s)
 end
 
 local function upload(purpose, bytes)
@@ -179,7 +182,7 @@ local function drawCapture(w, d)
 		if CAM.selected then CAM.selected = nil return end
 		local ox, oy = w.panel:LocalToScreen(0, 0)
 		local cx, cy = ox + (VIEW.x + VIEW.w / 2) * s, oy + (VIEW.y + VIEW.h / 2) * s
-		shoot(cx, cy, CAM.SIZE, function(bytes)
+		shoot(cx, cy, CAM.SIZE, s, function(bytes)
 			if not bytes then U.notify(T("camera.error.title", "Camera"), T("bobba.camera.failed", "The picture couldn't be taken."), 4) return end
 			if #CAM.roll >= CAM.ROLL_LIMIT then
 				U.alert(T("camera.full.header", "Camera roll full"), U.plain(T("camera.full.body", "Your camera roll is full: the oldest picture makes room.")))
@@ -270,7 +273,7 @@ local function drawMini(w, d)
 	d:btn(8 + bw + 6, by, bw, 26, U.C.success, function()
 		local s = d.s
 		local ox, oy = w.panel:LocalToScreen(0, 0)
-		shoot(ox + (fx + CAM.THUMB / 2) * s, oy + (fy + CAM.THUMB / 2) * s, CAM.THUMB, function(bytes)
+		shoot(ox + (fx + CAM.THUMB / 2) * s, oy + (fy + CAM.THUMB / 2) * s, CAM.THUMB, s, function(bytes)
 			if bytes then upload("thumbnail", bytes) end
 		end)
 		w:close()

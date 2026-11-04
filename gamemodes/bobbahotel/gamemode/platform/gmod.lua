@@ -131,7 +131,8 @@ end
 -- it at x, y, w, h becomes a PNG: cb(pngBytes) (or cb(nil) when it can't). Drawn off the screen, so
 -- windows over it aren't in the picture. (The desktop app draws into a canvas; GMod into a render
 -- target, read once the frame is drawn.)
-function P.renderPNG(x, y, w, h, draw, cb)
+function P.renderPNG(x, y, w, h, draw, cb, k)
+	k = k or 1
 	if love and love.graphics then
 		local lg = love.graphics
 		local canvas = lg.newCanvas(w, h)
@@ -140,6 +141,7 @@ function P.renderPNG(x, y, w, h, draw, cb)
 		lg.origin()
 		lg.setScissor()
 		lg.clear(0, 0, 0, 1)
+		lg.scale(k, k)
 		lg.translate(-x, -y)
 		local ok, err = pcall(draw)
 		lg.pop()
@@ -162,6 +164,7 @@ function P.renderPNG(x, y, w, h, draw, cb)
 		render.SetStencilEnable(false)
 		render.OverrideAlphaWriteEnable(true, false)
 		local m = Matrix()
+		m:Scale(Vector(k, k, 1))
 		m:Translate(Vector(-x, -y, 0))
 		cam.PushModelMatrix(m)
 		local ok, err = pcall(draw)

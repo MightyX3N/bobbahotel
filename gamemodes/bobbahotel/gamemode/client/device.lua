@@ -251,8 +251,33 @@ local function spaced(t, weight)
 	return t
 end
 -- (d.fontFn: another font for this drawing, e.g. a pack's website: fn(size, weight, s) -> font name)
-function PD:text(t, size, x, y, c, ax, ay, weight)
+local function drawLine(self, t, size, x, y, c, ax, ay, weight)
 	draw.SimpleText(self.fontFn and tostring(t or "") or spaced(t, weight), (self.fontFn or DV.font)(size, weight, self.s), self:X(x), self:Y(y), self:col(c), ax or TEXT_ALIGN_LEFT, ay or TEXT_ALIGN_TOP)
+end
+-- (a text that would go past the screen's edge is broken into lines instead, around where it was
+-- meant to be: never cut off by the edge)
+PD.EDGE = 10
+function PD:text(t, size, x, y, c, ax, ay, weight)
+	local vw = self.viewW
+	if vw and t and t ~= "" then
+		local at = x + self.ox
+		ax = ax or TEXT_ALIGN_LEFT
+		local room
+		if ax == TEXT_ALIGN_CENTER then room = 2 * math.min(at - self.EDGE, vw - at - self.EDGE)
+		elseif ax == TEXT_ALIGN_RIGHT then room = at - self.EDGE
+		else room = vw - at - self.EDGE end
+		if room > 40 and tostring(t):find(" ", 1, true) and self:textWidth(t, size, weight) > room then
+			local lines = self:wrap(t, size, room, weight)
+			local lh = math.floor(size * 1.3 + 0.5)
+			local y0 = y
+			ay = ay or TEXT_ALIGN_TOP
+			if ay == TEXT_ALIGN_CENTER then y0 = y - (#lines - 1) * lh / 2
+			elseif ay == TEXT_ALIGN_BOTTOM then y0 = y - (#lines - 1) * lh end
+			for i, l in ipairs(lines) do drawLine(self, l, size, x, y0 + (i - 1) * lh, c, ax, ay, weight) end
+			return
+		end
+	end
+	drawLine(self, t, size, x, y, c, ax, ay, weight)
 end
 function PD:textWidth(t, size, weight)
 	surface.SetFont((self.fontFn or DV.font)(size, weight, self.s))
@@ -696,6 +721,7 @@ local function makeSurface(parent, draw)
 		surf.mx, surf.my = inside and mx / s or nil, inside and my / s or nil
 		for _, e in pairs(surf.inputs or {}) do if IsValid(e) then e.bobbaSeen = false end end
 		local d = newDraw(surf, s)
+		d.viewW = pw / s
 		local ok, err = pcall(surf.draw, d, pw / s, ph / s)
 		if not ok then ErrorNoHalt("[Bobba] device: " .. tostring(err) .. "\n") end
 		-- (text boxes not drawn this time are hidden)
@@ -1609,7 +1635,8 @@ local function drawHome(d, W, H, kind)
 	local dockH = kind == "tablet" and 96 or 88
 	local dockW = kind == "tablet" and math.min(W - 200, math.max(4, #L.dock + (lf and 1 or 0)) * 100 + 40) or (W - 28)
 	local dockX, dockY = (W - dockW) / 2, H - dockH - (kind == "tablet" and 22 or 26)
-	d:round(32, dockX, dockY, dockW, dockH, alpha(C.paper, 0.16))
+	-- (a solid colour: see-through ones come out much lighter in GMod than here)
+	d:round(32, dockX, dockY, dockW, dockH, Color(44, 52, 72))
 	local dockItems = {}
 	for i, id in ipairs(L.dock) do dockItems[#dockItems + 1] = { kind = "app", id = id, index = i } end
 	if lf and lf.kind == kind and DV.liftedMoved then
@@ -1622,7 +1649,8 @@ local function drawHome(d, W, H, kind)
 			local x = dockX + (i - 1) * slotW
 			local key = kind .. ":dock:" .. it.id
 			local ex = eased(key, x + (slotW - S.icon) / 2, dockY)
-			drawHomeItem(d, kind, it, ex - (slotW - S.icon) / 2, dockY + (dockH - S.icon) / 2 - 6, slotW, dockH, key, "dock", it.index)
+			-- (in the middle of the dock: drawHomeItem puts the icon its label's room lower)
+			drawHomeItem(d, kind, it, ex - (slotW - S.icon) / 2, dockY + (dockH - S.icon) / 2 - (kind == "tablet" and 18 or 6), slotW, dockH, key, "dock", it.index)
 		end
 	end
 	-- editing: + widget and Done

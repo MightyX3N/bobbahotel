@@ -56,8 +56,10 @@ return function(G)
 	G.loveToCode = loveToCode
 
 	-- --- the screen -----------------------------------------------------------------------------
-	ScrW = function() return lg.getWidth() end
-	ScrH = function() return lg.getHeight() end
+	-- (as GMod: while a render target is drawn into, the "screen" is that target)
+	local rtStack = {}
+	ScrW = function() local rt = rtStack[#rtStack] return rt and rt.w or lg.getWidth() end
+	ScrH = function() local rt = rtStack[#rtStack] return rt and rt.h or lg.getHeight() end
 	ScreenScale = function(n) return n * (lg.getWidth() / 640) end
 	ScreenScaleH = function(n) return n * (lg.getHeight() / 480) end
 
@@ -596,12 +598,54 @@ return function(G)
 	end
 	render.Clear = function(r, g, b, a) lg.clear((r or 0) / 255, (g or 0) / 255, (b or 0) / 255, (a or 255) / 255) end
 	render.ClearDepth = function() end
+	-- render targets, as GMod's (the camera's pictures draw into one, after the frame: PostRender)
+	local rts = {}
+	GetRenderTargetEx = function(name, w, h)
+		local rt = rts[name]
+		if not rt then rt = { name = name, w = w, h = h, canvas = lg.newCanvas(w, h) } rts[name] = rt end
+		return rt
+	end
+	GetRenderTarget = function(name, w, h) return GetRenderTargetEx(name, w, h) end
+	render.PushRenderTarget = function(rt)
+		lg.flushBatch()
+		lg.push("all")
+		rtStack[#rtStack + 1] = { rt = rt, w = rt.w, h = rt.h, clip = S.clip }
+		S.clip = nil
+		lg.setCanvas(rt.canvas)
+		lg.origin()
+		lg.setScissor()
+	end
+	render.PopRenderTarget = function()
+		local top = table.remove(rtStack)
+		lg.pop()
+		if top then S.clip = top.clip end
+	end
+	render.Capture = function(opts)
+		local top = rtStack[#rtStack]
+		if not top then return nil end
+		local c = top.rt.canvas
+		lg.setCanvas()
+		local data = c:newImageData(nil, 1, opts.x or 0, opts.y or 0, opts.w or top.w, opts.h or top.h)
+		lg.setCanvas(c)
+		return data:encode("png"):getString()
+	end
+	render.OverrideAlphaWriteEnable = function() end
+	render.SetStencilEnable = function() end
+	Vector = Vector or function(x, y, z) return { x = x or 0, y = y or 0, z = z or 0 } end
+	Matrix = Matrix or function()
+		local m = { t = love.math.newTransform() }
+		function m:Translate(v) self.t:translate(v.x, v.y) end
+		function m:Scale(v) self.t:scale(v.x, v.y) end
+		return m
+	end
+
 	render.SetColorModulation = function() end
 	render.SetBlend = function() end
 	render.GetBlend = function() return 1 end
 	render.SetMaterial = surface.SetMaterial
 	render.SupportsHDR = function() return false end
-	cam = { Start2D = function() end, End2D = function() end, Start3D = function() end, End3D = function() end, IgnoreZ = function() end }
+	cam = { Start2D = function() end, End2D = function() end, Start3D = function() end, End3D = function() end, IgnoreZ = function() end,
+		PushModelMatrix = function(m) lg.push() lg.applyTransform(m.t) end, PopModelMatrix = function() lg.pop() end }
 
 	-- --- input ------------------------------------------------------------------------------------
 	local mouseButtons = { [MOUSE_LEFT] = 1, [MOUSE_RIGHT] = 2, [MOUSE_MIDDLE] = 3, [MOUSE_4] = 4, [MOUSE_5] = 5 }

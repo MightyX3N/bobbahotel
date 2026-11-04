@@ -458,7 +458,7 @@ V.drawUnits = function(phase)
 		render.OverrideBlend(true, BLEND_DST_COLOR, BLEND_ZERO, BLENDFUNC_ADD)
 		draw.NoTexture()
 		surface.SetDrawColor(t.r, t.g, t.b, 255)
-		surface.DrawRect(0, 0, ScrW(), ScrH())
+		surface.DrawRect(0, 0, V.screen())
 		render.OverrideBlend(false)
 	end
 	R.hits = hits
