@@ -29,6 +29,7 @@ return {
 	"hotel/actions.lua",
 	"hotel/effects.lua",
 	"hotel/photos.lua",
+	"hotel/tutorial.lua",
 	"hotel/chat.lua",
 	"hotel/looks.lua",
 	"hotel/figureeditor.lua",

@@ -415,6 +415,7 @@ function items.move(r, player, id, x, y, dir, wall)
 		it.x, it.y, it.dir, it.wall = wx, wy, side == "l" and 2 or 4, wall
 		BOBBA.store.query("UPDATE bobbahotel_items SET x = ?, y = ?, dir = ?, wall = ? WHERE id = ?", { it.x, it.y, it.dir, wall, it.id })
 		broadcast(r, "room.items", { snapshot(it) })
+		BOBBA.events.emit("itemMoved", r, it, player)
 		return true
 	end
 	x, y, dir = math.floor(tonumber(x) or it.x), math.floor(tonumber(y) or it.y), math.floor(tonumber(dir) or it.dir)
@@ -430,6 +431,7 @@ function items.move(r, player, id, x, y, dir, wall)
 	broadcast(r, "room.items", { snapshot(it) })
 	for _, p in ipairs(new) do old[#old + 1] = p end
 	items.settleUnits(r, old)
+	BOBBA.events.emit("itemMoved", r, it, player)
 	return true
 end
 

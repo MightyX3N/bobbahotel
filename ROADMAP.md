@@ -11,11 +11,11 @@ Nothing here is a promise of when; it keeps the plans in one place.
 3. **Rooms** (mostly): the navigator, creating rooms, settings (access, rights, chat, moderation),
    the doorbell and passwords, kick / ban / mute, favourites and home rooms, the hotel view, the
    avatar menu and infostand, the chat settings, the navigator's room popover, the floor plan editor (Habbo Club, as in Habbo; the hotel can open it to
-   everyone), starter rooms (a new player picks one; packs register their own).
+   everyone), starter rooms (a new player picks one; packs register their own), then a short tutorial in it
+   (walk, open the gift, move or turn a furni, say something; 50 credits, tutorial.reward.credits).
    Still open for rooms:
    - the navigator's thumbnail view (a grid of the rooms' pictures)
    - report, word filter
-   - a short tutorial after the starter room: walk, open the gift, place it, say hi (a small reward)
 
 **Free movement** is done: with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
 empty / WASD with Enter to chat; directions as on the screen or along the room) or a controller's stick

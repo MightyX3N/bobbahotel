@@ -84,6 +84,7 @@ function G.open(r, player, id)
 	BOBBA.store.query("DELETE FROM bobbahotel_items WHERE id = ?", { it.id })
 	BOBBA.store.query("DELETE FROM bobbahotel_gifts WHERE id = ?", { it.id })
 	I.removed(r, it)
+	BOBBA.events.emit("giftOpened", r, player, it)
 	if not row then P.send("gift.opened", { present = it.id, from = from }, player) return true end
 	-- what was in it: into the owner's inventory, then put where the box was if it fits there
 	local added = BOBBA.inventory.give(owner, row.kind, 1, row.data)[1]
