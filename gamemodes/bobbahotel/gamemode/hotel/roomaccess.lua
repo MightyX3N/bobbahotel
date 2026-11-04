@@ -154,6 +154,7 @@ function A.publicInfo(info, r)
 		chatDistance = num(info.chat_distance, 50), chatProtection = num(info.chat_protection, 2),
 		whoMute = num(info.who_mute, 0), whoKick = num(info.who_kick, 0), whoBan = num(info.who_ban, 0),
 		muted = r and r.mutedAll or false, ownerKey = info.owner, movement = num(info.movement, 0),
+		thumbnail = num(info.thumbnail, 0),
 	}
 end
 

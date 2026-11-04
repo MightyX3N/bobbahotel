@@ -397,6 +397,22 @@ function PANEL:Think()
 	if self:GetWide() ~= ScrW() or self:GetTall() ~= ScrH() then self:SetSize(ScrW(), ScrH()) end
 end
 
+-- the room alone (its floor, walls, people and furni), for a picture: no cursor, no highlights
+function V.drawScene(w, h)
+	if not V.room then return end
+	if V.dirty or not V.polys then
+		buildPolys()
+		V.dirty = false
+	end
+	local bg = V.background or BACKGROUND
+	surface.SetDrawColor(bg.r, bg.g, bg.b, 255)
+	surface.DrawRect(0, 0, w or ScrW(), h or ScrH())
+	drawPolys(V.backPolys)
+	drawPolys(V.polys)
+	if V.drawUnits and V.drawUnits("behind") then drawPolys(V.doorWallPolys) end
+	if V.drawUnits then V.drawUnits("front") end
+end
+
 function PANEL:Paint(w, h)
 	if not V.room then return end
 	V.stepZoom(RealFrameTime())

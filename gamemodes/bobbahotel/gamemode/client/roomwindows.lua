@@ -588,9 +588,17 @@ local function drawRoomInfo(w, d)
 	local W = 325
 	d:slimCard(T("navigator.roomsettings.roominfo", "Room info"))
 	local x, y = 9, 31 + 8
-	-- the picture (110 x 110): a room's thumbnail isn't made yet, Habbo's placeholder
+	-- the picture (110 x 110): the room's thumbnail, or Habbo's placeholder
 	d:box(x, y, 110, 110, 1, 4, U.C.border, Color(0, 0, 0, 32))
-	d:icon("nav-thumbnail", x + 10, y + 10, 90, 90)
+	local thumb = tonumber(a.thumbnail) or 0
+	if not (thumb > 0 and BOBBA.camera and BOBBA.camera.drawPhoto(d, thumb, x + 1, y + 1, 108, 108)) then
+		d:icon("nav-thumbnail", x + 10, y + 10, 90, 90)
+	end
+	-- (the owner's camera on it: a new thumbnail, LayoutMiniCameraView)
+	if (a.level or 0) >= 4 and BOBBA.camera then
+		d:click(x + 110 - 4 - 28, y + 4, 28, 22, function() BOBBA.camera.openThumbnail() end)
+		if not d:icon("camera_camera_icon", x + 110 - 4 - 28, y + 4) then d:icon("camera", x + 110 - 4 - 22, y + 4, 22, 22, { scale = 0.5 }) end
+	end
 	local cx = x + 110 + 8
 	local cw = W - 9 - cx
 	-- name with the house (your home room: clear; not: half see-through) and the favourite

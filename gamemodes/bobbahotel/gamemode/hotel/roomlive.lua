@@ -667,6 +667,7 @@ function live.start()
 	BOBBA.floorplan.start()
 	BOBBA.actions.start()
 	BOBBA.effects.start()
+	BOBBA.photos.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

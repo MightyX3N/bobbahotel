@@ -127,6 +127,47 @@ function P.dataMaterial(path, flags)
 	return Material("../data/bobbahotel/" .. path, flags or "noclamp smooth")
 end
 
+-- A picture of something drawn (the camera): draw() draws as it would on the screen, and the part of
+-- it at x, y, w, h becomes a PNG: cb(pngBytes) (or cb(nil) when it can't). Drawn off the screen, so
+-- windows over it aren't in the picture. (The desktop app draws into a canvas; GMod into a render
+-- target, read once the frame is drawn.)
+function P.renderPNG(x, y, w, h, draw, cb)
+	if love and love.graphics then
+		local lg = love.graphics
+		local canvas = lg.newCanvas(w, h)
+		lg.push("all")
+		lg.setCanvas(canvas)
+		lg.origin()
+		lg.setScissor()
+		lg.clear(0, 0, 0, 1)
+		lg.translate(-x, -y)
+		local ok, err = pcall(draw)
+		lg.pop()
+		if not ok then print("[Bobba] picture: " .. tostring(err)) cb(nil) return end
+		cb(canvas:newImageData():encode("png"):getString())
+		return
+	end
+	if not render or not render.Capture then cb(nil) return end
+	local rt = GetRenderTargetEx("bobba_picture_" .. w .. "x" .. h, w, h, RT_SIZE_LITERAL, MATERIAL_RT_DEPTH_NONE, 0, 0, IMAGE_FORMAT_RGB888)
+	local id = "bobba.picture." .. tostring(draw)
+	hook.Add("PostRender", id, function()
+		hook.Remove("PostRender", id)
+		render.PushRenderTarget(rt)
+		render.Clear(0, 0, 0, 255, true, true)
+		cam.Start2D()
+		local m = Matrix()
+		m:Translate(Vector(-x, -y, 0))
+		cam.PushModelMatrix(m)
+		local ok, err = pcall(draw)
+		cam.PopModelMatrix()
+		cam.End2D()
+		local data = ok and render.Capture({ format = "png", x = 0, y = 0, w = w, h = h, alpha = false }) or nil
+		render.PopRenderTarget()
+		if not ok then print("[Bobba] picture: " .. tostring(err)) end
+		cb(data)
+	end)
+end
+
 -- Hotel addons live in lua/bobbahotel/addons/<id>/ (a Workshop addon or a folder in garrysmod/addons).
 local ADDONS = "bobbahotel/addons/"
 

@@ -16,7 +16,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "12"
+H.CHAT_INDEX_VERSION = "13"
 
 -- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
 -- icons ("_off" is how Habbo shows one that isn't chosen)
@@ -58,6 +58,11 @@ for _, n in ipairs({ "bottom_bar_logo", "bottom_bar_home", "bottom_bar_navigator
 	"floor_plan_editor_logo", "floor_plan_editor_button",
 	-- the signs (the avatar menu)
 	"sign_icon_heart", "sign_icon_skull", "sign_icon_13", "sign_icon_14", "sign_icon_15", "sign_icon_16", "sign_icon_17" }) do
+	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
+end
+-- ... the camera
+for _, n in ipairs({ "camera_cam_bg", "camera_camera_btn", "camera_camera_btn_down", "camera_cam_btn_hi", "camera_viewfinder",
+	"camera_cam_close_x", "camera_camera_icon" }) do
 	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
 end
 -- ... and the effects' icons (the avatar editor's effects tab; the ones the client has)

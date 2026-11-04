@@ -353,6 +353,8 @@ end
 local AVATAR_DEPTH, AVATAR_LAY_DEPTH, OWN_DEPTH = -0.01, -0.409, 0.001
 
 local function info(kind)
+	-- (a bought photo: the core's own wall furni, client/camera.lua)
+	if kind == "photo" then return { name = "Photo", wall = true, sizeX = 1, sizeZ = 1, centerZ = 0 } end
 	return R.furniInfo and R.furniInfo(kind) or nil
 end
 
@@ -391,7 +393,9 @@ local function furniSprites(it, list, now)
 	local ix, iy, iz = itemPosition(it)
 	local sx, sy, k, depth = V.project(ix, iy, iz)
 	if not sx then return end
-	local ok, sprites = pcall(R.furniDrawer, it, { sx = sx, sy = sy, k = k, now = now, alpha = it.ghost and 0.5 or 1 })
+	local drawer = R.furniDrawer
+	if it.kind == "photo" and BOBBA.camera and BOBBA.camera.photoSprite then drawer = BOBBA.camera.photoSprite end
+	local ok, sprites = pcall(drawer, it, { sx = sx, sy = sy, k = k, now = now, alpha = it.ghost and 0.5 or 1 })
 	if not ok then ErrorNoHalt("[Bobba] furni drawer: " .. tostring(sprites) .. "\n") R.furniDrawer = nil return end
 	for i, s in ipairs(sprites or {}) do
 		-- Nitro: the object's screen depth + the sprite's own (and a tiny bit per sprite, in order)
@@ -451,8 +455,9 @@ V.drawUnits = function(phase)
 	end
 	R.hits = hits
 	R.unitHits = unitHits
-	for _, u in pairs(R.units) do drawName(u) end
-	if R.chatState then R.chatState.draw() end
+	-- (not in the camera's pictures: Nitro's names aren't part of the room either)
+	if not V.capturing then for _, u in pairs(R.units) do drawName(u) end end
+	if R.chatState and not V.capturing then R.chatState.draw() end
 end
 
 -- the furni under the mouse: the front-most picture that is solid there (the drawer's hit(); without

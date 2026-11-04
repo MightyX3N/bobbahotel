@@ -13,7 +13,7 @@ Nothing here is a promise of when; it keeps the plans in one place.
    avatar menu and infostand, the chat settings, the navigator's room popover, the floor plan editor (Habbo Club, as in Habbo; the hotel can open it to
    everyone), starter rooms (a new player picks one; packs register their own).
    Still open for rooms:
-   - room thumbnails in the navigator (see the camera, part 4)
+   - the navigator's thumbnail view (a grid of the rooms' pictures)
    - report, word filter
    - a short tutorial after the starter room: walk, open the gift, place it, say hi (a small reward)
 
@@ -40,7 +40,10 @@ borderless full screen, its own icon.
    effects (owned with a time and a count, worn from the avatar editor's Effects tab, drawn with
    Habbo's effect pictures: hoverboards, spotlights, sparkles ...), the wardrobe (ten saved looks).
    Effects are given with `bobba_give <player> effect <id> [days]` until the catalogue sells them.
-   - the camera: photos, photos as wall furni, room thumbnails for the navigator
+   The camera: Habbo's camera over the room (pictures of the room alone), a roll of five, buying a
+   shot as a photo to hang on a wall (camera.price.credits, 2), room thumbnails from the room info
+   (shown there and in the navigator).
+   - later: the camera's filters and frames (Nitro's editor), publishing photos to the website
 5. **Chat commands**.
 6. **Friends and messenger**: friend requests, the messenger, following friends.
    - Steam friends who play the hotel are friends automatically; removing one removes them only in

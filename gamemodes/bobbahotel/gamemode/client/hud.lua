@@ -85,7 +85,17 @@ local LEFT = {
 	{ id = "rooms", icon = "rooms", w = 44, h = 30, action = "navigator" },
 	{ id = "catalog", icon = "catalog", w = 37, h = 36, action = "catalog" },
 	{ id = "inventory", icon = "inventory", w = 44, h = 41, action = "inventory" },
+	-- (in a room: the camera, client/camera.lua)
+	{ id = "camera", icon = "camera", w = 38, h = 45, action = "camera", room = true },
 }
+-- the ones shown now
+local function leftItems()
+	local out = {}
+	for _, it in ipairs(LEFT) do
+		if not it.room or (V.mode == "room") then out[#out + 1] = it end
+	end
+	return out
+end
 local FRIEND_ITEM_W, FRIEND_BUTTON_W = 130, 36
 local FRIENDS_SHOWN = 3
 
@@ -96,7 +106,7 @@ HUD.meOpen = false
 -- right side's things
 function HUD.chatInput(screenW, screenH, textW)
 	local x = 16
-	for _, it in ipairs(LEFT) do x = x + it.w + 8 end
+	for _, it in ipairs(leftItems()) do x = x + it.w + 8 end
 	local inner = math.max(173, textW or 0)
 	local w = 2 + 10 + inner + 10 + 17 + 10 + 2
 	local rightW = 32 + (screenW >= 992 and (8 + FRIEND_BUTTON_W * 2 + (FRIEND_ITEM_W + 6) * FRIENDS_SHOWN) or 0)
@@ -131,7 +141,7 @@ local function drawToolbar(w, d)
 	local W, H = d.width, d.height
 	d:darkBox(0, 0, W, H)
 	local x = 16
-	for _, it in ipairs(LEFT) do
+	for _, it in ipairs(leftItems()) do
 		local y = 4 + (47 - it.h) / 2
 		local hover = d:click(x, y, it.w, it.h, function()
 			if it.id == "avatar" then HUD.meOpen = not HUD.meOpen

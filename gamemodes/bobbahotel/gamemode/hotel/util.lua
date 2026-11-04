@@ -65,3 +65,37 @@ function util.bindSql(sqlText, params, quote)
 	if i ~= #params then error(string.format("SQL has %d placeholders but got %d values", i, #params), 2) end
 	return out
 end
+
+-- Base64 (the camera's pictures travel as text): GMod's own when there is one, else plain Lua
+local B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+function util.base64Encode(s)
+	if _G.util and _G.util.Base64Encode then return (_G.util.Base64Encode(s):gsub("%s", "")) end
+	local out = {}
+	for i = 1, #s, 3 do
+		local a, b, c = s:byte(i, i + 2)
+		local n = a * 65536 + (b or 0) * 256 + (c or 0)
+		local q = {}
+		for k = 3, 0, -1 do q[4 - k] = B64:sub(math.floor(n / 64 ^ k) % 64 + 1, math.floor(n / 64 ^ k) % 64 + 1) end
+		if not b then q[3], q[4] = "=", "=" elseif not c then q[4] = "=" end
+		out[#out + 1] = table.concat(q)
+	end
+	return table.concat(out)
+end
+local B64R
+function util.base64Decode(s)
+	s = tostring(s or ""):gsub("[^%w%+/=]", "")
+	if _G.util and _G.util.Base64Decode then return _G.util.Base64Decode(s) end
+	if not B64R then B64R = {} for i = 1, 64 do B64R[B64:byte(i)] = i - 1 end end
+	local out = {}
+	for i = 1, #s, 4 do
+		local c1, c2, c3, c4 = s:byte(i, i + 3)
+		local a, b = B64R[c1], B64R[c2]
+		if not a or not b then return nil end
+		local c, d = c3 and B64R[c3], c4 and B64R[c4]
+		local n = a * 262144 + b * 4096 + (c or 0) * 64 + (d or 0)
+		out[#out + 1] = string.char(math.floor(n / 65536) % 256)
+		if c then out[#out + 1] = string.char(math.floor(n / 256) % 256) end
+		if d then out[#out + 1] = string.char(n % 256) end
+	end
+	return table.concat(out)
+end

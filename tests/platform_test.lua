@@ -43,6 +43,12 @@ function P.inbox(p, name)
 	return out
 end
 
+-- files (in memory)
+P.files = {}
+function P.writeData(path, bytes) P.files[path] = bytes end
+function P.readData(path) return P.files[path] end
+function P.dataExists(path) return P.files[path] ~= nil end
+
 -- timers: P.runTimers() runs every repeating timer once
 P.timers = {}
 function P.every(id, seconds, fn) P.timers[id] = fn end

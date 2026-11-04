@@ -47,6 +47,7 @@ local function roomData(row)
 		users = loaded and #loaded.order or 0, maxUsers = tonumber(row.max_users) or 25,
 		door = A and A.STATES[tonumber(row.state) or 0] or "open", tags = A and A.tags(row) or {},
 		category = tonumber(row.category) or 0, official = isOfficial(row) or nil,
+		thumbnail = (tonumber(row.thumbnail) or 0) > 0 and tonumber(row.thumbnail) or nil,
 	}
 end
 NAV.roomData = roomData

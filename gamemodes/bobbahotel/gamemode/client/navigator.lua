@@ -120,7 +120,9 @@ local function drawPopover(w, d)
 	local x, y = ARROW + 1 + 8, 1 + 8
 	-- the thumbnail
 	d:box(x, y, 110, 110, 1, 4, edge, Color(0, 0, 0, 32))
-	d:icon("nav-thumbnail", x + 10, y + 10, 90, 90)
+	if not (room.thumbnail and BOBBA.camera and BOBBA.camera.drawPhoto(d, room.thumbnail, x + 1, y + 1, 108, 108)) then
+		d:icon("nav-thumbnail", x + 10, y + 10, 90, 90)
+	end
 	local lock = ({ doorbell = "nav-locked", password = "nav-password", invisible = "nav-invisible" })[room.door or ""]
 	if lock then d:icon(lock, x + 110 - 4 - 13, y + 110 - 4 - 16, 13, 16) end
 	local cx = x + 110 + 8
