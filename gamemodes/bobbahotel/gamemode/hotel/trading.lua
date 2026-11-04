@@ -172,6 +172,10 @@ function T.finish(t)
 		end
 	end)
 	if not ok then return false, err end
+	-- (teleports that changed hands: no links to or from them any more)
+	local ids = {}
+	for _, s in ipairs({ t.a, t.b }) do for _, it in ipairs(moved[s]) do ids[#ids + 1] = it.id end end
+	BOBBA.items.unlink(ids)
 	for _, s in ipairs({ t.a, t.b }) do
 		local to = s == t.a and t.b or t.a
 		local list = moved[s]

@@ -73,7 +73,7 @@ local function setItem(s)
 		it = { id = s.id }
 		R.items[s.id] = it
 	end
-	it.kind, it.x, it.y, it.z, it.dir, it.state, it.data, it.wall = s.kind, s.x, s.y, s.z, s.dir, s.state, s.data, s.wall
+	it.kind, it.x, it.y, it.z, it.dir, it.state, it.data, it.wall, it.owner = s.kind, s.x, s.y, s.z, s.dir, s.state, s.data, s.wall, s.owner
 	-- moved by a roller: it slides there (Nitro's ObjectRollingUpdate, over half a second)
 	if s.slide then it.slideFrom, it.slideStart = s.slide, SysTime() else it.slideFrom = nil end
 	return it
@@ -410,6 +410,13 @@ local function furniSprites(it, list, now)
 		local draw = R.furniOverlay(it, sx, sy, k)
 		if draw then list[#list + 1] = { z = front - 1e-9, draw = draw } end
 	end
+	-- (others: wired's chosen furni marked, client/wired.lua)
+	if R.furniOverlays and front and not it.ghost then
+		for _, fn in pairs(R.furniOverlays) do
+			local draw = fn(it, sx, sy, k)
+			if draw then list[#list + 1] = { z = front - 2e-9, draw = draw } end
+		end
+	end
 end
 
 -- phase "behind": whoever is in the doorway (the view draws the wall with the door hole over them
@@ -545,7 +552,11 @@ BOBBA.events.on("roomClick", "bobba.room.walk", function(hit)
 		R.updateInfo()
 	end
 	local it, tag = R.itemAt(mx, my)
+	-- (choosing furni for a wired box: a click picks it or lets it go)
+	if it and BOBBA.wiredUI and BOBBA.wiredUI.picking() then BOBBA.wiredUI.pick(it) return end
 	if it then
+		-- (wired's "user clicks furni" hears of it)
+		P.send("room.item.click", { id = it.id })
 		local now = SysTime()
 		if lastClick.id == it.id and now - lastClick.t < 0.4 then
 			-- (some furni open a window instead: a trophy, a background toner; furniwidgets.lua)
@@ -734,6 +745,11 @@ function R.updateInfo()
 		end)
 		button(p, "Pick up", function() P.send("room.item.pickup", { id = it.id }) end)
 		n = n + 3
+	end
+	-- (your teleport: which of your teleports it takes you to)
+	if BOBBA.wiredUI and BOBBA.wiredUI.myTeleport(it) then
+		button(p, BOBBA.ui.text("bobba.tele.button", "Link"), function() BOBBA.wiredUI.openLink(it.id) end)
+		n = n + 1
 	end
 	p:SetTall(16 + 18 + n * 28)
 	-- (above the toolbar: Nitro's infostand is 10 over it, 10 from the right)

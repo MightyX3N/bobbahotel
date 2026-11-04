@@ -215,7 +215,7 @@ function H.catalogPages(fd, price, extra)
 			local into = club and clubLines or lines
 			local list = into[f.line]
 			if not list then list = {} into[f.line] = list end
-			-- (teleports are sold in linked pairs, like Habbo's)
+			-- (teleports are sold in pairs, like Habbo's; they come unlinked: their owner links them)
 			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, pair = f.category == "teleport" or nil,
 				clubLevel = (club and membersOnly) and 1 or nil }
 		end
@@ -311,6 +311,25 @@ function H.catalogPages(fd, price, extra)
 		end
 	end
 	if #stickies > 0 then table.insert(top, 1, page("Stickies", stickies)) end
+	-- wired: the boxes the hotel has (hotel/wired.lua says which), by what they are; the script boxes
+	-- are Habbo's "Custom Wired" furni
+	local known = BOBBA.wired and BOBBA.wired.HABBO
+	if known then
+		local parts = { { "^wf_trg_", "Triggers" }, { "^wf_act_", "Effects" }, { "^wf_cnd_", "Conditions" }, { "^wf_xtra_", "Add-ons" }, { "^wf_test_", "Scripts" } }
+		local children = {}
+		for _, part in ipairs(parts) do
+			local offers = {}
+			for class in pairs(known) do
+				local f = fd.byClass[class]
+				if f and class:find(part[1]) then
+					local name = f.name ~= "" and not f.name:find(" name$") and f.name or class
+					offers[#offers + 1] = { kind = class, name = name, price = { credits = price }, order = f.id or 0 }
+				end
+			end
+			if #offers > 0 then children[#children + 1] = page(part[2], offers) end
+		end
+		if #children > 0 then table.insert(top, 1, { name = "Wired", children = children, iconKind = children[1].iconKind }) end
+	end
 	table.sort(top, function(a, b)
 		if (a.name == "Other") ~= (b.name == "Other") then return b.name == "Other" end
 		return a.name:lower() < b.name:lower()

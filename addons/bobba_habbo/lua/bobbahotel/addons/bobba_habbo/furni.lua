@@ -46,6 +46,13 @@ local function typeFor(kind)
 			FU.aliases[base] = "poster"
 			return
 		end
+		-- (no file: drawn as its stand-in, H.FURNI_STANDINS)
+		if not lib and H.FURNI_STANDINS and H.FURNI_STANDINS[base] then
+			FU.loading[base] = nil
+			FU.aliases = FU.aliases or {}
+			FU.aliases[base] = H.FURNI_STANDINS[base]
+			return
+		end
 		if not lib then
 			FU.failed[base] = tostring(err)
 			print("[Bobba] furni " .. kind .. ": " .. tostring(err))

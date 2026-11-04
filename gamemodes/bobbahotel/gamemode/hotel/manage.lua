@@ -114,6 +114,7 @@ M.settings("core", "The hotel", {
 	n("events.max.hours", "Longest event (hours)", 3, 1, 48, nil, "People"),
 	n("tutorial.reward.credits", "Tutorial reward (credits)", 50, 0, 100000, "For finishing the first steps", "People"),
 	b("videos.enabled", "Videos", true, "The rooms' TVs", "Rooms"),
+	b("wired.scripts", "Wired scripts", true, "The script boxes: a little Lua in a room's wired", "Rooms"),
 	{ key = "videos.services", name = "Video services", type = "text", default = "youtube", max = 80, description = "Which ones play (youtube)", group = "Rooms" },
 	b("floorplan.club", "Floor plans for club members only", true, nil, "Rooms"),
 	n("rooms.idle.seconds", "Asleep after (seconds)", 120, 10, 3600, "Avatars that do nothing fall asleep", "Rooms"),

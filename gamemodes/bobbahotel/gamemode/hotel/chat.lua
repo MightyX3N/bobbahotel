@@ -99,6 +99,8 @@ function chat.say(u, text, kind, toName, style)
 	if not list then return false, why end
 	local allowed = BOBBA.events.emit("roomChat", u.room, u, text, kind)
 	if allowed == false then return false, "not allowed" end
+	-- (taken by something else, e.g. a wired keyword: nothing more to do)
+	if allowed == "handled" then return true end
 	style = math.floor(tonumber(style) or 0)
 	if style < 0 or style > 1000 then style = 0 end
 	if #list > 0 then P.send("room.chat", { unit = u.id, text = text, kind = kind, style = style }, list) end

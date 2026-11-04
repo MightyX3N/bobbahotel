@@ -612,6 +612,21 @@ local function step(r, u, moved)
 	BOBBA.events.emit("unitStepped", r, u)
 end
 
+-- a unit put straight onto a tile (wired's teleport): no walking there; it stops where it was going
+function live.warp(r, u, x, y)
+	if live.freeStop and u.px then live.freeStop(u) end
+	PF.removeUnit(r.grid, u.x, u.y)
+	PF.addUnit(r.grid, x, y)
+	u.x, u.y = x, y
+	u.path, u.to, u.useOnArrive = nil, nil, nil
+	u.z = BOBBA.items.standZ(r, x, y)
+	BOBBA.items.settle(r, u)
+	u.nextStep = BOBBA.platform.clock() + live.STEP_TIME
+	broadcast(r, "room.units", { snapshot(u) })
+	BOBBA.items.stepped(r, u)
+	BOBBA.events.emit("unitStepped", r, u)
+end
+
 live.ROLLER_EVERY = 4
 
 -- a unit moved by something else (a roller): from where it was to x, y, z, seen as a step
@@ -680,6 +695,7 @@ function live.start()
 	BOBBA.manage.start()
 	BOBBA.profiles.start()
 	BOBBA.trading.start()
+	BOBBA.wired.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

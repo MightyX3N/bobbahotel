@@ -542,6 +542,8 @@ return function(cfg)
 	local safeOS = { time = os.time, date = os.date, clock = os.clock, difftime = os.difftime }
 	local safeDebug = {
 		traceback = debug.traceback,
+		-- (counting a wired script's steps: hotel/wiredscript.lua)
+		sethook = debug.sethook, gethook = debug.gethook,
 		getinfo = function(f, what)
 			local i = debug.getinfo(type(f) == "number" and f + 1 or f, what)
 			if i then i.func = nil end
@@ -550,6 +552,8 @@ return function(cfg)
 	}
 	local SAFE = {
 		os = safeOS, debug = safeDebug, _G = ENV,
+		-- (only switching the JIT off for a function: wired scripts are counted step by step)
+		jit = jit and { version = jit.version, off = function(f, all) if type(f) == "function" then jit.off(f, all) end end } or nil,
 		loadstring = function(code, name) return compile(code, name) end,
 		getfenv = function(f)
 			local ok, e = pcall(getfenv, type(f) == "number" and f + 1 or f or 2)

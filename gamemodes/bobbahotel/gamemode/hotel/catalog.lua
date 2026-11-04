@@ -215,11 +215,8 @@ function CAT.buy(player, pageId, offerId, amount, extra)
 			BOBBA.wallet.addClub(key, offer.club, offer.tier, "catalog")
 		else
 			if offer.pair then
-				-- a pair that are each other's partner (teleports)
-				for _ = 1, amount do
-					local two = BOBBA.inventory.give(key, offer.kind, 2, nil, "catalog")
-					BOBBA.items.link(two[1].id, two[2].id)
-				end
+				-- a pair (teleports): they come unlinked; their owner links them (items.lua)
+				for _ = 1, amount do BOBBA.inventory.give(key, offer.kind, 2, nil, "catalog") end
 			elseif offer.trophy then
 				-- a trophy is engraved with who bought it, when, and their words (Arcturus: name TAB date TAB text)
 				BOBBA.inventory.give(key, offer.kind, 1, CAT.engraving(player, extra), "catalog")

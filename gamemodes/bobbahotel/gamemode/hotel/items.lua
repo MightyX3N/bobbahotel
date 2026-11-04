@@ -50,10 +50,65 @@ function items.migrate()
 	BOBBA.store.migrate("core.013_wall_items", { "ALTER TABLE bobbahotel_items ADD COLUMN wall TEXT NOT NULL DEFAULT ''" })
 end
 
--- two teleports become each other's partner
+-- Teleports' links go one way: each teleport has one it takes you to (its "partner"), which can be
+-- any other teleport its owner has, in any of their rooms; several can lead to the same one. They
+-- come unlinked; their owner links them (tele.link). A teleport that changes hands (a trade) loses
+-- its links, both ways.
+-- two teleports become each other's partner (both ways)
 function items.link(a, b)
 	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_teleports (a, b) VALUES (?, ?)", { a, b })
 	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_teleports (a, b) VALUES (?, ?)", { b, a })
+end
+
+-- a teleport takes you to another (0 / nil: nowhere)
+function items.linkTo(a, b)
+	if not b or b == 0 then BOBBA.store.query("DELETE FROM bobbahotel_teleports WHERE a = ?", { a }) return end
+	BOBBA.store.query("INSERT OR REPLACE INTO bobbahotel_teleports (a, b) VALUES (?, ?)", { a, b })
+end
+
+-- no links to or from these any more
+function items.unlink(ids)
+	if #ids == 0 then return end
+	local marks = {}
+	for i = 1, #ids do marks[i] = "?" end
+	local list = table.concat(marks, ",")
+	local args = {}
+	for _, id in ipairs(ids) do args[#args + 1] = id end
+	for _, id in ipairs(ids) do args[#args + 1] = id end
+	BOBBA.store.query("DELETE FROM bobbahotel_teleports WHERE a IN (" .. list .. ") OR b IN (" .. list .. ")", args)
+end
+
+-- someone's teleports, by room (and those in their inventory): cb({ rooms = { { id, name,
+-- teleports = { { id, kind, x, y } } } }, inventory = { { id, kind } } })
+function items.ownedTeleports(key, cb)
+	local rows = BOBBA.store.query("SELECT i.id, i.kind, i.room, i.x, i.y, r.name AS room_name FROM bobbahotel_items i LEFT JOIN bobbahotel_rooms r ON r.id = i.room WHERE i.owner = ? ORDER BY i.room, i.id", { tostring(key) })
+	local kinds, left = {}, 0
+	for _, row in ipairs(rows) do if kinds[row.kind] == nil then kinds[row.kind] = false left = left + 1 end end
+	local function finish()
+		local out, byRoom = { rooms = {}, inventory = {} }, {}
+		for _, row in ipairs(rows) do
+			local def = kinds[row.kind]
+			if def and def.teleport then
+				local room = tonumber(row.room) or 0
+				if room == 0 then
+					out.inventory[#out.inventory + 1] = { id = tonumber(row.id), kind = row.kind }
+				else
+					local g = byRoom[room]
+					if not g then g = { id = room, name = row.room_name or ("Room " .. room), teleports = {} } byRoom[room] = g out.rooms[#out.rooms + 1] = g end
+					g.teleports[#g.teleports + 1] = { id = tonumber(row.id), kind = row.kind, x = tonumber(row.x), y = tonumber(row.y) }
+				end
+			end
+		end
+		cb(out)
+	end
+	if left == 0 then finish() return end
+	for kind in pairs(kinds) do
+		items.resolve(kind, function(def)
+			kinds[kind] = def or false
+			left = left - 1
+			if left == 0 then finish() end
+		end)
+	end
 end
 
 function items.partner(id)
@@ -220,8 +275,11 @@ function items.standZ(r, x, y)
 end
 
 local function snapshot(it)
+	-- (a wired box's settings are only for who opens it; a teleport says whose it is: its Link button)
+	local secret = it.def and (it.def.wired or (BOBBA.wired and BOBBA.wired.HABBO[it.kind]))
 	return { id = it.id, kind = it.kind, x = it.x, y = it.y, z = it.z, dir = it.dir, state = it.state,
-		data = (it.data and it.data ~= "") and it.data or nil, wall = (it.wall and it.wall ~= "") and it.wall or nil }
+		data = (not secret and it.data and it.data ~= "") and it.data or nil, wall = (it.wall and it.wall ~= "") and it.wall or nil,
+		owner = (it.def and it.def.teleport) and it.owner or nil }
 end
 items.snapshot = snapshot
 
@@ -432,6 +490,29 @@ function items.move(r, player, id, x, y, dir, wall)
 	for _, p in ipairs(new) do old[#old + 1] = p end
 	items.settleUnits(r, old)
 	BOBBA.events.emit("itemMoved", r, it, player)
+	return true
+end
+
+-- moved by the room itself (wired): no one's rights asked; slides there like Habbo's. true, or
+-- false and why
+function items.moveBy(r, it, x, y, dir)
+	if not it.def or it.def.wall then return false end
+	local z, err = items.fits(r, it.def, x, y, dir, it)
+	if not z then return false, err end
+	local from = { x = it.x, y = it.y, z = it.z }
+	local turned = dir ~= it.dir
+	local old = items.footprint(it.def, it.x, it.y, it.dir)
+	it.x, it.y, it.z, it.dir = x, y, z, dir
+	BOBBA.store.query("UPDATE bobbahotel_items SET x = ?, y = ?, z = ?, dir = ? WHERE id = ?", { x, y, z, dir, it.id })
+	local new = items.footprint(it.def, x, y, dir)
+	updateTiles(r, old)
+	updateTiles(r, new)
+	local snap = snapshot(it)
+	if not turned and (from.x ~= x or from.y ~= y) then snap.slide = from end
+	broadcast(r, "room.items", { snap })
+	for _, p in ipairs(new) do old[#old + 1] = p end
+	items.settleUnits(r, old)
+	BOBBA.events.emit("itemMoved", r, it, nil)
 	return true
 end
 
@@ -655,6 +736,36 @@ local function setState(r, it, state, passing)
 	if not passing then BOBBA.store.query("UPDATE bobbahotel_items SET state = ? WHERE id = ?", { state, it.id }) end
 	broadcast(r, "room.items", { snapshot(it) })
 end
+items.setState = setState
+function items.broadcastItem(r, it) broadcast(r, "room.items", { snapshot(it) }) end
+
+-- the next state, as using it would (wired's toggle: no one's rights asked, no walking there)
+function items.toggle(r, it)
+	if not it.def then return false end
+	local use = items.USES[it.def.logic or ""] or {}
+	if use.roll then
+		if it.rolling then return false end
+		local roll = use.roll
+		local from, to = roll.from or 0, roll.to or (it.def.states - 1)
+		if roll.seconds > 0 then
+			it.rolling = true
+			setState(r, it, roll.rolling, true)
+			BOBBA.platform.after(roll.seconds, function()
+				it.rolling = nil
+				if r.items[it.id] == it then setState(r, it, math.random(from, to)) end
+			end)
+		else
+			setState(r, it, math.random(from, to))
+		end
+		return true
+	end
+	if it.def.gate then return useGate(r, it) end
+	if (it.def.states or 1) < 2 or it.def.teleport or it.def.oneWay then return false end
+	local state = tonumber(it.state) or 0
+	if state < 0 or state >= it.def.states then state = -1 end
+	setState(r, it, (state + 1) % it.def.states)
+	return true
+end
 
 -- is a unit next to a furni (on a tile touching it, corners too)?
 local function nextTo(it, ux, uy)
@@ -685,10 +796,20 @@ local function tileNextTo(r, it, u)
 	return best
 end
 
--- Using a furni (double-click in Habbo)
+-- Using a furni (double-click in Habbo); wired's "furni is used" hears of it
+local useFurni
 function items.use(r, player, id, tag)
 	local it = r.items[tonumber(id) or -1]
 	if not it or not it.def then return false, "no such furni" end
+	-- (a wired box: its window, for those who may change the room)
+	if BOBBA.wired and BOBBA.wired.typeOf(it) then return BOBBA.wired.open(r, player, it) end
+	local stateBefore = it.state
+	local ok, why = useFurni(r, player, it, tag)
+	if ok and (it.state ~= stateBefore or it.rolling) then BOBBA.events.emit("itemUsed", r, it, player) end
+	return ok, why
+end
+
+function useFurni(r, player, it, tag)
 	if it.def.oneWay then return useOneWay(r, it, player) end
 	if it.def.teleport then return items.useTeleport(r, it, player) end
 	local use = items.USES[it.def.logic or ""] or {}
@@ -1093,6 +1214,42 @@ function items.start()
 		if not r then return end
 		local ok, why = items.saveDimmer(r, player, data.id, data.preset, data.effect, data.color, data.brightness, data.apply == true)
 		if not ok then fail(player, why) end
+	end)
+	-- teleports: where each of yours goes (the Link window), and linking one
+	P.receive("tele.links", function(player, data)
+		local key = P.playerKey(player)
+		local id = tonumber(data.id) or 0
+		items.ownedTeleports(key, function(list)
+			list.from = id
+			list.to = items.partner(id) or 0
+			P.send("tele.links", list, player)
+		end)
+	end)
+	P.receive("tele.link", function(player, data)
+		local key = P.playerKey(player)
+		local id, to = tonumber(data.id) or -1, tonumber(data.to) or 0
+		local row = BOBBA.store.row("SELECT kind FROM bobbahotel_items WHERE id = ? AND owner = ?", { id, key })
+		local def = row and items.defs[row.kind]
+		if not def or not def.teleport then fail(player, "you can only link your own teleports") return end
+		if to ~= 0 then
+			local trow = BOBBA.store.row("SELECT kind FROM bobbahotel_items WHERE id = ? AND owner = ?", { to, key })
+			local tdef = trow and items.defs[trow.kind]
+			if to == id or not tdef or not tdef.teleport then fail(player, "it can only go to another of your teleports") return end
+		end
+		items.linkTo(id, to)
+		P.send("tele.linked", { id = id, to = to }, player)
+	end)
+	-- a furni clicked (wired's "user clicks furni"; at most a few a second)
+	local clickedAt = {}
+	P.onLeave(function(player) clickedAt[player] = nil end)
+	P.receive("room.item.click", function(player, data)
+		local r = room(player)
+		if not r or not BOBBA.wired then return end
+		local now = P.clock()
+		if clickedAt[player] and now - clickedAt[player] < 0.2 then return end
+		clickedAt[player] = now
+		local it = r.items[tonumber(data.id) or -1]
+		if it then BOBBA.wired.fire(r, "click", { unit = BOBBA.live.byPlayer[player], item = it }) end
 	end)
 	P.receive("room.item.use", function(player, data)
 		local r = room(player)

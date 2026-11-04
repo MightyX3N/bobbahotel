@@ -243,6 +243,10 @@ end
 
 H.FURNI_INFO_VERSION = "2"
 
+-- furni Habbo lists but may not have a file for (its test furni): drawn and worked out like another
+-- (the script boxes, hotel/wiredscript.lua, are Habbo's "Custom Wired" furni)
+H.FURNI_STANDINS = { wf_test_act = "wf_act_call_stacks", wf_test_cnd = "wf_cnd_stuff_is", wf_test_trg = "wf_trg_state_changed" }
+
 function H.furniInfo(classname, cb)
 	if infos[classname] then cb(infos[classname]) return end
 	if infoWaiting[classname] then table.insert(infoWaiting[classname], cb) return end
@@ -265,6 +269,9 @@ function H.furniInfo(classname, cb)
 	H.furniUrl(classname, function(url, base2, entry)
 		if not url then done(nil, base2) return end
 		H.download("furni/" .. base2, url, function(bytes, err)
+			-- (no file: its stand-in's, if it has one)
+			local standin = H.FURNI_STANDINS[base2]
+			if not bytes and standin then H.furniInfo(standin, done) return end
 			if not bytes then done(nil, err) return end
 			H.work(function()
 				local swf, why = H.swf.read(bytes, H.inflate, { images = false })

@@ -39,6 +39,8 @@ return {
 	"hotel/manage.lua",
 	"hotel/profiles.lua",
 	"hotel/trading.lua",
+	"hotel/wired.lua",
+	"hotel/wiredscript.lua",
 	"hotel/chat.lua",
 	"hotel/looks.lua",
 	"hotel/figureeditor.lua",

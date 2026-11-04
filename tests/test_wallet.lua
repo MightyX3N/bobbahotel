@@ -212,7 +212,7 @@ T["the inventory: placing takes it out, picking up brings it back"] = function()
 	eq(u.room.items[id], nil)
 end
 
-T["teleports are bought as a pair that go together"] = function()
+T["teleports are bought as a pair, unlinked"] = function()
 	local mia = start()
 	P.fromPlayer(mia, "catalog.index")
 	local page = last(mia, "catalog.index").pages[1].children[3]
@@ -223,9 +223,8 @@ T["teleports are bought as a pair that go together"] = function()
 	P.fromPlayer(mia, "inventory.get")
 	local list = last(mia, "inventory.items")
 	eq(#list, 4)
-	eq(BOBBA.items.partner(list[1].id), list[2].id)
-	eq(BOBBA.items.partner(list[2].id), list[1].id)
-	eq(BOBBA.items.partner(list[3].id), list[4].id)
+	eq(BOBBA.items.partner(list[1].id), nil)
+	eq(BOBBA.items.partner(list[2].id), nil)
 	eq(BOBBA.wallet.get(mia.key).credits, 5000 - 12, "6 a pair")
 end
 
