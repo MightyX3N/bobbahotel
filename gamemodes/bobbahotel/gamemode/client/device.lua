@@ -244,12 +244,18 @@ function PD:outline(r, x, y, w, h, bw, c, fill)
 	self:round(math.max(0, r - bw), x + bw, y + bw, w - 2 * bw, h - 2 * bw, fill or C.paper)
 end
 
+-- (the bold weights' spaces are narrow at small sizes: a hair space more, as the design has them)
+local function spaced(t, weight)
+	t = tostring(t or "")
+	if (weight == true or (weight or 500) >= 600) and t:find(" ", 1, true) then t = t:gsub(" ", " \226\128\138") end
+	return t
+end
 function PD:text(t, size, x, y, c, ax, ay, weight)
-	draw.SimpleText(tostring(t or ""), DV.font(size, weight, self.s), self:X(x), self:Y(y), self:col(c), ax or TEXT_ALIGN_LEFT, ay or TEXT_ALIGN_TOP)
+	draw.SimpleText(spaced(t, weight), DV.font(size, weight, self.s), self:X(x), self:Y(y), self:col(c), ax or TEXT_ALIGN_LEFT, ay or TEXT_ALIGN_TOP)
 end
 function PD:textWidth(t, size, weight)
 	surface.SetFont(DV.font(size, weight, self.s))
-	local w = surface.GetTextSize(tostring(t or ""))
+	local w = surface.GetTextSize(spaced(t, weight))
 	return w / self.s
 end
 PD.fit = U.D.fit
@@ -329,7 +335,10 @@ function PD:glyph(path, x, y, size, c, stroke, fill)
 		else
 			local n = #sub
 			for i = 1, n - 1 do
-				self:line(x + sub[i][1] * k, y + sub[i][2] * k, x + sub[i + 1][1] * k, y + sub[i + 1][2] * k, w, c)
+				local ax, ay, bx, by = x + sub[i][1] * k, y + sub[i][2] * k, x + sub[i + 1][1] * k, y + sub[i + 1][2] * k
+				-- (a dot: "h.01")
+				if math.abs(bx - ax) + math.abs(by - ay) < 0.2 then self:circle(ax, ay, math.max(w / 2, 1 / self.s), c)
+				else self:line(ax, ay, bx, by, w, c) end
 			end
 			if sub.closed and n > 2 then self:line(x + sub[n][1] * k, y + sub[n][2] * k, x + sub[1][1] * k, y + sub[1][2] * k, w, c) end
 			-- (round joins and ends)
@@ -457,6 +466,20 @@ function PD:button(x, y, w, h, label, style, fn, disabled)
 	return hov
 end
 
+-- someone's face in a rounded square (their avatar's head; the first letter of the name without one)
+local FACE_COLORS = { C.blue, C.pink, C.green, C.yellow, C.purple, C.peach, C.sky }
+function DV.face(d, figure, gender, name, x, y, size, bg)
+	local n = 0
+	for i = 1, #(name or "") do n = n + (name or ""):byte(i) end
+	d:round(size * 0.32, x, y, size, size, bg or FACE_COLORS[n % #FACE_COLORS + 1])
+	if figure and figure ~= "" then
+		local k = size / 34
+		d:clip(x, y, size, size, function() d:avatar(figure, gender, 2, x + size / 2, y - 14 * k, k) end)
+	else
+		d:text((name or "?"):sub(1, 1):upper(), size * 0.42, x + size / 2, y + size / 2, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
+	end
+end
+
 -- a round button that turns something (a furni, an avatar)
 function DV.turnButton(d, x, y, fn, left)
 	local hov = d:click(x, y, 44, 44, fn)
@@ -489,15 +512,18 @@ local function drawQuestion(d, W, H)
 	d:click(0, 0, W, H, function() DV.question = nil end)
 	local bw = math.min(W - 60, 320)
 	local lines = d:wrap(q.text or "", 14, bw - 40)
-	local bh = 24 + 26 + #lines * 19 + 20 + 44 + 20
+	local bh = 24 + 26 + #lines * 19 + 20 + 44 + 20 + (q.alt and 54 or 0)
 	local x, y = (W - bw) / 2, (H - bh) / 2 + (1 - t) * 30
 	d:fade(t, function()
 		d:round(26, x, y, bw, bh, C.paper)
 		d:click(x, y, bw, bh, function() end)
 		d:text(q.title or "", 17, W / 2, y + 24, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 800)
 		for i, l in ipairs(lines) do d:text(l, 14, W / 2, y + 54 + (i - 1) * 19, C.ink2, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP) end
-		local by = y + bh - 20 - 44
+		local by = y + bh - 20 - 44 - (q.alt and 54 or 0)
 		local half = (bw - 40 - 10) / 2
+		if q.alt then
+			d:button(x + 20, by + 54, bw - 40, 44, q.alt[1], "danger", function() DV.question = nil q.alt[2]() end)
+		end
 		d:button(x + 20, by, half, 44, q.cancel or U.text("generic.cancel", "Cancel"), "light", function() DV.question = nil end)
 		d:button(x + 20 + half + 10, by, half, 44, q.ok or U.text("generic.ok", "OK"), q.danger and "danger" or "primary", function()
 			DV.question = nil
@@ -774,8 +800,9 @@ function DV.notify(n)
 	n.shownAt = SysTime()
 	table.insert(DV.notes, 1, n)
 	while #DV.notes > 30 do table.remove(DV.notes) end
-	DV.banner = (not DV.dnd) and n or DV.banner
-	DV.unseen = (DV.unseen or 0) + 1
+	-- (quiet: only in the list, e.g. a friend coming online)
+	DV.banner = (not DV.dnd and not n.quiet) and n or DV.banner
+	if not n.quiet then DV.unseen = (DV.unseen or 0) + 1 end
 	return n
 end
 function DV.dismiss(n)
@@ -1125,6 +1152,18 @@ function DV.openApp(id, view, state)
 	if app.onOpen then pcall(app.onOpen, DV.stack) end
 end
 function DV.current() return DV.stack.app end
+-- an app's background (a colour, or a function giving one)
+function DV.appBg(app)
+	if not app then return nil end
+	if type(app.bg) == "function" then return app.bg() end
+	return app.bg
+end
+-- (a light background: the status bar's text dark)
+function DV.brightBg(app)
+	local bg = DV.appBg(app)
+	if not bg then return true end
+	return (bg.r + bg.g + bg.b) > 450
+end
 function DV.appOpen() return DV.stack.screens ~= nil and #DV.stack.screens > 0 end
 
 -- --- the view context an app draws with -------------------------------------------------------------
@@ -1941,7 +1980,7 @@ function drawScreenInside(d, W, H)
 	if not appOpen or opening < 1 or closing then drawHome(d, W, H, kind) end
 	local function app(s)
 		local a = s.app
-		local bg = a and a.bg or C.paper
+		local bg = DV.appBg(a) or C.paper
 		if s.onPhone then
 			-- (a phone-only app on the tablet: a phone in the middle, the "bigger" button)
 			DV.drawPhoneInTablet(d, W, H, s)
@@ -1956,7 +1995,7 @@ function drawScreenInside(d, W, H)
 		if opening < 1 then
 			d:fade(opening, function() d:translate(0, H * 0.06 * (1 - opening), function() app(st) end) end)
 		else app(st) end
-		dark = st.onPhone and false or ((st.app and st.app.bg and (st.app.bg.r + st.app.bg.g + st.app.bg.b) > 450) or (not (st.app and st.app.bg)))
+		dark = st.onPhone and false or DV.brightBg(st.app)
 	end
 	if DV.locked then dark = false end
 	-- the status bar (the shade's handle; while editing the home screen its buttons are there)
@@ -2001,7 +2040,7 @@ function DV.drawPhoneInTablet(d, W, H, st)
 	d2:round(48, -9, -9, PS.w + 18, PS.h + 18, Color(48, 56, 74))
 	d2:round(46, -8, -8, PS.w + 16, PS.h + 16, C.black)
 	d2:clip(0, 0, PS.w, PS.h, function()
-		d2:rect(0, 0, PS.w, PS.h, st.app and st.app.bg or C.paper)
+		d2:rect(0, 0, PS.w, PS.h, DV.appBg(st.app) or C.paper)
 		-- (clicks are kept in the tablet's points: the phone's are put there)
 		local before = #d.surf.clicks
 		local smx, smy = d.surf.mx, d.surf.my
@@ -2024,7 +2063,7 @@ function DV.drawPhoneInTablet(d, W, H, st)
 			z.x, z.y, z.w, z.h = z.x * k, z.y * k, z.w * k, z.h * k
 			z.handler = scaled(z.handler)
 		end
-		drawStatus(d2, PS.w, (st.app and st.app.bg and (st.app.bg.r + st.app.bg.g + st.app.bg.b) > 450) or not (st.app and st.app.bg), "phone")
+		drawStatus(d2, PS.w, DV.brightBg(st.app), "phone")
 	end)
 	corners(d2, PS.w, PS.h, 40, C.black)
 end

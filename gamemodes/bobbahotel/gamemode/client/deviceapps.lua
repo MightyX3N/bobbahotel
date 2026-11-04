@@ -69,8 +69,6 @@ DV.G = {
 local G = DV.G
 
 -- --- the hotel's apps (Rooms, Bag, the shops, Clothes and the tools are in client/app_*.lua) -------
-DV.app({ id = "friends", name = T("bobba.phone.app.friends", "Friends"), color = C.sky, glyph = G.friends, order = 14,
-	open = function() act("friends") end })
 DV.app({ id = "camera", name = T("bobba.phone.app.camera", "Camera"), color = C.mist, glyph = G.camera, order = 15,
 	open = function()
 		if not inRoom() then DV.notify({ app = "camera", title = T("bobba.phone.app.camera", "Camera"), text = T("bobba.phone.camera.room", "Go to a room to take photos.") }) return end

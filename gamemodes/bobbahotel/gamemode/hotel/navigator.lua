@@ -1,6 +1,6 @@
 -- The navigator (server): finding rooms and making new ones, the way Arcturus answers Nitro's
 -- navigator. Four views, as Habbo's: official_view (the hotel's own rooms), hotel_view (everyone's
--- rooms, the fullest first), roomads_view (events: none yet) and myworld_view (your rooms, your
+-- rooms, the fullest first), roomads_view (rooms with an event on: roomevents.lua) and myworld_view (your rooms, your
 -- favourites). A search ("roomname:", "owner:", "tag:" or anything) gives one list, "query".
 --
 -- Messages from players: navigator.search { view, query }
@@ -96,7 +96,9 @@ function NAV.view(view, playerKey, player)
 		end
 		return blocks
 	elseif view == "roomads_view" then
-		return { { code = "top_promotions", rooms = {} }, { code = "new_ads", rooms = {} } }
+		-- (the rooms with an event on: roomevents.lua)
+		if BOBBA.roomEvents then return BOBBA.roomEvents.navigatorBlocks(player) end
+		return { { code = "top_promotions", rooms = {} } }
 	elseif view == "myworld_view" then
 		local A = BOBBA.access
 		local fav = {}
@@ -121,6 +123,7 @@ function NAV.search(query, player)
 	if not kind then kind, text = "anything", query end
 	text = text:lower()
 	local out = {}
+	local groupRooms
 	for _, r in ipairs(allRooms()) do
 		local name, owner, desc = (r.name or ""):lower(), (r.owner_name or ""):lower(), (r.description or ""):lower()
 		local tags = (r.tags or ""):lower()
@@ -130,7 +133,10 @@ function NAV.search(query, player)
 		elseif kind == "owner" then hit = owner == text
 		elseif kind == "tag" then hit = hasTag(text)
 		elseif kind == "desc" then hit = desc:find(text, 1, true)
-		elseif kind == "group" then hit = false -- (no groups yet)
+		elseif kind == "group" then
+			-- (a room that's a group's, by the group's name: groups.lua)
+			groupRooms = groupRooms or (BOBBA.groups and BOBBA.groups.roomsNamed(text) or {})
+			hit = groupRooms[tonumber(r.id)]
 		else hit = name:find(text, 1, true) or owner:find(text, 1, true) or desc:find(text, 1, true) or tags:find(text, 1, true) end
 		if hit and visibleTo(player, r) then out[#out + 1] = roomData(r) end
 	end

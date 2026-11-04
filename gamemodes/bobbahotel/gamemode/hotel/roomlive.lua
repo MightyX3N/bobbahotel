@@ -669,6 +669,9 @@ function live.start()
 	BOBBA.effects.start()
 	BOBBA.photos.start()
 	BOBBA.tutorial.start()
+	BOBBA.friends.start()
+	BOBBA.groups.start()
+	BOBBA.roomEvents.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}
@@ -679,6 +682,8 @@ function live.start()
 		P.send("hotel.info", { name = A.hotelName() }, player)
 		P.send("room.favourites", { ids = A.favourites(key) }, player)
 		P.send("room.home", { id = A.home(key) or 0 }, player)
+		-- (here now: friends, groups and the like hear of it)
+		BOBBA.events.emit("playerReady", player)
 		if live.byPlayer[player] then return end
 		-- new here: first pick a room of your own (starter.lua)
 		if BOBBA.starter.maybeOffer(player) then return end
