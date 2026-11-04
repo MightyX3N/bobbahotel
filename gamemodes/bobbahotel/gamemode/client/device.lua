@@ -341,12 +341,171 @@ function PD:glyph(path, x, y, size, c, stroke, fill)
 end
 
 -- an avatar (the room's figure drawer), its head at x, y
-function PD:avatar(figure, gender, dir, x, y, k)
+function PD:avatar(figure, gender, dir, x, y, k, effect)
 	local AE = BOBBA.avatarEditor
 	if not (AE and AE.drawPreview) or not figure then return false end
-	AE.drawPreview(figure, gender or "M", dir or 2, (x + self.ox) * self.s, (y + self.oy) * self.s, (k or 1) * self.s)
+	AE.drawPreview(figure, gender or "M", dir or 2, (x + self.ox) * self.s, (y + self.oy) * self.s, (k or 1) * self.s, effect)
 	return true
 end
+
+-- a picture (a material) stretched into x, y, w, h
+function PD:material(mat, x, y, w, h, c)
+	if not mat then return false end
+	local X, Y = self:X(x), self:Y(y)
+	surface.SetMaterial(mat)
+	local c2 = self:col(c or C.white)
+	surface.SetDrawColor(c2.r, c2.g, c2.b, c2.a)
+	surface.DrawTexturedRect(X, Y, self:X(x + w) - X, self:Y(y + h) - Y)
+	return true
+end
+
+-- one of the pack's UI pictures (BOBBA.ui.icon, e.g. Habbo's), its middle in x, y, w, h; k: its size
+function PD:uiIcon(name, x, y, w, h, k)
+	local ic = U.icon(name)
+	if not ic or not ic.material then return false end
+	k = k or 1
+	local iw, ih = ic.width * k, ic.height * k
+	local X, Y = self:X(x + (w - iw) / 2), self:Y(y + (h - ih) / 2)
+	render.PushFilterMag(TEXFILTER.POINT)
+	render.PushFilterMin(k < 1 and TEXFILTER.LINEAR or TEXFILTER.POINT)
+	surface.SetMaterial(ic.material)
+	local c2 = self:col(C.white)
+	surface.SetDrawColor(c2.r, c2.g, c2.b, c2.a)
+	surface.DrawTexturedRectUV(X, Y, math.floor(iw * self.s + 0.5), math.floor(ih * self.s + 0.5), 0, 0, ic.u, ic.v)
+	render.PopFilterMin()
+	render.PopFilterMag()
+	return true
+end
+
+-- a furni's icon (or, preview = true, its picture as in a room) in x, y, w, h; data: a paint's number
+function PD:furni(kind, x, y, w, h, data, preview, dir)
+	local R = BOBBA.room
+	local info = R.furniInfo and R.furniInfo(kind)
+	local s = self.s
+	local X, Y, W, H = self:X(x), self:Y(y), self:X(x + w) - self:X(x), self:Y(y + h) - self:Y(y)
+	if data and info and info.paint and R.paintSwatch then
+		if preview then R.paintSwatch(info.paint, data, X, Y, W, H, 2 * s)
+		else
+			local q = math.min(W, H) - math.floor(8 * s)
+			R.paintSwatch(info.paint, data, X + math.floor((W - q) / 2), Y + math.floor((H - q) / 2), q, q, s)
+		end
+		return
+	end
+	if preview then
+		if R.furniPreview then R.furniPreview(kind, X, Y, W, H, s, dir or 2) end
+	elseif R.furniIcon then
+		-- (Habbo's icons are small: bigger in a bigger box, never more than fits)
+		local k = math.Clamp((math.min(w, h) - 12) / 44, 1, 2.5)
+		R.furniIcon(kind, X, Y, W, H, s * k, 255, true)
+	end
+end
+
+-- a row of choices (pills) that slides sideways when they don't fit; returns its height
+function PD:chips(id, x, y, w, list, active, onPick, opts)
+	opts = opts or {}
+	local h = opts.h or 32
+	local size = opts.size or 13
+	local total = 0
+	local widths = {}
+	for i, it in ipairs(list) do widths[i] = self:textWidth(it.label, size, 700) + 28 total = total + widths[i] + 8 end
+	total = total - 8
+	local off = 0
+	if total > w then
+		local surf = self.surf
+		local sc = surf.scrolls[id] or { offset = 0, v = 0 }
+		surf.scrolls[id] = sc
+		sc.max = total - w
+		sc.offset = math.Clamp(sc.offset, 0, sc.max)
+		self:dragZone(x, y, w, h, { vertical = false, start = function() sc.from = sc.offset return true end,
+			move = function(_, _, dx) sc.offset = math.Clamp(sc.from - dx, 0, sc.max) end,
+			wheel = function(delta) sc.offset = math.Clamp(sc.offset - delta * 60, 0, sc.max) return true end })
+		off = sc.offset
+	end
+	local fg, bgOn, bgOff = opts.fg or C.navy, opts.on or C.navy, opts.off or C.line
+	self:clip(x, y, w, h, function()
+		local cx = x - off
+		for i, it in ipairs(list) do
+			local on = it.id == active
+			local hov = self:click(math.max(cx, x), y, math.min(cx + widths[i], x + w) - math.max(cx, x), h, function() onPick(it.id) end)
+			self:pill(cx, y, widths[i], h, on and bgOn or (hov and alpha(bgOff, 0.8) or bgOff))
+			self:text(it.label, size, cx + widths[i] / 2, y + h / 2, on and (opts.onFg or C.paper) or fg, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 700)
+			cx = cx + widths[i] + 8
+		end
+	end)
+	return h
+end
+
+-- a button: style "primary" (navy), "light", "outline", "danger", "gold"
+function PD:button(x, y, w, h, label, style, fn, disabled)
+	local hov = (not disabled) and fn and self:click(x, y, w, h, fn) or false
+	local bg, fg = C.navy, C.paper
+	if style == "light" then bg, fg = C.line, C.navy
+	elseif style == "outline" then bg, fg = nil, C.navy
+	elseif style == "outlineLight" then bg, fg = nil, C.paper
+	elseif style == "danger" then bg, fg = C.red, C.white
+	elseif style == "green" then bg, fg = C.green, C.navy
+	elseif style == "gold" then bg, fg = C.gold, hex("14110B")
+	elseif style == "paper" then bg, fg = C.paper, C.navy end
+	if bg then
+		if hov then bg = Color(math.min(255, bg.r + 20), math.min(255, bg.g + 20), math.min(255, bg.b + 20), bg.a) end
+		self:pill(x, y, w, h, disabled and alpha(bg, 0.45) or bg)
+	else
+		self:round(h / 2, x, y, w, h, fg)
+		self:round(h / 2 - 2, x + 2, y + 2, w - 4, h - 4, hov and alpha(fg, 0.12) or (self.bgUnder or C.paper))
+	end
+	self:text(self:fit(label, math.min(16, h * 0.36), w - 16, 800), math.min(16, h * 0.36), x + w / 2, y + h / 2, disabled and alpha(fg, 0.6) or fg, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 800)
+	return hov
+end
+
+-- a round button that turns something (a furni, an avatar)
+function DV.turnButton(d, x, y, fn, left)
+	local hov = d:click(x, y, 44, 44, fn)
+	d:circle(x + 22, y + 22, 22, hov and C.white or C.paper)
+	d:glyph(left and "M4 12a8 8 0 1 0 3-6.2M4 4v5h5" or "M20 12a8 8 0 1 1-3-6.2M20 4v5h-5", x + 10, y + 10, 24, C.navy, 2.4)
+end
+
+-- a price: "25 credits", "250 diamonds + 5 credits"
+function DV.priceText(price, n)
+	n = n or 1
+	local parts = {}
+	for _, c in ipairs({ "credits", "duckets", "diamonds" }) do
+		local v = price and price[c]
+		if v and v > 0 then parts[#parts + 1] = DV.money(v * n) .. " " .. U.text("bobba.phone.currency." .. c, c) end
+	end
+	if #parts == 0 then return U.text("bobba.phone.free", "Free") end
+	return table.concat(parts, " + ")
+end
+
+-- a question over the screen: { title, text, ok = "Buy", cancel = "Cancel", fn = function() end, danger }
+function DV.ask(q)
+	q.at = SysTime()
+	DV.question = q
+end
+local function drawQuestion(d, W, H)
+	local q = DV.question
+	if not q then return end
+	local t = math.Clamp((SysTime() - q.at) / 0.18, 0, 1)
+	d:rect(0, 0, W, H, Color(0, 0, 0, math.floor(120 * t)))
+	d:click(0, 0, W, H, function() DV.question = nil end)
+	local bw = math.min(W - 60, 320)
+	local lines = d:wrap(q.text or "", 14, bw - 40)
+	local bh = 24 + 26 + #lines * 19 + 20 + 44 + 20
+	local x, y = (W - bw) / 2, (H - bh) / 2 + (1 - t) * 30
+	d:fade(t, function()
+		d:round(26, x, y, bw, bh, C.paper)
+		d:click(x, y, bw, bh, function() end)
+		d:text(q.title or "", 17, W / 2, y + 24, C.navy, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 800)
+		for i, l in ipairs(lines) do d:text(l, 14, W / 2, y + 54 + (i - 1) * 19, C.ink2, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP) end
+		local by = y + bh - 20 - 44
+		local half = (bw - 40 - 10) / 2
+		d:button(x + 20, by, half, 44, q.cancel or U.text("generic.cancel", "Cancel"), "light", function() DV.question = nil end)
+		d:button(x + 20 + half + 10, by, half, 44, q.ok or U.text("generic.ok", "OK"), q.danger and "danger" or "primary", function()
+			DV.question = nil
+			if q.fn then q.fn() end
+		end)
+	end)
+end
+DV.drawQuestion = drawQuestion
 
 -- only draw inside x, y, w, h while fn runs (inside the clip there is)
 local clips = {}
@@ -377,6 +536,53 @@ function PD:click(x, y, w, h, fn, opts)
 	local mx, my = surf.mx, surf.my
 	if not mx or (surf.press and surf.press.moved) then return false end
 	return mx >= r.x and mx < r.x + w and my >= r.y and my < r.y + h
+end
+
+-- a text box (a real one: GMod's DTextEntry on the screen): opts.placeholder, value (the first
+-- time), max, onEnter(text), onChange(text), bg, fg, size, multiline. Returns the entry.
+function PD:input(id, x, y, w, h, opts)
+	opts = opts or {}
+	local surf = self.surf
+	surf.inputs = surf.inputs or {}
+	local e = surf.inputs[id]
+	if not IsValid(e) then
+		e = vgui.Create("DTextEntry", surf.panel)
+		e:SetPaintBackground(false)
+		e:SetMultiline(opts.multiline or false)
+		e:SetUpdateOnType(true)
+		e:SetText(opts.value or "")
+		e.AllowInput = function(self2)
+			local t = self2:GetValue() or ""
+			return self2.bobbaMax and (utf8.len(t) or #t) >= self2.bobbaMax or false
+		end
+		e.OnEnter = function(self2) if self2.bobbaEnter then self2.bobbaEnter(self2:GetValue()) end end
+		e.OnValueChange = function(self2, v) if self2.bobbaChange then self2.bobbaChange(v) end end
+		e.OnGetFocus = function() DV.keysAt = SysTime() end
+		e.Paint = function(self2, pw, ph)
+			if not self2.bobbaFont then return end
+			self2:SetFont(self2.bobbaFont)
+			local fg = self2.bobbaFg or C.navy
+			self2:DrawTextEntryText(fg, Color(110, 139, 255), fg)
+			if (self2:GetValue() or "") == "" and self2.bobbaPlaceholder then
+				draw.SimpleText(self2.bobbaPlaceholder, self2.bobbaFont, 3, self2.bobbaMultiline and 2 or ph / 2, alpha(fg, 0.5), TEXT_ALIGN_LEFT, self2.bobbaMultiline and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
+			end
+		end
+		e.bobbaMultiline = opts.multiline or false
+		surf.inputs[id] = e
+	end
+	e.bobbaMax = opts.max
+	e.bobbaEnter, e.bobbaChange, e.bobbaPlaceholder = opts.onEnter, opts.onChange, opts.placeholder
+	e.bobbaFg = opts.fg
+	e.bobbaFont = DV.font(opts.size or 15, 500, self.s)
+	e.bobbaSeen = true
+	if not opts.bare then self:round(opts.radius or math.min(h / 2, 22), x, y, w, h, opts.bg or C.line) end
+	local padX = opts.padX or 16
+	local X, Y = self:X(x + padX), self:Y(y + (opts.multiline and 8 or 2))
+	e:SetPos(X, Y)
+	e:SetSize(self:X(x + w - padX) - X, self:Y(y + h - (opts.multiline and 8 or 2)) - Y)
+	if not e:IsVisible() then e:SetVisible(true) end
+	self:click(x, y, w, h, function() DV.keysAt = SysTime() e:RequestFocus() end)
+	return e
 end
 
 -- a part that's dragged (a page swipe, a pull): handler { start = fn(mx, my) -> bool, move, stop },
@@ -435,9 +641,14 @@ local function makeSurface(parent, draw)
 		local mx, my = self:CursorPos()
 		local inside = self:IsHovered() or self:IsChildHovered() or surf.press ~= nil
 		surf.mx, surf.my = inside and mx / s or nil, inside and my / s or nil
+		for _, e in pairs(surf.inputs or {}) do if IsValid(e) then e.bobbaSeen = false end end
 		local d = newDraw(surf, s)
 		local ok, err = pcall(surf.draw, d, pw / s, ph / s)
 		if not ok then ErrorNoHalt("[Bobba] device: " .. tostring(err) .. "\n") end
+		-- (text boxes not drawn this time are hidden)
+		for _, e in pairs(surf.inputs or {}) do
+			if IsValid(e) and not e.bobbaSeen and e:IsVisible() then e:SetVisible(false) if e:HasFocus() then e:KillFocus() end end
+		end
 	end
 	p.OnMousePressed = function(self, code)
 		if code ~= MOUSE_LEFT then return end
@@ -869,6 +1080,9 @@ end
 function DV.home()
 	if DV.edit then DV.endEdit() return end
 	if DV.appOpen() then
+		local a = DV.stack.app
+		if a and a.onClose then pcall(a.onClose) end
+		DV.question = nil
 		DV.closing = { stack = DV.stack, at = SysTime() }
 		DV.stack = {}
 		-- (the tablet brought by an app goes back to the phone)
@@ -902,6 +1116,8 @@ function DV.openApp(id, view, state)
 		DV.tabletFor = id
 	end
 	DV.closing = nil
+	local was = DV.stack.app
+	if was and was ~= app and was.onClose then pcall(was.onClose) end
 	-- (a fresh start: the app's lists from the top)
 	if DV.surface then DV.surface.scrolls = {} end
 	DV.stack = { app = app, screens = { { view = view or (DV.kind == "tablet" and (app.tablet or app.phone) or (app.phone or app.tablet)), state = state or {} } }, at = SysTime() }
@@ -1750,6 +1966,7 @@ function drawScreenInside(d, W, H)
 		drawStatus(d, W, dark and DV.shade < 0.5, kind)
 		if not DV.locked then shadeZone(d, W, kind) end
 	end
+	drawQuestion(d, W, H)
 	drawBanner(d, W, H, kind)
 	-- the shade: dragged, or easing to where it was let go
 	if DV.shadeDrag then DV.shade = DV.shadeDrag
@@ -1834,7 +2051,7 @@ local function buildPanels()
 	if IsValid(DV.root) then return end
 	local root = vgui.Create("EditablePanel")
 	DV.root = root
-	root:SetZPos(20)
+	root:MakePopup()
 	root:SetMouseInputEnabled(true)
 	root:SetKeyboardInputEnabled(false)
 	root.Paint = function(self, pw, ph)
@@ -1941,6 +2158,13 @@ hook.Add("Think", "bobba.device", function()
 		btn:SetSize(bs, bs)
 		btn:SetPos(ScrW() - bs - margin * 2, ScrH() - bs - margin)
 	end
+	-- the keyboard: the device's while one of its text boxes is being typed in
+	local focus = vgui.GetKeyboardFocus and vgui.GetKeyboardFocus()
+	local inside = false
+	local f = focus
+	while IsValid(f) do if f == root then inside = true break end f = f:GetParent() end
+	local wantKeys = inside or (SysTime() - (DV.keysAt or 0) < 0.4)
+	if root.bobbaKeys ~= wantKeys then root.bobbaKeys = wantKeys root:SetKeyboardInputEnabled(wantKeys) end
 	-- (the key that takes it out and puts it away)
 	local ST = BOBBA.steering
 	local key = ST and ST.key and ST.key("phone")

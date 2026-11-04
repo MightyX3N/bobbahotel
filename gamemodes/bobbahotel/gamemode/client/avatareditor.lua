@@ -213,6 +213,8 @@ local function effectTime(e)
 	return string.format("%02d:%02d:%02d", math.floor(left / 3600), math.floor(left % 3600 / 60), left % 60)
 end
 
+AE.effectTime = effectTime
+
 -- the wardrobe (AvatarEditorWardrobeView: 5 a row, each the look facing you, "Save" and "Use")
 local WR = { x = 9, w = 450, cols = 5, rowH = 141, gap = 8 }
 local function drawWardrobe(w, d, ed)

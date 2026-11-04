@@ -3,6 +3,8 @@
 --
 --   BOBBA.catalog.provider = function(cb) cb(pages) end   pages = { { name, children = { ... },
 --     offers = { { kind, name, price = { credits = n } }, ... } }, ... }   (a page has children or offers)
+--   (a page's shop: "furni" (the default), "clothes" or "club": which of the phone's shops shows it;
+--   the pages under it are in the same one)
 --
 -- Every page and offer gets a number when the catalogue is built. Buying puts the furni into the
 -- buyer's inventory (inventory.lua) after paying (wallet.lua); club adds days.
@@ -111,7 +113,7 @@ local function build(cb)
 			end
 			clubPages[#clubPages + 1] = page
 		end
-		pages[#pages + 1] = { name = CAT.CLUB_NAMES[kinds[1]], children = clubPages }
+		pages[#pages + 1] = { name = CAT.CLUB_NAMES[kinds[1]], children = clubPages, shop = "club" }
 		number(pages)
 		tree = pages
 		local list = building
@@ -133,7 +135,8 @@ local function index(list, staff)
 	local out = {}
 	for _, p in ipairs(list) do
 		if staff or (not p.staff and CAT.inSeason(p.season)) then
-			out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName,
+			-- (which of the phone's shops it's in: furni, clothes or club; a page says, else the one it's in)
+			out[#out + 1] = { id = p.id, name = p.name, icon = p.icon, iconKind = p.iconKind, iconName = p.iconName, shop = p.shop,
 				children = p.children and index(p.children, staff) or nil }
 		end
 	end

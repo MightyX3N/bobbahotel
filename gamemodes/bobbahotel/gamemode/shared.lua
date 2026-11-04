@@ -25,7 +25,7 @@ if SERVER then AddCSLuaFile("status.lua") end
 include("status.lua")
 
 -- client-only files (drawing, windows, input)
-local CLIENT_FILES = { "client/view.lua", "client/room.lua", "client/chat.lua", "client/ui.lua", "client/avatareditor.lua", "client/loading.lua", "client/hud.lua", "client/navigator.lua", "client/windows.lua", "client/shop.lua", "client/furniwidgets.lua", "client/sounds.lua", "client/roomwindows.lua", "client/hotelview.lua", "client/starter.lua", "client/steering.lua", "client/floorplan.lua", "client/camera.lua", "client/tutorial.lua", "client/device.lua", "client/deviceapps.lua" }
+local CLIENT_FILES = { "client/view.lua", "client/room.lua", "client/chat.lua", "client/ui.lua", "client/avatareditor.lua", "client/loading.lua", "client/hud.lua", "client/navigator.lua", "client/windows.lua", "client/shop.lua", "client/furniwidgets.lua", "client/sounds.lua", "client/roomwindows.lua", "client/hotelview.lua", "client/starter.lua", "client/steering.lua", "client/floorplan.lua", "client/camera.lua", "client/tutorial.lua", "client/device.lua", "client/deviceapps.lua", "client/app_rooms.lua", "client/app_bag.lua", "client/app_shops.lua", "client/app_clothes.lua", "client/app_tools.lua" }
 for _, f in ipairs(CLIENT_FILES) do
 	if SERVER then AddCSLuaFile(f) else include(f) end
 end

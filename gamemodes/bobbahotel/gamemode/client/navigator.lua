@@ -25,6 +25,8 @@ local function search(view, query)
 	P.send("navigator.search", { view = S.view, query = query or "" })
 end
 
+NAV.search = search
+
 P.receive("navigator.result", function(_, data)
 	S.result = data
 	S.loading = false
@@ -183,6 +185,8 @@ local function modelShape(name)
 	shapes[name] = tiles
 	return tiles
 end
+
+NAV.modelShape = modelShape
 
 local function drawModel(d, name, cx, cy, maxW, maxH)
 	local tiles = modelShape(name)

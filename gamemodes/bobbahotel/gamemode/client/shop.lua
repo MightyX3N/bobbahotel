@@ -167,6 +167,9 @@ local function groups()
 	return list
 end
 
+-- (for the phone's apps: client/apps_*.lua)
+SHOP.groups, SHOP.groupName, SHOP.furniName, SHOP.amount, SHOP.paintOf = groups, groupName, furniName, amount, paintOf
+
 P.receive("inventory.items", function(_, list)
 	INV.items = list or {}
 	INV.loaded = true
@@ -296,6 +299,8 @@ function SHOP.openPage(id)
 	end
 end
 
+SHOP.findPage, SHOP.priceRows = findPage, priceRows
+
 P.receive("catalog.index", function(_, data)
 	CAT.pages = data.pages or {}
 	findPage(CAT.pages, -1)
@@ -318,6 +323,8 @@ end)
 P.receive("catalog.search", function(_, data)
 	local w = U.windows.catalog
 	local box = w and w.inputs and w.inputs.search
+	-- (the phone's shops search too: what they asked for last)
+	if CAT.phoneQuery and CAT.phoneQuery == data.query then CAT.phoneSearch = data return end
 	if not IsValid(box) or (box:GetValue() or "") ~= data.query then return end
 	CAT.search = data
 	CAT.offer, CAT.quantity, CAT.state = nil, 1, "none"
@@ -331,6 +338,7 @@ P.receive("catalog.error", function(_, data)
 	end
 	CAT.state = "failed"
 	CAT.stateUntil = SysTime() + 3
+	if BOBBA.events.emit("catalogError", data) then return end
 	chat.AddText(Color(255, 120, 120), "[Bobba] ", color_white, tostring(data.message))
 end)
 

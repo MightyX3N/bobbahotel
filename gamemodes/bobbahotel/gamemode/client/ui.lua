@@ -43,6 +43,8 @@ end)
 -- own size (V.uiScale).
 local scaleVar = CreateClientConVar("bobba_ui_scale", "0", true, false, "The hotel's UI size (0 = by the screen, e.g. 1, 1.25, 1.5)")
 function U.scale(h)
+	-- (a window drawn inside something else, e.g. the tablet: its size)
+	if U.scaleOverride then return U.scaleOverride end
 	local set = scaleVar:GetFloat()
 	if set and set > 0 then return math.Clamp(set, 0.5, 4) end
 	return math.max(1, math.floor((h or ScrH()) / 1080 * 4 + 0.5) / 4)
@@ -137,6 +139,11 @@ end
 -- NitroCardView + NitroCardHeaderView + NitroCardTabsView (theme-primary)
 function D:card(title, tabs, active, onTab)
 	local W, H = self.width, self.height
+	-- (inside the tablet: no frame or header, the tablet's app has its own)
+	if self.w.host then
+		self:rect(0, 0, W, H, U.C.light)
+		if not tabs then return end
+	end
 	-- box-shadow: 0 2px 0 rgba(0,0,0,.45)
 	self:round(4, 0, 2, W, H, Color(0, 0, 0, 115))
 	self:round(4, 0, 0, W, H, U.C.border)
@@ -195,6 +202,7 @@ end
 -- in two light blues with a white line under it, the title 18px, a smaller close button
 function D:slimCard(title)
 	local W, H = self.width, self.height
+	if self.w.host then self:rect(0, 0, W, H, U.C.light) return end
 	self:round(4, 0, 2, W, H, Color(0, 0, 0, 115))
 	self:round(4, 0, 0, W, H, U.C.border)
 	self:round(3, 1, 1, W - 2, H - 2, U.C.light)
@@ -593,19 +601,58 @@ end
 
 function U.isOpen(id) return U.windows[id] ~= nil end
 
+-- the windows inside a host: where the host says, at its size, or hidden
+hook.Add("Think", "bobba.ui.hosted", function()
+	for _, w in pairs(U.windows) do
+		local host = w.host
+		if host and IsValid(w.panel) then
+			local p = w.panel
+			local x, y, hs = host.place()
+			if not x then
+				if p:IsVisible() then p:SetVisible(false) end
+			else
+				if not p:IsVisible() then p:SetVisible(true) end
+				p:SetPos(math.floor(x), math.floor(y))
+				local pw, ph = math.floor(w.width * hs + 0.5), math.floor((w.height + 2) * hs + 0.5)
+				if p:GetWide() ~= pw or p:GetTall() ~= ph then p:SetSize(pw, ph) end
+			end
+		end
+	end
+end)
+
+-- A window can be drawn inside something else (the tablet's apps): U.windowHost(id) returns
+-- { parent = panel, place = function() return x, y, scale end } (pixels in the parent) or nil.
 function U.window(id, width, height, draw)
 	if U.windows[id] then U.windows[id]:close() end
 	local w = setmetatable({ id = id, width = width, height = height, draw = draw, clicks = {}, scrolls = {} }, Window)
 	U.windows[id] = w
+	local host = U.windowHost and U.windowHost(id) or nil
+	w.host = host
 	local s = U.scale()
-	local p = vgui.Create("EditablePanel")
+	local p = vgui.Create("EditablePanel", host and host.parent or nil)
 	w.panel = p
 	p:SetSize(math.floor(width * s + 0.5), math.floor((height + 2) * s + 0.5))
-	p:Center()
-	p:MakePopup()
-	p:SetKeyboardInputEnabled(false)
+	if host then
+		p:SetMouseInputEnabled(true)
+		p:SetKeyboardInputEnabled(true)
+	else
+		p:Center()
+		p:MakePopup()
+		p:SetKeyboardInputEnabled(false)
+	end
 	p.bobbaWindow = true
-	p.Paint = function(self, pw, ph)
+	-- (inside a host: its size while it draws and is clicked)
+	local function scaled(fn)
+		if not host then return fn() end
+		local _, _, hs = host.place()
+		local old = U.scaleOverride
+		U.scaleOverride = hs or 1
+		local ok, a, b = pcall(fn)
+		U.scaleOverride = old
+		if not ok then ErrorNoHalt("[Bobba] window " .. id .. ": " .. tostring(a) .. "\n") end
+		return a, b
+	end
+	local paint = function(self, pw, ph)
 		w.clicks = {}
 		w.overlays = {}
 		for _, e in pairs(w.inputs or {}) do if IsValid(e) then e.bobbaSeen = false end end
@@ -623,8 +670,10 @@ function U.window(id, width, height, draw)
 		-- text boxes not drawn this time are hidden
 		for _, e in pairs(w.inputs or {}) do if IsValid(e) and not e.bobbaSeen and e:IsVisible() then e:SetVisible(false) end end
 	end
-	p.OnMousePressed = function(self, code)
+	p.Paint = function(self, pw, ph) return scaled(function() return paint(self, pw, ph) end) end
+	local pressed = function(self, code)
 		if code ~= MOUSE_LEFT then return end
+		if host and host.pressed then host.pressed() end
 		local scale = U.scale()
 		local mx, my = self:CursorPos()
 		mx, my = mx / scale, my / scale
@@ -640,15 +689,18 @@ function U.window(id, width, height, draw)
 		end
 		w.openSelect = nil
 		-- the header moves the window (.drag-handler)
-		if my < 34 then
+		if my < 34 and not host then
 			w.drag = { mx = mx * scale, my = my * scale }
 			self:MouseCapture(true)
 		end
 	end
+	p.OnMousePressed = function(self, code) return scaled(function() return pressed(self, code) end) end
 	p.OnMouseReleased = function(self)
 		if w.drag then w.drag = nil self:MouseCapture(false) end
 	end
 	p.Think = function(self)
+		-- (a hosted one is placed by the Think hook below: a hidden panel's own Think doesn't run)
+		if host then return end
 		-- the game's window changed size (full screen on or off, a new resolution): the window keeps
 		-- its place on the screen (where its middle was, as a share of the screen), at the new UI size,
 		-- and stays on the screen
@@ -670,6 +722,10 @@ function U.window(id, width, height, draw)
 		end
 	end
 	p.OnMouseWheeled = function(self, delta)
+		if host then return scaled(function() return self:bobbaWheel(delta) end) end
+		return self:bobbaWheel(delta)
+	end
+	p.bobbaWheel = function(self, delta)
 		local scale = U.scale()
 		local mx, my = self:CursorPos()
 		mx, my = mx / scale, my / scale

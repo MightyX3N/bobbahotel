@@ -68,18 +68,7 @@ DV.G = {
 }
 local G = DV.G
 
--- --- the hotel's apps (most open what's there now: their phone views come next) -----------------------
-DV.app({ id = "rooms", name = T("bobba.phone.app.rooms", "Rooms"), accent = true, glyph = G.rooms, dock = true, order = 3, removable = false,
-	open = function() act("navigator") end })
-DV.app({ id = "furni", name = T("bobba.phone.app.furni", "Furni"), color = C.yellow, glyph = G.furni, order = 10,
-	open = function() act("catalog") end })
-DV.app({ id = "clothes", name = T("bobba.phone.app.clothes", "Clothes"), color = C.pink, glyph = G.clothes, order = 11,
-	open = function() act("avatarEditor") end })
-DV.app({ id = "club", name = T("bobba.phone.app.club", "Club"), color = C.gold, glyph = G.club, order = 12,
-	open = function() act("club") end })
-DV.app({ id = "bag", name = T("bobba.phone.app.bag", "Bag"), color = C.peach, glyph = G.bag, order = 13,
-	badge = function() return BOBBA.shop and BOBBA.shop.unseenCount and BOBBA.shop.unseenCount() or 0 end,
-	open = function() act("inventory") end })
+-- --- the hotel's apps (Rooms, Bag, the shops, Clothes and the tools are in client/app_*.lua) -------
 DV.app({ id = "friends", name = T("bobba.phone.app.friends", "Friends"), color = C.sky, glyph = G.friends, order = 14,
 	open = function() act("friends") end })
 DV.app({ id = "camera", name = T("bobba.phone.app.camera", "Camera"), color = C.mist, glyph = G.camera, order = 15,
