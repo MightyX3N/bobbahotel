@@ -25,6 +25,12 @@ borderless full screen, its own icon.
 
 4. **Avatar**: the rest of the clothes editor, effects, dances, signs.
    - the camera: photos, photos as wall furni, room thumbnails for the navigator
+   - walking with WASD, the arrow keys or a stick: continuous tile walking (holding a direction keeps
+     stepping tile after tile, smoothly; diagonals with two keys; screen-relative by default, room
+     axes as an option). Everything stays on tiles: sitting, rollers, wired and rooms keep working.
+   - controller support (Steam Deck: GMod and the desktop app): walking as above, a cursor mode for
+     furni, avatars and the UI, a radial menu for the toolbar, the on-screen keyboard or a
+     quick-message wheel for chat, bumpers to turn furni and cycle selection
 5. **Chat commands**.
 6. **Friends and messenger**: friend requests, the messenger, following friends.
    - Steam friends who play the hotel are friends automatically; removing one removes them only in
@@ -39,6 +45,8 @@ borderless full screen, its own icon.
 9. **Groups**.
 10. **Rewards**: achievements, badges, daily quests, an advent calendar and seasonal events.
 11. **Minigames and wired**.
+    - free movement (between tiles) only inside minigames that want it (a snowball fight, racing),
+      never in the normal hotel
     - **Voice chat** (GMod first): heard in your room only, quieter with distance on the tiles
       (each player's game sets each speaker's volume).
       - each player chooses open mic or push-to-talk (the gamemode switches the microphone itself)
