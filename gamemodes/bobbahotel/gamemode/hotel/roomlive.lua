@@ -121,11 +121,10 @@ end
 -- (the hotel's default is a little taller than Nitro's automatic walls, which are as high as the room's
 -- highest floor plus 3.6: so it's that much above the highest floor, not a height from the ground,
 -- or a room with raised floors gets walls lower than the people standing there)
-function live.floorTop(layoutId)
-	local layout = BOBBA.registry.get("layout", layoutId or "")
-	if not layout then return 0 end
+-- (the highest floor of a heightmap)
+function live.floorTop(heightmap)
 	local top = 0
-	for c in layout.heightmap:gmatch("[^xX\r]") do
+	for c in tostring(heightmap or ""):gmatch("[^xX\r]") do
 		local h = tonumber(c, 36)
 		if h and h > top then top = h end
 	end
@@ -136,7 +135,21 @@ function live.wallHeightOf(info)
 	local d = live.defaultWallHeight()
 	if d == -1 then return -1 end
 	-- (Nitro: walls 3.6 + 2 x this high; automatic ones 3.6 + the highest floor)
-	return live.validWallHeight(d + live.floorTop(info.layout) / 2) or d
+	local layout = live.layoutOf(info)
+	return live.validWallHeight(d + live.floorTop(layout and layout.heightmap) / 2) or d
+end
+
+-- A room's shape: its own (made in the floor plan editor, floorplan.lua) or the layout it was made
+-- from. { heightmap, door = { x, y, dir }, width, height, custom }
+function live.layoutOf(info)
+	if info.heightmap and info.heightmap ~= "" then
+		local rows = BOBBA.util.split(info.heightmap, "\r")
+		local w = 0
+		for _, row in ipairs(rows) do w = math.max(w, #row) end
+		return { id = "custom_" .. tostring(info.id), heightmap = info.heightmap, custom = true, width = w, height = #rows,
+			door = { x = tonumber(info.door_x) or 0, y = tonumber(info.door_y) or 0, dir = tonumber(info.door_dir) or 2 } }
+	end
+	return BOBBA.registry.get("layout", info.layout or "")
 end
 
 function live.setDefaultWallHeight(v)
@@ -169,7 +182,7 @@ local function load(id)
 	if r then return r end
 	local info = live.info(id)
 	if not info then return nil, "no room " .. tostring(id) end
-	local layout = BOBBA.registry.get("layout", info.layout)
+	local layout = live.layoutOf(info)
 	if not layout then return nil, "room " .. id .. " uses a layout that isn't installed: " .. info.layout end
 	r = {
 		id = id, info = info, layout = layout,
@@ -650,6 +663,7 @@ function live.start()
 	BOBBA.gifts.start()
 	BOBBA.access.start()
 	BOBBA.starter.start()
+	BOBBA.floorplan.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}

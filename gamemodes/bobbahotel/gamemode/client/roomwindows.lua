@@ -652,6 +652,10 @@ local function drawRoomInfo(w, d)
 		d:btn(x, by, W - 18, 28, U.C.primary, function() P.send("room.muteAll", {}) end)
 		d:text(a.muted and T("navigator.muteall_on", "Unmute all") or T("navigator.muteall_off", "Mute all"), 12.6, W / 2, by + 14, WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		by = by + 28 + 4
+		-- the floor plan editor (client/floorplan.lua)
+		d:btn(x, by, W - 18, 28, U.C.primary, function() BOBBA.floorplanEditor.open() end)
+		d:text(T("open.floor.plan.editor", "Floor plan editor"), 12.6, W / 2, by + 14, WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		by = by + 28 + 4
 	end
 	w:setHeight(by + 8 - 4)
 end

@@ -25,6 +25,7 @@ return {
 	"hotel/navigator.lua",
 	"hotel/roomaccess.lua",
 	"hotel/starter.lua",
+	"hotel/floorplan.lua",
 	"hotel/chat.lua",
 	"hotel/looks.lua",
 	"hotel/figureeditor.lua",

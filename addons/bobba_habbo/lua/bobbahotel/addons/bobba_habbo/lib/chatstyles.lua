@@ -16,7 +16,7 @@
 local H = BOBBA.habbo
 local P = BOBBA.platform
 
-H.CHAT_INDEX_VERSION = "9"
+H.CHAT_INDEX_VERSION = "10"
 
 -- other pictures of Habbo's client the hotel draws with (saved in the same pass): the avatar editor's
 -- icons ("_off" is how Habbo shows one that isn't chosen)
@@ -50,7 +50,12 @@ for _, n in ipairs({ "bottom_bar_logo", "bottom_bar_home", "bottom_bar_navigator
 	"messenger_caution", "messenger_notification_icon", "ask_for_friend_png", "follow_friend_png",
 	"relationship_status_heart", "relationship_status_smile", "relationship_status_bobba", "small_pen",
 	"inventory_inventory_empty", "talent_vip_reward", "vip_color", "trophy_bg_gold", "trophy_bg_silver", "trophy_bg_bronze", "catalogue_giftcard_blank",
-	"stickie_blanco", "stickie_close", "stickie_remove", "dimmer_info" }) do
+	"stickie_blanco", "stickie_close", "stickie_remove", "dimmer_info",
+	-- the floor plan editor
+	"floor_plan_editor_add_tile", "floor_plan_editor_remove_tile", "floor_plan_editor_raise_tile", "floor_plan_editor_sink_tile",
+	"floor_plan_editor_enter_tile", "floor_editor_tile_base", "floor_editor_tile_entry", "floor_editor_tile_base_large",
+	"floor_editor_tile_entry_large", "enterdirection_ghost_avatar", "enterdirection_left", "enterdirection_right",
+	"floor_plan_editor_logo", "floor_plan_editor_button" }) do
 	H.CLIENT_IMAGES[#H.CLIENT_IMAGES + 1] = n
 end
 -- ... and Habbo's sounds (MP3s in the client; nitro-react's SoundNames, sounds.url): money in, a

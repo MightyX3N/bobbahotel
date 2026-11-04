@@ -10,9 +10,9 @@ Nothing here is a promise of when; it keeps the plans in one place.
 2. **Wall furni**: posters, stickies, mood lights, windows.
 3. **Rooms** (mostly): the navigator, creating rooms, settings (access, rights, chat, moderation),
    the doorbell and passwords, kick / ban / mute, favourites and home rooms, the hotel view, the
-   avatar menu and infostand, the chat settings, the navigator's room popover, starter rooms (a new player picks one; packs register their own).
+   avatar menu and infostand, the chat settings, the navigator's room popover, the floor plan editor (Habbo Club, as in Habbo; the hotel can open it to
+   everyone), starter rooms (a new player picks one; packs register their own).
    Still open for rooms:
-   - the floor plan editor
    - room thumbnails in the navigator (see the camera, part 4)
    - report, word filter
    - a short tutorial after the starter room: walk, open the gift, place it, say hi (a small reward)
