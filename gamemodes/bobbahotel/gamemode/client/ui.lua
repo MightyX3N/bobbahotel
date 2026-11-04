@@ -27,8 +27,17 @@ local styleVar = CreateClientConVar("bobba_ui", "", true, false, "The hotel's lo
 function U.style()
 	local v = styleVar:GetString()
 	if v == "phone" or v == "habbo" then return v end
+	-- (the hotel's choice: its Manage screen, hotel/manage.lua's ui.style)
+	local look = BOBBA.hotelLook
+	if look and (look.style == "phone" or look.style == "habbo") then return look.style end
 	return U.packStyle or "phone"
 end
+-- the hotel's look (hotel/manage.lua): its UI, colour, page and name, asked for as the game starts
+BOBBA.platform.receive("hotel.look", function(_, data)
+	BOBBA.hotelLook = data
+	if data.name and data.name ~= "" then BOBBA.hotelName = data.name end
+	BOBBA.events.emit("hotelLook", data)
+end)
 U.styleVar = styleVar
 -- (BOBBA.events "uiStyleChanged" when it changes)
 hook.Add("Think", "bobba.ui.style", function()

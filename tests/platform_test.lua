@@ -98,5 +98,8 @@ function P.loadAddon(folder)
 	end
 end
 function P.disabledAddons() return P.disabled end
+function P.setDisabledAddons(s) P.disabled = s end
+function P.canRestart() return true end
+function P.restartHotel() P.restarted = (P.restarted or 0) + 1 end
 
 BOBBA.platform = P

@@ -762,6 +762,10 @@ end)
 -- tell the server we're ready for the room (also after a Lua reload); first the hotel's own page,
 -- when it has one (client/website.lua): going in from there sends it
 local function ready()
+	P.send("hotel.look", {})
+	-- (who hosts the game picks a hotel first: client/picker.lua)
+	local PK = BOBBA.picker
+	if PK and PK.wanted and PK.wanted() then PK.show() return end
 	local W = BOBBA.website
 	if W and W.wanted and W.wanted() then W.show() return end
 	P.send("room.ready", {})

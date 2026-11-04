@@ -675,6 +675,7 @@ function live.start()
 	BOBBA.groups.start()
 	BOBBA.roomEvents.start()
 	BOBBA.videos.start()
+	BOBBA.manage.start()
 	live.homeRoom()
 	local P = BOBBA.platform
 	local lastWalk = {}
@@ -700,14 +701,15 @@ function live.start()
 		local figure, gender = BOBBA.looks.get(key)
 		local online = 0
 		for _ in pairs(BOBBA.friends and BOBBA.friends.online or {}) do online = online + 1 end
-		local news = util and util.JSONToTable and util.JSONToTable(BOBBA.store.setting("website.news", "") or "") or nil
-		if type(news) ~= "table" then news = nil end
+		local news = BOBBA.manage and BOBBA.manage.news() or nil
+		if type(news) ~= "table" or #news == 0 then news = nil end
 		local w = BOBBA.wallet.get(key)
 		P.send("hotel.page", {
 			name = BOBBA.access.hotelName(), description = BOBBA.store.setting("hotel.description", ""), online = online,
 			figure = figure, gender = gender, news = news, credits = w and w.credits or 0,
 			events = BOBBA.roomEvents and BOBBA.roomEvents.current() or {},
 			rooms = BOBBA.navigator.view("official_view", key, player)[1].rooms,
+			canManage = BOBBA.manage and BOBBA.manage.can(player) or nil,
 		}, player)
 	end)
 	P.receive("room.enter", function(player, data)

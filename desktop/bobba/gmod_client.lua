@@ -123,6 +123,10 @@ return function(G)
 			local p = G.findPath("resource/fonts/PlusJakartaSans-" .. w .. ".ttf", "GAME")
 			if p then return p, w ~= "Medium", false, true end
 		end
+		if face == "lilita one" then
+			local p = G.findPath("resource/fonts/LilitaOne-Regular.ttf", "GAME")
+			if p then return p, false, false, true end
+		end
 		if face == "ubuntu condensed" or face == "ubuntu-c" then
 			local p = G.findPath("resource/fonts/UbuntuCondensed-Regular.ttf", "GAME")
 			if p then return p, false end

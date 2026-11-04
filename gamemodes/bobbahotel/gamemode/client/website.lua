@@ -1,7 +1,10 @@
 -- The hotel's own page (client): what you see after checking in, before going in. It's Lua, part of
--- the hotel: this file has the default one (the phone's look); a pack or an addon makes its own:
+-- the hotel: this file has the default one (the phone's look); a pack or an addon makes its own, and
+-- the hotel's Manage screen picks which shows (hotel/manage.lua's website.page; else a pack's):
 --
---   BOBBA.website.page = function(d, W, H, site) ... end   -- draws it (d: the phone's drawing kit,
+--   BOBBA.website.register("my_page", { name = "My page", draw = function(d, W, H, site) ... end, pack = true })
+--   (BOBBA.website.page = function ... also still works)
+--   draw(d, W, H, site): d is the phone's drawing kit,
 --       client/device.lua's PD; d.fontFn sets another font); site.enter() goes in, site.data is what
 --       the server says (hotel.page: name, description, online, figure, gender, news, events, rooms,
 --       credits), site.friends the friends online, site.state a table of its own
@@ -19,6 +22,30 @@ local alpha = DV.alpha
 local T = function(k, f, v) return U.text(k, f, v) end
 
 if W.enabled == nil then W.enabled = true end
+W.pages = W.pages or {}
+W.pageOrder = W.pageOrder or {}
+function W.register(id, def)
+	if not W.pages[id] then W.pageOrder[#W.pageOrder + 1] = id end
+	def.id = id
+	W.pages[id] = def
+end
+for _, w in ipairs(W.waiting or {}) do W.register(w[1], w[2]) end
+W.waiting = nil
+-- the pages there are to pick from (the Manage screen): { { id, name } }; "" is the pack's
+function W.list()
+	local out = { { id = "", name = BOBBA.ui.text("bobba.manage.website.auto", "The pack's (or Bobba's own)") }, { id = "default", name = BOBBA.ui.text("bobba.manage.website.default", "Bobba's own") } }
+	for _, id in ipairs(W.pageOrder) do out[#out + 1] = { id = id, name = W.pages[id].name or id } end
+	return out
+end
+-- the page that shows: the hotel's pick, else a pack's, else the default
+function W.current()
+	local want = BOBBA.hotelLook and BOBBA.hotelLook.website or ""
+	if want == "default" then return W.defaultPage end
+	if want ~= "" and W.pages[want] then return W.pages[want].draw end
+	if W.page then return W.page end
+	for _, id in ipairs(W.pageOrder) do if W.pages[id].pack then return W.pages[id].draw end end
+	return W.defaultPage
+end
 W.data = W.data or nil
 W.state = W.state or {}
 W.entered = W.entered or false
@@ -144,6 +171,26 @@ local function defaultPage(d, WW, HH, s)
 end
 W.defaultPage = defaultPage
 
+-- (bottom left: "Hotels" back to the start screen in Garry's Mod; "Manage hotel" for its owner and admins)
+function W.corner(d, ww, hh)
+	local x = 16
+	local function pill(label, glyph, fn)
+		local w = d:textWidth(label, 13, 700) + (glyph and 46 or 28)
+		local hov = d:click(x, hh - 52, w, 36, fn)
+		d:pill(x, hh - 52, w, 36, Color(15, 26, 46, hov and 240 or 200))
+		if glyph then d:glyph(glyph, x + 12, hh - 52 + 9, 18, C.paper, 2) end
+		d:text(label, 13, x + (glyph and 36 or 14), hh - 34, C.paper, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 700)
+		x = x + w + 8
+	end
+	local PK = BOBBA.picker
+	if PK and PK.available and PK.available() then
+		pill(T("bobba.website.hotels", "Hotels"), "M15 18l-6-6 6-6", function() W.hide() PK.show() end)
+	end
+	if W.data and W.data.canManage and BOBBA.manageScreen then
+		pill(T("bobba.website.manage", "Manage hotel"), DV.G and DV.G.settings, function() BOBBA.manageScreen.open() end)
+	end
+end
+
 -- --- showing it -------------------------------------------------------------------------------------
 function W.show()
 	if IsValid(W.panel) then W.panel:SetVisible(true) return end
@@ -160,13 +207,16 @@ function W.show()
 		site.data = W.data
 		site.state = W.state
 		site.friends = BOBBA.social and BOBBA.social.friends or {}
-		local page = W.page or defaultPage
+		local page = W.current() or defaultPage
 		local ok, err = pcall(page, d, ww, hh, site)
 		if not ok then
 			ErrorNoHalt("[Bobba] website: " .. tostring(err) .. "\n")
 			d:rect(0, 0, ww, hh, C.navy)
 			d:button(ww / 2 - 100, hh / 2 - 28, 200, 56, T("bobba.website.enter", "Enter hotel"), "paper", function() site.enter() end)
 		end
+		-- over any page: the hotel's owner and admins manage it from here; and back to the hotels
+		d.fontFn = nil
+		W.corner(d, ww, hh)
 	end)
 	W.surface = surf
 	p.Think = function(self)

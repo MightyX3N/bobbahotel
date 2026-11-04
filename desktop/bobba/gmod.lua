@@ -183,6 +183,8 @@ return function(cfg)
 	FrameNumber = function() return G.frame end
 	engine = { TickInterval = function() return 1 / 66 end, ActiveGamemode = function() return "bobbahotel" end }
 	game = { SinglePlayer = function() return true end, MaxPlayers = function() return 1 end, GetMap = function() return "bobba_desktop" end, IsDedicated = function() return false end }
+	-- (the gamemode can tell it's in the desktop app: BOBBA.platform.isDesktop)
+	BOBBA_DESKTOP = true
 	system = { IsWindows = function() return FS.windows end, IsLinux = function() return not FS.windows end, IsOSX = function() return false end, SteamTime = os.time, AppTime = SysTime }
 
 	-- --- hooks ----------------------------------------------------------------------------------
@@ -265,6 +267,12 @@ return function(cfg)
 		local text = FS.read(cfgFile)
 		for name, value in (text or ""):gmatch('([%w_]+)%s+"([^"\n]*)"') do saved[name] = value end
 	end
+	-- (the player's game: the server's replicated convars, as the server saved them; GMod sends them)
+	local serverSaved = {}
+	if not isServer then
+		local text = FS.read(FS.join(cfg.save, "server.cfg"))
+		for name, value in (text or ""):gmatch('([%w_]+)%s+"([^"\n]*)"') do serverSaved[name] = value end
+	end
 	local function saveConvars()
 		local lines = {}
 		for name, cv in pairs(convars) do if cv.archive then lines[#lines + 1] = name .. ' "' .. cv.value:gsub('"', "") .. '"' end end
@@ -294,7 +302,9 @@ return function(cfg)
 	end
 	CreateConVar = function(name, default, flags, help)
 		if type(flags) == "table" then local f = 0 for _, x in ipairs(flags) do f = bit.bor(f, x) end flags = f end
-		return makeConvar(name, default, bit.band(tonumber(flags) or 0, FCVAR_ARCHIVE) ~= 0, help)
+		local cv = makeConvar(name, default, bit.band(tonumber(flags) or 0, FCVAR_ARCHIVE) ~= 0, help)
+		if not isServer and bit.band(tonumber(flags) or 0, FCVAR_REPLICATED) ~= 0 and serverSaved[name] then cv.value = serverSaved[name] end
+		return cv
 	end
 	CreateClientConVar = function(name, default, archive, userinfo, help)
 		return makeConvar(name, default, archive ~= false, help)

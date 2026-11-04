@@ -211,6 +211,19 @@ local disabledVar = CreateConVar("bobba_disabled_addons", "", bit.bor(FCVAR_ARCH
 function P.disabledAddons()
 	return disabledVar:GetString()
 end
+-- (the hotel's Manage screen: takes effect when the hotel starts again)
+function P.setDisabledAddons(list)
+	if SERVER then disabledVar:SetString(tostring(list or "")) end
+end
+-- the desktop app (BOBBA_DESKTOP) or Garry's Mod
+function P.isDesktop() return BOBBA_DESKTOP == true end
+-- starting the hotel again (the addons switched on or off): GMod loads the map again; the desktop app
+-- goes back to its start screen, where checking in starts it
+function P.canRestart() return true end
+function P.restartHotel()
+	if P.isDesktop() then return end
+	timer.Simple(1.5, function() RunConsoleCommand("changelevel", game.GetMap()) end)
+end
 if SERVER then
 	cvars.AddChangeCallback("bobba_disabled_addons", function(_, _, new)
 		P.log("info", BOBBA.L("addons.changed", { list = new == "" and "-" or new }))

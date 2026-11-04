@@ -196,6 +196,7 @@ function H.catalogPages(fd, price, extra)
 	-- rares and limited editions: on a staff-only tab, free (staff give them)
 	local rareLines = {}
 	local clubLines = {}
+	local membersOnly = not (BOBBA.store and BOBBA.store.setting("habbo.club.membersonly", "1") == "0")
 	for class, f in pairs(fd.byClass) do
 		if f.special == 1 and H.catalogRare(class, f) and f.name ~= "" and not f.name:find(" name$") then
 			local list = rareLines[f.line]
@@ -216,7 +217,7 @@ function H.catalogPages(fd, price, extra)
 			if not list then list = {} into[f.line] = list end
 			-- (teleports are sold in linked pairs, like Habbo's)
 			list[#list + 1] = { kind = class, name = f.name, price = { credits = price }, order = f.id or 0, pair = f.category == "teleport" or nil,
-				clubLevel = club and 1 or nil }
+				clubLevel = (club and membersOnly) and 1 or nil }
 		end
 	end
 	-- a page for a line (cut into parts when it's big)

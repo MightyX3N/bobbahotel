@@ -67,6 +67,8 @@ local function serverMessages()
 			hook.Run("InitPostEntity")
 			Game.spawnedAt = love.timer.getTime()
 			-- (a room picked on the start page: once the hotel has put you in its first one)
+			-- (Manage on the start page: the hotel's Manage screen once it's in)
+			if Game.opts.manage then timer.Simple(1, function() G.console("bobba_manage") end) end
 			if Game.opts.enterRoom then
 				local id = Game.opts.enterRoom
 				timer.Simple(1.5, function() G.console("bobba_room " .. id) end)

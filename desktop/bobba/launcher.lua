@@ -367,6 +367,11 @@ local function rightPanel(x0, W, H)
 		text(t, tx + 12, y + 7, 13, "b", C.cream)
 		tx = tx + tw + 8
 	end
+	-- your own hotel: its Manage screen (its addons, their settings, its look) once it's started
+	if sv.local_ then
+		y = y + 58
+		button("manage", "Manage hotel", x, y, 200, 46, "light", function() L.enter(nil, true) end, 15)
+	end
 end
 
 -- --- the sheets: settings, adding a server --------------------------------------------------------------
@@ -490,14 +495,14 @@ function L.start(st, acts)
 end
 
 -- checking in: your own hotel plays here; others need the hotel server (later)
-function L.enter(roomId)
+function L.enter(roomId, manage)
 	if not (settings.garrysmod and ST.isGarrysmod(settings.garrysmod)) then page = "setup" return end
 	local sv = chosen()
 	if not sv.local_ then
 		message = { text = "Hotels on other computers open when the hotel server comes. Your own hotel works now.", where = "checkin" }
 		return
 	end
-	actions.play(roomId)
+	actions.play(roomId, manage and { manage = true } or nil)
 end
 
 function L.saveName(t)

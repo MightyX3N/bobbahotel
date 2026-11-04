@@ -27,7 +27,7 @@ end
 function LD.progress()
 	-- (or the hotel view: a new player picking a room, someone waiting at a doorbell)
 	local roomThere = (R and R.current and not (R.itemsComing and next(R.itemsComing))) or (BOBBA.view and BOBBA.view.mode == "hotelview")
-		or (BOBBA.website and BOBBA.website.showing and BOBBA.website.data ~= nil)
+		or (BOBBA.website and BOBBA.website.showing and BOBBA.website.data ~= nil) or (BOBBA.picker and BOBBA.picker.showing)
 	local total, done = 1, roomThere and 1 or 0
 	local allDone = done == 1
 	for _, id in ipairs(LD.order) do
@@ -111,7 +111,7 @@ local function phonePaint(w, h)
 		end
 		pack = done / nChecks
 	else pack = 1 end
-	local siteDone = BOBBA.website and BOBBA.website.showing and BOBBA.website.data ~= nil
+	local siteDone = (BOBBA.website and BOBBA.website.showing and BOBBA.website.data ~= nil) or (BOBBA.picker and BOBBA.picker.showing)
 	local steps = {
 		{ U.text("bobba.loading.connected", "Connected"), 1 },
 		{ U.text("bobba.loading.signedin", "Signed in"), 1 },

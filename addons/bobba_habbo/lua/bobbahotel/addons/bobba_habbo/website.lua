@@ -87,7 +87,7 @@ local function cardTitle(d, t, x, y, w, c)
 	d:text(t, 16, x + w / 2, y + 23, K.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, true)
 end
 
-function W.page(d, WW, HH, site)
+local function habboPage(d, WW, HH, site)
 	d.fontFn = ubuntu
 	local data = site.data or {}
 	local name = data.name or BOBBA.hotelName or "Bobba Hotel"
@@ -171,3 +171,9 @@ function W.page(d, WW, HH, site)
 		d:text(T("bobba.website.by", "by %owner%", { owner = r.owner or "?" }), 12, rx + 68, yy + 28, K.faint)
 	end
 end
+
+-- (one of the hotel's pages: its Manage screen picks which; a pack's is used when it doesn't say)
+-- (the hotel's own page code may load after this: then it takes it from W.waiting)
+local def = { name = "Habbo's website", draw = habboPage, pack = true }
+if W.register then W.register("bobba_habbo", def)
+else W.waiting = W.waiting or {} W.waiting[#W.waiting + 1] = { "bobba_habbo", def } end

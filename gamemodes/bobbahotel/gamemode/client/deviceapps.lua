@@ -128,16 +128,22 @@ local function settingsView(ctx)
 				end },
 			{ title = T("bobba.phone.settings.look", "Hotel look"), sub = U.style() == "habbo" and T("bobba.phone.settings.lookhabbo", "Classic") or T("bobba.phone.settings.lookphone", "Phone"),
 				right = "chevron", color = C.purple, glyph = G.palette, click = function() ctx:push(DV.lookView) end },
+			-- (the hotel's owner and admins: its Manage screen)
+			(BOBBA.website and BOBBA.website.data and BOBBA.website.data.canManage and BOBBA.manageScreen) and { title = T("bobba.phone.settings.manage", "Manage hotel"),
+				sub = T("bobba.phone.settings.managesub", "Its addons, settings and look"), right = "chevron", color = C.navy3, glyph = G.settings,
+				click = function() DV.show(false) BOBBA.manageScreen.open() end } or nil,
 		})
 		y = y + 12
 		-- the accent colour
 		d:round(20, x, y, w, 64, C.white)
 		d:text(T("bobba.phone.settings.accent", "Colour"), 15, x + 16, y + 32, C.navy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 600)
+		-- (the one picked again: back to the hotel's own colour)
 		local cur = DV.accentVar:GetString():upper()
+		local shown = cur ~= "" and cur or DV.hotelAccent()
 		for i, hx in ipairs(ACCENTS) do
 			local cx = x + w - 16 - 14 - (#ACCENTS - i) * 36
-			local hov = d:click(cx - 16, y + 16, 32, 32, function() RunConsoleCommand("bobba_phone_accent", hx) end)
-			if cur == hx then d:circle(cx, y + 32, 16, C.navy) d:circle(cx, y + 32, 13.5, C.white) end
+			local hov = d:click(cx - 16, y + 16, 32, 32, function() RunConsoleCommand("bobba_phone_colour", cur == hx and "" or hx) end)
+			if shown == hx then d:circle(cx, y + 32, 16, C.navy) d:circle(cx, y + 32, 13.5, C.white) end
 			d:circle(cx, y + 32, hov and 12 or 11, DV.hex(hx))
 		end
 		y = y + 64 + 20

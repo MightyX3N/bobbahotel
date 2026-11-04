@@ -26,13 +26,14 @@ local function playOptions()
 	}
 end
 
-local function play(roomId)
+local function play(roomId, extra)
 	settings.lastPlayed = os.time()
 	Settings.save(settings)
 	mode = "game"
 	if Launcher and Launcher.leave then Launcher.leave() end
 	local opts = playOptions()
 	opts.enterRoom = roomId
+	opts.manage = extra and extra.manage or nil
 	Game.start(opts)
 end
 

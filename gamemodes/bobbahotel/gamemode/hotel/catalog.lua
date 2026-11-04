@@ -232,7 +232,7 @@ function CAT.start()
 	local P = BOBBA.platform
 	-- the club's pages change with its settings
 	BOBBA.events.on("settingChanged", "bobba.catalog", function(k)
-		if k == "club.mode" or k:find("%.price") then CAT.reset() end
+		if k == "club.mode" or k:find("%.price") or k:find("^catalog%.") or k:find("club") then CAT.reset() end
 	end)
 	P.receive("catalog.index", function(player)
 		build(function(pages) P.send("catalog.index", { pages = index(pages, isStaff(player)) }, player) end)

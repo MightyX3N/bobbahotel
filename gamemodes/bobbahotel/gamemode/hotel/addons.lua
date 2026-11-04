@@ -1,7 +1,9 @@
 -- Hotel addons. A Workshop addon (or a folder in garrysmod/addons) becomes a hotel addon by having
 --
 --   lua/bobbahotel/addons/<id>/addon.lua     returns { id = "<id>", name = "...", version = "1.0",
---                                                      requires = { "other_addon_id", ... } }
+--                                                      requires = { "other_addon_id", ... },
+--                                                      description = "...", author = "...",
+--                                                      settings = { ... } (hotel/manage.lua) }
 --   lua/bobbahotel/addons/<id>/shared.lua    loaded on server and players   (all optional)
 --   lua/bobbahotel/addons/<id>/server.lua    loaded on the server only
 --   lua/bobbahotel/addons/<id>/client.lua    loaded on players only
@@ -97,6 +99,8 @@ function addons.loadAll()
 		found[#found + 1] = { folder = folder, manifest = ok and manifest or nil }
 	end
 	local byId, problems = addons.checkManifests(found)
+	-- (every one found, on or off: the hotel's Manage screen lists them)
+	addons.all = byId
 	for _, prob in ipairs(problems) do
 		addons.skipped[prob.id] = prob.why
 		BOBBA.warn("addon %s skipped: %s", prob.id, prob.why)

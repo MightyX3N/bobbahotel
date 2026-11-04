@@ -878,10 +878,15 @@ end
 -- --- saved: the home screens (per hotel), the settings ----------------------------------------------
 DV.lockVar = CreateClientConVar("bobba_phone_lock", "1", true, false, "The phone's lock screen (the PIN typing itself) when it's taken out after a while")
 DV.deviceVar = CreateClientConVar("bobba_phone_device", "phone", true, false, "Your device: phone, or tablet (apps without a tablet view open as a phone on it)")
-DV.accentVar = CreateClientConVar("bobba_phone_accent", "FF9F5A", true, false, "The phone's accent colour (hex)")
+DV.accentVar = CreateClientConVar("bobba_phone_colour", "", true, false, "The phone's accent colour (hex; empty: the hotel's)")
+-- the hotel's colour (its Manage screen), or orange
+function DV.hotelAccent()
+	local s = tostring(BOBBA.hotelLook and BOBBA.hotelLook.accent or ""):gsub("[^%x]", "")
+	return #s == 6 and s:upper() or "FF9F5A"
+end
 function DV.accent()
 	local s = DV.accentVar:GetString():gsub("[^%x]", "")
-	if #s ~= 6 then return C.orange end
+	if #s ~= 6 then s = DV.hotelAccent() end
 	return hex(s)
 end
 

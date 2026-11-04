@@ -45,6 +45,13 @@ the pack's or an addon's; the Habbo pack has a Habbo-style one), then the room. 
 on a server picker; a hotel's Lua runs there sandboxed the way GMod limits it (no files outside data,
 no FFI, no running programs).
 
+**Managing the hotel**: its owner and admins (bobba.admin.hotel) have a Manage screen - from the start
+screen, the hotel's page or the phone's Settings - for its addons (on or off from the next start, a
+restart button), their settings (an addon describes them in its addon.lua), the hotel's own settings
+(money, shops, groups, rooms...) and its look (name, about, news, the UI players start in, its colour,
+which page shows). Garry's Mod has the start screen too when you host the game (singleplayer or a
+listen server); joining someone's server goes straight to its page.
+
 ## Next
 
 4. **Avatar**: done so far: dances (Habbo Club's four too), wave, blow a kiss, laugh, idle (asleep
