@@ -28,6 +28,10 @@ borderless full screen, its own icon.
    - walking with WASD, the arrow keys or a stick: continuous tile walking (holding a direction keeps
      stepping tile after tile, smoothly; diagonals with two keys; screen-relative by default, room
      axes as an option). Everything stays on tiles: sitting, rollers, wired and rooms keep working.
+   - a room setting for movement: both (default) / click only / steering only, shown with an icon
+     in the room info; wired effects to switch steering or click-walking off (for a user, everyone
+     or users on tiles, optionally for a while) and back, conditions "is steering" / "is
+     click-walking"; the interact button and clicking furni keep working unless also turned off
    - an interact button (E / A): the nearest usable thing (on your tile or next to you, the one
      you face first) is highlighted, and the button does what a double-click does: sit, lie down,
      switch, go through a teleport, open a gift, an avatar's menu; another button cycles between
