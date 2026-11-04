@@ -8,6 +8,7 @@ local U = BOBBA.ui
 local HUD = BOBBA.hud
 local P = BOBBA.platform
 local NAV = BOBBA.navigator
+local V = BOBBA.view
 
 local W, H = 420, 440
 local VIEWS = { "official_view", "hotel_view", "roomads_view", "myworld_view" }
@@ -81,12 +82,82 @@ local function drawBlock(d, block, x, y, w, clipTop, clipBottom)
 			local nameW = w - 2 - 8 - 35 - 8 - 8 - 18 - 8 - (lock and 17 or 0)
 			d:text(d:fit(room.name, 12.6, nameW), 12.6, x + 52, ry + 13, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			d:icon("nav-info", x + w - 9 - 18, ry + 4, 18, 18)
+			-- the mouse on the "i": the room's info beside it (NavigatorSearchResultItemInfoView)
+			local mx, my = d.w.mx, d.w.my
+			local ix, iy = x + w - 9 - 18, ry + 4
+			if mx and mx >= ix and mx < ix + 18 and my >= iy and my < iy + 18 and my >= clipTop and my < clipBottom then
+				local sx, sy = d.w.panel:LocalToScreen(0, 0)
+				S.popover = { room = room, x = sx / d.s + ix + 18, y = sy / d.s + iy + 9, seen = SysTime() }
+			end
 			if lock then d:icon(lock, x + w - 9 - 18 - 4 - 13, ry + 5, 13, 16) end
 			if hover then d:rect(x + 1, ry, w - 2, 26, Color(0, 0, 0, 10)) end
 		end
 	end
 	return h
 end
+
+-- --- the "i" popover (NavigatorSearchResultItemInfoView): a #DFDFDF box with a dark blue edge to the
+-- right of the "i", its arrow pointing at it; the thumbnail (110 x 110, the placeholder until rooms
+-- have pictures) with the door's lock, the name, the owner, the description, how many are in it
+local POP_W, POP_H, ARROW = 275, 126, 8
+local function drawPopover(w, d)
+	local p = S.popover
+	if not p then return end
+	local room = p.room
+	local edge, fill = Color(40, 63, 93), Color(223, 223, 223)
+	-- (box-shadow 0 2px rgba(0,0,0,.45))
+	d:round(4, ARROW, 2, POP_W + 2, POP_H + 2, Color(0, 0, 0, 115))
+	d:round(4, ARROW, 0, POP_W + 2, POP_H + 2, edge)
+	d:round(3, ARROW + 1, 1, POP_W, POP_H, fill)
+	-- the arrow, on the left, pointing at the "i"
+	local s = d.s
+	local cy = (POP_H + 2) / 2
+	draw.NoTexture()
+	surface.SetDrawColor(edge)
+	surface.DrawPoly(V.clockwise({ { x = 0, y = cy * s }, { x = (ARROW + 1) * s, y = (cy - 8) * s }, { x = (ARROW + 1) * s, y = (cy + 8) * s } }))
+	surface.SetDrawColor(fill)
+	surface.DrawPoly(V.clockwise({ { x = 1.5 * s, y = cy * s }, { x = (ARROW + 2) * s, y = (cy - 7) * s }, { x = (ARROW + 2) * s, y = (cy + 7) * s } }))
+	local x, y = ARROW + 1 + 8, 1 + 8
+	-- the thumbnail
+	d:box(x, y, 110, 110, 1, 4, edge, Color(0, 0, 0, 32))
+	d:icon("nav-thumbnail", x + 10, y + 10, 90, 90)
+	local lock = ({ doorbell = "nav-locked", password = "nav-password", invisible = "nav-invisible" })[room.door or ""]
+	if lock then d:icon(lock, x + 110 - 4 - 13, y + 110 - 4 - 16, 13, 16) end
+	local cx = x + 110 + 8
+	local cw = ARROW + 1 + POP_W - 8 - cx
+	d:text(d:fit(room.name or "", 12.6, cw, true), 12.6, cx, y, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, true)
+	local ty = y + 17
+	local oc = U.text("navigator.roomownercaption", "Owner:")
+	local ow = d:textWidth(oc, 12.6)
+	d:text(oc, 12.6, cx, ty, Color(108, 117, 125))
+	d:text(d:fit(room.owner or "", 12.6, cw - ow - 8), 12.6, cx + ow + 8, ty, U.C.black)
+	ty = ty + 21
+	local lines = d:wrap(room.description or "", 12.6, cw)
+	for i = 1, math.min(#lines, 3) do d:text(lines[i], 12.6, cx, ty + (i - 1) * 17, U.C.black) end
+	-- how many are in it (the badge, bottom right)
+	local num = tostring(room.users or 0)
+	local bw = 9.4 + 4 + d:textWidth(num, 9, true) + 8
+	local bx, by = ARROW + 1 + POP_W - 8 - bw, 1 + POP_H - 8 - 17
+	d:round(4, bx, by, bw, 17, counterColor(room))
+	d:fa("user", bx + 4, by + 4, 9.4, U.C.white)
+	d:text(num, 9, bx + 4 + 9.4 + 4, by + 17 / 2, U.C.white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
+end
+hook.Add("Think", "bobba.navigator.popover", function()
+	local p = S.popover
+	-- (gone when the mouse left the "i": the navigator draws it every frame while it's there)
+	if p and (SysTime() - p.seen > 0.1 or not U.isOpen("navigator")) then S.popover, p = nil, nil end
+	if p and not U.huds["nav-popover"] then
+		U.hud("nav-popover", function(sw, sh)
+			local q = S.popover
+			if not q then return nil end
+			local h = POP_H + 4
+			return q.x, math.max(0, math.min(sh - h, q.y - h / 2)), POP_W + ARROW + 4, h
+		end, drawPopover)
+		if IsValid(U.huds["nav-popover"].panel) then U.huds["nav-popover"].panel:SetZPos(32000) end
+	elseif not p and U.huds["nav-popover"] then
+		U.hudRemove("nav-popover")
+	end
+end)
 
 -- --- the room creator -------------------------------------------------------------------------------
 S.make = S.make or { name = "", description = "", maxUsers = 10, trade = 0, category = 0, model = "a" }

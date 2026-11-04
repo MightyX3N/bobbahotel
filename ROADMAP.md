@@ -10,12 +10,11 @@ Nothing here is a promise of when; it keeps the plans in one place.
 2. **Wall furni**: posters, stickies, mood lights, windows.
 3. **Rooms** (mostly): the navigator, creating rooms, settings (access, rights, chat, moderation),
    the doorbell and passwords, kick / ban / mute, favourites and home rooms, the hotel view, the
-   avatar menu and infostand, starter rooms (a new player picks one; packs register their own).
+   avatar menu and infostand, the chat settings, the navigator's room popover, starter rooms (a new player picks one; packs register their own).
    Still open for rooms:
    - the floor plan editor
    - room thumbnails in the navigator (see the camera, part 4)
-   - chat settings applied to the bubbles (mode, weight, speed, distance)
-   - the navigator's "i" popover; report, word filter
+   - report, word filter
    - a short tutorial after the starter room: walk, open the gift, place it, say hi (a small reward)
 
 **Free movement** is done: with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
