@@ -239,10 +239,21 @@ function S.direction()
 	if sx == 0 and sy == 0 and S.pad then
 		local px, py = S.pad[1], S.pad[2]
 		if px * px + py * py > 0.4 * 0.4 then
-			-- (eight ways, by the stick's angle)
+			-- (eight ways, by the stick's angle; the way it's going is kept until the stick is clearly
+			-- in another one, so a stick between two doesn't flick back and forth)
 			local a = math.atan2(py, px)
-			local k = math.floor(a / (math.pi / 4) + 0.5)
-			sx, sy = math.Round(math.cos(k * math.pi / 4)), math.Round(math.sin(k * math.pi / 4))
+			local k = math.floor(a / (math.pi / 4) + 0.5) % 8
+			local was = S.padSector
+			if was and was ~= k then
+				local d = math.abs(((a - was * math.pi / 4) + math.pi) % (2 * math.pi) - math.pi)
+				if d < math.rad(30) then k = was end
+			end
+			S.padSector = k
+			local c, sn = math.cos(k * math.pi / 4), math.sin(k * math.pi / 4)
+			sx = c > 0.5 and 1 or (c < -0.5 and -1 or 0)
+			sy = sn > 0.5 and 1 or (sn < -0.5 and -1 or 0)
+		else
+			S.padSector = nil
 		end
 	end
 	if sx == 0 and sy == 0 then return 0, 0 end
@@ -511,6 +522,19 @@ function V.drawOverlayTop()
 	end
 	draw.SimpleText(hint, font, bx + w / 2, ty + rh / 2, Color(160, 160, 170), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
+
+-- bobba_steer_debug 1: what the stick and keys say, and the direction sent (top left)
+local debugVar = CreateClientConVar("bobba_steer_debug", "0", false, false, "Show the stick's values and the walking direction")
+hook.Add("DrawOverlay", "bobba.steering.debug", function()
+	if not debugVar:GetBool() then return end
+	local dx, dy = S.direction()
+	local lines = {
+		string.format("stick %s", S.pad and string.format("%.2f, %.2f", S.pad[1], S.pad[2]) or "none"),
+		string.format("sector %s   tiles %d, %d   sent %d, %d", tostring(S.padSector), dx, dy, sent[1], sent[2]),
+		string.format("device %s   directions %s   keys %d", S.device, S.axesVar:GetInt() == 1 and "room" or "screen", S.mode()),
+	}
+	for i, l in ipairs(lines) do draw.SimpleTextOutlined(l, "DermaDefault", 60, 60 + i * 16, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 1, color_black) end
+end)
 
 -- a new room: nothing held
 BOBBA.events.on("roomShown", "bobba.steering", function()
