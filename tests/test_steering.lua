@@ -106,7 +106,7 @@ T["steering onto a seat sits down; going on stands up; a click takes over from s
 	tick(1)
 	P.fromPlayer(mia, "room.steer", { dx = 1, dy = 0 })
 	tick(1)
-	eq(at(u), "10,9", "one step up, then right")
+	eq(at(u), "11,10", "the step just begun turned right at once, then right again")
 end
 
 T["the room's movement: clicking only, steering only; saved and sent with the room"] = function()
@@ -183,6 +183,35 @@ T["standing still, a step starts at once; then one every half second"] = functio
 	P.fromPlayer(mia, "room.walk", { x = 8, y = 9 })
 	fast()
 	eq(at(u), "8,7")
+end
+
+T["a new direction early in a step turns it at once; late in a step it's the next one, facing that way now"] = function()
+	local mia, _, _, u = start()
+	P.now = P.now + 5
+	local function fast() P.now = P.now + 0.05 P.runTimers() end
+	P.fromPlayer(mia, "room.steer", { dx = 1, dy = 0 })
+	fast()
+	eq(at(u), "7,6", "walking right")
+	fast() fast() -- (0.1 of 0.5 walked)
+	P.sent = {}
+	P.fromPlayer(mia, "room.steer", { dx = 0, dy = 1 })
+	eq(at(u), "6,7", "from the tile it left, down instead")
+	local m = P.inbox(mia, "room.units")
+	local s = m[#m][1]
+	eq(string.format("%.1f,%.1f %.2f", s.x, s.y, s.dur), "6.2,6.0 0.50", "from where it is on screen, the rest of the way (a whole tile down)")
+	for _ = 1, 7 do fast() end
+	eq(at(u), "6,7", "still on its way")
+	fast() fast() fast()
+	eq(at(u), "6,8", "then on down")
+	-- late in a step: turned to face the new way, the step finishes
+	for _ = 1, 8 do fast() end
+	P.sent = {}
+	P.fromPlayer(mia, "room.steer", { dx = -1, dy = 0 })
+	eq(at(u), "6,8", "the step goes on")
+	local t = P.inbox(mia, "room.unit.turn")
+	eq(t[#t].dir, 6, "facing left already")
+	fast() fast()
+	eq(at(u), "5,8", "then left")
 end
 
 return T

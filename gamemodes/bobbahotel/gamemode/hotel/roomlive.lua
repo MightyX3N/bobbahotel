@@ -391,14 +391,83 @@ function live.steer(player, dx, dy)
 	if live.movement(u.room) == live.MOVE_CLICK then return false end
 	local was = u.steer
 	u.steer = { dx, dy }
+	local changed = not was or was[1] ~= dx or was[2] ~= dy
+	-- a new direction in the middle of a step takes effect now (live.redirect), not when the tile is
+	-- reached: otherwise half a second of walking the old way feels like the input wasn't taken
+	if changed and live.redirect(u) then
+		u.useOnArrive = nil
+		return true
+	end
 	-- it replaces a walk that was clicked (the step under way is already taken), and a new
 	-- direction replaces the next tile of the old one; the next step goes there, so even a tap
 	-- (pressed and let go before the next step) is one step
-	if not was or u.goal == nil or #(u.path or {}) ~= 1 or was[1] ~= dx or was[2] ~= dy then
+	if changed or u.goal == nil or #(u.path or {}) ~= 1 then
 		u.path, u.goal = nil, nil
 		u.path = steerPath(u.room, u)
 	end
 	u.useOnArrive = nil
+	return true
+end
+
+-- Turning a step under way to the held direction. Early in the step (before REDIRECT_BEFORE of it is
+-- walked) the avatar goes from where it is on screen to the tile next to the one it left in the new
+-- direction (back to it, if that's the way); later it turns to face the new way at once and goes
+-- there from the next tile. Not when the tile it was going to has furni (stepping on it may have done
+-- something already). true when the step was changed.
+live.REDIRECT_BEFORE = 0.6
+function live.redirect(u)
+	local r = u.room
+	local now = BOBBA.platform.clock()
+	if not u.stepStart or u.posture or u.teleporting then return false end
+	local dur = u.stepDur or live.STEP_TIME
+	local f = (now - u.stepStart) / dur
+	if f >= 1 then return false end
+	local dir = DIRS[u.steer[1] .. "," .. u.steer[2]]
+	if f >= live.REDIRECT_BEFORE or BOBBA.items.topAt(r, u.x, u.y) then
+		-- (too late to change this step: facing the new way shows it's coming)
+		if dir and dir ~= u.dir then broadcast(r, "room.unit.turn", { id = u.id, dir = dir }) end
+		u.path, u.goal = nil, nil
+		return false
+	end
+	local g = r.grid
+	local from, vis = u.stepFrom, u.visFrom or u.stepFrom
+	-- where it is on screen now
+	local fx, fy, fz = vis.x + (u.x - vis.x) * f, vis.y + (u.y - vis.y) * f, vis.z + (u.z - vis.z) * f
+	-- the new tile: next to the one it left, in the held direction (sliding along walls)
+	PF.removeUnit(g, u.x, u.y)
+	local dx, dy = u.steer[1], u.steer[2]
+	local tries = { { dx, dy } }
+	if dx ~= 0 and dy ~= 0 then tries[2] = { dx, 0 } tries[3] = { 0, dy } end
+	local tx, ty
+	for _, d in ipairs(tries) do
+		local cx, cy = from.x + d[1], from.y + d[2]
+		local path = PF.find(g, from.x, from.y, cx, cy)
+		if path and #path == 1 and path[1].x == cx and path[1].y == cy then tx, ty = cx, cy break end
+	end
+	if not tx or (tx == u.x and ty == u.y) then
+		PF.addUnit(g, u.x, u.y)
+		u.path, u.goal = nil, nil
+		if not tx then
+			-- (nowhere to go that way: finish the step, then turn)
+			return false
+		end
+		return true
+	end
+	PF.addUnit(g, tx, ty)
+	u.x, u.y, u.z = tx, ty, BOBBA.items.standZ(r, tx, ty)
+	u.dir = live.direction(from.x, from.y, tx, ty) or u.dir
+	u.to = { x = u.x, y = u.y, z = u.z }
+	u.path, u.goal = nil, nil
+	-- as long as the rest of the way is (a whole tile takes STEP_TIME)
+	local left = math.max(math.abs(tx - fx), math.abs(ty - fy))
+	local d2 = math.max(0.15, live.STEP_TIME * left)
+	u.visFrom, u.stepStart, u.stepDur = { x = fx, y = fy, z = fz }, now, d2
+	u.nextStep = now + d2
+	local snap = snapshot(u)
+	snap.x, snap.y, snap.z, snap.dur = fx, fy, fz, d2
+	broadcast(r, "room.units", { snap })
+	BOBBA.items.stepped(r, u)
+	BOBBA.events.emit("unitStepped", r, u)
 	return true
 end
 
@@ -459,6 +528,8 @@ local function step(r, u, moved)
 	local s = snapshot(u)
 	s.x, s.y, s.z = from.x, from.y, from.z
 	moved[#moved + 1] = s
+	-- (the step under way: where it started and when, so steering can turn it: live.steer)
+	u.stepFrom, u.visFrom, u.stepStart, u.stepDur = from, from, BOBBA.platform.clock(), live.STEP_TIME
 	BOBBA.items.stepped(r, u)
 	BOBBA.events.emit("unitStepped", r, u)
 end

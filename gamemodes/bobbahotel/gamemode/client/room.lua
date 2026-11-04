@@ -49,6 +49,8 @@ local function setUnit(s)
 	u.to = s.to
 	u.posture, u.height = s.posture, s.height
 	u.started = SysTime()
+	-- (a step turned halfway by steering is shorter: hotel/roomlive.lua live.redirect)
+	u.dur = tonumber(s.dur)
 	return u
 end
 
@@ -171,6 +173,12 @@ P.receive("room.units", function(_, list)
 	for _, s in ipairs(list) do setUnit(s) end
 end)
 
+-- turning while walking (steering a new way near the end of a step): the step goes on
+P.receive("room.unit.turn", function(_, data)
+	local u = R.units[data.id]
+	if u then u.dir = data.dir end
+end)
+
 P.receive("room.unit.remove", function(_, data)
 	R.units[data.id] = nil
 end)
@@ -200,7 +208,7 @@ local STEP = 0.5
 local function position(u)
 	local lift = (u.posture == "sit" or u.posture == "lay") and (u.height or 0) or 0
 	if not u.to then return u.from.x, u.from.y, u.from.z + lift end
-	local f = math.min((SysTime() - u.started) / STEP, 1)
+	local f = math.min((SysTime() - u.started) / (u.dur or STEP), 1)
 	local a, b = u.from, u.to
 	return a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f, a.z + (b.z - a.z) * f + lift
 end
@@ -224,7 +232,7 @@ R.unitPosition = position
 
 -- a unit is walking while it is on its way to the next tile
 local function posture(u)
-	if u.to and (SysTime() - u.started) < STEP + 0.1 then return "mv" end
+	if u.to and (SysTime() - u.started) < (u.dur or STEP) + 0.1 then return "mv" end
 	return u.posture or "std"
 end
 
