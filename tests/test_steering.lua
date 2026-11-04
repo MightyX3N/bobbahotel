@@ -102,8 +102,28 @@ T["stopping: onto the middle of its tile; on a seat it sits; no word for a while
 	eq(u.px, nil, "not free any more")
 	local m = P.inbox(bo, "room.units")
 	local s = m[#m][1]
-	eq(string.format("%.2f,%.2f > %d,%d %.2f", s.x, s.y, s.to.x, s.to.y, s.dur), "6.35,6.15 > 6,6 0.19", "easing from where she is to the middle, at walking speed")
+	eq(string.format("%.2f,%.2f > %d,%d %.2f", s.x, s.y, s.to.x, s.to.y, s.dur), "6.35,6.15 > 7,6 0.33", "past the middle: walking on to the next tile's middle, at walking speed")
+	eq(at(u), "7,6")
+	-- not yet past the middle: onto this one
+	fast(10)
+	move(mia, 7.3, 6.0, 2) move(mia, 7.15, 6.0, 6, true)
+	m = P.inbox(bo, "room.units")
+	s = m[#m][1]
+	eq(string.format("%d,%d", s.to.x, s.to.y), "7,6", "not past the middle (going left): this tile")
+	fast(10)
+	-- past the middle with something in the way ahead: back onto this one
+	place(r, mia, "block", 9, 6)
+	move(mia, 7.3, 6, 2) move(mia, 7.55, 6, 2) move(mia, 7.8, 6, 2) move(mia, 8.1, 6, 2) move(mia, 8.3, 6, 2, true)
+	m = P.inbox(bo, "room.units")
+	s = m[#m][1]
+	eq(string.format("%d,%d", s.to.x, s.to.y), "8,6", "furni ahead: this tile")
+	fast(10)
+	BOBBA.live.rooms[r.id].items[(function() for id, it in pairs(r.items) do if it.kind == "block" and it.x == 9 then return id end end end)()] = nil
 	-- a seat
+	BOBBA.items.updateTile(r, 9, 6)
+	P.now = P.now + 1
+	P.fromPlayer(mia, "room.walk", { x = 6, y = 6 })
+	fast(40)
 	place(r, mia, "chair", 7, 6, 6)
 	fast(10)
 	move(mia, 6.3, 6, 2) move(mia, 6.5, 6, 2) move(mia, 6.7, 6, 2, true)
@@ -115,7 +135,25 @@ T["stopping: onto the middle of its tile; on a seat it sits; no word for a while
 	-- no word
 	fast(20)
 	eq(u.px, nil, "stopped by itself")
-	eq(at(u), "7,6")
+	eq(at(u), "8,6", "(past the seat's middle: on to the next tile)")
+end
+
+T["not into a teleport, a one-way gate or a shut gate (only by using them); an open gate is fine"] = function()
+	local mia, _, r, u = start()
+	BOBBA.items.define("tele", { width = 1, length = 1, height = 2, states = 3, category = "teleport", directions = { 0, 2, 4, 6 } })
+	BOBBA.items.define("gate", { width = 1, length = 1, height = 1.5, states = 2, category = "gate", directions = { 0, 2 } })
+	P.now = P.now + 5
+	place(r, mia, "tele", 7, 6, 6)
+	for i = 1, 6 do move(mia, 6 + i * 0.1, 6, 2) end
+	eq(string.format("%.1f", u.px), "6.2", "up to the teleport, not into it")
+	move(mia, 6.2, 6, 2, true)
+	fast(10)
+	local gate = place(r, mia, "gate", 6, 7, 0)
+	for i = 1, 6 do move(mia, 6, 6 + i * 0.1, 4) end
+	eq(string.format("%.1f", u.py), "6.2", "a shut gate")
+	BOBBA.items.use(r, mia, gate.id)
+	for i = 1, 6 do move(mia, 6, 6.2 + i * 0.1, 4) end
+	eq(at(u), "6,7", "an open gate")
 end
 
 T["the room's movement: clicking only refuses free movement, free movement only refuses clicks"] = function()

@@ -438,13 +438,31 @@ local function correct(u)
 	end
 end
 
--- stopped: onto the middle of the tile it's on, at walking speed
+-- stopped: walking on to the middle of a tile, at walking speed. Past the middle of the tile it's on,
+-- that's the next one ahead (when one can stand there), so it never slides back; else this one.
+local AHEAD = { [0] = { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }, { -1, 0 }, { -1, -1 } }
 function live.freeStop(u)
 	if not u.px then return end
 	local r = u.room
 	local now = BOBBA.platform.clock()
 	local fx, fy = u.px, u.py
 	u.px, u.py, u.freeAt = nil, nil, nil
+	local a = AHEAD[u.dir or 2] or { 0, 0 }
+	local bx, by = (u.x - fx), (u.y - fy)
+	if bx * a[1] + by * a[2] < -0.05 then
+		local nx, ny = u.x + a[1], u.y + a[2]
+		local t = PF.tile(r.grid, nx, ny)
+		local here = PF.tile(r.grid, u.x, u.y)
+		local corner = a[1] == 0 or a[2] == 0 or freeTileOk(r, nx, u.y) or freeTileOk(r, u.x, ny)
+		if t and t.units.n == 0 and freeTileOk(r, nx, ny, here) and corner then
+			PF.removeUnit(r.grid, u.x, u.y)
+			PF.addUnit(r.grid, nx, ny)
+			u.x, u.y = nx, ny
+			u.z = BOBBA.items.standZ(r, nx, ny)
+			BOBBA.items.stepped(r, u)
+			BOBBA.events.emit("unitStepped", r, u)
+		end
+	end
 	local d = math.sqrt((u.x - fx) ^ 2 + (u.y - fy) ^ 2)
 	local dur = math.max(0.05, d / live.FREE_SPEED)
 	u.to = { x = u.x, y = u.y, z = u.z }
@@ -468,8 +486,14 @@ function live.move(player, x, y, dir, stop)
 	-- (not faster than walking, with a little room for the network's ups and downs)
 	local dt = u.freeAt and (now - u.freeAt) or 0.1
 	local d = math.sqrt((x - px) ^ 2 + (y - py) ^ 2)
-	if d > live.FREE_SPEED * math.min(math.max(dt, 0.05), 0.5) * 1.3 + 0.35 then correct(u) return false end
-	if d > 0 and not live.freeWayOk(r, px, py, x, y) then correct(u) return false end
+	-- (refused: put back; a stop still stops)
+	local function refuse()
+		correct(u)
+		if stop then live.freeStop(u) end
+		return false
+	end
+	if d > live.FREE_SPEED * math.min(math.max(dt, 0.05), 0.5) * 1.3 + 0.35 then return refuse() end
+	if d > 0 and not live.freeWayOk(r, px, py, x, y) then return refuse() end
 	-- moving: no walk to a clicked tile any more, standing up from a seat
 	u.path, u.goal, u.useOnArrive = nil, nil, nil
 	u.posture, u.height = nil, nil

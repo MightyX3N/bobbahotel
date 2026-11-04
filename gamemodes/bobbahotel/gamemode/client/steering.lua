@@ -297,7 +297,11 @@ local function refreshFloor()
 	for _, it in pairs(R.items or {}) do
 		local fi = R.furniInfo and R.furniInfo(it.kind)
 		if fi and not fi.wall and not it.wall then
-			local open = fi.walk or fi.sit or fi.lay or (fi.category == "gate" and tonumber(it.state) == 1)
+			-- (as the server has it: a teleport or a one-way gate is only gone into by using it, a gate
+			-- only when open)
+			local open = fi.walk or fi.sit or fi.lay
+			if fi.category == "gate" then open = tonumber(it.state) == 1 end
+			if fi.category == "teleport" or fi.logic == "furniture_one_way_door" then open = false end
 			if not open then
 				local w, l = fi.width or 1, fi.length or 1
 				if it.dir == 2 or it.dir == 6 then w, l = l, w end
