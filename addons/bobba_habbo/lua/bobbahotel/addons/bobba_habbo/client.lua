@@ -17,6 +17,8 @@ BOBBA.platform.runAddonFile("bobba_habbo", "editor.lua")
 BOBBA.platform.runAddonFile("bobba_habbo", "ui.lua")
 -- Habbo's hotel view
 BOBBA.platform.runAddonFile("bobba_habbo", "hotelview.lua")
+-- the hotel's page before going in, Habbo's website's look
+BOBBA.platform.runAddonFile("bobba_habbo", "website.lua")
 
 concommand.Add("bobba_habbo_test", function()
 	print("[Bobba] asking Habbo where its files are...")

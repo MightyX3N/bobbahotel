@@ -751,7 +751,12 @@ concommand.Add("bobba_furni", function(_, _, args)
 	R.updateInfo()
 end)
 
--- tell the server we're ready for the room (also after a Lua reload)
-local function ready() P.send("room.ready", {}) end
+-- tell the server we're ready for the room (also after a Lua reload); first the hotel's own page,
+-- when it has one (client/website.lua): going in from there sends it
+local function ready()
+	local W = BOBBA.website
+	if W and W.wanted and W.wanted() then W.show() return end
+	P.send("room.ready", {})
+end
 hook.Add("InitPostEntity", "bobba.room", ready)
 if IsValid(LocalPlayer()) then ready() end

@@ -691,6 +691,22 @@ function live.start()
 		local home = A.home(key)
 		if not (home and live.enter(player, home)) then live.enter(player, live.homeRoom()) end
 	end)
+	-- the hotel's own page (client/website.lua) before going in: what it shows
+	P.receive("hotel.get", function(player)
+		local key = P.playerKey(player)
+		local figure, gender = BOBBA.looks.get(key)
+		local online = 0
+		for _ in pairs(BOBBA.friends and BOBBA.friends.online or {}) do online = online + 1 end
+		local news = util and util.JSONToTable and util.JSONToTable(BOBBA.store.setting("website.news", "") or "") or nil
+		if type(news) ~= "table" then news = nil end
+		local w = BOBBA.wallet.get(key)
+		P.send("hotel.page", {
+			name = BOBBA.access.hotelName(), description = BOBBA.store.setting("hotel.description", ""), online = online,
+			figure = figure, gender = gender, news = news, credits = w and w.credits or 0,
+			events = BOBBA.roomEvents and BOBBA.roomEvents.current() or {},
+			rooms = BOBBA.navigator.view("official_view", key, player)[1].rooms,
+		}, player)
+	end)
 	P.receive("room.enter", function(player, data)
 		local ok, err = live.enter(player, data.id, nil, { password = data.password and tostring(data.password):sub(1, 40) or nil })
 		if not ok then

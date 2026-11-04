@@ -408,9 +408,16 @@ return function(cfg)
 	G.gameRoots = gameRoots
 
 	local DATA = GMOD .. "/data"
+	-- a name the game gives: no going up (".."), no drive or root, as GMod allows
+	local function safeName(p)
+		p = tostring(p or ""):gsub("\\", "/"):gsub("^%a:", ""):gsub("^/+", "")
+		for part in p:gmatch("[^/]+") do if part == ".." then return "_invalid_" end end
+		return p
+	end
+	G.safeName = safeName
 	-- (Windows doesn't mind the case of names; elsewhere a name GMod wrote in lower case is found too)
 	local function dataPath(p)
-		p = DATA .. "/" .. p:gsub("\\", "/")
+		p = DATA .. "/" .. safeName(p)
 		if not FS.windows and not FS.exists(p) then
 			local low = DATA .. "/" .. p:sub(#DATA + 2):lower()
 			if FS.exists(low) then return low end
@@ -429,7 +436,7 @@ return function(cfg)
 	-- the file's real path on the computer (the first root that has it)
 	function G.findPath(name, where)
 		local roots, data = rootsFor(where)
-		name = name:gsub("\\", "/"):gsub("^/+", "")
+		name = safeName(name)
 		if data then
 			local p = dataPath(name)
 			return FS.exists(p) and p or nil
@@ -507,10 +514,55 @@ return function(cfg)
 			if FS.kind(p) == "file" then return p, name end
 		end
 	end
+	-- --- the sandbox: the hotel's Lua (the gamemode, its addons; one day a server's) has what GMod
+	-- gives, not more: no io, no running programs, no FFI or LuaJIT's insides, no love, files only
+	-- through file.* (written only in data/), no loading bytecode. Its globals are the real ones
+	-- (the desktop reads BOBBA from them), but what it can see of them is filtered.
+	local realLoad = loadstring
+	local ENV = {}
+	G.env = ENV
+	local function sandboxed(fn) if type(fn) == "function" then setfenv(fn, ENV) end return fn end
+	local function compile(code, name)
+		code = tostring(code or "")
+		if code:byte(1) == 27 then return nil, "bytecode isn't allowed" end
+		local fn, err = realLoad(code, name)
+		return sandboxed(fn), err
+	end
+	G.compile = compile
+	local safeOS = { time = os.time, date = os.date, clock = os.clock, difftime = os.difftime }
+	local safeDebug = {
+		traceback = debug.traceback,
+		getinfo = function(f, what)
+			local i = debug.getinfo(type(f) == "number" and f + 1 or f, what)
+			if i then i.func = nil end
+			return i
+		end,
+	}
+	local SAFE = {
+		os = safeOS, debug = safeDebug, _G = ENV,
+		loadstring = function(code, name) return compile(code, name) end,
+		getfenv = function(f)
+			local ok, e = pcall(getfenv, type(f) == "number" and f + 1 or f or 2)
+			if ok and e ~= _G then return e end
+			return ENV
+		end,
+		setfenv = function(f, t)
+			if type(f) == "function" and getfenv(f) ~= ENV then error("setfenv: that function isn't the game's", 2) end
+			return setfenv(f, t)
+		end,
+	}
+	local BLOCKED = { io = true, os = true, require = true, ffi = true, jit = true, debug = true, package = true, loadfile = true,
+		dofile = true, load = true, loadstring = true, getfenv = true, setfenv = true, love = true, module = true, _G = true, arg = true,
+		TEST = true, TEST_API = true }
+	setmetatable(ENV, {
+		__index = function(_, k) if BLOCKED[k] then return SAFE[k] end return _G[k] end,
+		__newindex = function(_, k, v) if BLOCKED[k] then return end _G[k] = v end,
+		__metatable = false,
+	})
 	function G.runFile(path, rel)
 		local src = FS.read(path)
 		if not src then ErrorNoHalt("Couldn't read " .. path .. "\n") return end
-		local fn, err = loadstring(src, "@" .. rel)
+		local fn, err = compile(src, "@" .. rel)
 		if not fn then ErrorNoHalt(tostring(err) .. "\n") return end
 		stack[#stack + 1] = { path = path, rel = rel }
 		local res = { pcall(fn) }
@@ -526,10 +578,10 @@ return function(cfg)
 	CompileFile = function(name)
 		local p, rel = resolve(name)
 		if not p then return nil end
-		return loadstring(FS.read(p), "@" .. rel)
+		return (compile(FS.read(p), "@" .. rel))
 	end
 	CompileString = function(code, id, handle)
-		local fn, err = loadstring(code, "@" .. tostring(id))
+		local fn, err = compile(code, "@" .. tostring(id))
 		if not fn and handle ~= false then ErrorNoHalt(tostring(err) .. "\n") end
 		if not fn and handle == false then return err end
 		return fn

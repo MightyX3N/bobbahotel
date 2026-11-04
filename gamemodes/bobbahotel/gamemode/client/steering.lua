@@ -29,7 +29,7 @@ S.KEYS = {
 	{ id = "use", default = KEY_SPACE, label = { "bobba.controls.use", "Use what's next to you" } },
 	{ id = "next", default = KEY_TAB, label = { "bobba.controls.next", "Pick the next thing" } },
 	{ id = "chat", default = KEY_T, label = { "bobba.controls.chat", "Open the chat (WASD, Enter to chat)" } },
-	{ id = "phone", default = KEY_F1, label = { "bobba.controls.phone", "Take out / put away the phone" } },
+	{ id = "phone", default = KEY_F2, label = { "bobba.controls.phone", "Take out / put away the phone" } },
 }
 S.PAD = {
 	{ id = "use", default = "a", label = { "bobba.controls.use", "Use what's next to you" } },

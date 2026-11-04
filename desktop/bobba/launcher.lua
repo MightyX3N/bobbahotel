@@ -1,6 +1,8 @@
--- The start page, made like the old Habbo website: your hotel's "Me" page (what you have in the
--- hotel you played last), My hotels, Settings, and on the first start finding Garry's Mod.
--- Drawn at 1280 x 720 "website pixels", scaled to the window.
+-- The start screen: pick a hotel to check in to (your own on this computer, and hotels you've
+-- added), what the chosen one is like, settings; on the first start finding Garry's Mod. Neutral (not
+-- any pack's look): a sunset on the left, the hotel's skyline on the right. Each hotel's own page
+-- (its "website") comes after checking in: the gamemode draws it (client/website.lua).
+-- Drawn in 1280 x 800 "page pixels", scaled to the window; the halves stretch with it.
 
 local FS = require("bobba.fs")
 local ST = require("bobba.steam")
@@ -9,30 +11,30 @@ local lg = love.graphics
 
 local L = {}
 local settings, actions
-local page = "home" -- setup, home, account, hotels, settings
-local data = {} -- what the hotel's database says (L.refresh)
-local regions = {} -- the clickable parts drawn this frame
+local page = "servers" -- servers, setup
+local sheet -- nil, "settings", "add"
+local data = {} -- what your hotel's database says (L.refresh)
+local regions = {}
 local hoverId
-local s, ox, oy = 1, 0, 0 -- scale and where the 1280 x 720 page is
-local fields = {} -- text boxes by id
-local focus -- the text box typed in
-local message -- a line under the folder box: { text, good }
-local candidate -- the garrysmod folder found on this computer
-local images = {}
+local s = 1
+local fields = {}
+local focus
+local message -- { text, where, good }
+local candidate
+local VERSION = "Bobba (desktop)"
 
+local function rgb(h) return { tonumber(h:sub(1, 2), 16), tonumber(h:sub(3, 4), 16), tonumber(h:sub(5, 6), 16) } end
 local C = {
-	page = { 0xE6, 0xE5, 0xDE }, header = { 0xBF, 0xE0, 0xF1 }, ink = { 0x1E, 0x1E, 0x1E }, dark = { 0x2A, 0x2A, 0x2A },
-	white = { 255, 255, 255 }, grey = { 0x6C, 0x71, 0x78 }, line = { 0xC9, 0xC8, 0xC0 }, faint = { 0x8A, 0x89, 0x84 },
-	orange = { 0xE8, 0x64, 0x0C }, link = { 0x1F, 0x5E, 0x9C }, green = { 0x2E, 0x9A, 0x1E }, greenDark = { 0x1C, 0x6B, 0x12 },
-	tab = { 0x2E, 0x7F, 0xC0 }, tabDark = { 0x1D, 0x5A, 0x8C }, blue = { 0x2B, 0x6C, 0xB0 }, red = { 0xD6, 0x45, 0x41 },
-	yellow = { 0xFF, 0xC4, 0x0C }, panel = { 0x8E, 0x8C, 0x85 }, panelLine = { 0xA3, 0xA1, 0x9A }, navy = { 0x2F, 0x3D, 0x66 },
-	navyBox = { 0x46, 0x57, 0x8A }, newsText = { 0xE5, 0xEA, 0xF7 }, newsLabel = { 0xC9, 0xD3, 0xEE }, rowAlt = { 0xF4, 0xF9, 0xFC },
-	rowLine = { 0xE1, 0xE0, 0xD9 }, disabled = { 0x8A, 0x89, 0x84 }, input = { 0xB9, 0xB8, 0xB0 },
+	ink = rgb("2A1206"), ink2 = rgb("4A1A06"), ink3 = rgb("6B3A1E"), card = rgb("FFF9F0"), sel = rgb("FFE2C2"), cream = rgb("FFF6E8"),
+	rust = rgb("7A2E0E"), dash = rgb("E3B98F"), green = rgb("1E7A46"), grey = rgb("8A5A3C"), red = rgb("C0392B"),
+	top = rgb("FF6B4A"), bottom = rgb("FFC24B"), sky1 = rgb("3B1A3F"), sky2 = rgb("A8432A"), sky3 = rgb("E8873A"),
+	sun = rgb("FFC24B"), b1 = rgb("2A1630"), b2 = rgb("331A38"), win = rgb("FFD27A"), mint = rgb("6EE7A8"), field = rgb("F3D9BF"),
+	orange = rgb("FF9F5A"), sky = rgb("9DB4FF"), leaf = rgb("B7E4C7"), lilac = rgb("B98CFF"), pink = rgb("F26B8A"),
 }
 local function col(c, a) lg.setColor(c[1] / 255, c[2] / 255, c[3] / 255, a or 1) end
 
--- --- fonts (made at the size they're drawn, so text stays sharp) ---------------------------------
-local fontFiles = { r = "fonts/Ubuntu-Regular.ttf", b = "fonts/Ubuntu-Bold.ttf", m = "fonts/Ubuntu-Medium.ttf", logo = "fonts/LilitaOne-Regular.ttf" }
+-- --- fonts ----------------------------------------------------------------------------------------
+local fontFiles = { r = "fonts/PlusJakartaSans-Medium.ttf", b = "fonts/PlusJakartaSans-Bold.ttf", x = "fonts/PlusJakartaSans-ExtraBold.ttf", logo = "fonts/LilitaOne-Regular.ttf" }
 local fonts = {}
 local function font(px, kind)
 	kind = kind or "r"
@@ -44,27 +46,35 @@ local function font(px, kind)
 	end
 	return fonts[key]
 end
--- text at page coordinates; returns its width in page pixels
-local function text(t, x, y, px, kind, c, align, w)
+local function spaced(t, kind) t = tostring(t) if kind == "b" or kind == "x" then t = t:gsub(" ", " \226\128\138") end return t end
+local function text(t, x, y, px, kind, c, align, w, a)
 	local f = font(px, kind)
-	col(c or C.ink)
-	t = tostring(t)
+	col(c or C.ink, a)
+	t = spaced(t, kind)
 	local tw = f:getWidth(t) / s
 	if align == "center" then x = x + (w - tw) / 2 elseif align == "right" then x = x + w - tw end
 	lg.print(t, f, math.floor(x * s + 0.5) / s, math.floor(y * s + 0.5) / s, 0, 1 / s, 1 / s)
 	return tw
 end
-local function textWidth(t, px, kind) return font(px, kind):getWidth(tostring(t)) / s end
--- several lines in a width; returns the height
-local function para(t, x, y, w, px, kind, c, lineH)
+local function textWidth(t, px, kind) return font(px, kind):getWidth(spaced(t, kind)) / s end
+local function para(t, x, y, w, px, kind, c, lineH, maxLines)
 	local f = font(px, kind)
-	local _, lines = f:getWrap(t, w * s)
+	local _, lines = f:getWrap(spaced(t, kind), w * s)
 	lineH = lineH or px * 1.5
-	for i, l in ipairs(lines) do text(l, x, y + (i - 1) * lineH, px, kind, c) end
-	return #lines * lineH
+	for i, l in ipairs(lines) do
+		if maxLines and i > maxLines then break end
+		text(l, x, y + (i - 1) * lineH, px, kind, c)
+	end
+	return math.min(#lines, maxLines or #lines) * lineH
+end
+local function fit(t, px, kind, w)
+	t = tostring(t)
+	if textWidth(t, px, kind) <= w then return t end
+	while #t > 0 and textWidth(t .. "…", px, kind) > w do t = t:gsub("[%z\1-\127\194-\244][\128-\191]*$", "") end
+	return t .. "…"
 end
 
--- --- shapes -------------------------------------------------------------------------------------------
+-- --- shapes ---------------------------------------------------------------------------------------
 local cornerImg
 local function corner()
 	if cornerImg then return cornerImg end
@@ -80,94 +90,84 @@ local function corner()
 	cornerImg:setFilter("linear", "linear")
 	return cornerImg
 end
--- a box with soft rounded corners (r: radius; corners: "tl tr bl br" which are round, default all)
-local function box(x, y, w, h, r, c, corners)
-	col(c)
+local function box(x, y, w, h, r, c, a)
+	col(c, a)
 	r = math.min(r or 0, w / 2, h / 2)
 	if r <= 0 then lg.rectangle("fill", x, y, w, h) return end
-	local round = function(k) return corners == nil or corners:find(k, 1, true) ~= nil end
 	lg.rectangle("fill", x + r, y, w - 2 * r, h)
 	lg.rectangle("fill", x, y + r, r, h - 2 * r)
 	lg.rectangle("fill", x + w - r, y + r, r, h - 2 * r)
 	local img = corner()
 	local k = r / img:getWidth()
-	if round("tl") then lg.draw(img, x, y, 0, k, k) else lg.rectangle("fill", x, y, r, r) end
-	if round("tr") then lg.draw(img, x + w, y, 0, -k, k) else lg.rectangle("fill", x + w - r, y, r, r) end
-	if round("bl") then lg.draw(img, x, y + h, 0, k, -k) else lg.rectangle("fill", x, y + h - r, r, r) end
-	if round("br") then lg.draw(img, x + w, y + h, 0, -k, -k) else lg.rectangle("fill", x + w - r, y + h - r, r, r) end
+	lg.draw(img, x, y, 0, k, k)
+	lg.draw(img, x + w, y, 0, -k, k)
+	lg.draw(img, x, y + h, 0, k, -k)
+	lg.draw(img, x + w, y + h, 0, -k, -k)
 end
--- a box with a border of width b
-local function framed(x, y, w, h, r, fill, border, b, corners)
-	b = b or 1
-	box(x, y, w, h, r, border, corners)
-	box(x + b, y + b, w - 2 * b, h - 2 * b, math.max(0, (r or 0) - b), fill, corners)
+local function ring(x, y, w, h, r, c, b)
+	box(x, y, w, h, r, c)
+end
+-- a vertical gradient: stops { { t, colour }, ... }
+local function gradient(x, y, w, h, stops)
+	local verts = {}
+	for _, st in ipairs(stops) do
+		local c = st[2]
+		local yy = y + h * st[1]
+		verts[#verts + 1] = { x, yy, 0, 0, c[1] / 255, c[2] / 255, c[3] / 255, 1 }
+		verts[#verts + 1] = { x + w, yy, 0, 0, c[1] / 255, c[2] / 255, c[3] / 255, 1 }
+	end
+	local mesh = lg.newMesh(verts, "strip", "static")
+	lg.setColor(1, 1, 1)
+	lg.draw(mesh)
+end
+local function circle(x, y, r, c, a) col(c, a) lg.circle("fill", x, y, r, 64) end
+local function dashedBox(x, y, w, h, r, c)
+	col(c)
+	lg.setLineWidth(2)
+	local dash, gap = 8, 6
+	local function dline(x1, y1, x2, y2)
+		local len = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
+		local n = math.floor(len / (dash + gap))
+		for i = 0, n do
+			local t0, t1 = i * (dash + gap) / len, math.min(1, (i * (dash + gap) + dash) / len)
+			lg.line(x1 + (x2 - x1) * t0, y1 + (y2 - y1) * t0, x1 + (x2 - x1) * t1, y1 + (y2 - y1) * t1)
+		end
+	end
+	dline(x + r, y, x + w - r, y) dline(x + r, y + h, x + w - r, y + h)
+	dline(x, y + r, x, y + h - r) dline(x + w, y + r, x + w, y + h - r)
+	lg.arc("line", "open", x + r, y + r, r, math.pi, 1.5 * math.pi)
+	lg.arc("line", "open", x + w - r, y + r, r, 1.5 * math.pi, 2 * math.pi)
+	lg.arc("line", "open", x + r, y + h - r, r, 0.5 * math.pi, math.pi)
+	lg.arc("line", "open", x + w - r, y + h - r, r, 0, 0.5 * math.pi)
+	lg.setLineWidth(1)
 end
 
--- clickable part: id (for hover), area, what it does
 local function region(id, x, y, w, h, fn)
 	regions[#regions + 1] = { id = id, x = x, y = y, w = w, h = h, fn = fn }
 	return hoverId == id
 end
 
--- the Habbo pictures the game saved (the purse's coins, HC): cut to what's drawn in them
-local function habboImage(name)
-	if images[name] ~= nil then return images[name] end
-	images[name] = false
-	if not settings.garrysmod then return false end
-	local _, dirs = FS.list(settings.garrysmod .. "/data/bobbahotel/habbo/chat")
-	table.sort(dirs, function(a, b) return (tonumber(a:match("%d+")) or 0) > (tonumber(b:match("%d+")) or 0) end)
-	for _, d in ipairs(dirs) do
-		local bytes = FS.read(settings.garrysmod .. "/data/bobbahotel/habbo/chat/" .. d .. "/ui_" .. name .. ".png")
-		if bytes then
-			local ok, idata = pcall(love.image.newImageData, love.filesystem.newFileData(bytes, name .. ".png"))
-			if ok then
-				local w, h = idata:getDimensions()
-				local x1, y1 = 0, 0
-				for y = 0, h - 1 do for x = 0, w - 1 do
-					local _, _, _, a = idata:getPixel(x, y)
-					if a > 0 then if x + 1 > x1 then x1 = x + 1 end if y + 1 > y1 then y1 = y + 1 end end
-				end end
-				local img = lg.newImage(idata)
-				img:setFilter("nearest", "nearest")
-				images[name] = { img = img, quad = lg.newQuad(0, 0, math.max(1, x1), math.max(1, y1), w, h), w = math.max(1, x1), h = math.max(1, y1) }
-				return images[name]
-			end
-		end
-	end
-	return false
-end
-local function icon(name, cx, cy, fallback, fit)
-	local im = habboImage(name)
-	if im then
-		col(C.white)
-		local k = math.max(1, math.floor(s + 0.5)) / s
-		if fit and math.max(im.w, im.h) * k > fit then k = fit / math.max(im.w, im.h) end
-		lg.draw(im.img, im.quad, math.floor((cx - im.w * k / 2) * s) / s, math.floor((cy - im.h * k / 2) * s) / s, 0, k, k)
-	elseif fallback then fallback() end
-end
-
--- --- text boxes ----------------------------------------------------------------------------------------
+-- --- text boxes -------------------------------------------------------------------------------------
 local function field(id, value)
 	if not fields[id] then fields[id] = { text = value or "" } end
 	return fields[id]
 end
-local function input(id, x, y, w, h, placeholder, onEnter)
-	local f = field(id)
+local function input(id, x, y, w, h, placeholder, onEnter, value)
+	local f = field(id, value)
 	local focused = focus == id
-	framed(x, y, w, h, 4, C.white, focused and C.tab or C.input, 1)
-	local px = 13
+	box(x, y, w, h, h / 2, focused and C.rust or C.dash)
+	box(x + 2, y + 2, w - 4, h - 4, h / 2 - 2, C.cream)
+	local px = 15
 	local fnt = font(px)
-	lg.setScissor(math.floor((x + 6) * s + ox), math.floor(y * s + oy), math.floor((w - 12) * s), math.floor(h * s))
+	local sx0 = math.floor((x + 16) * s + L.ox)
+	lg.setScissor(sx0, math.floor(y * s + L.oy), math.floor((w - 32) * s), math.floor(h * s))
 	local tw = fnt:getWidth(f.text) / s
-	local shift = math.max(0, tw - (w - 16))
-	if f.text == "" and not focused then
-		text(placeholder or "", x + 10, y + (h - px * 1.2) / 2, px, "r", C.faint)
-	else
-		text(f.text, x + 10 - shift, y + (h - px * 1.2) / 2, px, "r", C.ink)
-	end
+	local shift = math.max(0, tw - (w - 36))
+	if f.text == "" and not focused then text(placeholder or "", x + 18, y + (h - px * 1.3) / 2, px, "r", C.ink3, nil, nil, 0.7)
+	else text(f.text, x + 18 - shift, y + (h - px * 1.3) / 2, px, "r", C.ink) end
 	if focused and love.timer.getTime() % 1 < 0.5 then
 		col(C.ink)
-		lg.rectangle("fill", x + 10 + tw - shift + 1, y + 7, 1 / s * math.max(1, math.floor(s)), h - 14)
+		lg.rectangle("fill", x + 18 + tw - shift + 1, y + 11, math.max(1, math.floor(s)) / s, h - 22)
 	end
 	lg.setScissor()
 	region("input:" .. id, x, y, w, h, function() focus = id end)
@@ -175,40 +175,30 @@ local function input(id, x, y, w, h, placeholder, onEnter)
 	return f
 end
 
--- buttons: kind "green" (big Habbo enter), "blue", "grey"
-local function button(id, label, x, y, w, h, kind, fn, px)
-	local hover = region(id, x, y, w, h, fn)
-	px = px or 15
-	if kind == "green" then
-		framed(x, y, w, h, 4, hover and { 0x38, 0xAD, 0x26 } or C.green, C.greenDark, 2)
-		text(label, x, y + (h - px * 1.2) / 2, px, "b", C.white, "center", w)
-	elseif kind == "blue" then
-		framed(x, y, w, h, 4, hover and { 0x3A, 0x8E, 0xD2 } or C.tab, C.tabDark, 1)
-		text(label, x, y + (h - px * 1.2) / 2, px, "r", C.white, "center", w)
+-- buttons: "dark" (the big one), "light", "outline"
+local function button(id, label, x, y, w, h, kind, fn, px, disabled)
+	local hover = (not disabled) and region(id, x, y, w, h, fn)
+	px = px or 16
+	if kind == "outline" then
+		box(x, y, w, h, h / 2, C.ink, disabled and 0.4 or 1)
+		box(x + 2, y + 2, w - 4, h - 4, h / 2 - 2, hover and C.sel or C.card)
+		text(label, x, y + (h - px * 1.3) / 2, px, "b", C.ink, "center", w)
+	elseif kind == "light" then
+		box(x, y, w, h, h / 2, hover and C.sel or C.field)
+		text(label, x, y + (h - px * 1.3) / 2, px, "b", C.ink, "center", w)
 	else
-		framed(x, y, w, h, 4, hover and { 0xF0, 0xF0, 0xEB } or { 0xE6, 0xE5, 0xDE }, C.input, 1)
-		text(label, x, y + (h - px * 1.2) / 2, px, "r", C.ink, "center", w)
+		box(x, y, w, h, h / 2, hover and C.ink2 or C.ink, disabled and 0.45 or 1)
+		text(label, x, y + (h - px * 1.3) / 2, px, "x", C.cream, "center", w)
 	end
-end
-local function link(id, label, x, y, px, c, fn, kind)
-	local w = textWidth(label, px, kind)
-	local hover = region(id, x, y - 2, w, px * 1.4, fn)
-	text(label, x, y, px, kind or "r", hover and C.orange or (c or C.link))
-	if hover or (c == C.orange) then
-		col(hover and C.orange or c)
-		lg.rectangle("fill", x, y + px * 1.2, w, 1 / s * math.max(1, math.floor(s)))
-	end
-	return w
-end
-local function tag(label, x, y)
-	local w = textWidth(label, 12) + 18
-	box(x, y, w, 22, 4, C.disabled)
-	text(label, x, y + 4, 12, "r", C.white, "center", w)
-	return w
+	return hover
 end
 
--- --- what the hotel's database says -----------------------------------------------------------------
+-- --- your hotel, and the hotels you've added ----------------------------------------------------------
 local function hotelName() return data.hotelName or "Bobba Hotel" end
+local function packName()
+	if settings.garrysmod and FS.isDir(settings.garrysmod .. "/addons/bobba_habbo") then return "Habbo pack" end
+	return "Default pack"
+end
 
 function L.refresh()
 	data = {}
@@ -220,361 +210,236 @@ function L.refresh()
 	if not db then return end
 	local key = SQ.quote(settings.playerKey or "")
 	local function row(q) local ok, r = pcall(db.query, db, q) return ok and r and r[1] or nil end
-	local function rows(q) local ok, r = pcall(db.query, db, q) return ok and r or {} end
-	data.wallet = row("SELECT * FROM bobbahotel_wallets WHERE key = " .. key)
 	data.user = row("SELECT * FROM bobbahotel_users WHERE key = " .. key)
-	data.look = row("SELECT * FROM bobbahotel_looks WHERE key = " .. key)
 	local name = row("SELECT v FROM bobbahotel_settings WHERE k = 'hotel_name'")
 	data.hotelName = name and name.v ~= "" and name.v or nil
-	local mine = row("SELECT COUNT(*) AS n FROM bobbahotel_rooms WHERE owner = " .. key)
-	data.myRooms = mine and tonumber(mine.n) or 0
-	data.lastRoom = row("SELECT id, name FROM bobbahotel_rooms WHERE owner = " .. key .. " ORDER BY id DESC LIMIT 1")
-	data.picks = rows("SELECT id, name, owner_name FROM bobbahotel_rooms ORDER BY id LIMIT 3")
+	local desc = row("SELECT v FROM bobbahotel_settings WHERE k = 'hotel.description'")
+	data.description = desc and desc.v ~= "" and desc.v or nil
+	local rooms = row("SELECT COUNT(*) AS n FROM bobbahotel_rooms")
+	data.rooms = rooms and tonumber(rooms.n) or 0
+	local people = row("SELECT COUNT(*) AS n FROM bobbahotel_users")
+	data.people = people and tonumber(people.n) or 0
 	db:close()
-	-- your avatar, as the game last drew it
-	local bytes = FS.read(opts.save .. "/avatar.png")
-	if bytes then
-		local ok, img = pcall(function() return lg.newImage(love.image.newImageData(love.filesystem.newFileData(bytes, "avatar.png"))) end)
-		if ok then data.avatar = img img:setFilter("nearest", "nearest") end
-	end
 end
 
--- --- the page's top: the logo, the links, the tabs ----------------------------------------------------
-local TABS = { { "home", nil }, { "hotels", "My hotels" }, { "settings", "Settings" } }
-local function header()
-	-- (the light blue band goes across the whole window)
-	-- the logo: the hotel's name in Habbo's yellow, with a dark outline and shadow
-	local name = hotelName()
-	local px = 46
-	local f = font(px, "logo")
-	local x, y = 30, 22
-	for _, o in ipairs({ { 3, 3 }, { -2, -2 }, { 2, -2 }, { -2, 2 }, { 2, 2 }, { 0, 2 }, { 2, 0 }, { -2, 0 }, { 0, -2 } }) do
-		text(name, x + o[1], y + o[2], px, "logo", C.dark)
+-- the list: your hotel first, then the ones added ({ name, address })
+local LETTER_COLORS = { C.orange, C.sky, C.leaf, C.lilac, C.pink }
+local function servers()
+	local list = { { name = hotelName(), info = "On this computer · " .. packName(), status = "Ready", statusColor = C.green, local_ = true } }
+	for _, sv in ipairs(settings.servers or {}) do
+		list[#list + 1] = { name = sv.name ~= "" and sv.name or sv.address, info = sv.address, status = "Soon", statusColor = C.grey, address = sv.address, saved = sv }
 	end
-	text(name, x, y, px, "logo", C.yellow)
-	-- the white tab top right
-	local links = { { "My hotels ›", function() page = "hotels" end, C.grey, "b" }, { "Settings ›", function() page = "settings" end, C.grey, "b" }, { "Change folder", function() page = "setup" end, C.orange, "r" } }
-	local widths, total = {}, 36
-	for i, l in ipairs(links) do widths[i] = textWidth(l[1], 13, l[4]) total = total + widths[i] + (i > 1 and 22 or 0) end
-	local lx = 1280 - 30 - total
-	box(lx, -8, total, 42, 8, C.white)
-	local cx = lx + 18
-	for i, l in ipairs(links) do
-		link("top" .. i, l[1], cx, 9, 13, l[3], l[2], l[4])
-		cx = cx + widths[i] + 22
-	end
-	-- Enter
-	local label = "Enter " .. name
-	local bw = textWidth(label, 15, "b") + 44
-	button("enter-top", label, 1280 - 30 - bw, 50, bw, 38, "green", L.enter)
-	-- the tabs
-	local tx = 24
-	for _, t in ipairs(TABS) do
-		local active = (t[1] == "home" and (page == "home" or page == "account")) or page == t[1]
-		local label2 = t[2] or (settings.playerName or "You")
-		local w = textWidth(label2, 14, "b") + (t[1] == "home" and 72 or 52)
-		local h = active and 40 or 34
-		local y2 = 110 - h
-		if active then
-			box(tx, y2, w, h + 4, 6, C.dark, "tl tr")
-			box(tx + 2, y2 + 2, w - 4, h + 2, 5, C.white, "tl tr")
-		else
-			box(tx, y2, w, h, 6, C.tabDark, "tl tr")
-			box(tx + 2, y2 + 2, w - 4, h - 2, 5, region("tab:" .. t[1], tx, y2, w, h, function() page = t[1] message = nil end) and { 0x3A, 0x8E, 0xD2 } or C.tab, "tl tr")
+	return list
+end
+local function chosen()
+	local list = servers()
+	local i = math.max(1, math.min(#list, settings.chosen or 1))
+	return list[i], i
+end
+
+-- --- the left: the sunset, the logo, the list, check in ------------------------------------------------
+local function logo(cx, y, px)
+	local t = "bobba"
+	local w = textWidth(t, px, "logo")
+	text(t, cx - w / 2 + 8, y + 8, px, "logo", C.rust, nil, nil, 0.45)
+	text(t, cx - w / 2 + 4, y + 4, px, "logo", C.rust)
+	text(t, cx - w / 2, y, px, "logo", C.cream)
+end
+
+local function serverList(cx, y)
+	local list = servers()
+	local _, ci = chosen()
+	local w = 460
+	local x = cx - w / 2
+	local rowH = 70
+	local h = 10 + #list * (rowH + 6) + 56 + 10
+	box(x + 4, y + 14, w, h, 26, C.rust, 0.18)
+	box(x, y, w, h, 26, C.card)
+	local yy = y + 10
+	for i, sv in ipairs(list) do
+		local on = i == ci
+		local hover = region("server" .. i, x + 10, yy, w - 20, rowH, function() settings.chosen = i actions.save() message = nil end)
+		if on or hover then box(x + 10, yy, w - 20, rowH, 18, C.sel, on and 1 or 0.55) end
+		box(x + 24, yy + 12, 46, 46, 15, LETTER_COLORS[(i - 1) % #LETTER_COLORS + 1])
+		text(sv.name:sub(1, 1):upper(), x + 24, yy + 21, 19, "x", C.ink, "center", 46)
+		text(fit(sv.name, 16, "b", w - 200), x + 84, yy + 14, 16, "b", C.ink)
+		text(fit(sv.info, 13, "r", w - 200), x + 84, yy + 37, 13, "r", C.ink3)
+		local stw = textWidth(sv.status, 13, "b")
+		circle(x + w - 34 - stw - 10, yy + rowH / 2, 4.5, sv.statusColor)
+		text(sv.status, x + w - 34 - stw, yy + rowH / 2 - 9, 13, "b", sv.statusColor)
+		-- (an added one can be taken off)
+		if sv.saved and hover then
+			local rx = x + w - 34 - stw - 44
+			if region("remove" .. i, rx, yy + 20, 30, 30, function()
+				for j, o in ipairs(settings.servers) do if o == sv.saved then table.remove(settings.servers, j) break end end
+				settings.chosen = 1
+				actions.save()
+			end) then box(rx, yy + 20, 30, 30, 15, C.field) end
+			text("×", rx, yy + 23, 18, "b", C.ink2, "center", 30)
 		end
-		local lx2 = tx + 26
-		if t[1] == "home" then
-			framed(tx + 20, y2 + (h - 22) / 2, 22, 22, 4, C.yellow, active and C.dark or C.tabDark, 2)
-			lx2 = tx + 50
-		end
-		text(label2, lx2, y2 + (h - 17) / 2, 14, active and "b" or "r", active and C.ink or C.white)
-		tx = tx + w + 6
+		yy = yy + rowH + 6
 	end
+	local hover = region("add", x + 10, yy, w - 20, 50, function() sheet = "add" focus = "addname" message = nil end)
+	if hover then box(x + 10, yy, w - 20, 50, 18, C.sel, 0.5) end
+	dashedBox(x + 10, yy, w - 20, 50, 18, C.dash)
+	text("+  Add a server", x + 10, yy + 15, 15, "b", C.rust, "center", w - 20)
+	return h
 end
 
--- the white bar under the tabs: the tab's own pages
-local function subnav(items)
-	box(20, 111, 1240, 36, 6, C.line)
-	box(20, 110, 1240, 36, 6, C.white)
-	local x = 38
-	for i, it in ipairs(items) do
-		if i > 1 then col(C.line) lg.rectangle("fill", x, 120, 1, 16) x = x + 16 end
-		if it.active then
-			x = x + text(it[1], x, 119, 14, "b", C.ink) + 16
-		else
-			x = x + link("sub" .. i, it[1], x, 119, 14, C.link, it[2]) + 16
-		end
-	end
-end
-
-local function cardTitle(t, x, y, w, c)
-	box(x + 6, y + 6, w - 12, 34, 6, c or C.blue)
-	text(t, x + 6, y + 14, 16, "b", C.white, "center", w - 12)
-end
-
--- --- Home: your avatar in the hotel view, what you have ------------------------------------------------
-local function hotelView(x, y, w, h)
-	lg.setScissor(math.floor(x * s + ox), math.floor(y * s + oy), math.floor(w * s), math.floor(h * s))
-	-- the sky, the hills, the street
-	col({ 0x7F, 0xB8, 0xD6 }) lg.rectangle("fill", x, y, w, h)
-	col({ 0x9C, 0xCB, 0xE2 }) lg.rectangle("fill", x, y + h * 0.35, w, h * 0.3)
-	col({ 0x8B, 0xBF, 0x5B }) lg.rectangle("fill", x, y + h - 96, w, 96)
-	col({ 0xA9, 0xA7, 0x9F }) lg.rectangle("fill", x, y + h - 40, w, 40)
-	-- the hotel
-	framed(x + 24, y + h - 240, 140, 200, 0, { 0xF2, 0xA2, 0x3A }, C.dark, 3)
-	for _, wnd in ipairs({ { 44, 172 }, { 94, 172 }, { 44, 122 }, { 94, 122 }, { 44, 72 } }) do
-		framed(x + wnd[1], y + h - wnd[2] - 22, 26, 22, 0, { 0xFC, 0xE5, 0x9A }, C.dark, 2)
-	end
-	framed(x + 600, y + h - 200, 130, 160, 0, { 0xE7, 0xE2, 0xD5 }, C.dark, 3)
-	framed(x + 620, y + h - 180, 34, 28, 0, { 0xBF, 0xE0, 0xF1 }, C.dark, 2)
-	framed(x + 676, y + h - 180, 34, 28, 0, { 0xBF, 0xE0, 0xF1 }, C.dark, 2)
-	-- where you stand
-	col({ 0x5F, 0x5D, 0x57 }) lg.ellipse("fill", x + 250, y + h - 43, 62, 18)
-	col({ 0xE3, 0xE1, 0xDA }) lg.ellipse("fill", x + 250, y + h - 43, 60, 16)
-	local top = y + h - 175
-	if data.avatar then
-		-- (twice its size when it fits, pixel-sharp)
-		local aw, ah = data.avatar:getDimensions()
-		local k = ah * 2 <= 200 and 2 or 1
-		col(C.white)
-		top = y + h - 38 - ah * k
-		lg.draw(data.avatar, math.floor(x + 250 - aw * k / 2), top, 0, k, k)
-	else
-		-- (until the game has drawn you once)
-		col({ 0x5F, 0x5D, 0x57 }, 0.55)
-		lg.circle("fill", x + 250, y + h - 150, 18)
-		box(x + 228, y + h - 130, 44, 80, 10, { 0x5F, 0x5D, 0x57 })
-	end
-	-- the burst behind Enter
-	local cx, cy = x + 540, y + 116
-	local pts = {}
-	for i = 0, 39 do
-		local a = i / 40 * math.pi * 2
-		local r = (i % 2 == 0) and 1 or 0.72
-		pts[#pts + 1] = cx + math.cos(a) * 108 * r
-		pts[#pts + 1] = cy + math.sin(a) * 76 * r
-	end
-	col({ 0xFF, 0xE0, 0x4A })
-	for i = 1, #pts - 2, 2 do
-		lg.polygon("fill", cx, cy, pts[i], pts[i + 1], pts[(i + 1) % #pts + 1], pts[(i + 2) % #pts + 1])
-	end
-	lg.setScissor()
-	-- Enter (a white ring round the green)
-	local hover = region("enter-big", x + 400, y + 88, 280, 56, L.enter)
-	box(x + 398, y + 86, 284, 60, 8, C.greenDark)
-	box(x + 400, y + 88, 280, 56, 7, C.white)
-	box(x + 403, y + 91, 274, 50, 5, hover and { 0x38, 0xAD, 0x26 } or C.green)
-	local label = "Enter " .. hotelName()
-	local tw = textWidth(label, 21, "m")
-	text(label, x + 400 + (280 - tw - 30) / 2, y + 102, 21, "m", C.white)
-	-- (the arrow)
-	col(C.white)
-	local ax, ay = x + 400 + (280 + tw - 30) / 2 + 12, y + 116
-	lg.polygon("fill", ax, ay - 9, ax + 14, ay, ax, ay + 9)
-	-- your name on a plate
-	local nm = settings.playerName or ""
-	local nw = textWidth(nm, 13, "b") + 20
-	box(x + 250 - nw / 2, top - 32, nw, 24, 4, { 0, 0, 0 }, nil)
-	text(nm, x + 250 - nw / 2, top - 27, 13, "b", C.white, "center", nw)
-end
-
-local function daysLeft(untilTime)
-	local t = tonumber(untilTime) or 0
-	local left = t - os.time()
-	if left <= 0 then return 0 end
-	return math.ceil(left / 86400)
-end
-local function commas(n)
-	n = tostring(math.floor(tonumber(n) or 0))
-	local out = n:reverse():gsub("(%d%d%d)", "%1,"):reverse()
-	return (out:gsub("^,", ""))
-end
-
-local function homePage()
-	subnav({ { "Home", active = page == "home", function() page = "home" end }, { "Account", active = page == "account", function() page = "account" end } })
-	if page == "account" then
-		-- who you are here
-		box(20, 156, 760, 300, 8, C.line)
-		box(21, 157, 758, 298, 8, C.white)
-		cardTitle("Account", 20, 156, 760)
-		local y = 210
-		text("Your name in the hotel", 42, y, 13, "r", { 0x4A, 0x4A, 0x46 })
-		local f = input("name", 42, y + 22, 360, 32, "Your name", function(t) L.saveName(t) end)
-		if f.text == "" and focus ~= "name" then f.text = settings.playerName or "" end
-		button("name-save", "Save", 412, y + 22, 90, 32, "blue", function() L.saveName(f.text) end, 13)
-		if message and message.where == "name" then text(message.text, 514, y + 30, 13, "r", message.good and C.green or C.red) end
-		y = y + 80
-		local key = tostring(settings.playerKey or "")
-		if key:match("^7656") then
-			text("You're the Steam account signed in on this computer:", 42, y, 14)
-			text(key, 42, y + 24, 14, "b")
-		else
-			text("Steam wasn't signed in when this started, so you have an id of your own here:", 42, y, 14)
-			text(key, 42, y + 24, 14, "b")
-		end
-		para("On a hotel someone hosts you'll sign in with Steam the first time (that comes with hosting). Your avatar, furni and friends belong to each hotel.", 42, y + 60, 700, 13, "r", C.faint)
-		return
-	end
-	-- the left: the hotel view and you
-	box(20, 156, 760, 548, 8, C.panel)
-	hotelView(20, 156, 760, 250)
-	local rows = {}
-	local w = data.wallet
-	rows[#rows + 1] = { icon = "pursearea_credits_icon", circle = { 0xF6, 0xC3, 0x43 },
-		parts = { { commas(w and w.credits or 0), "b" }, { " credits · " }, { commas(w and w.duckets or 0), "b" }, { " duckets · " }, { commas(w and w.diamonds or 0), "b" }, { " diamonds" } } }
-	local club, vip = daysLeft(w and w.club_until), daysLeft(w and w.vip_until)
-	if vip > 0 then
-		rows[#rows + 1] = { icon = "pursearea_hc_icon", square = { 0xE8, 0xB8, 0x30 }, parts = { { "Habbo Club VIP: " }, { tostring(vip), "b" }, { vip == 1 and " day left" or " days left" } } }
-	elseif club > 0 then
-		rows[#rows + 1] = { icon = "pursearea_hc_icon", square = { 0xE8, 0xB8, 0x30 }, parts = { { "Habbo Club: " }, { tostring(club), "b" }, { club == 1 and " day left" or " days left" } } }
-	else
-		rows[#rows + 1] = { icon = "pursearea_hc_icon", square = { 0xE8, 0xB8, 0x30 }, parts = { { "You're not in Habbo Club (the shop has it)" } } }
-	end
-	rows[#rows + 1] = { square = { 0x7C, 0xC0, 0xE8 }, parts = { { "Friends come with the friends and messenger part" } } }
-	if data.lastRoom then
-		rows[#rows + 1] = { icon = "newnavigator_icon_home_yes", square = { 0xF2, 0x8C, 0x5B }, parts = { { "Your rooms: " }, { tostring(data.myRooms), "b" }, { " · the newest: " }, { data.lastRoom.name, "link", function() L.enter(tonumber(data.lastRoom.id)) end } } }
-	else
-		rows[#rows + 1] = { icon = "newnavigator_icon_home_yes", square = { 0xF2, 0x8C, 0x5B }, parts = { { "You haven't made a room yet (the navigator makes them)" } } }
-	end
-	local seen = data.user and tonumber(data.user.seen)
-	rows[#rows + 1] = { circle = { 0xE5, 0x4B, 0x4B }, parts = { { "Last signed in: " }, { seen and os.date("%d %b %Y, %H:%M", seen) or "never (enter the hotel)", seen and "b" or nil } } }
-	local y = 406
-	for i, r in ipairs(rows) do
-		if i < #rows then col(C.panelLine) lg.rectangle("fill", 20, y + 49, 760, 1) end
-		icon(r.icon or "-", 49, y + 25, function()
-			if r.circle then
-				col({ r.circle[1] * 0.4, r.circle[2] * 0.4, r.circle[3] * 0.4 }) lg.circle("fill", 49, y + 25, 13)
-				col(r.circle) lg.circle("fill", 49, y + 25, 11)
-			else
-				framed(36, y + 12, 26, 26, 4, r.square, { r.square[1] * 0.4, r.square[2] * 0.4, r.square[3] * 0.4 }, 2)
-			end
-		end)
-		local x = 76
-		for j, p in ipairs(r.parts) do
-			if p[2] == "link" then
-				x = x + link("row" .. i .. "_" .. j, p[1], x, y + 16, 14, C.white, p[3])
-			else
-				x = x + text(p[1], x, y + 16, 14, p[2] == "b" and "b" or "r", C.white)
-			end
-		end
-		y = y + 50
-	end
-	-- the right: news and the hotel's picks
-	local rx = 796
-	box(rx, 156, 464, 290, 8, C.line)
-	box(rx + 1, 157, 462, 288, 8, C.white)
-	box(rx + 1, 157, 462, 168, 8, C.navy, "tl tr")
-	text("LATEST NEWS", rx + 16, 173, 12, "r", C.newsLabel)
-	text("Welcome to " .. hotelName(), rx + 16, 193, 22, "b", C.white)
-	para("This is the hotel on your own computer: everything you do is kept here. Hotels to join, and hosting your own, come next.", rx + 16, 228, 260, 13, "r", C.newsText, 19)
-	box(rx + 298, 175, 150, 130, 4, C.navyBox)
-	icon("bottom_bar_logo", rx + 373, 240, function() text("[" .. hotelName() .. "]", rx + 298, 232, 12, "r", C.newsLabel, "center", 150) end)
-	local ny = 336
-	text("The hotel's staff will write the news here", rx + 16, ny, 14, "r", C.ink)
-	text("(from the server panel, when hosting comes)", rx + 16, ny + 20, 12, "r", C.faint)
-	col(C.rowLine) lg.rectangle("fill", rx + 16, ny + 44, 432, 1)
-	text("F1 in the hotel opens the console", rx + 16, ny + 54, 14, "r", C.ink)
-	text("(the game's messages, and commands like bobba_give)", rx + 16, ny + 74, 12, "r", C.faint)
-
-	local py = 456
-	local picks = data.picks or {}
-	local ph = 46 + math.max(1, #picks) * 52 + 6
-	box(rx, py, 464, ph, 8, C.line)
-	box(rx + 1, py + 1, 462, ph - 2, 8, C.white)
-	cardTitle("Hotel picks", rx, py, 464, C.red)
-	if #picks == 0 then
-		text("No rooms yet: be the first to make one", rx + 16, py + 60, 14, "r", C.faint)
-	end
-	for i, r in ipairs(picks) do
-		local yy = py + 46 + (i - 1) * 52
-		local hover = region("pick" .. i, rx + 8, yy, 448, 48, function() L.enter(tonumber(r.id)) end)
-		if hover then box(rx + 8, yy, 448, 48, 6, C.rowAlt) end
-		framed(rx + 16, yy + 4, 40, 40, 6, { 0xCD, 0xE5, 0xF2 }, { 0x9C, 0xC3, 0xD8 }, 1)
-		icon("newnavigator_default_room", rx + 36, yy + 24, nil, 36)
-		text(r.name or "?", rx + 68, yy + 6, 14, "b", hover and C.orange or C.ink)
-		text("by " .. (r.owner_name or "?"), rx + 68, yy + 26, 12, "r", C.faint)
-	end
-end
-
--- --- My hotels ------------------------------------------------------------------------------------------
-local function hotelsPage()
-	subnav({ { "Hotels", active = true } })
-	box(20, 156, 760, 230, 8, C.line)
-	box(21, 157, 758, 228, 8, C.white)
-	cardTitle("My hotels", 20, 156, 760)
-	para("The hotels you've played. Each keeps its own name and logo, and its own account: your avatar, furni and friends are separate in each.", 42, 206, 716, 14, "r", C.ink, 21)
-	local y = 254
-	col(C.rowLine) lg.rectangle("fill", 21, y, 758, 1)
-	box(21, y + 1, 758, 62, 0, C.rowAlt)
-	local name = hotelName()
-	for _, o in ipairs({ { 2, 2 }, { -1, -1 }, { 1, -1 }, { -1, 1 } }) do text(name, 42 + o[1], y + 18 + o[2], 22, "logo", C.dark) end
-	text(name, 42, y + 18, 22, "logo", C.yellow)
-	text("My hotel", 214, y + 13, 14, "b")
-	text("· on this computer", 214 + textWidth("My hotel ", 14, "b"), y + 13, 14, "r", C.faint)
-	local seen = data.user and tonumber(data.user.seen)
-	text((seen and ("Last played " .. os.date("%d %b %Y", seen)) or "Not played yet") .. " · as " .. (settings.playerName or ""), 214, y + 35, 12, "r", C.grey)
-	button("play-local", "Play", 680, y + 14, 80, 34, "green", L.enter, 15)
-	y = y + 63
-	col(C.rowLine) lg.rectangle("fill", 21, y, 758, 1)
-	framed(42, y + 14, 150, 34, 4, { 0xED, 0xED, 0xE8 }, C.input, 1)
-	text("Hotels you join", 42, y + 23, 12, "r", C.faint, "center", 150)
-	text("Hotels someone hosts", 214, y + 13, 14, "b")
-	text("Joining them comes with the custom server", 214, y + 35, 12, "r", C.grey)
-	tag("Coming later", 666, y + 20)
-
-	local rx = 796
-	box(rx, 156, 464, 170, 8, C.line)
-	box(rx + 1, 157, 462, 168, 8, C.white)
-	cardTitle("Add a hotel", rx, 156, 464)
-	text("The hotel's address", rx + 16, 210, 13, "r", { 0x4A, 0x4A, 0x46 })
-	input("address", rx + 16, 232, 350, 32, "address:port")
-	button("add", "Add", rx + 374, 232, 74, 32, "grey", function() message = { text = "Joining other hotels comes with the custom server", where = "add" } end, 13)
-	if message and message.where == "add" then text(message.text, rx + 16, 274, 12, "r", C.red)
-	else text("You sign in with Steam the first time; after that it remembers you.", rx + 16, 274, 12, "r", C.grey) end
-	box(rx, 336, 464, 150, 8, C.line)
-	box(rx + 1, 337, 462, 148, 8, C.white)
-	cardTitle("Host a hotel", rx, 336, 464, C.red)
-	para("Open your own hotel to friends: give it a name and a logo, and share the address you get (through playit.gg, no router setup).", rx + 16, 386, 432, 13, "r", C.ink, 19)
-	tag("Coming later", rx + 16, 448)
-end
-
--- --- Settings ----------------------------------------------------------------------------------------------
-local function settingsPage()
-	subnav({ { "Settings", active = true } })
-	box(20, 156, 1240, 320, 8, C.line)
-	box(21, 157, 1238, 318, 8, C.white)
-	cardTitle("Settings", 20, 156, 1240)
-	local y = 210
-	text("Garry's Mod folder", 42, y, 14, "b")
-	text("The hotel's files (the gamemode, its addons, the Habbo files it downloaded) come from here.", 42, y + 22, 13, "r", C.grey)
-	text(settings.garrysmod or "(not set)", 42, y + 46, 14, "r", C.ink)
-	link("set-folder", "Change", 42 + textWidth(settings.garrysmod or "(not set)", 14) + 14, y + 46, 14, C.orange, function() page = "setup" end)
-	y = y + 90
-	text("Window", 42, y, 14, "b")
-	local Win = require("bobba.window")
-	local full = Win.full()
-	button("fullscreen", full and "Leave full screen" or "Full screen", 42, y + 24, 160, 32, "blue", function()
+local function leftPanel(x0, W, H)
+	gradient(x0, 0, W, H, { { 0, C.top }, { 1, C.bottom } })
+	local cx = x0 + W / 2
+	-- settings and full screen
+	local hv = region("menu", x0 + 16, 14, 40, 40, function() sheet = sheet == "settings" and nil or "settings" message = nil end)
+	box(x0 + 16, 14, 40, 40, 12, C.ink, hv and 0.28 or 0.18)
+	col(C.ink)
+	for i = 0, 2 do lg.rectangle("fill", x0 + 26, 25 + i * 7, 20, 2.4) end
+	local hf = region("full", x0 + 64, 14, 40, 40, function()
+		local Win = require("bobba.window")
 		Win.toggle()
 		settings.fullscreen = Win.full()
 		actions.save()
-	end, 13)
-	text("(F11 does the same, here and in the hotel)", 214, y + 32, 13, "r", C.grey)
-	y = y + 80
-	text("This hotel's files", 42, y, 14, "b")
-	text(data.folder or "", 42, y + 22, 13, "r", C.grey)
-	link("open-folder", "Open the folder", 42, y + 44, 14, C.link, function() FS.mkdirs(data.folder) love.system.openURL("file:///" .. data.folder) end)
+	end)
+	box(x0 + 64, 14, 40, 40, 12, C.ink, hf and 0.28 or 0.18)
+	col(C.ink)
+	lg.setLineWidth(2.2)
+	lg.line(x0 + 78, 26, x0 + 92, 26, x0 + 92, 40) lg.line(x0 + 76, 28, x0 + 76, 42, x0 + 90, 42)
+	lg.setLineWidth(1)
+	if page == "setup" then
+		logo(cx, 100, 76)
+		L.setupCard(cx, 230)
+		text(VERSION, x0 + 16, H - 28, 12, "b", C.ink2)
+		return
+	end
+	local top = math.max(60, (H - 640) / 2)
+	logo(cx, top + 10, 76)
+	text("Pick a hotel to check in", cx - 230, top + 104, 15, "b", C.ink2, "center", 460)
+	local lh = serverList(cx, top + 140)
+	local sv = chosen()
+	local by = top + 140 + lh + 22
+	button("checkin", "Check in to " .. fit(sv.name, 18, "x", 300), cx - 230, by, 460, 58, "dark", function() L.enter() end, 18)
+	if message and message.where == "checkin" then
+		para(message.text, cx - 230, by + 70, 460, 13, "b", message.good and C.green or C.ink2, 18)
+	else
+		text("Your own hotel runs right here, like GMod's singleplayer.", cx - 230, by + 72, 13, "b", C.ink2, "center", 460)
+	end
+	text(VERSION, x0 + 16, H - 28, 12, "b", C.ink2)
+	if sheet then L.sheetCard(cx, top + 120) end
 end
 
--- --- First start: finding Garry's Mod ----------------------------------------------------------------------
+-- --- the right: the chosen hotel ------------------------------------------------------------------------------
+local function rightPanel(x0, W, H)
+	gradient(x0, 0, W, H, { { 0, C.sky1 }, { 0.7, C.sky2 }, { 1, C.sky3 } })
+	-- the skyline (from the bottom; the sun behind it)
+	local bx = x0 + W / 2 - 320
+	local base = H
+	circle(bx + 470, base - 190, 120, C.sun, 0.9)
+	local bld = { { 90, 280, 90, C.b1 }, { 190, 340, 120, C.b2 }, { 330, 240, 80, C.b1 }, { 420, 180, 150, C.b2 } }
+	for _, b in ipairs(bld) do box(bx + b[1], base - b[2], b[3], b[2] + 10, 6, b[4]) end
+	col(C.win)
+	for _, wnd in ipairs({ { 110, 250 }, { 146, 250 }, { 110, 210 }, { 212, 310 }, { 246, 310 }, { 280, 270 }, { 212, 230 }, { 246, 190 }, { 350, 210 }, { 380, 170 }, { 444, 150 }, { 480, 150 }, { 516, 110 } }) do
+		lg.rectangle("fill", bx + wnd[1], base - wnd[2], 15, 19, 2, 2)
+	end
+	local sv = chosen()
+	local x = x0 + 56
+	local y = math.max(70, (H - 640) / 2 + 30)
+	local pill = sv.local_ and "On this computer" or "Somewhere else"
+	local pw = textWidth(pill, 13, "b") + 40
+	box(x, y, pw, 30, 14, C.cream, 0.16)
+	circle(x + 16, y + 15, 4.5, sv.local_ and C.mint or C.dash)
+	text(pill, x + 28, y + 7, 13, "b", C.cream)
+	y = y + 50
+	local nameH = para(sv.name, x, y, W - 112, 56, "logo", C.cream, 60, 2)
+	y = y + nameH + 12
+	local desc
+	if sv.local_ then
+		desc = data.description or ("Your own hotel. " .. (data.rooms or 0) .. " rooms so far, and everyone who's checked in keeps their rooms, furni and friends here.")
+	else
+		desc = "Hotels on other computers open when the hotel server comes: then you'll check in here the same way."
+	end
+	y = y + para(desc, x, y, math.min(470, W - 112), 17, "r", rgb("F6DCCB"), 26, 5) + 22
+	local tags = sv.local_ and { packName(), "English", "as " .. (settings.playerName or "you") } or { sv.address or "", "Coming later" }
+	local tx = x
+	for _, t in ipairs(tags) do
+		local tw = textWidth(t, 13, "b") + 24
+		if tx + tw > x0 + W - 40 then tx = x y = y + 40 end
+		box(tx, y, tw, 32, 12, C.cream, 0.16)
+		text(t, tx + 12, y + 7, 13, "b", C.cream)
+		tx = tx + tw + 8
+	end
+end
+
+-- --- the sheets: settings, adding a server --------------------------------------------------------------
+function L.sheetCard(cx, y)
+	local w = 460
+	local x = cx - w / 2
+	if sheet == "add" then
+		local h = 300
+		region("sheet", x, y, w, h, function() focus = nil end)
+		box(x + 4, y + 14, w, h, 26, C.rust, 0.2)
+		box(x, y, w, h, 26, C.card)
+		text("Add a server", x + 26, y + 24, 20, "x", C.ink)
+		text("Its name (for you)", x + 26, y + 66, 13, "b", C.ink3)
+		local nf = input("addname", x + 26, y + 86, w - 52, 46, "e.g. Sunset Hotel")
+		text("Its address", x + 26, y + 144, 13, "b", C.ink3)
+		local af = input("addaddress", x + 26, y + 164, w - 52, 46, "address:port", function() L.addServer() end)
+		button("addok", "Add", x + w - 26 - 130, y + 232, 130, 46, "dark", function() L.addServer() end, 16)
+		button("addcancel", "Cancel", x + 26, y + 232, 130, 46, "outline", function() sheet = nil message = nil focus = nil end, 15)
+		if message and message.where == "add" then text(message.text, x + 26, y + h + 14, 13, "b", C.ink2) end
+		return
+	end
+	-- settings
+	local h = 446
+	region("sheet", x, y, w, h, function() focus = nil end)
+	box(x + 4, y + 14, w, h, 26, C.rust, 0.2)
+	box(x, y, w, h, 26, C.card)
+	text("Settings", x + 26, y + 24, 20, "x", C.ink)
+	local yy = y + 66
+	text("Your name", x + 26, yy, 13, "b", C.ink3)
+	input("name", x + 26, yy + 20, w - 52 - 100, 46, "Your name", function(t) L.saveName(t) end, settings.playerName or "")
+	button("savename", "Save", x + w - 26 - 90, yy + 20, 90, 46, "dark", function() L.saveName(field("name").text) end, 15)
+	if message and message.where == "name" then text(message.text, x + 26, yy + 72, 12, "b", message.good and C.green or C.red) end
+	yy = yy + 100
+	text("Garry's Mod folder", x + 26, yy, 13, "b", C.ink3)
+	text(fit(settings.garrysmod or "(not set)", 13, "r", w - 52 - 110), x + 26, yy + 22, 13, "r", C.ink)
+	button("folder", "Change", x + w - 26 - 100, yy + 12, 100, 40, "light", function() page = "setup" sheet = nil message = nil end, 14)
+	yy = yy + 66
+	text("Window", x + 26, yy, 13, "b", C.ink3)
+	local Win = require("bobba.window")
+	button("fullscreen", Win.full() and "Leave full screen" or "Full screen (F11)", x + 26, yy + 20, w - 52, 44, "light", function()
+		Win.toggle()
+		settings.fullscreen = Win.full()
+		actions.save()
+	end, 14)
+	yy = yy + 82
+	button("openfolder", "Open this hotel's files", x + 26, yy, w - 52, 44, "light", function()
+		if data.folder then FS.mkdirs(data.folder) love.system.openURL("file:///" .. data.folder) end
+	end, 14)
+	button("closesheet", "Done", x + w / 2 - 70, y + h - 64, 140, 44, "dark", function() sheet = nil message = nil focus = nil end, 15)
+end
+
+function L.addServer()
+	local name = (field("addname").text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	local address = (field("addaddress").text or ""):gsub("%s", "")
+	if address == "" then message = { text = "It needs an address (like play.example.com:27015).", where = "add" } return end
+	settings.servers = settings.servers or {}
+	settings.servers[#settings.servers + 1] = { name = name, address = address }
+	settings.chosen = #settings.servers + 1
+	actions.save()
+	fields.addname, fields.addaddress = nil, nil
+	sheet, focus = nil, nil
+	message = { text = "Added. Hotels on other computers open when the hotel server comes.", where = "checkin" }
+end
+
+-- --- first start: finding Garry's Mod ----------------------------------------------------------------------
 function L.useFolder(p)
 	p = FS.clean(p or "")
 	local gm = ST.isGarrysmod(p)
 	if gm then
 		settings.garrysmod = gm
 		actions.save()
-		images = {}
 		message = nil
-		page = "home"
+		page = "servers"
 		L.refresh()
 		return true
 	end
@@ -586,33 +451,34 @@ function L.useFolder(p)
 	return false
 end
 
-local function setupPage()
-	local ch = candidate and 400 or 316
-	box(20, 156, 1240, ch, 8, C.line)
-	box(21, 157, 1238, ch - 2, 8, C.white)
-	cardTitle("Where's Garry's Mod?", 20, 156, 1240)
-	para("Bobba Hotel plays from your Garry's Mod: its gamemode and addons, and the Habbo files it already downloaded. Show it the garrysmod folder once and it remembers.", 42, 208, 1196, 14, "r", C.ink, 21)
-	local y = 262
+function L.setupCard(cx, y)
+	local w = 520
+	local x = cx - w / 2
+	local h = candidate and 400 or 320
+	box(x + 4, y + 14, w, h, 26, C.rust, 0.2)
+	box(x, y, w, h, 26, C.card)
+	text("Where's Garry's Mod?", x + 28, y + 26, 22, "x", C.ink)
+	local yy = y + 64 + para("Bobba plays from your Garry's Mod: its gamemode, addons and the files it already downloaded. Show it the garrysmod folder once and it remembers.", x + 28, y + 64, w - 56, 14, "r", C.ink3, 21)
+	yy = yy + 14
 	if candidate then
-		box(42, y, 1196, 64, 6, C.rowAlt)
-		text("Found on this computer", 60, y + 12, 13, "r", C.grey)
-		text(candidate.path, 60, y + 32, 14, "b")
-		if candidate.ok then
-			button("use-found", "Use this folder", 1060, y + 15, 160, 34, "green", function() L.useFolder(candidate.path) end, 14)
-		else
-			text("Bobba Hotel isn't in it yet", 980, y + 24, 13, "r", C.red)
-		end
-		y = y + 84
+		box(x + 20, yy, w - 40, 70, 18, C.sel)
+		text("Found on this computer", x + 36, yy + 12, 12, "b", C.ink3)
+		text(fit(candidate.path, 13, "b", w - 200), x + 36, yy + 32, 13, "b", C.ink)
+		if candidate.ok then button("use-found", "Use it", x + w - 20 - 110, yy + 15, 96, 40, "dark", function() L.useFolder(candidate.path) end, 14)
+		else text("Bobba isn't in it yet", x + w - 180, yy + 26, 12, "b", C.red) end
+		yy = yy + 86
 	end
-	text("Or type where it is", 42, y, 13, "r", { 0x4A, 0x4A, 0x46 })
-	local f = input("folder", 42, y + 22, 1000, 34, "e.g. E:\\SteamLibrary\\steamapps\\common\\GarrysMod\\garrysmod", function(t) L.useFolder(t) end)
-	button("use-typed", "Use", 1052, y + 22, 90, 34, "blue", function() L.useFolder(f.text) end, 14)
-	if message and message.where == "folder" then text(message.text, 42, y + 66, 13, "r", C.red) end
-	text("You can also drag the garrysmod folder onto this window.", 42, y + 92, 13, "r", C.grey)
-	if settings.garrysmod then link("back", "« Back", 42, y + 126, 14, C.link, function() page = "home" message = nil end) end
+	text("Or type where it is", x + 28, yy, 13, "b", C.ink3)
+	local f = input("folder", x + 28, yy + 20, w - 56 - 90, 46, "E:\\SteamLibrary\\steamapps\\common\\GarrysMod\\garrysmod", function(t) L.useFolder(t) end)
+	button("use-typed", "Use", x + w - 28 - 80, yy + 20, 80, 46, "dark", function() L.useFolder(f.text) end, 15)
+	if message and message.where == "folder" then para(message.text, x + 28, yy + 74, w - 56, 12, "b", C.red, 17)
+	else text("You can also drag the garrysmod folder onto this window.", x + 28, yy + 76, 12, "b", C.ink3) end
+	if settings.garrysmod then
+		button("back", "Back", x + 28, y + h - 58, 100, 40, "outline", function() page = "servers" message = nil end, 14)
+	end
 end
 
--- --- Love's events --------------------------------------------------------------------------------------------
+-- --- Love's events -------------------------------------------------------------------------------------------
 function L.start(st, acts)
 	settings, actions = st, acts
 	if not (settings.garrysmod and ST.isGarrysmod(settings.garrysmod)) then
@@ -623,8 +489,14 @@ function L.start(st, acts)
 	L.refresh()
 end
 
+-- checking in: your own hotel plays here; others need the hotel server (later)
 function L.enter(roomId)
 	if not (settings.garrysmod and ST.isGarrysmod(settings.garrysmod)) then page = "setup" return end
+	local sv = chosen()
+	if not sv.local_ then
+		message = { text = "Hotels on other computers open when the hotel server comes. Your own hotel works now.", where = "checkin" }
+		return
+	end
 	actions.play(roomId)
 end
 
@@ -639,39 +511,34 @@ end
 
 function L.update(dt) end
 
+L.ox, L.oy = 0, 0
 function L.draw()
 	local W, H = lg.getDimensions()
-	s = math.min(W / 1280, H / 720)
+	s = math.min(W / 1280, H / 800)
 	if s > 1 then s = math.floor(s * 4) / 4 end
-	ox = math.floor((W - 1280 * s) / 2)
-	oy = 0
+	L.ox, L.oy = 0, 0
 	regions = {}
-	lg.clear(C.page[1] / 255, C.page[2] / 255, C.page[3] / 255)
-	col(C.header)
-	lg.rectangle("fill", 0, 0, W, 104 * s)
+	lg.clear(0, 0, 0)
 	lg.push()
-	lg.translate(ox, oy)
 	lg.scale(s, s)
-	header()
-	if page == "setup" then setupPage()
-	elseif page == "hotels" then hotelsPage()
-	elseif page == "settings" then settingsPage()
-	else homePage() end
+	local PW, PH = W / s, H / s
+	local half = math.floor(PW / 2)
+	rightPanel(half, PW - half, PH)
+	leftPanel(0, half, PH)
 	lg.pop()
-	-- what's under the mouse (for the next frame's hover look)
 	local mx, my = love.mouse.getPosition()
-	mx, my = (mx - ox) / s, (my - oy) / s
+	mx, my = mx / s, my / s
 	hoverId = nil
 	for i = #regions, 1, -1 do
 		local r = regions[i]
 		if mx >= r.x and my >= r.y and mx < r.x + r.w and my < r.y + r.h then hoverId = r.id break end
 	end
-	love.mouse.setCursor(hoverId and love.mouse.getSystemCursor(hoverId:sub(1, 6) == "input:" and "ibeam" or "hand") or nil)
+	love.mouse.setCursor(hoverId and love.mouse.getSystemCursor(hoverId:sub(1, 6) == "input:" and "ibeam" or (hoverId == "sheet" and "arrow" or "hand")) or nil)
 end
 
 function L.mousepressed(x, y, b)
 	if b ~= 1 then return end
-	local mx, my = (x - ox) / s, (y - oy) / s
+	local mx, my = x / s, y / s
 	for i = #regions, 1, -1 do
 		local r = regions[i]
 		if mx >= r.x and my >= r.y and mx < r.x + r.w and my < r.y + r.h then
@@ -681,6 +548,8 @@ function L.mousepressed(x, y, b)
 		end
 	end
 	focus = nil
+	-- (a click outside a sheet closes it)
+	if sheet then sheet = nil message = nil end
 end
 
 function L.textinput(t)
@@ -698,7 +567,8 @@ function L.keypressed(key)
 		return
 	end
 	if not focus then
-		if key == "return" and page ~= "setup" then L.enter() end
+		if key == "escape" and sheet then sheet = nil return end
+		if (key == "return" or key == "kpenter") and page ~= "setup" and not sheet then L.enter() end
 		return
 	end
 	local f = field(focus)
@@ -706,6 +576,8 @@ function L.keypressed(key)
 		f.text = f.text:gsub("[%z\1-\127\194-\244][\128-\191]*$", "")
 	elseif key == "return" or key == "kpenter" then
 		if f.onEnter then f.onEnter(f.text) end
+	elseif key == "tab" and sheet == "add" then
+		focus = focus == "addname" and "addaddress" or "addname"
 	elseif key == "escape" then
 		focus = nil
 	elseif key == "v" and love.keyboard.isDown("lctrl", "rctrl") then

@@ -250,12 +250,13 @@ local function spaced(t, weight)
 	if (weight == true or (weight or 500) >= 600) and t:find(" ", 1, true) then t = t:gsub(" ", " \226\128\138") end
 	return t
 end
+-- (d.fontFn: another font for this drawing, e.g. a pack's website: fn(size, weight, s) -> font name)
 function PD:text(t, size, x, y, c, ax, ay, weight)
-	draw.SimpleText(spaced(t, weight), DV.font(size, weight, self.s), self:X(x), self:Y(y), self:col(c), ax or TEXT_ALIGN_LEFT, ay or TEXT_ALIGN_TOP)
+	draw.SimpleText(self.fontFn and tostring(t or "") or spaced(t, weight), (self.fontFn or DV.font)(size, weight, self.s), self:X(x), self:Y(y), self:col(c), ax or TEXT_ALIGN_LEFT, ay or TEXT_ALIGN_TOP)
 end
 function PD:textWidth(t, size, weight)
-	surface.SetFont(DV.font(size, weight, self.s))
-	local w = surface.GetTextSize(spaced(t, weight))
+	surface.SetFont((self.fontFn or DV.font)(size, weight, self.s))
+	local w = surface.GetTextSize(self.fontFn and tostring(t or "") or spaced(t, weight))
 	return w / self.s
 end
 PD.fit = U.D.fit
@@ -767,6 +768,9 @@ local function makeSurface(parent, draw)
 	end
 	return surf
 end
+
+DV.makeSurface = makeSurface
+DV.newDraw = newDraw
 
 -- --- apps, widgets, tiles, notifications ------------------------------------------------------------
 function DV.app(def)
