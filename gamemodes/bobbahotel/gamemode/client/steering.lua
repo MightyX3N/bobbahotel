@@ -83,6 +83,13 @@ S.typing = S.typing or false -- (setting 1: Enter pressed on an empty box, lette
 S.chatOpen = S.chatOpen or false -- (setting 2: the chat box has the keyboard)
 S.cycle = S.cycle or 0
 S.lastUsed = S.lastUsed or 0
+-- what was used last: "keys", "pad" or "mouse" (the list and the highlight follow it: the keys' or the
+-- controller's names in the hint, and nothing after a mouse click)
+S.device = S.device or "mouse"
+function S.setDevice(d)
+	S.device = d
+	if d ~= "mouse" then S.lastUsed = SysTime() end
+end
 
 local ARROWS = { [KEY_UP] = "up", [KEY_DOWN] = "down", [KEY_LEFT] = "left", [KEY_RIGHT] = "right" }
 local WASD = { [KEY_W] = "up", [KEY_S] = "down", [KEY_A] = "left", [KEY_D] = "right" }
@@ -125,8 +132,8 @@ function S.keyTyped(entry, code)
 	if dir then
 		S.held[code] = dir
 		S.heldAt = SysTime()
-		if WASD[code] then entry.steerDrop = true end
-		S.lastUsed = SysTime()
+		if WASD[code] then entry.steerDrop = SysTime() + 0.15 end
+		S.setDevice("keys")
 		return true
 	end
 	if empty and not S.typing and code == S.key("use") then
@@ -196,7 +203,7 @@ end
 function S.setPad(x, y)
 	if not x then S.pad = nil return end
 	S.pad = { x, y }
-	if math.abs(x) > 0.4 or math.abs(y) > 0.4 then S.lastUsed = SysTime() end
+	if math.abs(x) > 0.4 or math.abs(y) > 0.4 then S.setDevice("pad") end
 end
 
 -- --- the direction now ------------------------------------------------------------------------------
@@ -318,11 +325,14 @@ function S.target()
 	return list[(S.cycle % #list) + 1]
 end
 
-function S.next() S.cycle = S.cycle + 1 S.lastUsed = SysTime() end
+function S.next(device)
+	S.cycle = S.cycle + 1
+	S.setDevice(device or "keys")
+end
 
-function S.interact()
+function S.interact(device)
 	if V.mode ~= "room" then return end
-	S.lastUsed = SysTime()
+	S.setDevice(device or "keys")
 	local t = S.target()
 	if not t then return end
 	if t.kind == "unit" then
@@ -396,13 +406,26 @@ hook.Add("Think", "bobba.steering", function()
 	if dx ~= sent[1] or dy ~= sent[2] then
 		sent = { dx, dy }
 		if R.current then P.send("room.steer", { dx = dx, dy = dy }) end
-		if dx ~= 0 or dy ~= 0 then S.lastUsed = SysTime() S.cycle = 0 end
+		if dx ~= 0 or dy ~= 0 then
+			-- (by the stick, or by keys)
+			local stick = S.pad and (math.abs(S.pad[1]) > 0.4 or math.abs(S.pad[2]) > 0.4)
+			if not stick then S.setDevice("keys") end
+			S.cycle = 0
+		end
 	end
 end)
 
 -- the highlight: shown while steering is in use (or a controller is there), around what the
 -- interact button would use
 S.HIGHLIGHT_SECONDS = 10
+-- shown while a controller is what's used, or for a while after keys; never after a mouse click
+function S.showing()
+	if S.device == "mouse" then return false end
+	if S.device == "pad" and S.padConnected then return true end
+	return SysTime() - (S.lastUsed or 0) < S.HIGHLIGHT_SECONDS
+end
+-- (clicking the room: the mouse is what's used)
+BOBBA.events.on("roomClick", "bobba.steering.mouse", function() S.setDevice("mouse") end)
 local function tileOutline(x, y, z, c)
 	local pts = {}
 	for _, k in ipairs({ { -0.5, -0.5 }, { 0.5, -0.5 }, { 0.5, 0.5 }, { -0.5, 0.5 } }) do
@@ -417,7 +440,7 @@ local function tileOutline(x, y, z, c)
 	end
 end
 function V.drawOverlay()
-	if not (S.padConnected or SysTime() - (S.lastUsed or 0) < S.HIGHLIGHT_SECONDS) then return end
+	if not S.showing() then return end
 	local t = S.target()
 	if not t then return end
 	local a = 150 + 90 * math.sin(SysTime() * 5)
@@ -448,7 +471,7 @@ local function nameOf(t)
 end
 S.LIST_MAX = 6
 function V.drawOverlayTop()
-	if not (S.padConnected or SysTime() - (S.lastUsed or 0) < S.HIGHLIGHT_SECONDS) then return end
+	if not S.showing() then return end
 	local list = S.candidates()
 	if #list < 2 then return end
 	local u = R.units and R.you and R.units[R.you]
@@ -460,7 +483,7 @@ function V.drawOverlayTop()
 	local sc = U.scale()
 	local font, bold = U.font(12.6), U.font(12.6, true)
 	local cur = (S.cycle % #list) + 1
-	local pad = S.padConnected and (SysTime() - (S.padUsed or 0) < 30)
+	local pad = S.device == "pad"
 	local useK = pad and S.padName(S.padButton("use")) or S.keyName(S.key("use"))
 	local nextK = pad and S.padName(S.padButton("next")) or S.keyName(S.key("next"))
 	local hint = string.format("%s: %s   %s: %s", useK, U.text("bobba.controls.short.use", "use"), nextK, U.text("bobba.controls.short.next", "next"))

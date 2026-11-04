@@ -124,7 +124,6 @@ function Pad.update(dt, G)
 	local dx = (js:isGamepadDown("dpright") and 1 or 0) - (js:isGamepadDown("dpleft") and 1 or 0)
 	local dy = (js:isGamepadDown("dpdown") and 1 or 0) - (js:isGamepadDown("dpup") and 1 or 0)
 	if dx ~= 0 or dy ~= 0 then lx, ly = dx, dy end
-	if S and (lx ~= 0 or ly ~= 0) then S.padUsed = love.timer.getTime() end
 	-- (with a wheel open the stick chooses in it instead)
 	if wheel then
 		if lx * lx + ly * ly > 0.5 * 0.5 then
@@ -145,17 +144,19 @@ function Pad.update(dt, G)
 		local ny = math.max(0, math.min(love.graphics.getHeight() - 1, my + ry * math.abs(ry) * sp))
 		love.mouse.setPosition(nx, ny)
 		G.mouseMoved(nx, ny)
+		if S then S.setDevice("pad") end
 	end
 	local mx, my = love.mouse.getPosition()
 	-- the buttons (Settings > Keys and controller)
 	local cDown, cUp = pressed(btn("click"))
-	if cDown then G.mousePressed(mx, my, 1) clickHeld = true end
+	-- (a click from the controller is still the controller being used)
+	if cDown then G.mousePressed(mx, my, 1) clickHeld = true if S then S.setDevice("pad") end end
 	if cUp and clickHeld then G.mouseReleased(mx, my, 1) clickHeld = false end
 	local rDown, rUp = pressed(btn("rightclick"))
-	if rDown then G.mousePressed(mx, my, 2) end
+	if rDown then G.mousePressed(mx, my, 2) if S then S.setDevice("pad") end end
 	if rUp then G.mouseReleased(mx, my, 2) end
-	if pressed(btn("use")) and S and not wheel then S.interact() S.padUsed = love.timer.getTime() end
-	if pressed(btn("next")) and S then S.next() S.padUsed = love.timer.getTime() end
+	if pressed(btn("use")) and S and not wheel then S.interact("pad") end
+	if pressed(btn("next")) and S then S.next("pad") end
 	if pressed(btn("rotate")) then
 		local R = BOBBA and BOBBA.room
 		if R and R.pressR then pcall(R.pressR) end
