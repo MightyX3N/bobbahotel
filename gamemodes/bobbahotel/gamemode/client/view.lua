@@ -415,6 +415,8 @@ function PANEL:Paint(w, h)
 	-- them before the floor hid their feet under the room's floor halfway through the door)
 	if V.drawUnits and V.drawUnits("behind") then drawPolys(V.doorWallPolys) end
 	drawCursor()
+	-- (what the interact button would use: steering.lua)
+	if V.drawOverlay then V.drawOverlay() end
 	if V.drawUnits then V.drawUnits("front") end
 	if V.label then
 		draw.SimpleText(V.label, "BobbaViewLabel", 12, 12, color_white)

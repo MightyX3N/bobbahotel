@@ -320,10 +320,102 @@ function live.walk(player, x, y)
 	u.goal = { x = x, y = y }
 	u.path = path
 	u.useOnArrive = nil
+	u.steer = nil
+	return true
+end
+
+-- The interact button (E / a controller's A): the furni next to you does what a double-click does,
+-- and a seat or bed is sat or lain on. Works whatever the room's movement setting is. true, or false
+-- and why.
+function live.interact(player, id, tag)
+	local u = live.byPlayer[player]
+	if not u or u.teleporting or u.kicked then return false end
+	local r = u.room
+	local it = r.items[tonumber(id) or -1]
+	if not it or not it.def then return false, "no such furni" end
+	local I = BOBBA.items
+	local on, near = false, false
+	if it.def.wall then
+		near = math.abs(it.x - u.x) <= 2 and math.abs(it.y - u.y) <= 2
+	else
+		for _, t in ipairs(I.footprint(it.def, it.x, it.y, it.dir)) do
+			if t.x == u.x and t.y == u.y then on = true end
+			if math.abs(t.x - u.x) <= 1 and math.abs(t.y - u.y) <= 1 then near = true end
+		end
+	end
+	if not near then return false, "too far away" end
+	if it.def.present then return BOBBA.gifts.open(r, player, it.id) end
+	if not it.def.wall and (it.def.sit or it.def.lay or it.def.walk) then
+		if on then return true end
+		-- onto its tile closest to you
+		local best, bestD
+		for _, t in ipairs(I.footprint(it.def, it.x, it.y, it.dir)) do
+			local d = (t.x - u.x) ^ 2 + (t.y - u.y) ^ 2
+			if not bestD or d < bestD then best, bestD = t, d end
+		end
+		if live.walk(player, best.x, best.y) then return true end
+		return false, "you can't get onto it"
+	end
+	return I.use(r, player, it.id, tag)
+end
+
+-- --- steering (WASD, the arrow keys, a stick): one tile at a time while a direction is held -----------
+-- The room's movement setting (rooms.movement): 0 both, 1 clicking only, 2 steering only
+live.MOVE_BOTH, live.MOVE_CLICK, live.MOVE_STEER = 0, 1, 2
+function live.movement(r)
+	return math.floor(tonumber(r.info.movement) or 0)
+end
+
+-- the next tile in the held direction (sliding along a wall when a diagonal is blocked): a path of one
+local function steerPath(r, u)
+	local dx, dy = u.steer[1], u.steer[2]
+	local tries = { { dx, dy } }
+	if dx ~= 0 and dy ~= 0 then tries[2] = { dx, 0 } tries[3] = { 0, dy } end
+	for _, d in ipairs(tries) do
+		local tx, ty = u.x + d[1], u.y + d[2]
+		local path = PF.find(r.grid, u.x, u.y, tx, ty)
+		if path and #path == 1 and path[1].x == tx and path[1].y == ty then
+			u.goal = { x = tx, y = ty }
+			return path
+		end
+	end
+end
+
+-- a direction to keep walking in (dx, dy each -1, 0 or 1; 0, 0 stops after the step under way)
+function live.steer(player, dx, dy)
+	local u = live.byPlayer[player]
+	if not u or u.teleporting or u.kicked then return false end
+	dx, dy = math.floor(tonumber(dx) or 0), math.floor(tonumber(dy) or 0)
+	if dx < -1 or dx > 1 or dy < -1 or dy > 1 then return false end
+	if dx == 0 and dy == 0 then u.steer = nil return true end
+	if live.movement(u.room) == live.MOVE_CLICK then return false end
+	local was = u.steer
+	u.steer = { dx, dy }
+	-- it replaces a walk that was clicked (the step under way is already taken), and a new
+	-- direction replaces the next tile of the old one; the next step goes there, so even a tap
+	-- (pressed and let go before the next step) is one step
+	if not was or u.goal == nil or #(u.path or {}) ~= 1 or was[1] ~= dx or was[2] ~= dy then
+		u.path, u.goal = nil, nil
+		u.path = steerPath(u.room, u)
+	end
+	u.useOnArrive = nil
 	return true
 end
 
 local function step(r, u, moved)
+	-- steering: the next tile when the last step is done; nowhere to go, they turn that way
+	if u.steer and not (u.path and #u.path > 0) and not u.teleporting then
+		local path = steerPath(r, u)
+		if path then
+			u.path = path
+		elseif not u.posture then
+			local dir = DIRS[u.steer[1] .. "," .. u.steer[2]]
+			if dir and dir ~= u.dir then
+				u.dir = dir
+				moved[#moved + 1] = snapshot(u)
+			end
+		end
+	end
 	local path = u.path
 	if not path or #path == 0 then
 		u.path = nil
@@ -345,7 +437,7 @@ local function step(r, u, moved)
 			and not (g.allowWalkthrough and #path > 1))
 		or (nextTile.state == PF.OPEN and nextTile.stackHeight - PF.tile(g, u.x, u.y).stackHeight > PF.MAXIMUM_STEP_HEIGHT)
 	if blocked then
-		path = PF.find(g, u.x, u.y, u.goal.x, u.goal.y)
+		path = u.goal and PF.find(g, u.x, u.y, u.goal.x, u.goal.y)
 		if not path or #path == 0 then
 			u.path = nil
 			if u.to then u.to = nil moved[#moved + 1] = snapshot(u) end
@@ -444,7 +536,24 @@ function live.start()
 		local now = P.clock()
 		if lastWalk[player] and now - lastWalk[player] < 0.1 then return end
 		lastWalk[player] = now
+		-- (a room for steering only: no walking by clicking)
+		local u = live.byPlayer[player]
+		if u and live.movement(u.room) == live.MOVE_STEER then return end
 		live.walk(player, data.x, data.y)
+	end)
+	local steers = {}
+	P.onLeave(function(player) steers[player] = nil end)
+	P.receive("room.steer", function(player, data)
+		-- (at most 30 a second: a stick wobbling between directions)
+		local now = P.clock()
+		local s = steers[player]
+		if not s or now - s.t >= 1 then s = { t = now, n = 0 } steers[player] = s end
+		s.n = s.n + 1
+		if s.n > 30 then return end
+		live.steer(player, data.dx, data.dy)
+	end)
+	P.receive("room.interact", function(player, data)
+		live.interact(player, data.id, type(data.tag) == "string" and data.tag or nil)
 	end)
 	P.every("rooms.tick", live.STEP_TIME, live.tick)
 end

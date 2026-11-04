@@ -10,7 +10,7 @@
 -- Messages from players:
 --   room.settings.get { id }                 -> room.settings { ... } (owner/staff)
 --   room.settings.save { id, name, description, state, password, maxUsers, category, tags = {..},
---       trade, allowPets, allowPetsEat, allowWalkthrough, hideWall, wallThickness, floorThickness,
+--       trade, allowPets, allowPetsEat, allowWalkthrough, hideWall, wallThickness, floorThickness, movement,
 --       chatMode, chatWeight, chatSpeed, chatDistance, chatProtection, whoMute, whoKick, whoBan }
 --                                             -> room.settings.saved { id } or room.settings.error { id, code }
 --   room.delete { id }
@@ -77,6 +77,10 @@ function A.migrate()
 		"CREATE TABLE bobbahotel_room_bans (room INTEGER NOT NULL, key TEXT NOT NULL, name TEXT NOT NULL, ends INTEGER NOT NULL, PRIMARY KEY (room, key))",
 		"CREATE TABLE bobbahotel_favourites (key TEXT NOT NULL, room INTEGER NOT NULL, PRIMARY KEY (key, room))",
 		"CREATE TABLE bobbahotel_home_rooms (key TEXT PRIMARY KEY, room INTEGER NOT NULL)",
+	})
+	-- how people may move in the room: 0 both, 1 clicking only, 2 steering only (roomlive.lua)
+	BOBBA.store.migrate("core.017_room_movement", {
+		"ALTER TABLE bobbahotel_rooms ADD COLUMN movement INTEGER NOT NULL DEFAULT 0",
 	})
 end
 
@@ -149,7 +153,7 @@ function A.publicInfo(info, r)
 		chatMode = num(info.chat_mode, 0), chatWeight = num(info.chat_weight, 1), chatSpeed = num(info.chat_speed, 1),
 		chatDistance = num(info.chat_distance, 50), chatProtection = num(info.chat_protection, 2),
 		whoMute = num(info.who_mute, 0), whoKick = num(info.who_kick, 0), whoBan = num(info.who_ban, 0),
-		muted = r and r.mutedAll or false, ownerKey = info.owner,
+		muted = r and r.mutedAll or false, ownerKey = info.owner, movement = num(info.movement, 0),
 	}
 end
 
@@ -269,13 +273,14 @@ function A.save(player, data)
 	BOBBA.store.query([[UPDATE bobbahotel_rooms SET name = ?, description = ?, state = ?, password = ?, tags = ?, max_users = ?,
 		category = ?, trade = ?, allow_pets = ?, allow_pets_eat = ?, allow_walkthrough = ?, hide_wall = ?, wall_thickness = ?,
 		floor_thickness = ?, chat_mode = ?, chat_weight = ?, chat_speed = ?, chat_distance = ?, chat_protection = ?,
-		who_mute = ?, who_kick = ?, who_ban = ? WHERE id = ?]], {
+		who_mute = ?, who_kick = ?, who_ban = ?, movement = ? WHERE id = ?]], {
 		name, desc, state, password, (#tags > 0) and (table.concat(tags, ";") .. ";") or "", maxUsers,
 		category, clamp(data.trade, 0, 2, 0), data.allowPets and 1 or 0, data.allowPetsEat and 1 or 0,
 		data.allowWalkthrough and 1 or 0, data.hideWall and 1 or 0, clamp(data.wallThickness, -2, 1, 0),
 		clamp(data.floorThickness, -2, 1, 0), clamp(data.chatMode, 0, 1, 0), clamp(data.chatWeight, 0, 2, 1),
 		clamp(data.chatSpeed, 0, 2, 1), clamp(math.abs(num(data.chatDistance, 50)), 0, 99, 50), clamp(data.chatProtection, 0, 2, 2),
-		clamp(data.whoMute, 0, 1, 0), clamp(data.whoKick, 0, 2, 0), clamp(data.whoBan, 0, 1, 0), info.id,
+		clamp(data.whoMute, 0, 1, 0), clamp(data.whoKick, 0, 2, 0), clamp(data.whoBan, 0, 1, 0),
+		clamp(data.movement, 0, 2, num(info.movement, 0)), info.id,
 	})
 	A.refreshRoom(info.id)
 	BOBBA.events.emit("roomSettingsSaved", info.id)

@@ -479,6 +479,8 @@ local function createInput()
 	entry:SetPlaceholderText(BOBBA.ui and BOBBA.ui.text and BOBBA.ui.text("widgets.chatinput.default", "Click here to chat...") or "Click here to chat...")
 	entry:SetUpdateOnType(true)
 	entry.AllowInput = function(self, ch)
+		-- (a key that steered or interacted isn't typed: steering.lua)
+		if BOBBA.steering and BOBBA.steering.blockChar(self, ch) then return true end
 		if self.dropNextR then
 			self.dropNextR = false
 			if ch == "r" or ch == "R" then return true end
@@ -488,11 +490,15 @@ local function createInput()
 		return (utf8.len(t) or #t) >= C.MAX_LENGTH
 	end
 	entry.OnKeyCodeTyped = function(self, code)
+		-- steering with the keys, the interact button (steering.lua)
+		if BOBBA.steering and BOBBA.steering.keyTyped(self, code) then return true end
 		if code == KEY_ENTER or code == KEY_PAD_ENTER then
 			if C.floodUntil and SysTime() < C.floodUntil then return true end
 			local keep = C.send(self:GetValue(), input.IsShiftDown())
 			self:SetText(keep)
 			self:SetCaretPos(#keep)
+			-- (with "WASD, Enter to chat" sending closes the chat)
+			if BOBBA.steering and BOBBA.steering.mode() == 2 and keep == "" then BOBBA.steering.closeChat() end
 			return true
 		end
 		-- turning the furni being placed (when there's nothing typed)
@@ -501,6 +507,9 @@ local function createInput()
 			self.dropNextR = true
 			return true
 		end
+	end
+	entry.OnKeyCodeReleased = function(self, code)
+		if BOBBA.steering then BOBBA.steering.keyReleased(code) end
 	end
 	entry.Paint = function(self, w, h)
 		if C.floodUntil and SysTime() < C.floodUntil then
@@ -511,7 +520,7 @@ local function createInput()
 		self:DrawTextEntryText(Color(0, 0, 0), Color(80, 140, 230), Color(0, 0, 0))
 		if (self:GetValue() or "") == "" then
 			-- (the browser's placeholder grey)
-			draw.SimpleText(self:GetPlaceholderText(), F.input, 2, h / 2, Color(117, 117, 117), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText((BOBBA.steering and BOBBA.steering.placeholder()) or self:GetPlaceholderText(), F.input, 2, h / 2, Color(117, 117, 117), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 	end
 	frame.entry = entry
@@ -561,7 +570,9 @@ hook.Add("Think", "bobba.chat", function()
 		f:SetKeyboardInputEnabled(true)
 	end
 	local focus = vgui.GetKeyboardFocus()
-	if not gui.IsGameUIVisible() and not gui.IsConsoleVisible() and (focus == nil or focus == f or focus == V.panel) then
+	-- (with "WASD, Enter to chat" only while the chat is open: steering.lua)
+	local wanted = not BOBBA.steering or BOBBA.steering.chatWanted()
+	if wanted and not gui.IsGameUIVisible() and not gui.IsConsoleVisible() and (focus == nil or focus == f or focus == V.panel) then
 		f.entry:RequestFocus()
 	end
 end)

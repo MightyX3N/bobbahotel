@@ -230,6 +230,36 @@ local function drawSettings(w, d)
 		speaker(d, d.width - 9 - 14.4, ry + 0.8, 2, value < 50 and muted or U.C.black)
 		y = y + 44
 	end
+	-- moving with the keys or a controller (steering.lua)
+	local ST = BOBBA.steering
+	if ST then
+		y = y + 4
+		d:text(U.text("bobba.settings.movement", "Movement"), 14.4, 9, y + 8, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, true)
+		y = y + 24
+		d:text(U.text("bobba.settings.movement.keys", "Keys"), 12.6, 9, y + 12, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		d:select("movekeys", 80, y, d.width - 89, 24, {
+			{ 0, U.text("bobba.settings.movement.keys.arrows", "Arrow keys") },
+			{ 1, U.text("bobba.settings.movement.keys.wasdempty", "WASD while chat is empty") },
+			{ 2, U.text("bobba.settings.movement.keys.wasd", "WASD, Enter to chat") },
+		}, ST.mode(), function(v) RunConsoleCommand("bobba_setting_movekeys", tostring(v)) end)
+		y = y + 30
+		d:text(U.text("bobba.settings.movement.axes", "Directions"), 12.6, 9, y + 12, U.C.black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		d:select("moveaxes", 80, y, d.width - 89, 24, {
+			{ 0, U.text("bobba.settings.movement.axes.screen", "As on the screen") },
+			{ 1, U.text("bobba.settings.movement.axes.room", "Along the room") },
+		}, ST.axesVar:GetInt() == 1 and 1 or 0, function(v) RunConsoleCommand("bobba_setting_moveaxes", tostring(v)) end)
+		y = y + 30
+		local m = ST.mode()
+		local hint = m == 0 and U.text("bobba.settings.movement.hint0", "Space uses what's next to you, Tab picks the next thing.")
+			or m == 1 and U.text("bobba.settings.movement.hint1", "Press Enter first to start a message with w, a, s or d. Space uses what's next to you.")
+			or U.text("bobba.settings.movement.hint2", "E uses what's next to you, Tab picks the next thing.")
+		for _, l in ipairs(d:wrap(hint, 12.6, d.width - 18)) do
+			d:text(l, 12.6, 9, y + 8, Color(108, 117, 125), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			y = y + 17
+		end
+		y = y + 6
+	end
+	w:setHeight(math.max(300, y))
 end
 
 HUD.actions.settings = function() U.toggle("settings", function() U.window("settings", 250, 300, drawSettings) end) end

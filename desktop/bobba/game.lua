@@ -4,6 +4,7 @@
 local FS = require("bobba.fs")
 local HTTP = require("bobba.http")
 local Console = require("bobba.console")
+local Pad = require("bobba.gamepad")
 
 local Game = {}
 local toGame = love.thread.getChannel("bobba_to_game")
@@ -93,6 +94,8 @@ function Game.update(dt)
 	end
 	serverMessages()
 	G.tick(dt)
+	-- (a controller: walking, the pointer, the wheels)
+	if not Console.isOpen() then pcall(Pad.update, dt, G) end
 	G.vguiUpdate()
 	if serverThread and serverThread:getError() then
 		local err = serverThread:getError()
@@ -122,6 +125,7 @@ function Game.draw()
 	lg.origin()
 	lg.setScissor()
 	Game.snapshot()
+	Pad.draw()
 	if state == "failed" then
 		lg.setColor(0, 0, 0, 0.7)
 		lg.rectangle("fill", 0, 0, lg.getWidth(), 60)

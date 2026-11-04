@@ -217,10 +217,18 @@ local function save(changes)
 		allowPetsEat = s.allowPetsEat, allowWalkthrough = s.allowWalkthrough, hideWall = s.hideWall,
 		wallThickness = s.wallThickness, floorThickness = s.floorThickness, chatMode = s.chatMode, chatWeight = s.chatWeight,
 		chatSpeed = s.chatSpeed, chatDistance = s.chatDistance, chatProtection = s.chatProtection,
-		whoMute = s.whoMute, whoKick = s.whoKick, whoBan = s.whoBan,
+		whoMute = s.whoMute, whoKick = s.whoKick, whoBan = s.whoBan, movement = s.movement,
 	})
 end
 local STATE_NUM = { open = 0, doorbell = 1, password = 2, invisible = 3 }
+-- the room's movement setting (hotel/roomlive.lua): 0 both, 1 clicking only, 2 steering only
+function RW.MOVEMENT_OPTIONS()
+	return {
+		{ 0, T("bobba.roomsettings.movement.both", "Clicking and steering") },
+		{ 1, T("bobba.roomsettings.movement.click", "Clicking only") },
+		{ 2, T("bobba.roomsettings.movement.steer", "Steering only (keys, controller)") },
+	}
+end
 
 local function label(d, t, x, y, bold) d:text(t, 14.4, x, y, BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, bold) end
 
@@ -271,6 +279,11 @@ local function tabBasic(w, d, x, y, cw)
 		{ 1, T("navigator.roomsettings.trade_not_with_Controller", "Only players with rights") },
 		{ 2, T("navigator.roomsettings.trade_allowed", "Everyone can trade") },
 	}, s.trade, function(v) save({ trade = v }) end) end
+	y = y + 28.9 + 8
+	-- moving: clicking, steering with keys or a controller, or both (steering.lua)
+	label(d, T("bobba.roomsettings.movement", "Movement"), x, y + 4)
+	local mvy = y
+	selects[#selects + 1] = function() d:select("movement", cx, mvy, ccw, 28.9, RW.MOVEMENT_OPTIONS(), s.movement or 0, function(v) save({ movement = v }) end) end
 	y = y + 28.9 + 8
 	-- tags: two boxes side by side
 	label(d, T("navigator.tags", "Tags"), x, y + 4)
@@ -600,6 +613,24 @@ local function drawRoomInfo(w, d)
 		local ot = T("navigator.roomownercaption", "Owner:")
 		d:text(ot, 14.4, cx, ty, MUTED)
 		d:text(d:fit(c.owner, 14.4, cw - d:textWidth(ot, 14.4) - 6), 14.4, cx + d:textWidth(ot, 14.4) + 4, ty, BLACK)
+		ty = ty + 21.6 + 4
+	end
+	-- how you move here, when it isn't the usual (clicking and steering)
+	local mv = tonumber(a.movement) or 0
+	if mv ~= 0 then
+		local mt = T("bobba.roomsettings.movement", "Movement") .. ":"
+		local label2 = RW.MOVEMENT_OPTIONS()[mv + 1][2]
+		-- (a little four-way arrow)
+		local ix, iy = cx + 7, ty + 10.8
+		d:line(ix - 6, iy, ix + 6, iy, 1.6, MUTED)
+		d:line(ix, iy - 6, ix, iy + 6, 1.6, MUTED)
+		for _, k in ipairs({ { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }) do
+			local px, py = ix + k[1] * 6, iy + k[2] * 6
+			d:line(px, py, px - k[1] * 3 + k[2] * 3, py - k[2] * 3 + k[1] * 3, 1.6, MUTED)
+			d:line(px, py, px - k[1] * 3 - k[2] * 3, py - k[2] * 3 - k[1] * 3, 1.6, MUTED)
+		end
+		d:text(mt, 14.4, cx + 18, ty, MUTED)
+		d:text(d:fit(label2, 14.4, cw - 22 - d:textWidth(mt, 14.4)), 14.4, cx + 22 + d:textWidth(mt, 14.4), ty, BLACK)
 		ty = ty + 21.6 + 4
 	end
 	-- tags: grey chips (a search for the tag)

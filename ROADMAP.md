@@ -18,6 +18,15 @@ Nothing here is a promise of when; it keeps the plans in one place.
    - the navigator's "i" popover; report, word filter
    - a short tutorial after the starter room: walk, open the gift, place it, say hi (a small reward)
 
+**Steering** is done: walking with the arrow keys or WASD (Settings: arrow keys / WASD while the chat is
+empty / WASD with Enter to chat; directions as on the screen or along the room), tile after tile while
+held, sliding along walls; the interact button (Space, or E with WASD) with a highlight, Tab for the next
+thing; the room's movement setting (clicking and steering / clicking only / steering only) shown in the
+room info; controllers in the desktop app (stick or d-pad walks, A interacts, LB next, RB turns, the right
+stick is the pointer with X / B as the mouse buttons, Y holds the menu wheel, Back the quick-message
+wheel, Start the chat with the Steam Deck's keyboard). GMod players use a controller through Steam
+Input. The wired parts for movement come with wired (part 11).
+
 The desktop app (Love2D, runs the gamemode without GMod) is working: launcher, hosting a hotel,
 borderless full screen, its own icon.
 
@@ -25,20 +34,6 @@ borderless full screen, its own icon.
 
 4. **Avatar**: the rest of the clothes editor, effects, dances, signs.
    - the camera: photos, photos as wall furni, room thumbnails for the navigator
-   - walking with WASD, the arrow keys or a stick: continuous tile walking (holding a direction keeps
-     stepping tile after tile, smoothly; diagonals with two keys; screen-relative by default, room
-     axes as an option). Everything stays on tiles: sitting, rollers, wired and rooms keep working.
-   - a room setting for movement: both (default) / click only / steering only, shown with an icon
-     in the room info; wired effects to switch steering or click-walking off (for a user, everyone
-     or users on tiles, optionally for a while) and back, conditions "is steering" / "is
-     click-walking"; the interact button and clicking furni keep working unless also turned off
-   - an interact button (E / A): the nearest usable thing (on your tile or next to you, the one
-     you face first) is highlighted, and the button does what a double-click does: sit, lie down,
-     switch, go through a teleport, open a gift, an avatar's menu; another button cycles between
-     things equally close. The mouse keeps working alongside.
-   - controller support (Steam Deck: GMod and the desktop app): walking as above, a cursor mode for
-     furni, avatars and the UI, a radial menu for the toolbar, the on-screen keyboard or a
-     quick-message wheel for chat, bumpers to turn furni and cycle selection
 5. **Chat commands**.
 6. **Friends and messenger**: friend requests, the messenger, following friends.
    - Steam friends who play the hotel are friends automatically; removing one removes them only in
@@ -57,6 +52,8 @@ borderless full screen, its own icon.
       face, walls and furni block it, a hit stuns and scores, teams by colour), built from wired
       parts (a laser gun effect, a "hit by laser" trigger, team scores) so owners design their own
       arenas; the server decides hits. Banzai, Freeze and snowball fights play better this way too.
+    - wired for movement: switch steering or click-walking off (for a user, everyone, or users on
+      tiles, optionally for a while) and back; conditions "is steering" / "is click-walking"
     - free movement (between tiles) only inside minigames that want it (a snowball fight, racing),
       never in the normal hotel
     - **Voice chat** (GMod first): heard in your room only, quieter with distance on the tiles

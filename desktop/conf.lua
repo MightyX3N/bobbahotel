@@ -14,7 +14,7 @@ function love.conf(t)
 	t.window.vsync = 1
 	t.window.highdpi = false
 	t.modules.physics = false
-	t.modules.joystick = false
+	t.modules.joystick = true -- (controllers: bobba/gamepad.lua)
 	t.modules.video = false
 	t.modules.touch = false
 end
